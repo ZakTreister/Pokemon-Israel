@@ -9,10 +9,14 @@ export const setStore = (store: Store) => {
 
 // Determine the base URL based on environment
 const getBaseURL = () => {
-  // In WebContainer, we need to use the internal port mapping
+  // In WebContainer, we need to use the correct internal URL
   if (import.meta.env.DEV) {
-    // Development mode - explicitly use localhost:5000
-    return 'http://localhost:5000';
+    // Development mode - use the WebContainer internal URL
+    // The backend should be accessible on the same host but different port
+    const currentOrigin = window.location.origin;
+    // Replace the port with 5000 for the backend
+    const backendURL = currentOrigin.replace(/:\d+/, ':5000');
+    return backendURL;
   } else {
     // Production mode
     return 'https://api.pokemon-tournaments.netlify.app';
