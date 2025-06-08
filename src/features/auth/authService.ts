@@ -1,7 +1,7 @@
 import api from '../../services/api';
 
 const login = async (credentials: { username: string; password: string }) => {
-  const { data } = await api.post('/auth/login', credentials);
+  const { data } = await api.post('/api/auth/login', credentials);
   if (data.token) {
     localStorage.setItem('token', data.token);
   }
@@ -9,7 +9,7 @@ const login = async (credentials: { username: string; password: string }) => {
 };
 
 const register = async (userData: { username: string; email?: string; password: string; phone: string }) => {
-  const { data } = await api.post('/auth/register', userData);
+  const { data } = await api.post('/api/auth/register', userData);
   if (data.token) {
     localStorage.setItem('token', data.token);
   }
@@ -23,7 +23,7 @@ const checkAuth = async () => {
     throw new Error('No token found');
   }
 
-  const { data } = await api.get('/auth/profile');
+  const { data } = await api.get('/api/auth/profile');
   return { token, user: data };
 };
 
