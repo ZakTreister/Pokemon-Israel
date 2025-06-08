@@ -8,12 +8,24 @@ export const setStore = (store: Store) => {
 };
 
 // Determine the base URL based on environment
-const baseURL = import.meta.env.PROD 
-  ? 'https://api.pokemon-tournaments.netlify.app' // Production API URL
-  : 'http://localhost:5000'; // Development API URL
+const getBaseURL = () => {
+  // In WebContainer, we need to use the internal port mapping
+  if (import.meta.env.DEV) {
+    // Development mode - use the current origin but change port to 5000
+    const currentOrigin = window.location.origin;
+    const baseUrl = currentOrigin.replace(':5173', ':5000');
+    return baseUrl;
+  } else {
+    // Production mode
+    return 'https://api.pokemon-tournaments.netlify.app';
+  }
+};
+
+const baseURL = getBaseURL();
 
 console.log('API Base URL:', baseURL);
 console.log('Environment:', import.meta.env.MODE);
+console.log('Current origin:', window.location.origin);
 
 const api = axios.create({
   baseURL,
