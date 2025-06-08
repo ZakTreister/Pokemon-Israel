@@ -11,10 +11,8 @@ export const setStore = (store: Store) => {
 const getBaseURL = () => {
   // In WebContainer, we need to use the internal port mapping
   if (import.meta.env.DEV) {
-    // Development mode - use the current origin but change port to 5000
-    const currentOrigin = window.location.origin;
-    const baseUrl = currentOrigin.replace(':5173', ':5000');
-    return baseUrl;
+    // Development mode - explicitly use localhost:5000
+    return 'http://localhost:5000';
   } else {
     // Production mode
     return 'https://api.pokemon-tournaments.netlify.app';
