@@ -20,16 +20,10 @@ interface StandingsRow {
 }
 
 interface NewTournamentData {
-  title: string;
-  description: string;
   date: string;
   location: string;
-  maxParticipants: number;
-  registrationDeadline: string;
-  image: string;
-  prizePool: string;
-  entryFee: number;
-  format: string;
+  isRecurring: boolean;
+  maxParticipants?: number;
 }
 
 export default function AdminTournaments() {
@@ -48,16 +42,10 @@ export default function AdminTournaments() {
   const [playerDecks, setPlayerDecks] = useState<Record<string, string>>({});
   const [isCreating, setIsCreating] = useState(false);
   const [newTournamentData, setNewTournamentData] = useState<NewTournamentData>({
-    title: '',
-    description: '',
     date: '',
     location: '',
-    maxParticipants: 32,
-    registrationDeadline: '',
-    image: '',
-    prizePool: '',
-    entryFee: 0,
-    format: 'Standard'
+    isRecurring: false,
+    maxParticipants: undefined
   });
 
   useEffect(() => {
@@ -110,39 +98,67 @@ export default function AdminTournaments() {
       setIsCreating(true);
       
       // Validate required fields
-      if (!newTournamentData.title || !newTournamentData.description || !newTournamentData.date || 
-          !newTournamentData.location || !newTournamentData.registrationDeadline) {
+      if (!newTournamentData.date || !newTournamentData.location) {
         alert('אנא מלא את כל השדות הנדרשים');
         return;
       }
 
-      // Set default image if not provided
+      // Create tournament data with defaults
+      const tournamentDate = new Date(newTournamentData.date);
+      const registrationDeadline = new Date(tournamentDate);
+      registrationDeadline.setHours(registrationDeadline.getHours() - 2); // 2 hours before tournament
+
       const tournamentData = {
-        ...newTournamentData,
-        image: newTournamentData.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
+        title: `טורניר פוקימון - ${newTournamentData.location}`,
+        description: `טורניר פוקימון ב${newTournamentData.location}${newTournamentData.isRecurring ? ' (טורניר שבועי)' : ''}`,
+        date: newTournamentData.date,
+        location: newTournamentData.location,
+        maxParticipants: newTournamentData.maxParticipants || 32,
+        registrationDeadline: registrationDeadline.toISOString(),
+        image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+        prizePool: 'פרסים וחבילות בוסטר',
+        entryFee: 0,
+        format: 'Standard'
       };
 
       await api.post('/api/tournaments', tournamentData);
+      
+      // If recurring, create additional tournaments for the next few weeks
+      if (newTournamentData.isRecurring) {
+        for (let i = 1; i <= 4; i++) {
+          const nextWeekDate = new Date(tournamentDate);
+          nextWeekDate.setDate(nextWeekDate.getDate() + (7 * i));
+          
+          const nextWeekRegistration = new Date(nextWeekDate);
+          nextWeekRegistration.setHours(nextWeekRegistration.getHours() - 2);
+          
+          const recurringTournamentData = {
+            ...tournamentData,
+            date: nextWeekDate.toISOString(),
+            registrationDeadline: nextWeekRegistration.toISOString(),
+            title: `טורניר פוקימון שבועי - ${newTournamentData.location}`
+          };
+          
+          await api.post('/api/tournaments', recurringTournamentData);
+        }
+      }
       
       // Refresh tournaments list
       dispatch(fetchTournaments());
       
       // Reset form and close modal
       setNewTournamentData({
-        title: '',
-        description: '',
         date: '',
         location: '',
-        maxParticipants: 32,
-        registrationDeadline: '',
-        image: '',
-        prizePool: '',
-        entryFee: 0,
-        format: 'Standard'
+        isRecurring: false,
+        maxParticipants: undefined
       });
       setShowNewTournamentModal(false);
       
-      alert('הטורניר נוצר בהצלחה!');
+      const message = newTournamentData.isRecurring 
+        ? 'הטורנירים השבועיים נוצרו בהצלחה!' 
+        : 'הטורניר נוצר בהצלחה!';
+      alert(message);
     } catch (error: any) {
       console.error('Error creating tournament:', error);
       alert(error.response?.data?.message || 'שגיאה ביצירת הטורניר');
@@ -368,7 +384,7 @@ export default function AdminTournaments() {
       {/* New Tournament Modal */}
       {showNewTournamentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">יצירת טורניר חדש</h3>
               <Button
@@ -381,119 +397,52 @@ export default function AdminTournaments() {
             </div>
             
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">שם הטורניר *</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="שם הטורניר"
-                    value={newTournamentData.title}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, title: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">מיקום *</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="מיקום הטורניר"
-                    value={newTournamentData.location}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, location: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">תאריך ושעה *</label>
-                  <input
-                    type="datetime-local"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    value={newTournamentData.date}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, date: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">מועד אחרון להרשמה *</label>
-                  <input
-                    type="datetime-local"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    value={newTournamentData.registrationDeadline}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, registrationDeadline: e.target.value})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="32"
-                    value={newTournamentData.maxParticipants}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, maxParticipants: parseInt(e.target.value) || 32})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">פורמט</label>
-                  <select 
-                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    value={newTournamentData.format}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, format: e.target.value})}
-                  >
-                    <option value="Standard">Standard</option>
-                    <option value="Expanded">Expanded</option>
-                    <option value="Limited">Limited</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">דמי השתתפות (₪)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="0"
-                    value={newTournamentData.entryFee}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, entryFee: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">פרסים</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="פרסים וחבילות בוסטר"
-                    value={newTournamentData.prizePool}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, prizePool: e.target.value})}
-                  />
-                </div>
-              </div>
-              
               <div>
-                <label className="block text-sm font-medium mb-1">תיאור *</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  rows={4}
-                  placeholder="תיאור הטורניר"
-                  value={newTournamentData.description}
-                  onChange={(e) => setNewTournamentData({...newTournamentData, description: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">תמונה (URL)</label>
+                <label className="block text-sm font-medium mb-1">תאריך ושעה *</label>
                 <input
-                  type="url"
+                  type="datetime-local"
                   className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="https://example.com/image.jpg (אופציונלי)"
-                  value={newTournamentData.image}
-                  onChange={(e) => setNewTournamentData({...newTournamentData, image: e.target.value})}
+                  value={newTournamentData.date}
+                  onChange={(e) => setNewTournamentData({...newTournamentData, date: e.target.value})}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  אם לא תוזן תמונה, תשמש תמונת ברירת מחדל
-                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">מיקום *</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="מיקום הטורניר"
+                  value={newTournamentData.location}
+                  onChange={(e) => setNewTournamentData({...newTournamentData, location: e.target.value})}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isRecurring"
+                  className="rounded border-input"
+                  checked={newTournamentData.isRecurring}
+                  onChange={(e) => setNewTournamentData({...newTournamentData, isRecurring: e.target.checked})}
+                />
+                <label htmlFor="isRecurring" className="text-sm font-medium">
+                  טורניר שבועי (יוצר 5 טורנירים)
+                </label>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי (אופציונלי)</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="32 (ברירת מחדל)"
+                  value={newTournamentData.maxParticipants || ''}
+                  onChange={(e) => setNewTournamentData({
+                    ...newTournamentData, 
+                    maxParticipants: e.target.value ? parseInt(e.target.value) : undefined
+                  })}
+                />
               </div>
               
               <div className="flex justify-end gap-2 mt-6">
