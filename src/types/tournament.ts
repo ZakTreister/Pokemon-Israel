@@ -12,7 +12,15 @@ export interface Tournament {
   prizePool: string;
   registrationDeadline: string;
   image: string;
-  participants: string[];
+  participants: TournamentParticipant[];
   seriesId?: string; // For recurring tournaments
   isRecurring: boolean;
+}
+
+export interface TournamentParticipant {
+  user: {
+    _id: string;
+    username: string;
+  } | string;
+  registeredAt: string;
 }

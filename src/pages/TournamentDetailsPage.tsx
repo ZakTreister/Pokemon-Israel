@@ -5,13 +5,14 @@ import { fetchTournamentById, registerForTournament, clearError } from '../featu
 import { Calendar, MapPin, User, Clock } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { TournamentParticipant } from '../types/tournament';
 
 export default function TournamentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (id) {
@@ -23,6 +24,20 @@ export default function TournamentDetailsPage() {
       dispatch(clearError());
     };
   }, [dispatch, id]);
+
+  // Helper function to check if user is registered
+  const isUserRegistered = () => {
+    if (!isAuthenticated || !user || !activeTournament) return false;
+    
+    return activeTournament.participants.some((participant: TournamentParticipant) => {
+      // Handle both populated and non-populated participant data
+      if (typeof participant.user === 'string') {
+        return participant.user === user.id;
+      } else {
+        return participant.user._id === user.id;
+      }
+    });
+  };
 
   const handleRegister = async () => {
     if (!isAuthenticated) {
@@ -63,6 +78,7 @@ export default function TournamentDetailsPage() {
 
   const isFull = activeTournament.currentParticipants >= activeTournament.maxParticipants;
   const isRegistrationClosed = new Date(activeTournament.registrationDeadline) < new Date();
+  const userRegistered = isUserRegistered();
 
   return (
     <div className="container py-12">
@@ -167,6 +183,12 @@ export default function TournamentDetailsPage() {
                     {new Date(activeTournament.registrationDeadline).toLocaleDateString('he-IL')}
                   </span>
                 </div>
+
+                {userRegistered && (
+                  <div className="p-3 rounded-md bg-success/10 text-success text-sm">
+                    ✓ נרשמת לטורניר זה בהצלחה!
+                  </div>
+                )}
                 
                 {error && (
                   <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -181,14 +203,18 @@ export default function TournamentDetailsPage() {
                       activeTournament.status !== 'upcoming' || 
                       isFull || 
                       isRegistrationClosed ||
-                      isLoading
+                      isLoading ||
+                      userRegistered
                     }
                     onClick={handleRegister}
+                    variant={userRegistered ? 'success' : 'default'}
                   >
                     {isLoading
                       ? 'מבצע רישום...'
                       : !isAuthenticated
                       ? 'התחבר כדי להירשם'
+                      : userRegistered
+                      ? 'נרשמת לטורניר!'
                       : activeTournament.status !== 'upcoming'
                       ? 'ההרשמה הסתיימה'
                       : isFull

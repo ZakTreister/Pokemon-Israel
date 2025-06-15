@@ -257,6 +257,10 @@ export const registerForTournament = asyncHandler(async (req, res) => {
   tournament.currentParticipants = tournament.participants.length;
 
   const updatedTournament = await tournament.save();
+  
+  // Populate the participants for the response
+  await updatedTournament.populate('participants.user', 'username');
+  
   res.json(updatedTournament);
 });
 

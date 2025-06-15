@@ -5,7 +5,7 @@ import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
 import { Calendar, MapPin, User, Search } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Tournament } from '../types/tournament';
+import { Tournament, TournamentParticipant } from '../types/tournament';
 
 export default function TournamentsPage() {
   const dispatch = useAppDispatch();
@@ -21,7 +21,15 @@ export default function TournamentsPage() {
   // Helper function to check if user is registered for a tournament
   const isUserRegistered = (tournament: Tournament) => {
     if (!isAuthenticated || !user) return false;
-    return tournament.participants.some(participantId => participantId === user.id);
+    
+    return tournament.participants.some((participant: TournamentParticipant) => {
+      // Handle both populated and non-populated participant data
+      if (typeof participant.user === 'string') {
+        return participant.user === user.id;
+      } else {
+        return participant.user._id === user.id;
+      }
+    });
   };
 
   // Helper function to check if tournament is in the past
