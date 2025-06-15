@@ -120,6 +120,15 @@ export const updateTournament = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id);
 
   if (tournament) {
+    // Check if tournament is in the past
+    const now = new Date();
+    const tournamentDate = new Date(tournament.date);
+    
+    if (tournamentDate < now) {
+      res.status(400);
+      throw new Error('Cannot edit past tournaments');
+    }
+
     tournament.title = req.body.title || tournament.title;
     tournament.description = req.body.description || tournament.description;
     tournament.date = req.body.date || tournament.date;
@@ -150,13 +159,26 @@ export const deleteTournament = asyncHandler(async (req, res) => {
   }
 
   if (deleteSeries === 'true' && tournament.seriesId) {
-    // Delete all tournaments in the series
-    const deleteResult = await Tournament.deleteMany({ seriesId: tournament.seriesId });
+    // Delete only future tournaments in the series
+    const now = new Date();
+    const deleteResult = await Tournament.deleteMany({ 
+      seriesId: tournament.seriesId,
+      date: { $gte: now } // Only delete future tournaments
+    });
     res.json({ 
-      message: `Deleted ${deleteResult.deletedCount} tournaments from series`,
+      message: `Deleted ${deleteResult.deletedCount} future tournaments from series`,
       deletedCount: deleteResult.deletedCount 
     });
   } else {
+    // Check if tournament is in the past
+    const now = new Date();
+    const tournamentDate = new Date(tournament.date);
+    
+    if (tournamentDate < now) {
+      res.status(400);
+      throw new Error('Cannot delete past tournaments');
+    }
+
     // Delete single tournament
     await tournament.deleteOne();
     res.json({ message: 'Tournament removed' });
