@@ -85,6 +85,37 @@ export const getUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
+// @desc    Update user (admin only)
+// @route   PUT /api/users/:id
+// @access  Private/Admin
+export const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Update user fields
+  user.name = req.body.name || user.name;
+  user.username = req.body.username || user.username;
+  user.role = req.body.role || user.role;
+
+  // Only update password if provided
+  if (req.body.password) {
+    user.password = req.body.password;
+  }
+
+  const updatedUser = await user.save();
+
+  res.json({
+    id: updatedUser._id,
+    name: updatedUser.name,
+    username: updatedUser.username,
+    role: updatedUser.role,
+  });
+});
+
 // @desc    Delete user (admin only)
 // @route   DELETE /api/users/:id
 // @access  Private/Admin

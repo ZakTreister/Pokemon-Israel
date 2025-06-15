@@ -4,6 +4,7 @@ import {
   getUserStats,
   getUserTournaments,
   getUsers,
+  updateUser,
   deleteUser,
 } from '../controllers/userController.js';
 
@@ -16,6 +17,7 @@ router.route('/')
   .get(protect, admin, getUsers);
 
 router.route('/:id')
+  .put(protect, admin, updateUser)
   .delete(protect, admin, deleteUser);
 
 export default router;
