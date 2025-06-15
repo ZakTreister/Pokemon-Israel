@@ -26,9 +26,10 @@ export default function TournamentsPage() {
       // Handle both populated and non-populated participant data
       if (typeof participant.user === 'string') {
         return participant.user === user.id;
-      } else {
-        return participant.user._id === user.id;
+      } else if (participant.user && typeof participant.user === 'object') {
+        return participant.user._id === user.id || participant.user.id === user.id;
       }
+      return false;
     });
   };
 

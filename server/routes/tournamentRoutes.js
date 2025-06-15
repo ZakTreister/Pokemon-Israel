@@ -7,6 +7,7 @@ import {
   updateTournament,
   deleteTournament,
   registerForTournament,
+  unregisterFromTournament,
   submitTournamentResults,
   getTournamentResults,
   getTournamentsBySeries,
@@ -25,7 +26,9 @@ router.route('/:id')
 
 router.get('/series/:seriesId', getTournamentsBySeries);
 
-router.post('/:id/register', protect, registerForTournament);
+router.route('/:id/register')
+  .post(protect, registerForTournament)
+  .delete(protect, unregisterFromTournament);
 
 router.route('/:id/results')
   .get(getTournamentResults)

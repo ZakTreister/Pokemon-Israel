@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchTournamentById, registerForTournament, clearError } from '../features/tournaments/tournamentsSlice';
+import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
 import { Calendar, MapPin, User, Clock } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -33,9 +33,10 @@ export default function TournamentDetailsPage() {
       // Handle both populated and non-populated participant data
       if (typeof participant.user === 'string') {
         return participant.user === user.id;
-      } else {
-        return participant.user._id === user.id;
+      } else if (participant.user && typeof participant.user === 'object') {
+        return participant.user._id === user.id || participant.user.id === user.id;
       }
+      return false;
     });
   };
 
@@ -47,6 +48,14 @@ export default function TournamentDetailsPage() {
     
     if (id) {
       await dispatch(registerForTournament(id));
+    }
+  };
+
+  const handleUnregister = async () => {
+    if (!isAuthenticated || !id) return;
+    
+    if (window.confirm('האם אתה בטוח שברצונך לבטל את ההרשמה לטורניר?')) {
+      await dispatch(unregisterFromTournament(id));
     }
   };
 
@@ -79,6 +88,7 @@ export default function TournamentDetailsPage() {
   const isFull = activeTournament.currentParticipants >= activeTournament.maxParticipants;
   const isRegistrationClosed = new Date(activeTournament.registrationDeadline) < new Date();
   const userRegistered = isUserRegistered();
+  const isPastTournament = new Date(activeTournament.date) < new Date();
 
   return (
     <div className="container py-12">
@@ -157,16 +167,16 @@ export default function TournamentDetailsPage() {
         <div>
           <Card className="sticky top-24">
             <CardHeader>
-              <CardTitle>הרשמה לטורניר</CardTitle>
+              <CardTitle>
+                {userRegistered ? 'אתה רשום לטורניר' : 'הרשמה לטורניר'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-2 border-b border-border">
                   <span className="text-muted-foreground">סטטוס</span>
                   <span className="font-medium">
-                    {activeTournament.status === 'upcoming' && 'קרוב'}
-                    {activeTournament.status === 'ongoing' && 'מתקיים'}
-                    {activeTournament.status === 'completed' && 'הסתיים'}
+                    {isPastTournament ? 'הסתיים' : 'קרוב'}
                   </span>
                 </div>
                 
@@ -186,7 +196,7 @@ export default function TournamentDetailsPage() {
 
                 {userRegistered && (
                   <div className="p-3 rounded-md bg-success/10 text-success text-sm">
-                    ✓ נרשמת לטורניר זה בהצלחה!
+                    ✓ אתה רשום לטורניר זה!
                   </div>
                 )}
                 
@@ -196,36 +206,43 @@ export default function TournamentDetailsPage() {
                   </div>
                 )}
                 
-                <div className="pt-4">
-                  <Button 
-                    className="w-full" 
-                    disabled={
-                      activeTournament.status !== 'upcoming' || 
-                      isFull || 
-                      isRegistrationClosed ||
-                      isLoading ||
-                      userRegistered
-                    }
-                    onClick={handleRegister}
-                    variant={userRegistered ? 'success' : 'default'}
-                  >
-                    {isLoading
-                      ? 'מבצע רישום...'
-                      : !isAuthenticated
-                      ? 'התחבר כדי להירשם'
-                      : userRegistered
-                      ? 'נרשמת לטורניר!'
-                      : activeTournament.status !== 'upcoming'
-                      ? 'ההרשמה הסתיימה'
-                      : isFull
-                      ? 'הטורניר מלא'
-                      : isRegistrationClosed
-                      ? 'ההרשמה נסגרה'
-                      : 'הרשם לטורניר'}
-                  </Button>
+                <div className="pt-4 space-y-2">
+                  {userRegistered ? (
+                    <Button 
+                      className="w-full" 
+                      variant="destructive"
+                      disabled={isPastTournament || isLoading}
+                      onClick={handleUnregister}
+                    >
+                      {isLoading ? 'מבטל הרשמה...' : 'בטל הרשמה'}
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full" 
+                      disabled={
+                        isPastTournament || 
+                        isFull || 
+                        isRegistrationClosed ||
+                        isLoading
+                      }
+                      onClick={handleRegister}
+                    >
+                      {isLoading
+                        ? 'מבצע רישום...'
+                        : !isAuthenticated
+                        ? 'התחבר כדי להירשם'
+                        : isPastTournament
+                        ? 'הטורניר הסתיים'
+                        : isFull
+                        ? 'הטורניר מלא'
+                        : isRegistrationClosed
+                        ? 'ההרשמה נסגרה'
+                        : 'הרשם לטורניר'}
+                    </Button>
+                  )}
                   
                   {!isAuthenticated && (
-                    <p className="text-sm text-muted-foreground mt-2 text-center">
+                    <p className="text-sm text-muted-foreground text-center">
                       עליך להתחבר כדי להירשם לטורניר
                     </p>
                   )}

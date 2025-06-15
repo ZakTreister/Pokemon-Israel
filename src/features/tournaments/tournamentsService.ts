@@ -30,6 +30,11 @@ const registerForTournament = async (id: string) => {
   return data;
 };
 
+const unregisterFromTournament = async (id: string) => {
+  const { data } = await api.delete<Tournament>(`/api/tournaments/${id}/register`);
+  return data;
+};
+
 const submitTournamentResults = async (id: string, results: any) => {
   const { data } = await api.post<Tournament>(`/api/tournaments/${id}/results`, { results });
   return data;
@@ -47,6 +52,7 @@ const tournamentsService = {
   updateTournament,
   deleteTournament,
   registerForTournament,
+  unregisterFromTournament,
   submitTournamentResults,
   getTournamentResults,
 };

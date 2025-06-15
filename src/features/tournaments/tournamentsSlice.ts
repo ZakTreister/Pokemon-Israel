@@ -52,6 +52,18 @@ export const registerForTournament = createAsyncThunk(
   }
 );
 
+export const unregisterFromTournament = createAsyncThunk(
+  'tournaments/unregister',
+  async (tournamentId: string, thunkAPI) => {
+    try {
+      return await tournamentsService.unregisterFromTournament(tournamentId);
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'שגיאה בביטול ההרשמה';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 const tournamentsSlice = createSlice({
   name: 'tournaments',
   initialState,
@@ -106,6 +118,26 @@ const tournamentsSlice = createSlice({
         );
       })
       .addCase(registerForTournament.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(unregisterFromTournament.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(unregisterFromTournament.fulfilled, (state, action) => {
+        state.isLoading = false;
+        
+        // Update the tournaments list with updated registration count
+        if (state.activeTournament && state.activeTournament.id === action.payload.id) {
+          state.activeTournament = action.payload;
+        }
+        
+        state.tournaments = state.tournaments.map((tournament) => 
+          tournament.id === action.payload.id ? action.payload : tournament
+        );
+      })
+      .addCase(unregisterFromTournament.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
