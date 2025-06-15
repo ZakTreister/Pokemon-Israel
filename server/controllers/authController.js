@@ -38,6 +38,13 @@ export const login = asyncHandler(async (req, res) => {
 export const register = asyncHandler(async (req, res) => {
   const { username, email, password, phone } = req.body;
 
+  // Validate required fields
+  if (!username || !password || !phone) {
+    res.status(400);
+    throw new Error('Username, password, and phone are required');
+  }
+
+  // Check if user already exists
   const userExists = await User.findOne({ username });
 
   if (userExists) {
@@ -45,26 +52,63 @@ export const register = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  const user = await User.create({
-    username,
-    email,
-    password,
-    phone,
-  });
+  // Check if email is provided and already exists
+  if (email) {
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      res.status(400);
+      throw new Error('Email already exists');
+    }
+  }
 
-  if (user) {
-    res.status(201).json({
-      token: generateToken(user._id),
-      user: {
+  try {
+    // Create user
+    const user = await User.create({
+      username,
+      email: email || undefined, // Don't save empty string
+      password,
+      phone,
+    });
+
+    if (user) {
+      console.log('User created successfully:', {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role,
-      },
-    });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+        role: user.role
+      });
+
+      res.status(201).json({
+        token: generateToken(user._id),
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    } else {
+      res.status(400);
+      throw new Error('Invalid user data');
+    }
+  } catch (error) {
+    console.error('Error creating user:', error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      res.status(400);
+      throw new Error(messages.join(', '));
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      res.status(400);
+      throw new Error(`${field} already exists`);
+    }
+    
+    throw error;
   }
 });
 
