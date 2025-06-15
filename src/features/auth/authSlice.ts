@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
-import { jwtDecode } from 'jwt-decode';
 
 interface User {
   id: string;
@@ -85,15 +84,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
-        
-        // Decode the JWT to get user data
-        try {
-          const decoded = jwtDecode<User>(action.payload.token);
-          state.user = decoded;
-        } catch (e) {
-          console.error('Failed to decode token', e);
-        }
-        
+        state.user = action.payload.user; // Use the user data from the response
         localStorage.setItem('token', action.payload.token);
       })
       .addCase(login.rejected, (state, action) => {
@@ -108,15 +99,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
-        
-        // Decode the JWT to get user data
-        try {
-          const decoded = jwtDecode<User>(action.payload.token);
-          state.user = decoded;
-        } catch (e) {
-          console.error('Failed to decode token', e);
-        }
-        
+        state.user = action.payload.user; // Use the user data from the response
         localStorage.setItem('token', action.payload.token);
       })
       .addCase(register.rejected, (state, action) => {
@@ -132,14 +115,7 @@ const authSlice = createSlice({
         if (action.payload) {
           state.isAuthenticated = true;
           state.token = action.payload.token;
-          
-          // Decode the JWT to get user data
-          try {
-            const decoded = jwtDecode<User>(action.payload.token);
-            state.user = decoded;
-          } catch (e) {
-            console.error('Failed to decode token', e);
-          }
+          state.user = action.payload.user; // Use the user data from the response
         } else {
           state.isAuthenticated = false;
           state.user = null;
