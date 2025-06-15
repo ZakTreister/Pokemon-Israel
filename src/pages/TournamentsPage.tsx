@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
-import { Calendar, MapPin, User, Trophy, Search } from 'lucide-react';
+import { Calendar, MapPin, User, Search } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Tournament } from '../types/tournament';
@@ -10,6 +10,7 @@ import { Tournament } from '../types/tournament';
 export default function TournamentsPage() {
   const dispatch = useAppDispatch();
   const { tournaments, isLoading } = useAppSelector((state) => state.tournaments);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
 
@@ -17,13 +18,33 @@ export default function TournamentsPage() {
     dispatch(fetchTournaments());
   }, [dispatch]);
 
+  // Helper function to check if user is registered for a tournament
+  const isUserRegistered = (tournament: Tournament) => {
+    if (!isAuthenticated || !user) return false;
+    return tournament.participants.some(participantId => participantId === user.id);
+  };
+
+  // Helper function to check if tournament is in the past
+  const isPastTournament = (tournament: Tournament) => {
+    const now = new Date();
+    const tournamentDate = new Date(tournament.date);
+    return tournamentDate < now;
+  };
+
   // Filter tournaments
   const filteredTournaments = (tournaments || []).filter((tournament) => {
     const matchesSearch = tournament.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          tournament.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          tournament.location.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = filterStatus === 'all' || tournament.status === filterStatus;
+    // Fix the filter logic
+    let matchesStatus = true;
+    if (filterStatus === 'upcoming') {
+      matchesStatus = !isPastTournament(tournament);
+    } else if (filterStatus === 'completed') {
+      matchesStatus = isPastTournament(tournament);
+    }
+    // 'all' shows everything, so no additional filtering needed
     
     return matchesSearch && matchesStatus;
   });
@@ -101,7 +122,12 @@ export default function TournamentsPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {sortedTournaments.map((tournament) => (
-                <TournamentCard key={tournament.id} tournament={tournament} />
+                <TournamentCard 
+                  key={tournament.id} 
+                  tournament={tournament} 
+                  isUserRegistered={isUserRegistered(tournament)}
+                  isPast={isPastTournament(tournament)}
+                />
               ))}
             </div>
           )}
@@ -111,23 +137,46 @@ export default function TournamentsPage() {
   );
 }
 
-function TournamentCard({ tournament }: { tournament: Tournament }) {
-  const getStatusBadge = (status: Tournament['status']) => {
-    switch (status) {
-      case 'upcoming':
-        return (
-          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
-            קרוב
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-medium">
-            הסתיים
-          </span>
-        );
-      default:
-        return null;
+interface TournamentCardProps {
+  tournament: Tournament;
+  isUserRegistered: boolean;
+  isPast: boolean;
+}
+
+function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCardProps) {
+  const getStatusBadge = () => {
+    if (isPast) {
+      return (
+        <span className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-medium">
+          הסתיים
+        </span>
+      );
+    } else {
+      return (
+        <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
+          קרוב
+        </span>
+      );
+    }
+  };
+
+  const getButtonText = () => {
+    if (isPast) {
+      return 'פרטים';
+    } else if (isUserRegistered) {
+      return 'נרשמת! פרטים';
+    } else {
+      return 'פרטים והרשמה';
+    }
+  };
+
+  const getButtonVariant = () => {
+    if (isPast) {
+      return 'outline';
+    } else if (isUserRegistered) {
+      return 'success';
+    } else {
+      return 'default';
     }
   };
 
@@ -139,8 +188,13 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
           alt={tournament.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-2 left-2">
-          {getStatusBadge(tournament.status)}
+        <div className="absolute top-2 left-2 flex gap-1">
+          {getStatusBadge()}
+          {tournament.seriesId && (
+            <span className="bg-secondary/10 text-secondary px-2 py-1 rounded-full text-xs font-medium">
+              שבועי
+            </span>
+          )}
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
           <h3 className="text-white text-xl font-bold">{tournament.title}</h3>
@@ -162,22 +216,16 @@ function TournamentCard({ tournament }: { tournament: Tournament }) {
               {tournament.currentParticipants} / {tournament.maxParticipants} משתתפים
             </span>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Trophy size={18} />
-            <span>
-              פרסים: {tournament.prizePool}
-            </span>
-          </div>
         </div>
       </CardContent>
       <CardFooter className="pt-0">
         <Button 
           className="w-full" 
-          variant={tournament.status === 'completed' ? 'outline' : 'default'}
+          variant={getButtonVariant()}
           asChild
         >
           <Link to={`/tournaments/${tournament.id}`}>
-            {tournament.status === 'completed' ? 'צפה בתוצאות' : 'פרטים והרשמה'}
+            {getButtonText()}
           </Link>
         </Button>
       </CardFooter>
