@@ -40,5 +40,15 @@ userSchema.pre('save', async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+// Transform _id to id and remove __v when converting to JSON
+userSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
+
 const User = mongoose.model('User', userSchema);
 export default User;
