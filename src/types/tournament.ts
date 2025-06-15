@@ -13,4 +13,6 @@ export interface Tournament {
   registrationDeadline: string;
   image: string;
   participants: string[];
+  seriesId?: string; // For recurring tournaments
+  isRecurring: boolean;
 }
