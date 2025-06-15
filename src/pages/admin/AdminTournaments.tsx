@@ -23,6 +23,7 @@ interface NewTournamentData {
   date: string;
   location: string;
   isRecurring: boolean;
+  lastTournamentDate: string;
   maxParticipants?: number;
 }
 
@@ -45,6 +46,7 @@ export default function AdminTournaments() {
     date: '',
     location: '',
     isRecurring: false,
+    lastTournamentDate: '',
     maxParticipants: undefined
   });
 
@@ -103,10 +105,16 @@ export default function AdminTournaments() {
         return;
       }
 
+      // If recurring is selected, validate last tournament date
+      if (newTournamentData.isRecurring && !newTournamentData.lastTournamentDate) {
+        alert('אנא הזן תאריך טורניר אחרון עבור טורניר שבועי');
+        return;
+      }
+
       // Create tournament data with defaults
       const tournamentDate = new Date(newTournamentData.date);
+      // Set registration deadline to the tournament start time
       const registrationDeadline = new Date(tournamentDate);
-      registrationDeadline.setHours(registrationDeadline.getHours() - 2); // 2 hours before tournament
 
       const tournamentData = {
         title: `טורניר פוקימון - ${newTournamentData.location}`,
@@ -123,23 +131,30 @@ export default function AdminTournaments() {
 
       await api.post('/api/tournaments', tournamentData);
       
-      // If recurring, create additional tournaments for the next few weeks
+      // If recurring, create additional tournaments until the last tournament date
       if (newTournamentData.isRecurring) {
-        for (let i = 1; i <= 4; i++) {
-          const nextWeekDate = new Date(tournamentDate);
-          nextWeekDate.setDate(nextWeekDate.getDate() + (7 * i));
+        const lastDate = new Date(newTournamentData.lastTournamentDate);
+        let currentDate = new Date(tournamentDate);
+        let weekCount = 1;
+        
+        while (currentDate < lastDate) {
+          currentDate = new Date(tournamentDate);
+          currentDate.setDate(currentDate.getDate() + (7 * weekCount));
           
-          const nextWeekRegistration = new Date(nextWeekDate);
-          nextWeekRegistration.setHours(nextWeekRegistration.getHours() - 2);
+          if (currentDate <= lastDate) {
+            const nextWeekRegistration = new Date(currentDate);
+            
+            const recurringTournamentData = {
+              ...tournamentData,
+              date: currentDate.toISOString(),
+              registrationDeadline: nextWeekRegistration.toISOString(),
+              title: `טורניר פוקימון שבועי - ${newTournamentData.location}`
+            };
+            
+            await api.post('/api/tournaments', recurringTournamentData);
+          }
           
-          const recurringTournamentData = {
-            ...tournamentData,
-            date: nextWeekDate.toISOString(),
-            registrationDeadline: nextWeekRegistration.toISOString(),
-            title: `טורניר פוקימון שבועי - ${newTournamentData.location}`
-          };
-          
-          await api.post('/api/tournaments', recurringTournamentData);
+          weekCount++;
         }
       }
       
@@ -151,6 +166,7 @@ export default function AdminTournaments() {
         date: '',
         location: '',
         isRecurring: false,
+        lastTournamentDate: '',
         maxParticipants: undefined
       });
       setShowNewTournamentModal(false);
@@ -427,9 +443,21 @@ export default function AdminTournaments() {
                   onChange={(e) => setNewTournamentData({...newTournamentData, isRecurring: e.target.checked})}
                 />
                 <label htmlFor="isRecurring" className="text-sm font-medium">
-                  טורניר שבועי (יוצר 5 טורנירים)
+                  טורניר שבועי
                 </label>
               </div>
+              
+              {newTournamentData.isRecurring && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">תאריך טורניר אחרון *</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    value={newTournamentData.lastTournamentDate}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, lastTournamentDate: e.target.value})}
+                  />
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי (אופציונלי)</label>
