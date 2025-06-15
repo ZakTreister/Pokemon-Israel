@@ -144,22 +144,22 @@ export const deleteTournament = asyncHandler(async (req, res) => {
   const { deleteSeries } = req.query; // Optional query parameter
   const tournament = await Tournament.findById(req.params.id);
 
-  if (tournament) {
-    if (deleteSeries === 'true' && tournament.seriesId) {
-      // Delete all tournaments in the series
-      const deleteResult = await Tournament.deleteMany({ seriesId: tournament.seriesId });
-      res.json({ 
-        message: `Deleted ${deleteResult.deletedCount} tournaments from series`,
-        deletedCount: deleteResult.deletedCount 
-      });
-    } else {
-      // Delete single tournament
-      await tournament.deleteOne();
-      res.json({ message: 'Tournament removed' });
-    }
-  } else {
+  if (!tournament) {
     res.status(404);
     throw new Error('Tournament not found');
+  }
+
+  if (deleteSeries === 'true' && tournament.seriesId) {
+    // Delete all tournaments in the series
+    const deleteResult = await Tournament.deleteMany({ seriesId: tournament.seriesId });
+    res.json({ 
+      message: `Deleted ${deleteResult.deletedCount} tournaments from series`,
+      deletedCount: deleteResult.deletedCount 
+    });
+  } else {
+    // Delete single tournament
+    await tournament.deleteOne();
+    res.json({ message: 'Tournament removed' });
   }
 });
 
