@@ -15,6 +15,14 @@ interface User {
   tournaments: number;
 }
 
+interface UserFormData {
+  username: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: 'player' | 'admin';
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +33,16 @@ export default function AdminUsers() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form data for add/edit user
+  const [formData, setFormData] = useState<UserFormData>({
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: 'player'
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -39,6 +57,135 @@ export default function AdminUsers() {
       setError(err.response?.data?.message || 'Failed to fetch users');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      email: '',
+      phone: '',
+      password: '',
+      role: 'player'
+    });
+  };
+
+  const handleAddUser = async () => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Validate required fields
+      if (!formData.username || !formData.password || !formData.phone) {
+        setError('שם משתמש, סיסמה וטלפון הם שדות חובה');
+        return;
+      }
+
+      // Validate phone number
+      if (!/^[0-9]{9,15}$/.test(formData.phone)) {
+        setError('מספר טלפון חייב להכיל 9-15 ספרות');
+        return;
+      }
+
+      // Validate email if provided
+      if (formData.email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
+        setError('כתובת אימייל לא תקינה');
+        return;
+      }
+
+      // Create user
+      const userData = {
+        username: formData.username,
+        email: formData.email || undefined, // Don't send empty string
+        phone: formData.phone,
+        password: formData.password,
+        role: formData.role
+      };
+
+      const { data } = await api.post('/api/auth/register', userData);
+      
+      // Add the new user to the list
+      const newUser: User = {
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email,
+        phone: formData.phone, // Use form data since it might not be in response
+        role: data.user.role,
+        status: 'active',
+        tournaments: 0
+      };
+      
+      setUsers([...users, newUser]);
+      
+      // Reset form and close modal
+      resetForm();
+      setShowAddModal(false);
+      
+      alert('המשתמש נוצר בהצלחה!');
+      
+    } catch (err: any) {
+      console.error('Error creating user:', err);
+      setError(err.response?.data?.message || 'שגיאה ביצירת המשתמש');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Validate required fields
+      if (!formData.username || !formData.phone) {
+        setError('שם משתמש וטלפון הם שדות חובה');
+        return;
+      }
+
+      // Validate phone number
+      if (!/^[0-9]{9,15}$/.test(formData.phone)) {
+        setError('מספר טלפון חייב להכיל 9-15 ספרות');
+        return;
+      }
+
+      // Validate email if provided
+      if (formData.email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
+        setError('כתובת אימייל לא תקינה');
+        return;
+      }
+
+      // Update user
+      const updateData = {
+        username: formData.username,
+        email: formData.email || undefined,
+        phone: formData.phone,
+        role: formData.role,
+        ...(formData.password && { password: formData.password }) // Only include password if provided
+      };
+
+      await api.put(`/api/users/${selectedUser.id}`, updateData);
+      
+      // Update the user in the list
+      setUsers(users.map(user => 
+        user.id === selectedUser.id 
+          ? { ...user, ...updateData, email: updateData.email || null }
+          : user
+      ));
+      
+      // Reset form and close modal
+      resetForm();
+      setShowEditModal(false);
+      setSelectedUser(null);
+      
+      alert('המשתמש עודכן בהצלחה!');
+      
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      setError(err.response?.data?.message || 'שגיאה בעדכון המשתמש');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -61,9 +208,30 @@ export default function AdminUsers() {
     try {
       await api.delete(`/api/users/${userId}`);
       setUsers(users.filter(user => user.id !== userId));
+      alert('המשתמש נמחק בהצלחה');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete user');
     }
+  };
+
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user);
+    setFormData({
+      username: user.username,
+      email: user.email || '',
+      phone: user.phone,
+      password: '', // Don't pre-fill password
+      role: user.role
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseModals = () => {
+    setShowAddModal(false);
+    setShowEditModal(false);
+    setSelectedUser(null);
+    resetForm();
+    setError(null);
   };
 
   // Filter users
@@ -169,13 +337,16 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+          {error}
+        </div>
+      )}
+
       {/* Users Table */}
       {isLoading ? (
         <div className="animate-pulse text-center py-12">טוען משתמשים...</div>
-      ) : error ? (
-        <div className="text-center py-12 text-destructive">
-          {error}
-        </div>
       ) : (
         <Card>
           <div className="overflow-x-auto">
@@ -236,10 +407,7 @@ export default function AdminUsers() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditModal(true);
-                          }}
+                          onClick={() => handleEditClick(user)}
                         >
                           ערוך
                         </Button>
@@ -292,40 +460,52 @@ export default function AdminUsers() {
             <h3 className="text-xl font-bold mb-4">הוספת משתמש חדש</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">שם משתמש</label>
+                <label className="block text-sm font-medium mb-1">שם משתמש *</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן שם משתמש"
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">אימייל</label>
+                <label className="block text-sm font-medium mb-1">אימייל (אופציונלי)</label>
                 <input
                   type="email"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן אימייל"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">טלפון</label>
+                <label className="block text-sm font-medium mb-1">טלפון *</label>
                 <input
                   type="tel"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן מספר טלפון"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">סיסמה</label>
+                <label className="block text-sm font-medium mb-1">סיסמה *</label>
                 <input
                   type="password"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן סיסמה"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">תפקיד</label>
-                <select className="w-full px-3 py-2 border border-input rounded-md bg-background">
+                <select 
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'admin'})}
+                >
                   <option value="player">שחקן</option>
                   <option value="admin">מנהל</option>
                 </select>
@@ -333,17 +513,16 @@ export default function AdminUsers() {
               <div className="flex justify-end gap-2 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={handleCloseModals}
+                  disabled={isSubmitting}
                 >
                   ביטול
                 </Button>
                 <Button
-                  onClick={() => {
-                    // Handle user creation
-                    setShowAddModal(false);
-                  }}
+                  onClick={handleAddUser}
+                  disabled={isSubmitting}
                 >
-                  הוסף משתמש
+                  {isSubmitting ? 'יוצר משתמש...' : 'הוסף משתמש'}
                 </Button>
               </div>
             </div>
@@ -358,45 +537,51 @@ export default function AdminUsers() {
             <h3 className="text-xl font-bold mb-4">עריכת משתמש</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">שם משתמש</label>
+                <label className="block text-sm font-medium mb-1">שם משתמש *</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן שם משתמש"
-                  defaultValue={selectedUser.username}
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">אימייל</label>
+                <label className="block text-sm font-medium mb-1">אימייל (אופציונלי)</label>
                 <input
                   type="email"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן אימייל"
-                  defaultValue={selectedUser.email || ''}
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">טלפון</label>
+                <label className="block text-sm font-medium mb-1">טלפון *</label>
                 <input
                   type="tel"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="הזן מספר טלפון"
-                  defaultValue={selectedUser.phone}
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">סיסמה חדשה</label>
+                <label className="block text-sm font-medium mb-1">סיסמה חדשה (אופציונלי)</label>
                 <input
                   type="password"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="השאר ריק לשמירת הסיסמה הנוכחית"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">תפקיד</label>
                 <select 
                   className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  defaultValue={selectedUser.role}
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'admin'})}
                 >
                   <option value="player">שחקן</option>
                   <option value="admin">מנהל</option>
@@ -405,21 +590,16 @@ export default function AdminUsers() {
               <div className="flex justify-end gap-2 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setSelectedUser(null);
-                  }}
+                  onClick={handleCloseModals}
+                  disabled={isSubmitting}
                 >
                   ביטול
                 </Button>
                 <Button
-                  onClick={() => {
-                    // Handle user update
-                    setShowEditModal(false);
-                    setSelectedUser(null);
-                  }}
+                  onClick={handleEditUser}
+                  disabled={isSubmitting}
                 >
-                  שמור שינויים
+                  {isSubmitting ? 'מעדכן משתמש...' : 'שמור שינויים'}
                 </Button>
               </div>
             </div>
