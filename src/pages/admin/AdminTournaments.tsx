@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../../features/decks/decksSlice';
-import { Plus, Calendar, MapPin, User, Search, X, Trash2 } from 'lucide-react';
+import { Plus, Calendar, MapPin, User, Search, X, Trash2, Edit, Eye } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Tournament } from '../../types/tournament';
@@ -19,7 +19,7 @@ interface StandingsRow {
   deck?: string;
 }
 
-interface NewTournamentData {
+interface TournamentFormData {
   date: string;
   location: string;
   isRecurring: boolean;
@@ -36,13 +36,13 @@ export default function AdminTournaments() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showNewTournamentModal, setShowNewTournamentModal] = useState(false);
+  const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [standingsInput, setStandingsInput] = useState('');
   const [parsedStandings, setParsedStandings] = useState<StandingsRow[]>([]);
   const [playerDecks, setPlayerDecks] = useState<Record<string, string>>({});
-  const [isCreating, setIsCreating] = useState(false);
-  const [newTournamentData, setNewTournamentData] = useState<NewTournamentData>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<TournamentFormData>({
     date: '',
     location: '',
     isRecurring: false,
@@ -65,16 +65,6 @@ export default function AdminTournaments() {
     return tournament;
   });
 
-  // Group tournaments by series for better display
-  const tournamentGroups = processedTournaments.reduce((groups, tournament) => {
-    const key = tournament.seriesId || tournament.id;
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-    groups[key].push(tournament);
-    return groups;
-  }, {} as Record<string, any[]>);
-
   // Filter tournaments
   const filteredTournaments = processedTournaments.filter((tournament) => {
     const matchesSearch = tournament.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,75 +81,116 @@ export default function AdminTournaments() {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
 
-  const handleCreateTournament = async () => {
+  const resetForm = () => {
+    setFormData({
+      date: '',
+      location: '',
+      isRecurring: false,
+      lastTournamentDate: '',
+      maxParticipants: undefined
+    });
+  };
+
+  const handleCreateTournament = () => {
+    setIsEditing(false);
+    resetForm();
+    setShowTournamentModal(true);
+  };
+
+  const handleEditTournament = (tournament: Tournament) => {
+    setIsEditing(true);
+    setSelectedTournament(tournament.id);
+    
+    // Format date for datetime-local input
+    const tournamentDate = new Date(tournament.date);
+    const formattedDate = tournamentDate.toISOString().slice(0, 16);
+    
+    setFormData({
+      date: formattedDate,
+      location: tournament.location,
+      isRecurring: tournament.isRecurring || false,
+      lastTournamentDate: '',
+      maxParticipants: tournament.maxParticipants
+    });
+    setShowTournamentModal(true);
+  };
+
+  const handleSubmitTournament = async () => {
     try {
-      setIsCreating(true);
+      setIsSubmitting(true);
       
       // Validate required fields
-      if (!newTournamentData.date || !newTournamentData.location) {
+      if (!formData.date || !formData.location) {
         alert('אנא מלא את כל השדות הנדרשים');
         return;
       }
 
-      // If recurring is selected, validate last tournament date
-      if (newTournamentData.isRecurring && !newTournamentData.lastTournamentDate) {
+      // If recurring is selected for new tournament, validate last tournament date
+      if (!isEditing && formData.isRecurring && !formData.lastTournamentDate) {
         alert('אנא הזן תאריך טורניר אחרון עבור טורניר שבועי');
         return;
       }
 
-      // Send data to server - let server handle the creation logic
-      const response = await api.post('/api/tournaments', newTournamentData);
+      if (isEditing && selectedTournament) {
+        // Update existing tournament
+        const updateData = {
+          date: formData.date,
+          location: formData.location,
+          maxParticipants: formData.maxParticipants || 32
+        };
+        
+        await api.put(`/api/tournaments/${selectedTournament}`, updateData);
+        alert('הטורניר עודכן בהצלחה!');
+      } else {
+        // Create new tournament(s)
+        const response = await api.post('/api/tournaments', formData);
+        
+        if (formData.isRecurring) {
+          alert(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`);
+        } else {
+          alert('הטורניר נוצר בהצלחה!');
+        }
+      }
       
       // Refresh tournaments list
       dispatch(fetchTournaments());
       
       // Reset form and close modal
-      setNewTournamentData({
-        date: '',
-        location: '',
-        isRecurring: false,
-        lastTournamentDate: '',
-        maxParticipants: undefined
-      });
-      setShowNewTournamentModal(false);
+      resetForm();
+      setShowTournamentModal(false);
+      setSelectedTournament(null);
       
-      // Show success message
-      if (newTournamentData.isRecurring) {
-        alert(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`);
-      } else {
-        alert('הטורניר נוצר בהצלחה!');
-      }
     } catch (error: any) {
-      console.error('Error creating tournament:', error);
-      alert(error.response?.data?.message || 'שגיאה ביצירת הטורניר');
+      console.error('Error with tournament:', error);
+      alert(error.response?.data?.message || 'שגיאה בעיבוד הטורניר');
     } finally {
-      setIsCreating(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteTournament = async (tournament: any) => {
-    const isRecurring = tournament.seriesId;
-    const message = isRecurring 
-      ? 'האם אתה בטוח שברצונך למחוק את כל הטורנירים בסדרה?' 
-      : 'האם אתה בטוח שברצונך למחוק את הטורניר?';
-    
-    if (!window.confirm(message)) return;
+  const handleDeleteSingleTournament = async (tournament: Tournament) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את הטורניר הזה בלבד?')) return;
 
     try {
-      const url = isRecurring 
-        ? `/api/tournaments/${tournament.id}?deleteSeries=true`
-        : `/api/tournaments/${tournament.id}`;
-      
-      await api.delete(url);
+      await api.delete(`/api/tournaments/${tournament.id}`);
       dispatch(fetchTournaments());
-      
-      const successMessage = isRecurring 
-        ? 'כל הטורנירים בסדרה נמחקו בהצלחה' 
-        : 'הטורניר נמחק בהצלחה';
-      alert(successMessage);
+      alert('הטורניר נמחק בהצלחה');
     } catch (error: any) {
       console.error('Error deleting tournament:', error);
       alert(error.response?.data?.message || 'שגיאה במחיקת הטורניר');
+    }
+  };
+
+  const handleDeleteSeries = async (tournament: Tournament) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את כל הטורנירים בסדרה?')) return;
+
+    try {
+      await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
+      dispatch(fetchTournaments());
+      alert('כל הטורנירים בסדרה נמחקו בהצלחה');
+    } catch (error: any) {
+      console.error('Error deleting series:', error);
+      alert(error.response?.data?.message || 'שגיאה במחיקת הסדרה');
     }
   };
 
@@ -170,11 +201,6 @@ export default function AdminTournaments() {
 
   const handleViewTournament = (tournamentId: string) => {
     navigate(`/tournaments/${tournamentId}`);
-  };
-
-  const handleEditTournament = (tournament: Tournament) => {
-    setSelectedTournament(tournament.id);
-    setShowEditModal(true);
   };
 
   const parseStandings = (input: string) => {
@@ -241,7 +267,7 @@ export default function AdminTournaments() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול טורנירים</h2>
-        <Button onClick={() => setShowNewTournamentModal(true)}>
+        <Button onClick={handleCreateTournament}>
           <Plus size={18} className="ml-1" />
           <span>טורניר חדש</span>
         </Button>
@@ -360,8 +386,10 @@ export default function AdminTournaments() {
                             size="sm"
                             onClick={() => handleViewTournament(tournament.id)}
                           >
-                            צפה
+                            <Eye size={16} className="ml-1" />
+                            <span>צפה</span>
                           </Button>
+                          
                           {tournament.status === 'completed' ? (
                             <Button 
                               variant="success" 
@@ -376,17 +404,31 @@ export default function AdminTournaments() {
                               size="sm"
                               onClick={() => handleEditTournament(tournament)}
                             >
-                              ערוך
+                              <Edit size={16} className="ml-1" />
+                              <span>ערוך</span>
                             </Button>
                           )}
+                          
+                          {/* Delete options */}
                           <Button 
                             variant="destructive" 
                             size="sm"
-                            onClick={() => handleDeleteTournament(tournament)}
+                            onClick={() => handleDeleteSingleTournament(tournament)}
                           >
                             <Trash2 size={16} className="ml-1" />
-                            {tournament.seriesId ? 'מחק סדרה' : 'מחק'}
+                            <span>מחק</span>
                           </Button>
+                          
+                          {tournament.seriesId && (
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteSeries(tournament)}
+                            >
+                              <Trash2 size={16} className="ml-1" />
+                              <span>מחק סדרה</span>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -398,16 +440,18 @@ export default function AdminTournaments() {
         </>
       )}
 
-      {/* New Tournament Modal */}
-      {showNewTournamentModal && (
+      {/* Tournament Modal (Create/Edit) */}
+      {showTournamentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">יצירת טורניר חדש</h3>
+              <h3 className="text-xl font-bold">
+                {isEditing ? 'עריכת טורניר' : 'יצירת טורניר חדש'}
+              </h3>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowNewTournamentModal(false)}
+                onClick={() => setShowTournamentModal(false)}
               >
                 <X size={20} />
               </Button>
@@ -419,8 +463,8 @@ export default function AdminTournaments() {
                 <input
                   type="datetime-local"
                   className="w-full px-3 py-2 border border-input rounded-md"
-                  value={newTournamentData.date}
-                  onChange={(e) => setNewTournamentData({...newTournamentData, date: e.target.value})}
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
                 />
               </div>
               
@@ -430,32 +474,34 @@ export default function AdminTournaments() {
                   type="text"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="מיקום הטורניר"
-                  value={newTournamentData.location}
-                  onChange={(e) => setNewTournamentData({...newTournamentData, location: e.target.value})}
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
                 />
               </div>
               
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isRecurring"
-                  className="rounded border-input"
-                  checked={newTournamentData.isRecurring}
-                  onChange={(e) => setNewTournamentData({...newTournamentData, isRecurring: e.target.checked})}
-                />
-                <label htmlFor="isRecurring" className="text-sm font-medium">
-                  טורניר שבועי
-                </label>
-              </div>
+              {!isEditing && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isRecurring"
+                    className="rounded border-input"
+                    checked={formData.isRecurring}
+                    onChange={(e) => setFormData({...formData, isRecurring: e.target.checked})}
+                  />
+                  <label htmlFor="isRecurring" className="text-sm font-medium">
+                    טורניר שבועי
+                  </label>
+                </div>
+              )}
               
-              {newTournamentData.isRecurring && (
+              {!isEditing && formData.isRecurring && (
                 <div>
                   <label className="block text-sm font-medium mb-1">תאריך טורניר אחרון *</label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 border border-input rounded-md"
-                    value={newTournamentData.lastTournamentDate}
-                    onChange={(e) => setNewTournamentData({...newTournamentData, lastTournamentDate: e.target.value})}
+                    value={formData.lastTournamentDate}
+                    onChange={(e) => setFormData({...formData, lastTournamentDate: e.target.value})}
                   />
                 </div>
               )}
@@ -466,9 +512,9 @@ export default function AdminTournaments() {
                   type="number"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   placeholder="32 (ברירת מחדל)"
-                  value={newTournamentData.maxParticipants || ''}
-                  onChange={(e) => setNewTournamentData({
-                    ...newTournamentData, 
+                  value={formData.maxParticipants || ''}
+                  onChange={(e) => setFormData({
+                    ...formData, 
                     maxParticipants: e.target.value ? parseInt(e.target.value) : undefined
                   })}
                 />
@@ -477,16 +523,19 @@ export default function AdminTournaments() {
               <div className="flex justify-end gap-2 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => setShowNewTournamentModal(false)}
-                  disabled={isCreating}
+                  onClick={() => setShowTournamentModal(false)}
+                  disabled={isSubmitting}
                 >
                   ביטול
                 </Button>
                 <Button
-                  onClick={handleCreateTournament}
-                  disabled={isCreating}
+                  onClick={handleSubmitTournament}
+                  disabled={isSubmitting}
                 >
-                  {isCreating ? 'יוצר טורניר...' : 'צור טורניר'}
+                  {isSubmitting 
+                    ? (isEditing ? 'מעדכן...' : 'יוצר טורניר...') 
+                    : (isEditing ? 'עדכן טורניר' : 'צור טורניר')
+                  }
                 </Button>
               </div>
             </div>
@@ -590,74 +639,6 @@ Player Points OMP GWP OGP
                   disabled={parsedStandings.length === 0}
                 >
                   שמור תוצאות
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && selectedTournament && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-2xl">
-            <h3 className="text-xl font-bold mb-4">עריכת טורניר</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">שם הטורניר</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="שם הטורניר"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">מיקום</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="מיקום הטורניר"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">תאריך</label>
-                  <input
-                    type="datetime-local"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-2 border border-input rounded-md"
-                    placeholder="מספר משתתפים"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">תיאור</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  rows={4}
-                  placeholder="תיאור הטורניר"
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowEditModal(false)}
-                >
-                  ביטול
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Handle tournament update
-                    setShowEditModal(false);
-                  }}
-                >
-                  שמור שינויים
                 </Button>
               </div>
             </div>
