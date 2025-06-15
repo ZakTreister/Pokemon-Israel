@@ -35,7 +35,7 @@ export default function AdminTournaments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [showResultsModal, setShowResultsModal] = useState(false);
-  const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [showTournamentModal, setShowTournamentModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [standingsInput, setStandingsInput] = useState('');
@@ -104,13 +104,14 @@ export default function AdminTournaments() {
 
   const handleCreateTournament = () => {
     setIsEditing(false);
+    setSelectedTournament(null);
     resetForm();
     setShowTournamentModal(true);
   };
 
   const handleEditTournament = (tournament: Tournament) => {
     setIsEditing(true);
-    setSelectedTournament(tournament.id);
+    setSelectedTournament(tournament);
     
     // Format date for datetime-local input with proper timezone conversion
     const formattedDate = formatDateForInput(tournament.date);
@@ -142,14 +143,14 @@ export default function AdminTournaments() {
       }
 
       if (isEditing && selectedTournament) {
-        // Update existing tournament
+        // Update existing tournament - now using id consistently
         const updateData = {
           date: formData.date,
           location: formData.location,
           maxParticipants: formData.maxParticipants || 32
         };
         
-        await api.put(`/api/tournaments/${selectedTournament}`, updateData);
+        await api.put(`/api/tournaments/${selectedTournament.id}`, updateData);
         alert('הטורניר עודכן בהצלחה!');
       } else {
         // Create new tournament(s)
@@ -182,6 +183,7 @@ export default function AdminTournaments() {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את הטורניר הזה בלבד?')) return;
 
     try {
+      // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}`);
       dispatch(fetchTournaments());
       alert('הטורניר נמחק בהצלחה');
@@ -195,6 +197,7 @@ export default function AdminTournaments() {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את כל הטורנירים בסדרה?')) return;
 
     try {
+      // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
       dispatch(fetchTournaments());
       alert('כל הטורנירים בסדרה נמחקו בהצלחה');
@@ -205,7 +208,9 @@ export default function AdminTournaments() {
   };
 
   const handleSubmitResults = (tournamentId: string) => {
-    setSelectedTournament(tournamentId);
+    // Find the tournament object to pass to the modal
+    const tournament = sortedTournaments.find(t => t.id === tournamentId);
+    setSelectedTournament(tournament || null);
     setShowResultsModal(true);
   };
 
@@ -260,7 +265,7 @@ export default function AdminTournaments() {
   const handleSaveResults = () => {
     // Here you would handle saving the results with the optional deck selections
     console.log('Saving results with decks:', {
-      tournamentId: selectedTournament,
+      tournamentId: selectedTournament?.id,
       standings: parsedStandings.map(row => ({
         ...row,
         deck: playerDecks[row.player] || null // Convert empty string to null
