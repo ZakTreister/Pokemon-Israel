@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { login, clearError } from '../features/auth/authSlice';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -115,14 +115,6 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter>
-            <p className="text-sm text-muted-foreground text-center w-full">
-              אין לך חשבון?{' '}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                הרשם
-              </Link>
-            </p>
-          </CardFooter>
         </Card>
       </div>
     </div>

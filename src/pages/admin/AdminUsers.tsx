@@ -7,12 +7,14 @@ import api from '../../services/api';
 
 interface User {
   id: string;
+  name: string;
   username: string;
   role: 'player' | 'admin';
   tournaments: number;
 }
 
 interface UserFormData {
+  name: string;
   username: string;
   password: string;
   role: 'player' | 'admin';
@@ -31,6 +33,7 @@ export default function AdminUsers() {
   
   // Form data for add/edit user
   const [formData, setFormData] = useState<UserFormData>({
+    name: '',
     username: '',
     password: '',
     role: 'player'
@@ -54,6 +57,7 @@ export default function AdminUsers() {
 
   const resetForm = () => {
     setFormData({
+      name: '',
       username: '',
       password: '',
       role: 'player'
@@ -66,13 +70,14 @@ export default function AdminUsers() {
       setError(null);
 
       // Validate required fields
-      if (!formData.username || !formData.password) {
-        setError('שם משתמש וסיסמה הם שדות חובה');
+      if (!formData.name || !formData.username || !formData.password) {
+        setError('שם, שם משתמש וסיסמה הם שדות חובה');
         return;
       }
 
       // Create user
       const userData = {
+        name: formData.name,
         username: formData.username,
         password: formData.password,
         role: formData.role
@@ -83,6 +88,7 @@ export default function AdminUsers() {
       // Add the new user to the list
       const newUser: User = {
         id: data.user.id,
+        name: data.user.name,
         username: data.user.username,
         role: data.user.role,
         tournaments: 0
@@ -112,13 +118,14 @@ export default function AdminUsers() {
       setError(null);
 
       // Validate required fields
-      if (!formData.username) {
-        setError('שם משתמש הוא שדה חובה');
+      if (!formData.name || !formData.username) {
+        setError('שם ושם משתמש הם שדות חובה');
         return;
       }
 
       // Update user
       const updateData = {
+        name: formData.name,
         username: formData.username,
         role: formData.role,
         ...(formData.password && { password: formData.password }) // Only include password if provided
@@ -165,6 +172,7 @@ export default function AdminUsers() {
   const handleEditClick = (user: User) => {
     setSelectedUser(user);
     setFormData({
+      name: user.name,
       username: user.username,
       password: '', // Don't pre-fill password
       role: user.role
@@ -183,6 +191,7 @@ export default function AdminUsers() {
   // Filter users
   const filteredUsers = users.filter((user) => {
     const matchesSearch = 
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.username.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = filterRole === 'all' || user.role === filterRole;
@@ -208,7 +217,7 @@ export default function AdminUsers() {
           </div>
           <input
             type="text"
-            placeholder="חפש לפי שם משתמש..."
+            placeholder="חפש לפי שם או שם משתמש..."
             className="w-full pl-3 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -261,6 +270,7 @@ export default function AdminUsers() {
             <table className="w-full">
               <thead>
                 <tr className="bg-muted border-b border-border text-right">
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם משתמש</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תפקיד</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
@@ -271,7 +281,10 @@ export default function AdminUsers() {
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b border-border">
                     <td className="px-4 py-3">
-                      <div className="font-medium">{user.username}</div>
+                      <div className="font-medium">{user.name}</div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {user.username}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -325,6 +338,16 @@ export default function AdminUsers() {
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">הוספת משתמש חדש</h3>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">שם *</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="הזן שם מלא"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">שם משתמש *</label>
                 <input
@@ -382,6 +405,16 @@ export default function AdminUsers() {
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">עריכת משתמש</h3>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">שם *</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="הזן שם מלא"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1">שם משתמש *</label>
                 <input

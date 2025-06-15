@@ -21,6 +21,7 @@ export const login = asyncHandler(async (req, res) => {
       token: generateToken(user._id),
       user: {
         id: user._id,
+        name: user.name,
         username: user.username,
         role: user.role,
       },
@@ -31,16 +32,16 @@ export const login = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Register a new user
+// @desc    Register a new user (Admin only)
 // @route   POST /api/auth/register
-// @access  Public
+// @access  Private/Admin
 export const register = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  const { name, username, password, role = 'player' } = req.body;
 
   // Validate required fields
-  if (!username || !password) {
+  if (!name || !username || !password) {
     res.status(400);
-    throw new Error('Username and password are required');
+    throw new Error('Name, username, and password are required');
   }
 
   // Check if user already exists
@@ -54,13 +55,16 @@ export const register = asyncHandler(async (req, res) => {
   try {
     // Create user
     const user = await User.create({
+      name,
       username,
       password,
+      role,
     });
 
     if (user) {
       console.log('User created successfully:', {
         id: user._id,
+        name: user.name,
         username: user.username,
         role: user.role
       });
@@ -69,6 +73,7 @@ export const register = asyncHandler(async (req, res) => {
         token: generateToken(user._id),
         user: {
           id: user._id,
+          name: user.name,
           username: user.username,
           role: user.role,
         },
@@ -107,6 +112,7 @@ export const getProfile = asyncHandler(async (req, res) => {
   if (user) {
     res.json({
       id: user._id,
+      name: user.name,
       username: user.username,
       role: user.role,
     });
@@ -123,6 +129,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
+    user.name = req.body.name || user.name;
     user.username = req.body.username || user.username;
 
     if (req.body.password) {
@@ -133,6 +140,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
     res.json({
       id: updatedUser._id,
+      name: updatedUser.name,
       username: updatedUser.username,
       role: updatedUser.role,
     });

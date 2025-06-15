@@ -69,6 +69,7 @@ const checkAndCreateAdminUser = async () => {
       // Get admin credentials from environment variables
       const adminUsername = process.env.ADMIN_USERNAME;
       const adminPassword = process.env.ADMIN_PASSWORD;
+      const adminName = process.env.ADMIN_NAME || 'מנהל מערכת';
       
       if (!adminUsername || !adminPassword) {
         console.error('Admin credentials not found in environment variables');
@@ -81,6 +82,7 @@ const checkAndCreateAdminUser = async () => {
       if (existingUser) {
         console.log(`User with username ${adminUsername} already exists. Updating to admin role...`);
         existingUser.role = 'admin';
+        if (adminName) existingUser.name = adminName;
         await existingUser.save();
         console.log(`✅ User ${adminUsername} updated to admin role`);
         return;
@@ -88,17 +90,19 @@ const checkAndCreateAdminUser = async () => {
       
       // Create new admin user
       const adminUser = await User.create({
+        name: adminName,
         username: adminUsername,
         password: adminPassword,
         role: 'admin'
       });
       
       console.log(`✅ Admin user created successfully:`);
+      console.log(`   Name: ${adminUser.name}`);
       console.log(`   Username: ${adminUser.username}`);
       console.log(`   Role: ${adminUser.role}`);
       
     } else {
-      console.log(`✅ Admin user already exists: ${adminExists.username}`);
+      console.log(`✅ Admin user already exists: ${adminExists.name} (${adminExists.username})`);
     }
   } catch (error) {
     console.error('Error checking/creating admin user:', error.message);
