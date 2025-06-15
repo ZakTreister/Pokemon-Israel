@@ -11,11 +11,6 @@ import { Eye, EyeOff } from 'lucide-react';
 
 const registerSchema = z.object({
   username: z.string().min(3, 'שם המשתמש חייב להיות לפחות 3 תווים'),
-  email: z.string().email('כתובת אימייל לא תקינה').optional().or(z.literal('')),
-  phone: z.string()
-    .min(9, 'מספר טלפון חייב להיות לפחות 9 ספרות')
-    .max(15, 'מספר טלפון ארוך מדי')
-    .regex(/^[0-9]+$/, 'מספר טלפון חייב להכיל ספרות בלבד'),
   password: z.string().min(6, 'הסיסמה חייבת להיות לפחות 6 תווים'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -38,9 +33,6 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: '',
-    }
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -87,41 +79,6 @@ export default function RegisterPage() {
                 />
                 {errors.username && (
                   <p className="text-destructive text-sm">{errors.username.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium flex justify-between">
-                  <span>אימייל</span>
-                  <span className="text-muted-foreground">(אופציונלי)</span>
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="הזן אימייל"
-                  autoComplete="email"
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="text-destructive text-sm">{errors.email.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="phone" className="text-sm font-medium">
-                  טלפון
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="הזן מספר טלפון"
-                  autoComplete="tel"
-                  {...register('phone')}
-                />
-                {errors.phone && (
-                  <p className="text-destructive text-sm">{errors.phone.message}</p>
                 )}
               </div>
               

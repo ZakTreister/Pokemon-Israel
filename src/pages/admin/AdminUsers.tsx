@@ -8,8 +8,6 @@ import api from '../../services/api';
 interface User {
   id: string;
   username: string;
-  email: string | null;
-  phone: string;
   role: 'player' | 'admin';
   status: 'active' | 'inactive' | 'blocked';
   tournaments: number;
@@ -17,8 +15,6 @@ interface User {
 
 interface UserFormData {
   username: string;
-  email: string;
-  phone: string;
   password: string;
   role: 'player' | 'admin';
 }
@@ -38,8 +34,6 @@ export default function AdminUsers() {
   // Form data for add/edit user
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
-    email: '',
-    phone: '',
     password: '',
     role: 'player'
   });
@@ -63,8 +57,6 @@ export default function AdminUsers() {
   const resetForm = () => {
     setFormData({
       username: '',
-      email: '',
-      phone: '',
       password: '',
       role: 'player'
     });
@@ -76,28 +68,14 @@ export default function AdminUsers() {
       setError(null);
 
       // Validate required fields
-      if (!formData.username || !formData.password || !formData.phone) {
-        setError('שם משתמש, סיסמה וטלפון הם שדות חובה');
-        return;
-      }
-
-      // Validate phone number
-      if (!/^[0-9]{9,15}$/.test(formData.phone)) {
-        setError('מספר טלפון חייב להכיל 9-15 ספרות');
-        return;
-      }
-
-      // Validate email if provided
-      if (formData.email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
-        setError('כתובת אימייל לא תקינה');
+      if (!formData.username || !formData.password) {
+        setError('שם משתמש וסיסמה הם שדות חובה');
         return;
       }
 
       // Create user
       const userData = {
         username: formData.username,
-        email: formData.email || undefined, // Don't send empty string
-        phone: formData.phone,
         password: formData.password,
         role: formData.role
       };
@@ -108,8 +86,6 @@ export default function AdminUsers() {
       const newUser: User = {
         id: data.user.id,
         username: data.user.username,
-        email: data.user.email,
-        phone: formData.phone, // Use form data since it might not be in response
         role: data.user.role,
         status: 'active',
         tournaments: 0
@@ -139,28 +115,14 @@ export default function AdminUsers() {
       setError(null);
 
       // Validate required fields
-      if (!formData.username || !formData.phone) {
-        setError('שם משתמש וטלפון הם שדות חובה');
-        return;
-      }
-
-      // Validate phone number
-      if (!/^[0-9]{9,15}$/.test(formData.phone)) {
-        setError('מספר טלפון חייב להכיל 9-15 ספרות');
-        return;
-      }
-
-      // Validate email if provided
-      if (formData.email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
-        setError('כתובת אימייל לא תקינה');
+      if (!formData.username) {
+        setError('שם משתמש הוא שדה חובה');
         return;
       }
 
       // Update user
       const updateData = {
         username: formData.username,
-        email: formData.email || undefined,
-        phone: formData.phone,
         role: formData.role,
         ...(formData.password && { password: formData.password }) // Only include password if provided
       };
@@ -170,7 +132,7 @@ export default function AdminUsers() {
       // Update the user in the list
       setUsers(users.map(user => 
         user.id === selectedUser.id 
-          ? { ...user, ...updateData, email: updateData.email || null }
+          ? { ...user, ...updateData }
           : user
       ));
       
@@ -218,8 +180,6 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setFormData({
       username: user.username,
-      email: user.email || '',
-      phone: user.phone,
       password: '', // Don't pre-fill password
       role: user.role
     });
@@ -237,9 +197,7 @@ export default function AdminUsers() {
   // Filter users
   const filteredUsers = users.filter((user) => {
     const matchesSearch = 
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      user.phone.includes(searchQuery);
+      user.username.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
@@ -265,7 +223,7 @@ export default function AdminUsers() {
           </div>
           <input
             type="text"
-            placeholder="חפש לפי שם משתמש, אימייל או טלפון..."
+            placeholder="חפש לפי שם משתמש..."
             className="w-full pl-3 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -354,8 +312,6 @@ export default function AdminUsers() {
               <thead>
                 <tr className="bg-muted border-b border-border text-right">
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם משתמש</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אימייל</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טלפון</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תפקיד</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">סטטוס</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
@@ -367,12 +323,6 @@ export default function AdminUsers() {
                   <tr key={user.id} className="border-b border-border">
                     <td className="px-4 py-3">
                       <div className="font-medium">{user.username}</div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {user.email || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {user.phone}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -470,26 +420,6 @@ export default function AdminUsers() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">אימייל (אופציונלי)</label>
-                <input
-                  type="email"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="הזן אימייל"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">טלפון *</label>
-                <input
-                  type="tel"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="הזן מספר טלפון"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">סיסמה *</label>
                 <input
                   type="password"
@@ -544,26 +474,6 @@ export default function AdminUsers() {
                   placeholder="הזן שם משתמש"
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">אימייל (אופציונלי)</label>
-                <input
-                  type="email"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="הזן אימייל"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">טלפון *</label>
-                <input
-                  type="tel"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="הזן מספר טלפון"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
               </div>
               <div>

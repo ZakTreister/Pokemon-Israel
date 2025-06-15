@@ -9,6 +9,7 @@ import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailsPage from './pages/TournamentDetailsPage';
 import RankingsPage from './pages/RankingsPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import PlayerDashboardPage from './pages/player/PlayerDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -31,6 +32,7 @@ function App() {
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<PlayerDashboardPage />} />

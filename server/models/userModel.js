@@ -10,33 +10,10 @@ const userSchema = new mongoose.Schema({
     minlength: [3, 'Username must be at least 3 characters long'],
     maxlength: [30, 'Username cannot exceed 30 characters']
   },
-  email: {
-    type: String,
-    sparse: true, // Allows multiple null values but enforces uniqueness for non-null values
-    trim: true,
-    lowercase: true,
-    validate: {
-      validator: function(v) {
-        // Only validate email format if email is provided
-        return !v || /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
-      },
-      message: 'Please enter a valid email address'
-    }
-  },
   password: {
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
-  },
-  phone: {
-    type: String,
-    required: [true, 'Phone number is required'],
-    validate: {
-      validator: function(v) {
-        return /^[0-9]{9,15}$/.test(v);
-      },
-      message: 'Phone number must be between 9-15 digits'
-    }
   },
   role: {
     type: String,
@@ -78,7 +55,6 @@ userSchema.set('toJSON', {
 
 // Add index for better performance
 userSchema.index({ username: 1 });
-userSchema.index({ email: 1 }, { sparse: true });
 
 const User = mongoose.model('User', userSchema);
 export default User;

@@ -115,6 +115,14 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
+          <CardFooter>
+            <p className="text-sm text-muted-foreground text-center w-full">
+              אין לך חשבון?{' '}
+              <Link to="/register" className="text-primary font-medium hover:underline">
+                הרשם
+              </Link>
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>

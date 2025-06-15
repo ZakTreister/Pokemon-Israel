@@ -22,7 +22,6 @@ export const login = asyncHandler(async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
         role: user.role,
       },
     });
@@ -36,12 +35,12 @@ export const login = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/register
 // @access  Public
 export const register = asyncHandler(async (req, res) => {
-  const { username, email, password, phone } = req.body;
+  const { username, password } = req.body;
 
   // Validate required fields
-  if (!username || !password || !phone) {
+  if (!username || !password) {
     res.status(400);
-    throw new Error('Username, password, and phone are required');
+    throw new Error('Username and password are required');
   }
 
   // Check if user already exists
@@ -52,29 +51,17 @@ export const register = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  // Check if email is provided and already exists
-  if (email) {
-    const emailExists = await User.findOne({ email });
-    if (emailExists) {
-      res.status(400);
-      throw new Error('Email already exists');
-    }
-  }
-
   try {
     // Create user
     const user = await User.create({
       username,
-      email: email || undefined, // Don't save empty string
       password,
-      phone,
     });
 
     if (user) {
       console.log('User created successfully:', {
         id: user._id,
         username: user.username,
-        email: user.email,
         role: user.role
       });
 
@@ -83,7 +70,6 @@ export const register = asyncHandler(async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
-          email: user.email,
           role: user.role,
         },
       });
@@ -122,8 +108,6 @@ export const getProfile = asyncHandler(async (req, res) => {
     res.json({
       id: user._id,
       username: user.username,
-      email: user.email,
-      phone: user.phone,
       role: user.role,
     });
   } else {
@@ -140,8 +124,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   if (user) {
     user.username = req.body.username || user.username;
-    user.email = req.body.email || user.email;
-    user.phone = req.body.phone || user.phone;
 
     if (req.body.password) {
       user.password = req.body.password;
@@ -152,8 +134,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
     res.json({
       id: updatedUser._id,
       username: updatedUser.username,
-      email: updatedUser.email,
-      phone: updatedUser.phone,
       role: updatedUser.role,
     });
   } else {
