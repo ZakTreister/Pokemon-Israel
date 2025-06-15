@@ -91,6 +91,17 @@ export default function AdminTournaments() {
     });
   };
 
+  // Helper function to convert UTC date to local datetime-local format
+  const formatDateForInput = (dateString: string) => {
+    const date = new Date(dateString);
+    // Get the timezone offset in minutes and convert to milliseconds
+    const timezoneOffset = date.getTimezoneOffset() * 60000;
+    // Create a new date adjusted for timezone
+    const localDate = new Date(date.getTime() - timezoneOffset);
+    // Return in the format required by datetime-local input
+    return localDate.toISOString().slice(0, 16);
+  };
+
   const handleCreateTournament = () => {
     setIsEditing(false);
     resetForm();
@@ -101,9 +112,8 @@ export default function AdminTournaments() {
     setIsEditing(true);
     setSelectedTournament(tournament.id);
     
-    // Format date for datetime-local input
-    const tournamentDate = new Date(tournament.date);
-    const formattedDate = tournamentDate.toISOString().slice(0, 16);
+    // Format date for datetime-local input with proper timezone conversion
+    const formattedDate = formatDateForInput(tournament.date);
     
     setFormData({
       date: formattedDate,
