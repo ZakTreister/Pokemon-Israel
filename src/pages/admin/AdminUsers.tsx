@@ -9,7 +9,6 @@ interface User {
   id: string;
   username: string;
   role: 'player' | 'admin';
-  status: 'active' | 'inactive' | 'blocked';
   tournaments: number;
 }
 
@@ -25,7 +24,6 @@ export default function AdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'player' | 'admin'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'blocked'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -87,7 +85,6 @@ export default function AdminUsers() {
         id: data.user.id,
         username: data.user.username,
         role: data.user.role,
-        status: 'active',
         tournaments: 0
       };
       
@@ -151,17 +148,6 @@ export default function AdminUsers() {
     }
   };
 
-  const handleStatusChange = async (userId: string, newStatus: 'active' | 'inactive' | 'blocked') => {
-    try {
-      await api.put(`/api/users/${userId}/status`, { status: newStatus });
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, status: newStatus } : user
-      ));
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update user status');
-    }
-  };
-
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק את המשתמש?')) {
       return;
@@ -200,9 +186,8 @@ export default function AdminUsers() {
       user.username.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = filterRole === 'all' || user.role === filterRole;
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
     
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   return (
@@ -257,41 +242,6 @@ export default function AdminUsers() {
               מנהלים
             </Button>
           </div>
-          
-          <div>
-            <span className="text-sm font-medium ml-2">סטטוס:</span>
-            <Button
-              size="sm"
-              variant={filterStatus === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('all')}
-              className="ml-1"
-            >
-              הכל
-            </Button>
-            <Button
-              size="sm"
-              variant={filterStatus === 'active' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('active')}
-              className="ml-1"
-            >
-              פעילים
-            </Button>
-            <Button
-              size="sm"
-              variant={filterStatus === 'inactive' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('inactive')}
-              className="ml-1"
-            >
-              לא פעילים
-            </Button>
-            <Button
-              size="sm"
-              variant={filterStatus === 'blocked' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('blocked')}
-            >
-              חסומים
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -313,7 +263,6 @@ export default function AdminUsers() {
                 <tr className="bg-muted border-b border-border text-right">
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם משתמש</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תפקיד</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">סטטוס</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">פעולות</th>
                 </tr>
@@ -333,22 +282,6 @@ export default function AdminUsers() {
                         {user.role === 'admin' ? 'מנהל' : 'שחקן'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.status === 'active' 
-                          ? 'bg-success/10 text-success' 
-                          : user.status === 'inactive'
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-destructive/10 text-destructive'
-                      }`}>
-                        {user.status === 'active' 
-                          ? 'פעיל' 
-                          : user.status === 'inactive'
-                          ? 'לא פעיל'
-                          : 'חסום'
-                        }
-                      </span>
-                    </td>
                     <td className="px-4 py-3 text-center">
                       {user.tournaments}
                     </td>
@@ -361,23 +294,6 @@ export default function AdminUsers() {
                         >
                           ערוך
                         </Button>
-                        {user.status === 'active' ? (
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleStatusChange(user.id, 'blocked')}
-                          >
-                            חסום
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="success" 
-                            size="sm"
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                          >
-                            הפעל
-                          </Button>
-                        )}
                         {user.role !== 'admin' && (
                           <Button 
                             variant="destructive" 
