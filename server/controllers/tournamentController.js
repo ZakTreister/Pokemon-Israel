@@ -301,6 +301,38 @@ export const unregisterFromTournament = asyncHandler(async (req, res) => {
   res.json(updatedTournament);
 });
 
+// @desc    Remove participant from tournament (Admin only)
+// @route   DELETE /api/tournaments/:id/participants/:participantId
+// @access  Private/Admin
+export const removeParticipant = asyncHandler(async (req, res) => {
+  const tournament = await Tournament.findById(req.params.id);
+
+  if (!tournament) {
+    res.status(404);
+    throw new Error('Tournament not found');
+  }
+
+  const participantIndex = tournament.participants.findIndex(
+    (p) => p.user.toString() === req.params.participantId
+  );
+
+  if (participantIndex === -1) {
+    res.status(404);
+    throw new Error('Participant not found in this tournament');
+  }
+
+  // Remove the participant
+  tournament.participants.splice(participantIndex, 1);
+  tournament.currentParticipants = tournament.participants.length;
+
+  const updatedTournament = await tournament.save();
+  
+  // Populate the participants for the response
+  await updatedTournament.populate('participants.user', 'username');
+  
+  res.json(updatedTournament);
+});
+
 // @desc    Submit tournament results
 // @route   POST /api/tournaments/:id/results
 // @access  Private/Admin
