@@ -188,11 +188,15 @@ export default function AdminUsers() {
     setError(null);
   };
 
-  // Filter users
+  // Filter users with proper null checks
   const filteredUsers = users.filter((user) => {
+    // Ensure user properties exist and are strings before calling toLowerCase
+    const name = user.name || '';
+    const username = user.username || '';
+    
     const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase());
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      username.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     
@@ -281,10 +285,10 @@ export default function AdminUsers() {
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b border-border">
                     <td className="px-4 py-3">
-                      <div className="font-medium">{user.name}</div>
+                      <div className="font-medium">{user.name || 'לא זמין'}</div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {user.username}
+                      {user.username || 'לא זמין'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -296,7 +300,7 @@ export default function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {user.tournaments}
+                      {user.tournaments || 0}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
