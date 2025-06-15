@@ -31,7 +31,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form data for add/edit user
+  // Form data for add/edit user - ensure all values are always strings
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     username: '',
@@ -88,8 +88,8 @@ export default function AdminUsers() {
       // Add the new user to the list
       const newUser: User = {
         id: data.user.id,
-        name: data.user.name,
-        username: data.user.username,
+        name: data.user.name || '',
+        username: data.user.username || '',
         role: data.user.role,
         tournaments: 0
       };
@@ -172,8 +172,8 @@ export default function AdminUsers() {
   const handleEditClick = (user: User) => {
     setSelectedUser(user);
     setFormData({
-      name: user.name,
-      username: user.username,
+      name: user.name || '', // Ensure it's always a string
+      username: user.username || '', // Ensure it's always a string
       password: '', // Don't pre-fill password
       role: user.role
     });
