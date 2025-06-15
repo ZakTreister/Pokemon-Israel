@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../../features/decks/decksSlice';
-import { Plus, Calendar, MapPin, User, Search } from 'lucide-react';
+import { Plus, Calendar, MapPin, User, Search, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Tournament } from '../../types/tournament';
+import api from '../../services/api';
 
 interface StandingsRow {
   position: number;
@@ -16,6 +17,19 @@ interface StandingsRow {
   gwp: number;
   ogp: number;
   deck?: string;
+}
+
+interface NewTournamentData {
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  maxParticipants: number;
+  registrationDeadline: string;
+  image: string;
+  prizePool: string;
+  entryFee: number;
+  format: string;
 }
 
 export default function AdminTournaments() {
@@ -28,9 +42,23 @@ export default function AdminTournaments() {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showNewTournamentModal, setShowNewTournamentModal] = useState(false);
   const [standingsInput, setStandingsInput] = useState('');
   const [parsedStandings, setParsedStandings] = useState<StandingsRow[]>([]);
   const [playerDecks, setPlayerDecks] = useState<Record<string, string>>({});
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTournamentData, setNewTournamentData] = useState<NewTournamentData>({
+    title: '',
+    description: '',
+    date: '',
+    location: '',
+    maxParticipants: 32,
+    registrationDeadline: '',
+    image: '',
+    prizePool: '',
+    entryFee: 0,
+    format: 'Standard'
+  });
 
   useEffect(() => {
     dispatch(fetchTournaments());
@@ -75,6 +103,52 @@ export default function AdminTournaments() {
   const handleEditTournament = (tournament: Tournament) => {
     setSelectedTournament(tournament.id);
     setShowEditModal(true);
+  };
+
+  const handleCreateTournament = async () => {
+    try {
+      setIsCreating(true);
+      
+      // Validate required fields
+      if (!newTournamentData.title || !newTournamentData.description || !newTournamentData.date || 
+          !newTournamentData.location || !newTournamentData.registrationDeadline) {
+        alert('אנא מלא את כל השדות הנדרשים');
+        return;
+      }
+
+      // Set default image if not provided
+      const tournamentData = {
+        ...newTournamentData,
+        image: newTournamentData.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
+      };
+
+      await api.post('/api/tournaments', tournamentData);
+      
+      // Refresh tournaments list
+      dispatch(fetchTournaments());
+      
+      // Reset form and close modal
+      setNewTournamentData({
+        title: '',
+        description: '',
+        date: '',
+        location: '',
+        maxParticipants: 32,
+        registrationDeadline: '',
+        image: '',
+        prizePool: '',
+        entryFee: 0,
+        format: 'Standard'
+      });
+      setShowNewTournamentModal(false);
+      
+      alert('הטורניר נוצר בהצלחה!');
+    } catch (error: any) {
+      console.error('Error creating tournament:', error);
+      alert(error.response?.data?.message || 'שגיאה ביצירת הטורניר');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const parseStandings = (input: string) => {
@@ -141,7 +215,7 @@ export default function AdminTournaments() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול טורנירים</h2>
-        <Button>
+        <Button onClick={() => setShowNewTournamentModal(true)}>
           <Plus size={18} className="ml-1" />
           <span>טורניר חדש</span>
         </Button>
@@ -289,6 +363,157 @@ export default function AdminTournaments() {
             </div>
           )}
         </>
+      )}
+
+      {/* New Tournament Modal */}
+      {showNewTournamentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">יצירת טורניר חדש</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowNewTournamentModal(false)}
+              >
+                <X size={20} />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">שם הטורניר *</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    placeholder="שם הטורניר"
+                    value={newTournamentData.title}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, title: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">מיקום *</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    placeholder="מיקום הטורניר"
+                    value={newTournamentData.location}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, location: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">תאריך ושעה *</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    value={newTournamentData.date}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, date: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">מועד אחרון להרשמה *</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    value={newTournamentData.registrationDeadline}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, registrationDeadline: e.target.value})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי</label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    placeholder="32"
+                    value={newTournamentData.maxParticipants}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, maxParticipants: parseInt(e.target.value) || 32})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">פורמט</label>
+                  <select 
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    value={newTournamentData.format}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, format: e.target.value})}
+                  >
+                    <option value="Standard">Standard</option>
+                    <option value="Expanded">Expanded</option>
+                    <option value="Limited">Limited</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">דמי השתתפות (₪)</label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    placeholder="0"
+                    value={newTournamentData.entryFee}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, entryFee: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">פרסים</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-input rounded-md"
+                    placeholder="פרסים וחבילות בוסטר"
+                    value={newTournamentData.prizePool}
+                    onChange={(e) => setNewTournamentData({...newTournamentData, prizePool: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">תיאור *</label>
+                <textarea
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  rows={4}
+                  placeholder="תיאור הטורניר"
+                  value={newTournamentData.description}
+                  onChange={(e) => setNewTournamentData({...newTournamentData, description: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">תמונה (URL)</label>
+                <input
+                  type="url"
+                  className="w-full px-3 py-2 border border-input rounded-md"
+                  placeholder="https://example.com/image.jpg (אופציונלי)"
+                  value={newTournamentData.image}
+                  onChange={(e) => setNewTournamentData({...newTournamentData, image: e.target.value})}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  אם לא תוזן תמונה, תשמש תמונת ברירת מחדל
+                </p>
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowNewTournamentModal(false)}
+                  disabled={isCreating}
+                >
+                  ביטול
+                </Button>
+                <Button
+                  onClick={handleCreateTournament}
+                  disabled={isCreating}
+                >
+                  {isCreating ? 'יוצר טורניר...' : 'צור טורניר'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Results Modal */}
