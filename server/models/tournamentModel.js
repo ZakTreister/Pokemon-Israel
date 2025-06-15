@@ -38,6 +38,15 @@ const tournamentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // New fields for recurring tournaments
+  seriesId: {
+    type: String,
+    default: null, // Will be set for recurring tournaments
+  },
+  isRecurring: {
+    type: Boolean,
+    default: false,
+  },
   participants: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,

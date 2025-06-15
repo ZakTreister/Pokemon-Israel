@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../../features/decks/decksSlice';
-import { Plus, Calendar, MapPin, User, Search, X } from 'lucide-react';
+import { Plus, Calendar, MapPin, User, Search, X, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Tournament } from '../../types/tournament';
@@ -65,6 +65,16 @@ export default function AdminTournaments() {
     return tournament;
   });
 
+  // Group tournaments by series for better display
+  const tournamentGroups = processedTournaments.reduce((groups, tournament) => {
+    const key = tournament.seriesId || tournament.id;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(tournament);
+    return groups;
+  }, {} as Record<string, any[]>);
+
   // Filter tournaments
   const filteredTournaments = processedTournaments.filter((tournament) => {
     const matchesSearch = tournament.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,20 +90,6 @@ export default function AdminTournaments() {
   const sortedTournaments = [...filteredTournaments].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
-
-  const handleSubmitResults = (tournamentId: string) => {
-    setSelectedTournament(tournamentId);
-    setShowResultsModal(true);
-  };
-
-  const handleViewTournament = (tournamentId: string) => {
-    navigate(`/tournaments/${tournamentId}`);
-  };
-
-  const handleEditTournament = (tournament: Tournament) => {
-    setSelectedTournament(tournament.id);
-    setShowEditModal(true);
-  };
 
   const handleCreateTournament = async () => {
     try {
@@ -111,52 +107,8 @@ export default function AdminTournaments() {
         return;
       }
 
-      // Create tournament data with defaults
-      const tournamentDate = new Date(newTournamentData.date);
-      // Set registration deadline to the tournament start time
-      const registrationDeadline = new Date(tournamentDate);
-
-      const tournamentData = {
-        title: `טורניר פוקימון - ${newTournamentData.location}`,
-        description: `טורניר פוקימון ב${newTournamentData.location}${newTournamentData.isRecurring ? ' (טורניר שבועי)' : ''}`,
-        date: newTournamentData.date,
-        location: newTournamentData.location,
-        maxParticipants: newTournamentData.maxParticipants || 32,
-        registrationDeadline: registrationDeadline.toISOString(),
-        image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
-        prizePool: 'פרסים וחבילות בוסטר',
-        entryFee: 0,
-        format: 'Standard'
-      };
-
-      await api.post('/api/tournaments', tournamentData);
-      
-      // If recurring, create additional tournaments until the last tournament date
-      if (newTournamentData.isRecurring) {
-        const lastDate = new Date(newTournamentData.lastTournamentDate);
-        let currentDate = new Date(tournamentDate);
-        let weekCount = 1;
-        
-        while (currentDate < lastDate) {
-          currentDate = new Date(tournamentDate);
-          currentDate.setDate(currentDate.getDate() + (7 * weekCount));
-          
-          if (currentDate <= lastDate) {
-            const nextWeekRegistration = new Date(currentDate);
-            
-            const recurringTournamentData = {
-              ...tournamentData,
-              date: currentDate.toISOString(),
-              registrationDeadline: nextWeekRegistration.toISOString(),
-              title: `טורניר פוקימון שבועי - ${newTournamentData.location}`
-            };
-            
-            await api.post('/api/tournaments', recurringTournamentData);
-          }
-          
-          weekCount++;
-        }
-      }
+      // Send data to server - let server handle the creation logic
+      const response = await api.post('/api/tournaments', newTournamentData);
       
       // Refresh tournaments list
       dispatch(fetchTournaments());
@@ -171,16 +123,58 @@ export default function AdminTournaments() {
       });
       setShowNewTournamentModal(false);
       
-      const message = newTournamentData.isRecurring 
-        ? 'הטורנירים השבועיים נוצרו בהצלחה!' 
-        : 'הטורניר נוצר בהצלחה!';
-      alert(message);
+      // Show success message
+      if (newTournamentData.isRecurring) {
+        alert(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`);
+      } else {
+        alert('הטורניר נוצר בהצלחה!');
+      }
     } catch (error: any) {
       console.error('Error creating tournament:', error);
       alert(error.response?.data?.message || 'שגיאה ביצירת הטורניר');
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleDeleteTournament = async (tournament: any) => {
+    const isRecurring = tournament.seriesId;
+    const message = isRecurring 
+      ? 'האם אתה בטוח שברצונך למחוק את כל הטורנירים בסדרה?' 
+      : 'האם אתה בטוח שברצונך למחוק את הטורניר?';
+    
+    if (!window.confirm(message)) return;
+
+    try {
+      const url = isRecurring 
+        ? `/api/tournaments/${tournament.id}?deleteSeries=true`
+        : `/api/tournaments/${tournament.id}`;
+      
+      await api.delete(url);
+      dispatch(fetchTournaments());
+      
+      const successMessage = isRecurring 
+        ? 'כל הטורנירים בסדרה נמחקו בהצלחה' 
+        : 'הטורניר נמחק בהצלחה';
+      alert(successMessage);
+    } catch (error: any) {
+      console.error('Error deleting tournament:', error);
+      alert(error.response?.data?.message || 'שגיאה במחיקת הטורניר');
+    }
+  };
+
+  const handleSubmitResults = (tournamentId: string) => {
+    setSelectedTournament(tournamentId);
+    setShowResultsModal(true);
+  };
+
+  const handleViewTournament = (tournamentId: string) => {
+    navigate(`/tournaments/${tournamentId}`);
+  };
+
+  const handleEditTournament = (tournament: Tournament) => {
+    setSelectedTournament(tournament.id);
+    setShowEditModal(true);
   };
 
   const parseStandings = (input: string) => {
@@ -322,7 +316,7 @@ export default function AdminTournaments() {
                           alt={tournament.title}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-2 left-2">
+                        <div className="absolute top-2 left-2 flex gap-1">
                           <span className={`
                               px-2 py-1 rounded-full text-xs font-medium
                               ${tournament.status === 'upcoming' ? 'bg-primary/10 text-primary' : 
@@ -331,6 +325,11 @@ export default function AdminTournaments() {
                           >
                             {tournament.status === 'upcoming' ? 'קרוב' : 'הסתיים'}
                           </span>
+                          {tournament.seriesId && (
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
+                              שבועי
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -383,8 +382,10 @@ export default function AdminTournaments() {
                           <Button 
                             variant="destructive" 
                             size="sm"
+                            onClick={() => handleDeleteTournament(tournament)}
                           >
-                            מחק
+                            <Trash2 size={16} className="ml-1" />
+                            {tournament.seriesId ? 'מחק סדרה' : 'מחק'}
                           </Button>
                         </div>
                       </div>

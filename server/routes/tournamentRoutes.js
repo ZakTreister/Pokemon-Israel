@@ -9,6 +9,7 @@ import {
   registerForTournament,
   submitTournamentResults,
   getTournamentResults,
+  getTournamentsBySeries,
 } from '../controllers/tournamentController.js';
 
 const router = express.Router();
@@ -21,6 +22,8 @@ router.route('/:id')
   .get(getTournamentById)
   .put(protect, admin, updateTournament)
   .delete(protect, admin, deleteTournament);
+
+router.get('/series/:seriesId', getTournamentsBySeries);
 
 router.post('/:id/register', protect, registerForTournament);
 

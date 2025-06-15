@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
@@ -28,22 +29,88 @@ export const getTournamentById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Create a tournament
+// @desc    Create a tournament (single or recurring)
 // @route   POST /api/tournaments
 // @access  Private/Admin
 export const createTournament = asyncHandler(async (req, res) => {
-  const tournament = new Tournament({
-    title: req.body.title,
-    description: req.body.description,
-    date: req.body.date,
-    location: req.body.location,
-    maxParticipants: req.body.maxParticipants,
-    registrationDeadline: req.body.registrationDeadline,
-    image: req.body.image,
-  });
+  const { 
+    date, 
+    location, 
+    isRecurring, 
+    lastTournamentDate, 
+    maxParticipants = 32 
+  } = req.body;
 
-  const createdTournament = await tournament.save();
-  res.status(201).json(createdTournament);
+  // Validate required fields
+  if (!date || !location) {
+    res.status(400);
+    throw new Error('Date and location are required');
+  }
+
+  if (isRecurring && !lastTournamentDate) {
+    res.status(400);
+    throw new Error('Last tournament date is required for recurring tournaments');
+  }
+
+  const tournamentDate = new Date(date);
+  const registrationDeadline = new Date(tournamentDate); // Deadline = tournament start time
+
+  // Base tournament data
+  const baseTournamentData = {
+    title: `טורניר פוקימון - ${location}`,
+    description: `טורניר פוקימון ב${location}`,
+    location,
+    maxParticipants,
+    registrationDeadline,
+    image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+    isRecurring,
+  };
+
+  const createdTournaments = [];
+
+  if (isRecurring) {
+    // Generate a unique series ID for all tournaments in this recurring series
+    const seriesId = uuidv4();
+    const lastDate = new Date(lastTournamentDate);
+    let currentDate = new Date(tournamentDate);
+    let weekNumber = 1;
+
+    // Create tournaments for each week until the last tournament date
+    while (currentDate <= lastDate) {
+      const weeklyTournament = new Tournament({
+        ...baseTournamentData,
+        title: `טורניר פוקימון שבועי - ${location} (שבוע ${weekNumber})`,
+        description: `טורניר פוקימון שבועי ב${location} - שבוע ${weekNumber}`,
+        date: new Date(currentDate),
+        registrationDeadline: new Date(currentDate), // Registration closes when tournament starts
+        seriesId,
+      });
+
+      const savedTournament = await weeklyTournament.save();
+      createdTournaments.push(savedTournament);
+
+      // Move to next week
+      currentDate.setDate(currentDate.getDate() + 7);
+      weekNumber++;
+    }
+
+    res.status(201).json({
+      message: `Created ${createdTournaments.length} recurring tournaments`,
+      tournaments: createdTournaments,
+      seriesId,
+    });
+  } else {
+    // Create single tournament
+    const tournament = new Tournament({
+      ...baseTournamentData,
+      date: tournamentDate,
+    });
+
+    const createdTournament = await tournament.save();
+    createdTournaments.push(createdTournament);
+
+    res.status(201).json(createdTournament);
+  }
 });
 
 // @desc    Update a tournament
@@ -70,19 +137,41 @@ export const updateTournament = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Delete a tournament
+// @desc    Delete a tournament or entire series
 // @route   DELETE /api/tournaments/:id
 // @access  Private/Admin
 export const deleteTournament = asyncHandler(async (req, res) => {
+  const { deleteSeries } = req.query; // Optional query parameter
   const tournament = await Tournament.findById(req.params.id);
 
   if (tournament) {
-    await tournament.deleteOne();
-    res.json({ message: 'Tournament removed' });
+    if (deleteSeries === 'true' && tournament.seriesId) {
+      // Delete all tournaments in the series
+      const deleteResult = await Tournament.deleteMany({ seriesId: tournament.seriesId });
+      res.json({ 
+        message: `Deleted ${deleteResult.deletedCount} tournaments from series`,
+        deletedCount: deleteResult.deletedCount 
+      });
+    } else {
+      // Delete single tournament
+      await tournament.deleteOne();
+      res.json({ message: 'Tournament removed' });
+    }
   } else {
     res.status(404);
     throw new Error('Tournament not found');
   }
+});
+
+// @desc    Get tournaments by series
+// @route   GET /api/tournaments/series/:seriesId
+// @access  Public
+export const getTournamentsBySeries = asyncHandler(async (req, res) => {
+  const tournaments = await Tournament.find({ seriesId: req.params.seriesId })
+    .populate('participants.user', 'username')
+    .sort({ date: 1 });
+  
+  res.json(tournaments);
 });
 
 // @desc    Register for tournament
