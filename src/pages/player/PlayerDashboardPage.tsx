@@ -75,9 +75,9 @@ export default function PlayerDashboardPage() {
                   <p className="text-muted-foreground mb-4">
                     טרם השתתפת בטורנירים
                   </p>
-                  <Button asChild>
-                    <Link to="/tournaments">מצא טורנירים</Link>
-                  </Button>
+                  <Link to="/tournaments">
+                    <Button>מצא טורנירים</Button>
+                  </Link>
                 </CardContent>
               </Card>
             ) : (
@@ -142,9 +142,9 @@ export default function PlayerDashboardPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardFooter className="pt-2">
-                      <Button variant="outline" asChild className="w-full">
-                        <Link to={`/tournaments/${tournament.id}`}>פרטים והרשמה</Link>
-                      </Button>
+                      <Link to={`/tournaments/${tournament.id}`} className="w-full">
+                        <Button variant="outline" className="w-full">פרטים והרשמה</Button>
+                      </Link>
                     </CardFooter>
                   </Card>
                 ))}

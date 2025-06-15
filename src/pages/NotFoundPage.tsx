@@ -10,9 +10,9 @@ export default function NotFoundPage() {
         <p className="text-muted-foreground mb-8">
           נראה שהדף שחיפשת לא קיים. אולי כתובת ה-URL שגויה או שהדף הוסר.
         </p>
-        <Button asChild>
-          <Link to="/">חזרה לדף הבית</Link>
-        </Button>
+        <Link to="/">
+          <Button>חזרה לדף הבית</Button>
+        </Link>
       </div>
     </div>
   );

@@ -18,22 +18,22 @@ export default function Footer() {
             <h3 className="text-lg font-bold mb-4">קישורים מהירים</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors block">
                   דף הבית
                 </Link>
               </li>
               <li>
-                <Link to="/tournaments" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/tournaments" className="text-muted-foreground hover:text-primary transition-colors block">
                   טורנירים
                 </Link>
               </li>
               <li>
-                <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors block">
                   התחברות
                 </Link>
               </li>
               <li>
-                <Link to="/register" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/register" className="text-muted-foreground hover:text-primary transition-colors block">
                   הרשמה
                 </Link>
               </li>

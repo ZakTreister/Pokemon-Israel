@@ -1,4 +1,4 @@
-import { forwardRef, ElementRef, ComponentPropsWithoutRef, ElementType } from 'react';
+import { forwardRef, ElementRef, ComponentPropsWithoutRef } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface ButtonProps
@@ -8,37 +8,45 @@ export interface ButtonProps
   size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
-type PolymorphicRef<T extends ElementType> = ElementRef<T>;
-type PolymorphicComponentProps<T extends ElementType, Props = {}> = 
-  & ComponentPropsWithoutRef<T>
-  & Props
-  & { as?: T; asChild?: boolean };
-
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', asChild = false, ...props }, ref) => {
-    const Comp = asChild ? ('div' as any) : 'button';
+  ({ className, variant = 'default', size = 'default', asChild = false, children, ...props }, ref) => {
+    const baseClasses = cn(
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+      {
+        'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'default',
+        'bg-destructive text-destructive-foreground hover:bg-destructive/90': variant === 'destructive',
+        'bg-success text-success-foreground hover:bg-success/90': variant === 'success',
+        'border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground': variant === 'outline',
+        'bg-secondary text-secondary-foreground hover:bg-secondary/80': variant === 'secondary',
+        'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground': variant === 'ghost',
+        'text-primary underline-offset-4 hover:underline': variant === 'link',
+        'h-10 px-4 py-2': size === 'default',
+        'h-9 rounded-md px-3': size === 'sm',
+        'h-11 rounded-md px-8': size === 'lg',
+        'h-10 w-10': size === 'icon',
+      },
+      className
+    );
+
+    if (asChild) {
+      // When using asChild, we need to clone the child element and apply our classes
+      const child = children as React.ReactElement;
+      if (child && child.type) {
+        return React.cloneElement(child, {
+          className: cn(baseClasses, child.props.className),
+          ...props
+        });
+      }
+    }
+
     return (
-      <Comp
-        className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          {
-            'bg-primary text-primary-foreground hover:bg-primary/90': variant === 'default',
-            'bg-destructive text-destructive-foreground hover:bg-destructive/90': variant === 'destructive',
-            'bg-success text-success-foreground hover:bg-success/90': variant === 'success',
-            'border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground': variant === 'outline',
-            'bg-secondary text-secondary-foreground hover:bg-secondary/80': variant === 'secondary',
-            'bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground': variant === 'ghost',
-            'text-primary underline-offset-4 hover:underline': variant === 'link',
-            'h-10 px-4 py-2': size === 'default',
-            'h-9 rounded-md px-3': size === 'sm',
-            'h-11 rounded-md px-8': size === 'lg',
-            'h-10 w-10': size === 'icon',
-          },
-          className
-        )}
+      <button
+        className={baseClasses}
         ref={ref}
         {...props}
-      />
+      >
+        {children}
+      </button>
     );
   }
 );

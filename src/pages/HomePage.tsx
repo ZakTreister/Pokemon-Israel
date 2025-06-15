@@ -42,13 +42,13 @@ export default function HomePage() {
               המערכת המובילה לניהול תחרויות פוקימון, מעקב דירוגים ופרופילים של שחקנים
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link to="/tournaments">צפה בטורנירים</Link>
-              </Button>
+              <Link to="/tournaments" className="inline-block">
+                <Button size="lg" className="w-full">צפה בטורנירים</Button>
+              </Link>
               {!isAuthenticated && (
-                <Button variant="outline" size="lg" asChild>
-                  <Link to="/login">התחבר</Link>
-                </Button>
+                <Link to="/login" className="inline-block">
+                  <Button variant="outline" size="lg" className="w-full">התחבר</Button>
+                </Link>
               )}
             </div>
           </div>
@@ -108,9 +108,9 @@ export default function HomePage() {
                     </div>
                   </CardContent>
                   <CardFooter className="pt-0">
-                    <Button className="w-full" asChild>
-                      <Link to={`/tournaments/${tournament.id}`}>פרטים והרשמה</Link>
-                    </Button>
+                    <Link to={`/tournaments/${tournament.id}`} className="w-full">
+                      <Button className="w-full">פרטים והרשמה</Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               ))}
@@ -118,9 +118,9 @@ export default function HomePage() {
           )}
 
           <div className="text-center mt-10">
-            <Button variant="outline" asChild>
-              <Link to="/tournaments">צפה בכל הטורנירים</Link>
-            </Button>
+            <Link to="/tournaments">
+              <Button variant="outline">צפה בכל הטורנירים</Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -178,13 +178,13 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isAuthenticated ? (
-                <Button size="lg\" asChild>
-                  <Link to="/dashboard">לאזור האישי</Link>
-                </Button>
+                <Link to="/dashboard">
+                  <Button size="lg">לאזור האישי</Button>
+                </Link>
               ) : (
-                <Button size="lg" asChild>
-                  <Link to="/login">התחבר</Link>
-                </Button>
+                <Link to="/login">
+                  <Button size="lg">התחבר</Button>
+                </Link>
               )}
             </div>
           </div>

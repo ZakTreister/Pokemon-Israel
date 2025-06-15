@@ -92,9 +92,9 @@ export default function Header() {
                 </Button>
               </div>
             ) : (
-              <Button asChild>
-                <Link to="/login" className="flex items-center">התחבר</Link>
-              </Button>
+              <Link to="/login">
+                <Button className="flex items-center">התחבר</Button>
+              </Link>
             )}
           </div>
 
@@ -179,13 +179,9 @@ export default function Header() {
                     </Button>
                   </div>
                 ) : (
-                  <Button 
-                    size="sm"
-                    asChild
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Link to="/login" className="flex items-center">התחבר</Link>
-                  </Button>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button size="sm" className="flex items-center">התחבר</Button>
+                  </Link>
                 )}
               </div>
             </nav>

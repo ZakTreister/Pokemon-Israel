@@ -219,15 +219,14 @@ function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCard
         </div>
       </CardContent>
       <CardFooter className="pt-0">
-        <Button 
-          className="w-full" 
-          variant={getButtonVariant()}
-          asChild
-        >
-          <Link to={`/tournaments/${tournament.id}`}>
+        <Link to={`/tournaments/${tournament.id}`} className="w-full">
+          <Button 
+            className="w-full" 
+            variant={getButtonVariant()}
+          >
             {getButtonText()}
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );
