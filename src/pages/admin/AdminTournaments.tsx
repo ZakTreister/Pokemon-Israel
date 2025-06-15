@@ -81,6 +81,13 @@ export default function AdminTournaments() {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
 
+  // Helper function to check if tournament is in the past
+  const isPastTournament = (tournament: Tournament) => {
+    const now = new Date();
+    const tournamentDate = new Date(tournament.date);
+    return tournamentDate < now;
+  };
+
   const resetForm = () => {
     setFormData({
       date: '',
@@ -194,13 +201,13 @@ export default function AdminTournaments() {
   };
 
   const handleDeleteSeries = async (tournament: Tournament) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק את כל הטורנירים בסדרה?')) return;
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את כל הטורנירים העתידיים בסדרה?')) return;
 
     try {
       // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
       dispatch(fetchTournaments());
-      alert('כל הטורנירים בסדרה נמחקו בהצלחה');
+      alert('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה');
     } catch (error: any) {
       console.error('Error deleting series:', error);
       alert(error.response?.data?.message || 'שגיאה במחיקת הסדרה');
@@ -414,35 +421,42 @@ export default function AdminTournaments() {
                               הזן תוצאות
                             </Button>
                           ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditTournament(tournament)}
-                            >
-                              <Edit size={16} className="ml-1" />
-                              <span>ערוך</span>
-                            </Button>
+                            // Only show edit button for future tournaments
+                            !isPastTournament(tournament) && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditTournament(tournament)}
+                              >
+                                <Edit size={16} className="ml-1" />
+                                <span>ערוך</span>
+                              </Button>
+                            )
                           )}
                           
-                          {/* Delete options */}
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleDeleteSingleTournament(tournament)}
-                          >
-                            <Trash2 size={16} className="ml-1" />
-                            <span>מחק</span>
-                          </Button>
-                          
-                          {tournament.seriesId && (
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteSeries(tournament)}
-                            >
-                              <Trash2 size={16} className="ml-1" />
-                              <span>מחק סדרה</span>
-                            </Button>
+                          {/* Delete options - only for future tournaments */}
+                          {!isPastTournament(tournament) && (
+                            <>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteSingleTournament(tournament)}
+                              >
+                                <Trash2 size={16} className="ml-1" />
+                                <span>מחק</span>
+                              </Button>
+                              
+                              {tournament.seriesId && (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleDeleteSeries(tournament)}
+                                >
+                                  <Trash2 size={16} className="ml-1" />
+                                  <span>מחק סדרה</span>
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
