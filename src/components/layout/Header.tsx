@@ -75,7 +75,7 @@ export default function Header() {
             {isAuthenticated ? (
               <div className="flex items-center gap-4">
                 <div className="text-sm font-medium">
-                  {user && user.username}
+                  {user && user.name}
                   {user?.role === 'admin' && (
                     <span className="mr-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
                       מנהל
@@ -164,7 +164,7 @@ export default function Header() {
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">
-                      {user?.username}
+                      {user?.name}
                     </span>
                     <Button
                       variant="ghost"

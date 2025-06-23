@@ -3,6 +3,7 @@ import authService from './authService';
 
 interface User {
   id: string;
+  name: string;
   username: string;
   email?: string;
   role: 'admin' | 'player';
