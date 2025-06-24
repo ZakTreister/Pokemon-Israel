@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
-import { Calendar, MapPin, User, Clock, Trash2, UserMinus, UserPlus, Search } from 'lucide-react';
+import { fetchDecks } from '../features/decks/decksSlice';
+import { Calendar, MapPin, User, Clock, Trash2, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { TournamentParticipant } from '../types/tournament';
@@ -20,6 +21,7 @@ export default function TournamentDetailsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
+  const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
   
@@ -37,6 +39,7 @@ export default function TournamentDetailsPage() {
     if (id) {
       dispatch(fetchTournamentById(id));
     }
+    dispatch(fetchDecks());
     
     // Cleanup
     return () => {
@@ -200,6 +203,26 @@ export default function TournamentDetailsPage() {
     return '';
   };
 
+  // Helper function to get deck name
+  const getDeckName = (deckId: string) => {
+    const deck = decks.find(d => d.id === deckId);
+    return deck ? deck.archetype : 'לא ידוע';
+  };
+
+  // Helper function to get position icon
+  const getPositionIcon = (position: number) => {
+    switch (position) {
+      case 1:
+        return <Trophy className="h-5 w-5 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-5 w-5 text-gray-400" />;
+      case 3:
+        return <Award className="h-5 w-5 text-amber-600" />;
+      default:
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container py-16">
@@ -230,6 +253,7 @@ export default function TournamentDetailsPage() {
   const isRegistrationClosed = new Date(activeTournament.registrationDeadline) < new Date();
   const userRegistered = isUserRegistered();
   const isPastTournament = new Date(activeTournament.date) < new Date();
+  const hasResults = activeTournament.results && activeTournament.results.length > 0;
 
   return (
     <div className="container py-12">
@@ -276,16 +300,25 @@ export default function TournamentDetailsPage() {
             </div>
           </div>
 
-          {/* Participants Management */}
+          {/* Results or Participants Management */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  <span>רשימת משתתפים ({activeTournament.participants.length})</span>
-                </CardTitle>
-                
-                {!isPastTournament && !isFull && (
+              <CardTitle className="flex items-center gap-2">
+                {hasResults ? (
+                  <>
+                    <Trophy className="h-5 w-5" />
+                    <span>תוצאות הטורניר</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="h-5 w-5" />
+                    <span>רשימת משתתפים ({activeTournament.participants.length})</span>
+                  </>
+                )}
+              </CardTitle>
+              
+              {!hasResults && !isPastTournament && !isFull && (
+                <div className="flex justify-end">
                   <Button 
                     onClick={() => setShowAddUserModal(true)}
                     className="flex items-center gap-2"
@@ -293,51 +326,89 @@ export default function TournamentDetailsPage() {
                     <UserPlus size={16} />
                     <span>הוסף משתתף</span>
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
-              {activeTournament.participants.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  אין משתתפים רשומים עדיין
+              {hasResults ? (
+                /* Tournament Results Table */
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted border-b border-border text-right">
+                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
+                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
+                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
+                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeTournament.results
+                        .sort((a, b) => a.position - b.position)
+                        .map((result) => (
+                        <tr key={result.player} className="border-b border-border">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">{result.position}</span>
+                              {getPositionIcon(result.position)}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-medium">{result.playerName}</td>
+                          <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                          <td className="px-4 py-3">
+                            {result.deck ? getDeckName(result.deck) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {activeTournament.participants.map((participant, index) => {
-                    const participantName = getParticipantName(participant);
-                    const participantId = getParticipantId(participant);
-                    
-                    return (
-                      <div key={participantId || index} className="flex items-center justify-between p-3 border border-border rounded-md">
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground w-8">#{index + 1}</span>
-                          <span className="font-medium">{participantName}</span>
-                          <span className="text-sm text-muted-foreground">
-                            נרשם: {new Date(participant.registeredAt).toLocaleDateString('he-IL')}
-                          </span>
-                        </div>
+                /* Participants List */
+                <>
+                  {activeTournament.participants.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      אין משתתפים רשומים עדיין
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {activeTournament.participants.map((participant, index) => {
+                        const participantName = getParticipantName(participant);
+                        const participantId = getParticipantId(participant);
                         
-                        {!isPastTournament && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleRemoveParticipant(participantId, participantName)}
-                            disabled={removingParticipant === participantId}
-                          >
-                            {removingParticipant === participantId ? (
-                              'מסיר...'
-                            ) : (
-                              <>
-                                <UserMinus size={16} className="ml-1" />
-                                <span>הסר</span>
-                              </>
+                        return (
+                          <div key={participantId || index} className="flex items-center justify-between p-3 border border-border rounded-md">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground w-8">#{index + 1}</span>
+                              <span className="font-medium">{participantName}</span>
+                              <span className="text-sm text-muted-foreground">
+                                נרשם: {new Date(participant.registeredAt).toLocaleDateString('he-IL')}
+                              </span>
+                            </div>
+                            
+                            {!isPastTournament && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveParticipant(participantId, participantName)}
+                                disabled={removingParticipant === participantId}
+                              >
+                                {removingParticipant === participantId ? (
+                                  'מסיר...'
+                                ) : (
+                                  <>
+                                    <UserMinus size={16} className="ml-1" />
+                                    <span>הסר</span>
+                                  </>
+                                )}
+                              </Button>
                             )}
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -413,6 +484,84 @@ export default function TournamentDetailsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Tournament Results Section for Regular Users */}
+            {hasResults && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-primary" />
+                  <span>תוצאות הטורניר</span>
+                </h2>
+                
+                {/* Desktop Results Table */}
+                <div className="hidden md:block">
+                  <Card>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted border-b border-border text-right">
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeTournament.results
+                            .sort((a, b) => a.position - b.position)
+                            .map((result) => (
+                            <tr key={result.player} className="border-b border-border">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold">{result.position}</span>
+                                  {getPositionIcon(result.position)}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 font-medium">{result.playerName}</td>
+                              <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                              <td className="px-4 py-3">
+                                {result.deck ? getDeckName(result.deck) : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Mobile Results Cards */}
+                <div className="md:hidden space-y-4">
+                  {activeTournament.results
+                    .sort((a, b) => a.position - b.position)
+                    .map((result) => (
+                    <Card key={result.player} className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-primary">#{result.position}</span>
+                          {getPositionIcon(result.position)}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground">נקודות</div>
+                          <div className="text-xl font-bold text-primary">{result.points}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">שחקן</span>
+                          <span className="font-medium">{result.playerName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">דק</span>
+                          <span>{result.deck ? getDeckName(result.deck) : '-'}</span>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
