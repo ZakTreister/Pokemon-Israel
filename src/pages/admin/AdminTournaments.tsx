@@ -419,16 +419,26 @@ export default function AdminTournaments() {
         return;
       }
 
-      // Prepare results data
-      const results = parsedStandings.map(row => ({
-        player: row.playerId,
-        position: row.position,
-        points: row.points,
-        omp: 0, // Default values for now
-        gwp: 0,
-        ogp: 0,
-        deck: selectedDecks[parsedStandings.indexOf(row)] || null
-      }));
+      // Get tournament participants for name lookup
+      const participants = getTournamentParticipants();
+
+      // Prepare results data with player names
+      const results = parsedStandings.map(row => {
+        // Find the participant to get the display name
+        const participant = participants.find(p => p.id === row.playerId);
+        const playerName = participant ? participant.name : row.playerName;
+
+        return {
+          player: row.playerId,
+          playerName: playerName, // Include player name in results
+          position: row.position,
+          points: row.points,
+          omp: 0, // Default values for now
+          gwp: 0,
+          ogp: 0,
+          deck: selectedDecks[parsedStandings.indexOf(row)] || null
+        };
+      });
 
       await api.post(`/api/tournaments/${selectedTournament?.id}/results`, { results });
       
@@ -741,7 +751,7 @@ export default function AdminTournaments() {
 
       {/* Results Modal */}
       {showResultsModal && selectedTournament && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card p-6 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">הזנת תוצאות טורניר</h3>
             <div className="space-y-4">
@@ -786,7 +796,9 @@ PlayerB 6
                     <br />• מקום 3: 2 נקודות טורניר
                     <br />• מקום 4 ומעלה: 1 נקודה טורניר
                   </div>
-                  <div className="overflow-x-auto">
+                  
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-muted border-b border-border text-right">
@@ -881,6 +893,108 @@ PlayerB 6
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {parsedStandings.map((row, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="space-y-3">
+                          {/* Position and Player */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold text-primary">#{row.position}</span>
+                              {row.position === 1 && <span className="text-xl">🥇</span>}
+                              {row.position === 2 && <span className="text-xl">🥈</span>}
+                              {row.position === 3 && <span className="text-xl">🥉</span>}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-muted-foreground">נקודות טורניר</div>
+                              <div className="text-xl font-bold text-primary">{row.points}</div>
+                            </div>
+                          </div>
+
+                          {/* Player Selection */}
+                          <div>
+                            <label className="block text-sm font-medium mb-1">שחקן</label>
+                            {row.needsPlayerSelection ? (
+                              <select
+                                className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                                value={row.playerId || ''}
+                                onChange={(e) => handlePlayerSelection(index, e.target.value)}
+                              >
+                                <option value="">בחר שחקן עבור "{row.playerName}"</option>
+                                {getTournamentParticipants().map(participant => (
+                                  <option key={participant.id} value={participant.id}>
+                                    {participant.name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="px-3 py-2 bg-muted rounded-md font-medium">
+                                {row.playerName}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Original Points */}
+                          <div className="flex justify-between items-center py-2 border-t border-border">
+                            <span className="text-sm text-muted-foreground">נקודות מקוריות</span>
+                            <span className="font-medium">{row.originalPoints}</span>
+                          </div>
+
+                          {/* Deck Selection */}
+                          <div>
+                            <label className="block text-sm font-medium mb-1">דק</label>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                                placeholder="חפש דק..."
+                                value={deckInputs[index] || ''}
+                                onChange={(e) => handleDeckInputChange(index, e.target.value)}
+                                onFocus={() => {
+                                  if (deckInputs[index] && deckInputs[index].length > 0) {
+                                    setShowDeckSuggestions(prev => ({ ...prev, [index]: true }));
+                                  }
+                                }}
+                                onBlur={() => {
+                                  // Delay hiding suggestions to allow clicking on them
+                                  setTimeout(() => {
+                                    setShowDeckSuggestions(prev => ({ ...prev, [index]: false }));
+                                  }, 200);
+                                }}
+                              />
+                              
+                              {showDeckSuggestions[index] && (
+                                <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
+                                  {deckSuggestions[index]?.length > 0 ? (
+                                    deckSuggestions[index].map(deck => (
+                                      <button
+                                        key={deck.id}
+                                        className="w-full px-3 py-2 text-right hover:bg-muted"
+                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                                        onClick={() => handleDeckSelection(index, deck.id, deck.archetype)}
+                                      >
+                                        {deck.archetype}
+                                      </button>
+                                    ))
+                                  ) : deckInputs[index] && deckInputs[index].trim().length > 0 ? (
+                                    <button
+                                      className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
+                                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                                      onClick={() => handleCreateDeck(index, deckInputs[index].trim())}
+                                    >
+                                      + צור דק "{deckInputs[index].trim()}"
+                                    </button>
+                                  ) : null}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
                 </div>
               )}
