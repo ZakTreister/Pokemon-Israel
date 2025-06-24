@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
-import { Calendar, MapPin, User, Clock, Trash2, UserMinus } from 'lucide-react';
+import { Calendar, MapPin, User, Clock, Trash2, UserMinus, UserPlus, Search } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
+
+interface AvailableUser {
+  id: string;
+  name: string;
+  username: string;
+  role: 'player' | 'admin';
+}
 
 export default function TournamentDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +22,14 @@ export default function TournamentDetailsPage() {
   const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
+  
+  // Add user modal states
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<AvailableUser[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [addingUser, setAddingUser] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -28,6 +43,87 @@ export default function TournamentDetailsPage() {
       dispatch(clearError());
     };
   }, [dispatch, id]);
+
+  // Load available users when modal opens
+  useEffect(() => {
+    if (showAddUserModal && isAdmin) {
+      loadAvailableUsers();
+    }
+  }, [showAddUserModal, isAdmin]);
+
+  // Filter users based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredUsers(availableUsers);
+    } else {
+      const filtered = availableUsers.filter(user =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchQuery, availableUsers]);
+
+  const loadAvailableUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const { data } = await api.get('/api/users');
+      
+      // Filter out users who are already registered for this tournament
+      const registeredUserIds = activeTournament?.participants.map(participant => {
+        if (typeof participant.user === 'string') {
+          return participant.user;
+        } else if (participant.user && typeof participant.user === 'object') {
+          return participant.user._id || participant.user.id;
+        }
+        return '';
+      }) || [];
+
+      const available = data.filter((user: AvailableUser) => 
+        !registeredUserIds.includes(user.id)
+      );
+      
+      setAvailableUsers(available);
+      setFilteredUsers(available);
+    } catch (error: any) {
+      console.error('Error loading users:', error);
+      alert('שגיאה בטעינת רשימת המשתמשים');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleAddUserToTournament = async (userId: string, userName: string) => {
+    try {
+      setAddingUser(userId);
+      
+      // Add user to tournament via API
+      await api.post(`/api/tournaments/${id}/participants`, { userId });
+      
+      // Refresh tournament data
+      if (id) {
+        dispatch(fetchTournamentById(id));
+      }
+      
+      // Update available users list
+      setAvailableUsers(prev => prev.filter(user => user.id !== userId));
+      
+      alert(`${userName} נוסף לטורניר בהצלחה!`);
+      
+    } catch (error: any) {
+      console.error('Error adding user to tournament:', error);
+      alert(error.response?.data?.message || 'שגיאה בהוספת המשתמש לטורניר');
+    } finally {
+      setAddingUser(null);
+    }
+  };
+
+  const closeAddUserModal = () => {
+    setShowAddUserModal(false);
+    setSearchQuery('');
+    setAvailableUsers([]);
+    setFilteredUsers([]);
+  };
 
   // Helper function to check if user is registered
   const isUserRegistered = () => {
@@ -183,10 +279,22 @@ export default function TournamentDetailsPage() {
           {/* Participants Management */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                <span>רשימת משתתפים ({activeTournament.participants.length})</span>
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  <span>רשימת משתתפים ({activeTournament.participants.length})</span>
+                </CardTitle>
+                
+                {!isPastTournament && !isFull && (
+                  <Button 
+                    onClick={() => setShowAddUserModal(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <UserPlus size={16} />
+                    <span>הוסף משתתף</span>
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {activeTournament.participants.length === 0 ? (
@@ -209,21 +317,23 @@ export default function TournamentDetailsPage() {
                           </span>
                         </div>
                         
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRemoveParticipant(participantId, participantName)}
-                          disabled={removingParticipant === participantId}
-                        >
-                          {removingParticipant === participantId ? (
-                            'מסיר...'
-                          ) : (
-                            <>
-                              <UserMinus size={16} className="ml-1" />
-                              <span>הסר</span>
-                            </>
-                          )}
-                        </Button>
+                        {!isPastTournament && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveParticipant(participantId, participantName)}
+                            disabled={removingParticipant === participantId}
+                          >
+                            {removingParticipant === participantId ? (
+                              'מסיר...'
+                            ) : (
+                              <>
+                                <UserMinus size={16} className="ml-1" />
+                                <span>הסר</span>
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -392,6 +502,97 @@ export default function TournamentDetailsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <UserPlus size={20} />
+                <span>הוסף משתתף לטורניר</span>
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeAddUserModal}
+              >
+                ×
+              </Button>
+            </div>
+            
+            {/* Search */}
+            <div className="mb-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="חפש משתמש לפי שם או שם משתמש..."
+                  className="w-full pl-3 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Users List */}
+            <div className="overflow-y-auto max-h-[50vh]">
+              {loadingUsers ? (
+                <div className="text-center py-8">
+                  <div className="animate-pulse">טוען משתמשים...</div>
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? 'לא נמצאו משתמשים התואמים לחיפוש' : 'אין משתמשים זמינים להוספה'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 border border-border rounded-md">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-muted-foreground">@{user.username}</div>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          user.role === 'admin' 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'bg-secondary/10 text-secondary'
+                        }`}>
+                          {user.role === 'admin' ? 'מנהל' : 'שחקן'}
+                        </span>
+                      </div>
+                      
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddUserToTournament(user.id, user.name)}
+                        disabled={addingUser === user.id}
+                      >
+                        {addingUser === user.id ? (
+                          'מוסיף...'
+                        ) : (
+                          <>
+                            <UserPlus size={16} className="ml-1" />
+                            <span>הוסף</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button variant="outline" onClick={closeAddUserModal}>
+                סגור
+              </Button>
+            </div>
           </div>
         </div>
       )}
