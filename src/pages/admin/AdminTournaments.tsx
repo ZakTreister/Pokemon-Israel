@@ -353,6 +353,7 @@ export default function AdminTournaments() {
       setShowDeckSuggestions(prev => ({ ...prev, [rowIndex]: true }));
     } else {
       setShowDeckSuggestions(prev => ({ ...prev, [rowIndex]: false }));
+      setDeckSuggestions(prev => ({ ...prev, [rowIndex]: [] }));
     }
   };
 
@@ -788,7 +789,17 @@ PlayerB 6
                                   placeholder="חפש דק..."
                                   value={deckInputs[index] || ''}
                                   onChange={(e) => handleDeckInputChange(index, e.target.value)}
-                                  onFocus={() => setShowDeckSuggestions(prev => ({ ...prev, [index]: true }))}
+                                  onFocus={() => {
+                                    if (deckInputs[index] && deckInputs[index].length > 0) {
+                                      setShowDeckSuggestions(prev => ({ ...prev, [index]: true }));
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    // Delay hiding suggestions to allow clicking on them
+                                    setTimeout(() => {
+                                      setShowDeckSuggestions(prev => ({ ...prev, [index]: false }));
+                                    }, 200);
+                                  }}
                                 />
                                 
                                 {showDeckSuggestions[index] && (
@@ -798,17 +809,19 @@ PlayerB 6
                                         <button
                                           key={deck.id}
                                           className="w-full px-3 py-2 text-right hover:bg-muted"
+                                          onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                           onClick={() => handleDeckSelection(index, deck.id, deck.archetype)}
                                         >
                                           {deck.archetype}
                                         </button>
                                       ))
-                                    ) : deckInputs[index] && deckInputs[index].length > 0 ? (
+                                    ) : deckInputs[index] && deckInputs[index].trim().length > 0 ? (
                                       <button
                                         className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
-                                        onClick={() => handleCreateDeck(index, deckInputs[index])}
+                                        onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                                        onClick={() => handleCreateDeck(index, deckInputs[index].trim())}
                                       >
-                                        + צור דק "{deckInputs[index]}"
+                                        + צור דק "{deckInputs[index].trim()}"
                                       </button>
                                     ) : null}
                                   </div>
