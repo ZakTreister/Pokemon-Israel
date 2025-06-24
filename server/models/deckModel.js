@@ -9,10 +9,27 @@ const deckSchema = new mongoose.Schema({
     minlength: [1, 'Archetype must be at least 1 character long'],
     maxlength: [100, 'Archetype cannot exceed 100 characters']
   },
+  // Legacy image field for backward compatibility
   image: {
     type: String,
-    required: [true, 'Image is required'],
     default: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
+  },
+  // New image fields
+  iconImage1: {
+    type: String,
+    default: null
+  },
+  iconImage2: {
+    type: String,
+    default: null
+  },
+  attackerImage1: {
+    type: String,
+    default: null
+  },
+  attackerImage2: {
+    type: String,
+    default: null
   },
 }, {
   timestamps: true,

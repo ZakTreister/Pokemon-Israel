@@ -13,7 +13,14 @@ export const getDecks = asyncHandler(async (req, res) => {
 // @route   POST /api/decks
 // @access  Private/Admin
 export const createDeck = asyncHandler(async (req, res) => {
-  const { archetype, image } = req.body;
+  const { 
+    archetype, 
+    image, 
+    iconImage1, 
+    iconImage2, 
+    attackerImage1, 
+    attackerImage2 
+  } = req.body;
 
   // Validate required fields
   if (!archetype) {
@@ -29,10 +36,26 @@ export const createDeck = asyncHandler(async (req, res) => {
   }
 
   try {
-    const deck = await Deck.create({
+    const deckData = {
       archetype,
       image: image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
-    });
+    };
+
+    // Add optional image fields only if they are provided and not empty
+    if (iconImage1 && iconImage1.trim()) {
+      deckData.iconImage1 = iconImage1.trim();
+    }
+    if (iconImage2 && iconImage2.trim()) {
+      deckData.iconImage2 = iconImage2.trim();
+    }
+    if (attackerImage1 && attackerImage1.trim()) {
+      deckData.attackerImage1 = attackerImage1.trim();
+    }
+    if (attackerImage2 && attackerImage2.trim()) {
+      deckData.attackerImage2 = attackerImage2.trim();
+    }
+
+    const deck = await Deck.create(deckData);
 
     console.log('Deck created successfully:', deck);
     res.status(201).json(deck);
@@ -64,8 +87,32 @@ export const updateDeck = asyncHandler(async (req, res) => {
   const deck = await Deck.findById(req.params.id);
 
   if (deck) {
-    deck.archetype = req.body.archetype || deck.archetype;
-    deck.image = req.body.image || deck.image;
+    const { 
+      archetype, 
+      image, 
+      iconImage1, 
+      iconImage2, 
+      attackerImage1, 
+      attackerImage2 
+    } = req.body;
+
+    // Update basic fields
+    deck.archetype = archetype || deck.archetype;
+    deck.image = image || deck.image;
+
+    // Update optional image fields - allow clearing by setting to empty string
+    if (iconImage1 !== undefined) {
+      deck.iconImage1 = iconImage1.trim() || null;
+    }
+    if (iconImage2 !== undefined) {
+      deck.iconImage2 = iconImage2.trim() || null;
+    }
+    if (attackerImage1 !== undefined) {
+      deck.attackerImage1 = attackerImage1.trim() || null;
+    }
+    if (attackerImage2 !== undefined) {
+      deck.attackerImage2 = attackerImage2.trim() || null;
+    }
 
     const updatedDeck = await deck.save();
     res.json(updatedDeck);
