@@ -15,12 +15,46 @@ export const getDecks = asyncHandler(async (req, res) => {
 export const createDeck = asyncHandler(async (req, res) => {
   const { archetype, image } = req.body;
 
-  const deck = await Deck.create({
-    archetype,
-    image,
-  });
+  // Validate required fields
+  if (!archetype) {
+    res.status(400);
+    throw new Error('Archetype is required');
+  }
 
-  res.status(201).json(deck);
+  // Check if deck with same archetype already exists
+  const existingDeck = await Deck.findOne({ archetype });
+  if (existingDeck) {
+    res.status(400);
+    throw new Error('Deck with this archetype already exists');
+  }
+
+  try {
+    const deck = await Deck.create({
+      archetype,
+      image: image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+    });
+
+    console.log('Deck created successfully:', deck);
+    res.status(201).json(deck);
+  } catch (error) {
+    console.error('Error creating deck:', error);
+    
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      res.status(400);
+      throw new Error(messages.join(', '));
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      res.status(400);
+      throw new Error(`${field} already exists`);
+    }
+    
+    throw error;
+  }
 });
 
 // @desc    Update a deck
