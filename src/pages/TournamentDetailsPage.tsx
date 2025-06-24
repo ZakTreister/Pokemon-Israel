@@ -223,6 +223,18 @@ export default function TournamentDetailsPage() {
     }
   };
 
+  // Helper function to get unique key for results
+  const getResultKey = (result: any, index: number) => {
+    // Try to get player ID first
+    if (typeof result.player === 'string') {
+      return result.player;
+    } else if (result.player && typeof result.player === 'object') {
+      return result.player._id || result.player.id || `result-${index}`;
+    }
+    // Fallback to position + player name + index
+    return `${result.position}-${result.playerName || 'unknown'}-${index}`;
+  };
+
   if (isLoading) {
     return (
       <div className="container py-16">
@@ -345,8 +357,8 @@ export default function TournamentDetailsPage() {
                     <tbody>
                       {[...activeTournament.results]
                         .sort((a, b) => a.position - b.position)
-                        .map((result) => (
-                        <tr key={result.player} className="border-b border-border">
+                        .map((result, index) => (
+                        <tr key={getResultKey(result, index)} className="border-b border-border">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <span className="font-bold">{result.position}</span>
@@ -509,8 +521,8 @@ export default function TournamentDetailsPage() {
                         <tbody>
                           {[...activeTournament.results]
                             .sort((a, b) => a.position - b.position)
-                            .map((result) => (
-                            <tr key={result.player} className="border-b border-border">
+                            .map((result, index) => (
+                            <tr key={getResultKey(result, index)} className="border-b border-border">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold">{result.position}</span>
@@ -534,8 +546,8 @@ export default function TournamentDetailsPage() {
                 <div className="md:hidden space-y-4">
                   {[...activeTournament.results]
                     .sort((a, b) => a.position - b.position)
-                    .map((result) => (
-                    <Card key={result.player} className="p-4">
+                    .map((result, index) => (
+                    <Card key={getResultKey(result, index)} className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-2xl font-bold text-primary">#{result.position}</span>
