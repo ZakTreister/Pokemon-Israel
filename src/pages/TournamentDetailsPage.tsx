@@ -203,10 +203,40 @@ export default function TournamentDetailsPage() {
     return '';
   };
 
-  // Helper function to get deck name
-  const getDeckName = (deckId: string) => {
-    const deck = decks.find(d => d.id === deckId);
-    return deck ? deck.archetype : 'לא ידוע';
+  // Helper function to get deck information with icons
+  const getDeckInfo = (deckData: any) => {
+    if (!deckData) return { name: '-', icons: [] };
+    
+    // If deckData is populated (object), use it directly
+    if (typeof deckData === 'object' && deckData.archetype) {
+      const icons = [];
+      if (deckData.iconImage1) icons.push(deckData.iconImage1);
+      if (deckData.iconImage2) icons.push(deckData.iconImage2);
+      
+      return {
+        name: deckData.archetype,
+        icons: icons,
+        attackerImages: [deckData.attackerImage1, deckData.attackerImage2].filter(Boolean)
+      };
+    }
+    
+    // If deckData is just an ID (string), try to find it in the decks array
+    if (typeof deckData === 'string') {
+      const deck = decks.find(d => d.id === deckData);
+      if (deck) {
+        const icons = [];
+        if (deck.iconImage1) icons.push(deck.iconImage1);
+        if (deck.iconImage2) icons.push(deck.iconImage2);
+        
+        return {
+          name: deck.archetype,
+          icons: icons,
+          attackerImages: [deck.attackerImage1, deck.attackerImage2].filter(Boolean)
+        };
+      }
+    }
+    
+    return { name: 'לא ידוע', icons: [] };
   };
 
   // Helper function to get position icon
@@ -357,21 +387,41 @@ export default function TournamentDetailsPage() {
                     <tbody>
                       {[...activeTournament.results]
                         .sort((a, b) => a.position - b.position)
-                        .map((result, index) => (
-                        <tr key={getResultKey(result, index)} className="border-b border-border">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold">{result.position}</span>
-                              {getPositionIcon(result.position)}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-medium">{result.playerName}</td>
-                          <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
-                          <td className="px-4 py-3">
-                            {result.deck ? getDeckName(result.deck) : '-'}
-                          </td>
-                        </tr>
-                      ))}
+                        .map((result, index) => {
+                          const deckInfo = getDeckInfo(result.deck);
+                          return (
+                            <tr key={getResultKey(result, index)} className="border-b border-border">
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold">{result.position}</span>
+                                  {getPositionIcon(result.position)}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 font-medium">{result.playerName}</td>
+                              <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <span>{deckInfo.name}</span>
+                                  {deckInfo.icons.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {deckInfo.icons.map((icon, iconIndex) => (
+                                        <img
+                                          key={iconIndex}
+                                          src={icon}
+                                          alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                          className="w-6 h-6 rounded object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                          }}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -521,21 +571,41 @@ export default function TournamentDetailsPage() {
                         <tbody>
                           {[...activeTournament.results]
                             .sort((a, b) => a.position - b.position)
-                            .map((result, index) => (
-                            <tr key={getResultKey(result, index)} className="border-b border-border">
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold">{result.position}</span>
-                                  {getPositionIcon(result.position)}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3 font-medium">{result.playerName}</td>
-                              <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
-                              <td className="px-4 py-3">
-                                {result.deck ? getDeckName(result.deck) : '-'}
-                              </td>
-                            </tr>
-                          ))}
+                            .map((result, index) => {
+                              const deckInfo = getDeckInfo(result.deck);
+                              return (
+                                <tr key={getResultKey(result, index)} className="border-b border-border">
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold">{result.position}</span>
+                                      {getPositionIcon(result.position)}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 font-medium">{result.playerName}</td>
+                                  <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span>{deckInfo.name}</span>
+                                      {deckInfo.icons.length > 0 && (
+                                        <div className="flex gap-1">
+                                          {deckInfo.icons.map((icon, iconIndex) => (
+                                            <img
+                                              key={iconIndex}
+                                              src={icon}
+                                              alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                              className="w-6 h-6 rounded object-cover"
+                                              onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                              }}
+                                            />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                         </tbody>
                       </table>
                     </div>
@@ -546,31 +616,51 @@ export default function TournamentDetailsPage() {
                 <div className="md:hidden space-y-4">
                   {[...activeTournament.results]
                     .sort((a, b) => a.position - b.position)
-                    .map((result, index) => (
-                    <Card key={getResultKey(result, index)} className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold text-primary">#{result.position}</span>
-                          {getPositionIcon(result.position)}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-muted-foreground">נקודות</div>
-                          <div className="text-xl font-bold text-primary">{result.points}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">שחקן</span>
-                          <span className="font-medium">{result.playerName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">דק</span>
-                          <span>{result.deck ? getDeckName(result.deck) : '-'}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                    .map((result, index) => {
+                      const deckInfo = getDeckInfo(result.deck);
+                      return (
+                        <Card key={getResultKey(result, index)} className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold text-primary">#{result.position}</span>
+                              {getPositionIcon(result.position)}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-muted-foreground">נקודות</div>
+                              <div className="text-xl font-bold text-primary">{result.points}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">שחקן</span>
+                              <span className="font-medium">{result.playerName}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-muted-foreground">דק</span>
+                              <div className="flex items-center gap-2">
+                                <span>{deckInfo.name}</span>
+                                {deckInfo.icons.length > 0 && (
+                                  <div className="flex gap-1">
+                                    {deckInfo.icons.map((icon, iconIndex) => (
+                                      <img
+                                        key={iconIndex}
+                                        src={icon}
+                                        alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                        className="w-6 h-6 rounded object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
                 </div>
               </div>
             )}

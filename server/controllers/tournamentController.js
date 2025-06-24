@@ -20,7 +20,10 @@ export const getTournamentById = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id)
     .populate('participants.user', 'username')
     .populate('results.player', 'username')
-    .populate('results.deck', 'archetype');
+    .populate({
+      path: 'results.deck',
+      select: 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image'
+    });
 
   if (tournament) {
     res.json(tournament);
@@ -446,7 +449,10 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
 export const getTournamentResults = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id)
     .populate('results.player', 'username')
-    .populate('results.deck', 'archetype')
+    .populate({
+      path: 'results.deck',
+      select: 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image'
+    })
     .select('results');
 
   if (!tournament) {
