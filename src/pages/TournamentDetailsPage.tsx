@@ -343,7 +343,7 @@ export default function TournamentDetailsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {activeTournament.results
+                      {[...activeTournament.results]
                         .sort((a, b) => a.position - b.position)
                         .map((result) => (
                         <tr key={result.player} className="border-b border-border">
@@ -507,7 +507,7 @@ export default function TournamentDetailsPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {activeTournament.results
+                          {[...activeTournament.results]
                             .sort((a, b) => a.position - b.position)
                             .map((result) => (
                             <tr key={result.player} className="border-b border-border">
@@ -532,7 +532,7 @@ export default function TournamentDetailsPage() {
 
                 {/* Mobile Results Cards */}
                 <div className="md:hidden space-y-4">
-                  {activeTournament.results
+                  {[...activeTournament.results]
                     .sort((a, b) => a.position - b.position)
                     .map((result) => (
                     <Card key={result.player} className="p-4">
