@@ -14,6 +14,7 @@ interface StandingsRow {
   playerName: string;
   playerId?: string;
   points: number;
+  originalPoints: number; // Store original points for reference
   deck?: string;
   needsPlayerSelection?: boolean;
 }
@@ -250,7 +251,7 @@ export default function AdminTournaments() {
     });
   };
 
-  // Enhanced parsing function with improved points extraction
+  // Enhanced parsing function with improved points extraction and sorting
   const parseStandings = (input: string) => {
     if (!input.trim()) return;
     
@@ -315,16 +316,36 @@ export default function AdminTournaments() {
         playerName,
         playerId: matchedPlayer?.id,
         points,
+        originalPoints: points, // Store original points for reference
         needsPlayerSelection: !matchedPlayer
       };
     });
 
-    setParsedStandings(standings);
+    // Sort by points (highest first) and reassign positions and tournament points
+    const sortedStandings = standings.sort((a, b) => b.originalPoints - a.originalPoints);
+    
+    // Reassign positions and tournament points based on ranking
+    const finalStandings = sortedStandings.map((standing, index) => {
+      const newPosition = index + 1;
+      let tournamentPoints = 1; // Default for 4th place and below
+      
+      if (newPosition === 1) tournamentPoints = 4;
+      else if (newPosition === 2) tournamentPoints = 3;
+      else if (newPosition === 3) tournamentPoints = 2;
+      
+      return {
+        ...standing,
+        position: newPosition,
+        points: tournamentPoints
+      };
+    });
+
+    setParsedStandings(finalStandings);
     
     // Initialize deck inputs and selections
     const initialDeckInputs: Record<number, string> = {};
     const initialSelectedDecks: Record<number, string> = {};
-    standings.forEach((_, index) => {
+    finalStandings.forEach((_, index) => {
       initialDeckInputs[index] = '';
       initialSelectedDecks[index] = '';
     });
@@ -434,7 +455,7 @@ export default function AdminTournaments() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold mb-4">ניהול טורנירים</h2>
+        <h2 className="text-2xl font-bold">ניהול טורנירים</h2>
         <Button onClick={handleCreateTournament}>
           <Plus size={18} className="ml-1" />
           <span>טורניר חדש</span>
@@ -739,7 +760,9 @@ PlayerB 6
 1 PlayerA 7
 2 PlayerB 6
 
-הנקודות הן המספר הראשון אחרי שם השחקן`}
+הנקודות הן המספר הראשון אחרי שם השחקן
+לאחר העיבוד, השחקנים יסודרו לפי נקודות ויקבלו נקודות טורניר:
+מקום 1: 4 נקודות, מקום 2: 3 נקודות, מקום 3: 2 נקודות, שאר המקומות: 1 נקודה`}
                   value={standingsInput}
                   onChange={(e) => setStandingsInput(e.target.value)}
                 />
@@ -755,21 +778,36 @@ PlayerB 6
 
               {parsedStandings.length > 0 && (
                 <div>
-                  <h4 className="text-lg font-medium mb-2">תוצאות מעובדות</h4>
+                  <h4 className="text-lg font-medium mb-2">תוצאות מעובדות (ממוינות לפי נקודות)</h4>
+                  <div className="mb-3 p-3 bg-muted rounded-md text-sm">
+                    <strong>הערה:</strong> השחקנים סודרו לפי הנקודות המקוריות שלהם ונקודות הטורניר הוקצו מחדש:
+                    <br />• מקום 1: 4 נקודות טורניר
+                    <br />• מקום 2: 3 נקודות טורניר  
+                    <br />• מקום 3: 2 נקודות טורניר
+                    <br />• מקום 4 ומעלה: 1 נקודה טורניר
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="bg-muted border-b border-border text-right">
-                          <th className="px-4 py-2 text-sm font-medium">מיקום</th>
+                          <th className="px-4 py-2 text-sm font-medium">מיקום סופי</th>
                           <th className="px-4 py-2 text-sm font-medium">שחקן</th>
-                          <th className="px-4 py-2 text-sm font-medium">נקודות</th>
+                          <th className="px-4 py-2 text-sm font-medium">נקודות מקוריות</th>
+                          <th className="px-4 py-2 text-sm font-medium">נקודות טורניר</th>
                           <th className="px-4 py-2 text-sm font-medium">דק</th>
                         </tr>
                       </thead>
                       <tbody>
                         {parsedStandings.map((row, index) => (
                           <tr key={index} className="border-b border-border">
-                            <td className="px-4 py-2">{row.position}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold">{row.position}</span>
+                                {row.position === 1 && <span className="text-primary">🥇</span>}
+                                {row.position === 2 && <span className="text-secondary">🥈</span>}
+                                {row.position === 3 && <span className="text-accent">🥉</span>}
+                              </div>
+                            </td>
                             <td className="px-4 py-2">
                               {row.needsPlayerSelection ? (
                                 <select
@@ -788,7 +826,10 @@ PlayerB 6
                                 <div className="font-medium">{row.playerName}</div>
                               )}
                             </td>
-                            <td className="px-4 py-2">{row.points}</td>
+                            <td className="px-4 py-2 text-muted-foreground">{row.originalPoints}</td>
+                            <td className="px-4 py-2">
+                              <span className="font-bold text-primary">{row.points}</span>
+                            </td>
                             <td className="px-4 py-2">
                               <div className="relative">
                                 <input
