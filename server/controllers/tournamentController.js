@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
+import User from '../models/userModel.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Get all tournaments
@@ -421,6 +422,13 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
   if (invalidPlayers.length > 0) {
     res.status(400);
     throw new Error('Results contain players who did not participate in the tournament');
+  }
+
+  // Validate that playerName is provided for each result
+  const resultsWithoutNames = req.body.results.filter(r => !r.playerName);
+  if (resultsWithoutNames.length > 0) {
+    res.status(400);
+    throw new Error('Player name is required for all results');
   }
 
   // Update tournament with results and mark as completed

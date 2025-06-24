@@ -62,6 +62,10 @@ const tournamentSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    playerName: {
+      type: String,
+      required: true, // Store the player's display name
+    },
     position: Number,
     points: Number,
     omp: Number,

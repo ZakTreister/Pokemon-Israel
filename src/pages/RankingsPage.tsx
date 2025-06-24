@@ -43,10 +43,12 @@ export default function RankingsPage() {
         
         if (typeof result.player === 'string') {
           playerId = result.player;
-          playerName = result.player;
+          // Use playerName from result if available, otherwise fallback to player ID
+          playerName = result.playerName || result.player;
         } else if (result.player && typeof result.player === 'object') {
           playerId = result.player._id || result.player.id;
-          playerName = result.player.username || result.player.name || playerId;
+          // Use playerName from result if available, otherwise fallback to username
+          playerName = result.playerName || result.player.username || result.player.name || playerId;
         } else {
           return; // Skip invalid player data
         }
