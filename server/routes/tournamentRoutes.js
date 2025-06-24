@@ -8,6 +8,7 @@ import {
   deleteTournament,
   registerForTournament,
   unregisterFromTournament,
+  addParticipant,
   removeParticipant,
   submitTournamentResults,
   getTournamentResults,
@@ -30,6 +31,9 @@ router.get('/series/:seriesId', getTournamentsBySeries);
 router.route('/:id/register')
   .post(protect, registerForTournament)
   .delete(protect, unregisterFromTournament);
+
+router.route('/:id/participants')
+  .post(protect, admin, addParticipant);
 
 router.delete('/:id/participants/:participantId', protect, admin, removeParticipant);
 
