@@ -11,12 +11,11 @@ import api from '../../services/api';
 
 interface StandingsRow {
   position: number;
-  player: string;
+  playerName: string;
+  playerId?: string;
   points: number;
-  omp: number;
-  gwp: number;
-  ogp: number;
   deck?: string;
+  needsPlayerSelection?: boolean;
 }
 
 interface TournamentFormData {
@@ -25,6 +24,11 @@ interface TournamentFormData {
   isRecurring: boolean;
   lastTournamentDate: string;
   maxParticipants?: number;
+}
+
+interface DeckSuggestion {
+  id: string;
+  archetype: string;
 }
 
 export default function AdminTournaments() {
@@ -40,7 +44,6 @@ export default function AdminTournaments() {
   const [isEditing, setIsEditing] = useState(false);
   const [standingsInput, setStandingsInput] = useState('');
   const [parsedStandings, setParsedStandings] = useState<StandingsRow[]>([]);
-  const [playerDecks, setPlayerDecks] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<TournamentFormData>({
     date: '',
@@ -49,6 +52,12 @@ export default function AdminTournaments() {
     lastTournamentDate: '',
     maxParticipants: undefined
   });
+
+  // Deck autocomplete states
+  const [deckInputs, setDeckInputs] = useState<Record<number, string>>({});
+  const [deckSuggestions, setDeckSuggestions] = useState<Record<number, DeckSuggestion[]>>({});
+  const [showDeckSuggestions, setShowDeckSuggestions] = useState<Record<number, boolean>>({});
+  const [selectedDecks, setSelectedDecks] = useState<Record<number, string>>({});
 
   useEffect(() => {
     dispatch(fetchTournaments());
@@ -225,64 +234,194 @@ export default function AdminTournaments() {
     navigate(`/tournaments/${tournamentId}`);
   };
 
+  // Get tournament participants for player matching
+  const getTournamentParticipants = () => {
+    if (!selectedTournament) return [];
+    
+    return selectedTournament.participants.map(participant => {
+      if (typeof participant.user === 'string') {
+        return { id: participant.user, name: participant.user };
+      } else {
+        return { 
+          id: participant.user._id || participant.user.id, 
+          name: participant.user.username 
+        };
+      }
+    });
+  };
+
+  // Enhanced parsing function
   const parseStandings = (input: string) => {
     if (!input.trim()) return;
     
     const lines = input.trim().split('\n');
+    const participants = getTournamentParticipants();
     
     // Remove header lines if they exist
-    if (lines[0].toLowerCase().includes('standings')) {
-      lines.shift();
-    }
-    if (lines[0].toLowerCase().includes('player points')) {
-      lines.shift();
-    }
+    const filteredLines = lines.filter(line => {
+      const lowerLine = line.toLowerCase();
+      return !lowerLine.includes('standings') && 
+             !lowerLine.includes('player') && 
+             !lowerLine.includes('points') &&
+             line.trim().length > 0;
+    });
     
-    const standings: StandingsRow[] = lines.map(line => {
+    const standings: StandingsRow[] = filteredLines.map((line, index) => {
       const parts = line.trim().split(/\s+/);
       
-      // Get position (remove the colon)
-      const position = parseInt(parts[0].replace(':', ''));
+      let position = index + 1; // Default position
+      let playerName = '';
+      let points = 0;
       
-      // Get player name (it's always the second part)
-      const player = parts[1];
-      
-      // Get the numbers (they're always the last 4 parts)
-      const [points, omp, gwp, ogp] = parts.slice(2).map(Number);
-      
+      // Try to parse position if the first part looks like a position (number with optional colon)
+      const firstPart = parts[0];
+      if (/^\d+:?$/.test(firstPart)) {
+        position = parseInt(firstPart.replace(':', ''));
+        // Player name could be multiple words, points is the last number
+        const lastPart = parts[parts.length - 1];
+        if (/^\d+$/.test(lastPart)) {
+          points = parseInt(lastPart);
+          playerName = parts.slice(1, -1).join(' ');
+        } else {
+          // No points found, treat everything after position as player name
+          playerName = parts.slice(1).join(' ');
+        }
+      } else {
+        // No position found, check if last part is points
+        const lastPart = parts[parts.length - 1];
+        if (/^\d+$/.test(lastPart)) {
+          points = parseInt(lastPart);
+          playerName = parts.slice(0, -1).join(' ');
+        } else {
+          // No points found, treat everything as player name
+          playerName = parts.join(' ');
+        }
+      }
+
+      // Try to match player with tournament participants
+      const matchedPlayer = participants.find(p => 
+        p.name.toLowerCase().includes(playerName.toLowerCase()) ||
+        playerName.toLowerCase().includes(p.name.toLowerCase())
+      );
+
       return {
         position,
-        player,
+        playerName,
+        playerId: matchedPlayer?.id,
         points,
-        omp,
-        gwp,
-        ogp,
+        needsPlayerSelection: !matchedPlayer
       };
     });
 
     setParsedStandings(standings);
-    // Initialize deck selections as empty strings (optional selection)
-    const initialDecks: Record<string, string> = {};
-    standings.forEach(row => {
-      initialDecks[row.player] = '';
+    
+    // Initialize deck inputs and selections
+    const initialDeckInputs: Record<number, string> = {};
+    const initialSelectedDecks: Record<number, string> = {};
+    standings.forEach((_, index) => {
+      initialDeckInputs[index] = '';
+      initialSelectedDecks[index] = '';
     });
-    setPlayerDecks(initialDecks);
+    setDeckInputs(initialDeckInputs);
+    setSelectedDecks(initialSelectedDecks);
   };
 
-  const handleSaveResults = () => {
-    // Here you would handle saving the results with the optional deck selections
-    console.log('Saving results with decks:', {
-      tournamentId: selectedTournament?.id,
-      standings: parsedStandings.map(row => ({
-        ...row,
-        deck: playerDecks[row.player] || null // Convert empty string to null
-      }))
-    });
+  // Handle player selection for unmatched players
+  const handlePlayerSelection = (rowIndex: number, playerId: string) => {
+    const participants = getTournamentParticipants();
+    const selectedPlayer = participants.find(p => p.id === playerId);
     
-    setShowResultsModal(false);
-    setStandingsInput('');
-    setParsedStandings([]);
-    setPlayerDecks({});
+    if (selectedPlayer) {
+      setParsedStandings(prev => prev.map((row, index) => 
+        index === rowIndex 
+          ? { ...row, playerId, playerName: selectedPlayer.name, needsPlayerSelection: false }
+          : row
+      ));
+    }
+  };
+
+  // Deck autocomplete functions
+  const handleDeckInputChange = (rowIndex: number, value: string) => {
+    setDeckInputs(prev => ({ ...prev, [rowIndex]: value }));
+    
+    if (value.length > 0) {
+      const suggestions = (decks || []).filter(deck =>
+        deck.archetype.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 5);
+      
+      setDeckSuggestions(prev => ({ ...prev, [rowIndex]: suggestions }));
+      setShowDeckSuggestions(prev => ({ ...prev, [rowIndex]: true }));
+    } else {
+      setShowDeckSuggestions(prev => ({ ...prev, [rowIndex]: false }));
+    }
+  };
+
+  const handleDeckSelection = (rowIndex: number, deckId: string, deckName: string) => {
+    setSelectedDecks(prev => ({ ...prev, [rowIndex]: deckId }));
+    setDeckInputs(prev => ({ ...prev, [rowIndex]: deckName }));
+    setShowDeckSuggestions(prev => ({ ...prev, [rowIndex]: false }));
+  };
+
+  const handleCreateDeck = async (rowIndex: number, archetype: string) => {
+    try {
+      const response = await api.post('/api/decks', {
+        archetype,
+        image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
+      });
+      
+      // Refresh decks list
+      dispatch(fetchDecks());
+      
+      // Select the newly created deck
+      handleDeckSelection(rowIndex, response.data.id, response.data.archetype);
+      
+      alert(`דק "${archetype}" נוצר בהצלחה!`);
+    } catch (error: any) {
+      console.error('Error creating deck:', error);
+      alert(error.response?.data?.message || 'שגיאה ביצירת הדק');
+    }
+  };
+
+  const handleSaveResults = async () => {
+    try {
+      // Validate that all players are selected
+      const unselectedPlayers = parsedStandings.filter(row => row.needsPlayerSelection);
+      if (unselectedPlayers.length > 0) {
+        alert('אנא בחר שחקן עבור כל השורות');
+        return;
+      }
+
+      // Prepare results data
+      const results = parsedStandings.map(row => ({
+        player: row.playerId,
+        position: row.position,
+        points: row.points,
+        omp: 0, // Default values for now
+        gwp: 0,
+        ogp: 0,
+        deck: selectedDecks[parsedStandings.indexOf(row)] || null
+      }));
+
+      await api.post(`/api/tournaments/${selectedTournament?.id}/results`, { results });
+      
+      alert('התוצאות נשמרו בהצלחה!');
+      
+      // Refresh tournament data
+      dispatch(fetchTournaments());
+      
+      // Close modal and reset
+      setShowResultsModal(false);
+      setStandingsInput('');
+      setParsedStandings([]);
+      setDeckInputs({});
+      setSelectedDecks({});
+      setDeckSuggestions({});
+      setShowDeckSuggestions({});
+      
+    } catch (error: any) {
+      console.error('Error saving results:', error);
+      alert(error.response?.data?.message || 'שגיאה בשמירת התוצאות');
+    }
   };
 
   return (
@@ -575,7 +714,7 @@ export default function AdminTournaments() {
       {/* Results Modal */}
       {showResultsModal && selectedTournament && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-card p-6 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">הזנת תוצאות טורניר</h3>
             <div className="space-y-4">
               <div>
@@ -584,10 +723,14 @@ export default function AdminTournaments() {
                   className="w-full px-3 py-2 border border-input rounded-md font-mono text-sm"
                   rows={10}
                   placeholder={`הדבק את טבלת התוצאות בפורמט הבא:
-Standings
-Player Points OMP GWP OGP
-1: PlayerA 7 48.15 83.33 50
-2: PlayerB 6 62.96 66.67 66.67`}
+1: PlayerA 7
+2: PlayerB 6
+או:
+PlayerA 7
+PlayerB 6
+או:
+1 PlayerA 7
+2 PlayerB 6`}
                   value={standingsInput}
                   onChange={(e) => setStandingsInput(e.target.value)}
                 />
@@ -611,37 +754,66 @@ Player Points OMP GWP OGP
                           <th className="px-4 py-2 text-sm font-medium">מיקום</th>
                           <th className="px-4 py-2 text-sm font-medium">שחקן</th>
                           <th className="px-4 py-2 text-sm font-medium">נקודות</th>
-                          <th className="px-4 py-2 text-sm font-medium">OMP</th>
-                          <th className="px-4 py-2 text-sm font-medium">GWP</th>
-                          <th className="px-4 py-2 text-sm font-medium">OGP</th>
                           <th className="px-4 py-2 text-sm font-medium">דק</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {parsedStandings.map((row) => (
-                          <tr key={row.player} className="border-b border-border">
+                        {parsedStandings.map((row, index) => (
+                          <tr key={index} className="border-b border-border">
                             <td className="px-4 py-2">{row.position}</td>
-                            <td className="px-4 py-2">{row.player}</td>
-                            <td className="px-4 py-2">{row.points}</td>
-                            <td className="px-4 py-2">{row.omp}</td>
-                            <td className="px-4 py-2">{row.gwp}</td>
-                            <td className="px-4 py-2">{row.ogp}</td>
                             <td className="px-4 py-2">
-                              <select
-                                className="w-full px-2 py-1 border border-input rounded-md bg-background"
-                                value={playerDecks[row.player] || ''}
-                                onChange={(e) => setPlayerDecks({
-                                  ...playerDecks,
-                                  [row.player]: e.target.value
-                                })}
-                              >
-                                <option value="">ללא דק</option>
-                                {(decks || []).map(deck => (
-                                  <option key={deck.id} value={deck.id}>
-                                    {deck.archetype}
-                                  </option>
-                                ))}
-                              </select>
+                              {row.needsPlayerSelection ? (
+                                <select
+                                  className="w-full px-2 py-1 border border-input rounded-md bg-background"
+                                  value={row.playerId || ''}
+                                  onChange={(e) => handlePlayerSelection(index, e.target.value)}
+                                >
+                                  <option value="">בחר שחקן עבור "{row.playerName}"</option>
+                                  {getTournamentParticipants().map(participant => (
+                                    <option key={participant.id} value={participant.id}>
+                                      {participant.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <div className="font-medium">{row.playerName}</div>
+                              )}
+                            </td>
+                            <td className="px-4 py-2">{row.points}</td>
+                            <td className="px-4 py-2">
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  className="w-full px-2 py-1 border border-input rounded-md bg-background"
+                                  placeholder="חפש דק..."
+                                  value={deckInputs[index] || ''}
+                                  onChange={(e) => handleDeckInputChange(index, e.target.value)}
+                                  onFocus={() => setShowDeckSuggestions(prev => ({ ...prev, [index]: true }))}
+                                />
+                                
+                                {showDeckSuggestions[index] && (
+                                  <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
+                                    {deckSuggestions[index]?.length > 0 ? (
+                                      deckSuggestions[index].map(deck => (
+                                        <button
+                                          key={deck.id}
+                                          className="w-full px-3 py-2 text-right hover:bg-muted"
+                                          onClick={() => handleDeckSelection(index, deck.id, deck.archetype)}
+                                        >
+                                          {deck.archetype}
+                                        </button>
+                                      ))
+                                    ) : deckInputs[index] && deckInputs[index].length > 0 ? (
+                                      <button
+                                        className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
+                                        onClick={() => handleCreateDeck(index, deckInputs[index])}
+                                      >
+                                        + צור דק "{deckInputs[index]}"
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -658,14 +830,17 @@ Player Points OMP GWP OGP
                     setShowResultsModal(false);
                     setStandingsInput('');
                     setParsedStandings([]);
-                    setPlayerDecks({});
+                    setDeckInputs({});
+                    setSelectedDecks({});
+                    setDeckSuggestions({});
+                    setShowDeckSuggestions({});
                   }}
                 >
                   ביטול
                 </Button>
                 <Button
                   onClick={handleSaveResults}
-                  disabled={parsedStandings.length === 0}
+                  disabled={parsedStandings.length === 0 || parsedStandings.some(row => row.needsPlayerSelection)}
                 >
                   שמור תוצאות
                 </Button>
