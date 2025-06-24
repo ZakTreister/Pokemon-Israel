@@ -250,7 +250,7 @@ export default function AdminTournaments() {
     });
   };
 
-  // Enhanced parsing function
+  // Enhanced parsing function with improved points extraction
   const parseStandings = (input: string) => {
     if (!input.trim()) return;
     
@@ -272,30 +272,36 @@ export default function AdminTournaments() {
       let position = index + 1; // Default position
       let playerName = '';
       let points = 0;
+      let startIndex = 0;
       
       // Try to parse position if the first part looks like a position (number with optional colon)
       const firstPart = parts[0];
       if (/^\d+:?$/.test(firstPart)) {
         position = parseInt(firstPart.replace(':', ''));
-        // Player name could be multiple words, points is the last number
-        const lastPart = parts[parts.length - 1];
-        if (/^\d+$/.test(lastPart)) {
-          points = parseInt(lastPart);
-          playerName = parts.slice(1, -1).join(' ');
-        } else {
-          // No points found, treat everything after position as player name
-          playerName = parts.slice(1).join(' ');
+        startIndex = 1;
+      }
+      
+      // Find the first number after the player name - this will be the points
+      let pointsIndex = -1;
+      for (let i = startIndex; i < parts.length; i++) {
+        if (/^\d+$/.test(parts[i])) {
+          pointsIndex = i;
+          break;
         }
+      }
+      
+      if (pointsIndex > startIndex) {
+        // Player name is everything from startIndex to pointsIndex
+        playerName = parts.slice(startIndex, pointsIndex).join(' ');
+        points = parseInt(parts[pointsIndex]);
+      } else if (pointsIndex === startIndex) {
+        // Edge case: only a number after position, treat as points with empty name
+        points = parseInt(parts[pointsIndex]);
+        playerName = `Player ${position}`;
       } else {
-        // No position found, check if last part is points
-        const lastPart = parts[parts.length - 1];
-        if (/^\d+$/.test(lastPart)) {
-          points = parseInt(lastPart);
-          playerName = parts.slice(0, -1).join(' ');
-        } else {
-          // No points found, treat everything as player name
-          playerName = parts.join(' ');
-        }
+        // No points found, treat everything after position as player name
+        playerName = parts.slice(startIndex).join(' ');
+        points = 0;
       }
 
       // Try to match player with tournament participants
@@ -428,7 +434,7 @@ export default function AdminTournaments() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">ניהול טורנירים</h2>
+        <h2 className="text-2xl font-bold mb-4">ניהול טורנירים</h2>
         <Button onClick={handleCreateTournament}>
           <Plus size={18} className="ml-1" />
           <span>טורניר חדש</span>
@@ -731,7 +737,9 @@ PlayerA 7
 PlayerB 6
 או:
 1 PlayerA 7
-2 PlayerB 6`}
+2 PlayerB 6
+
+הנקודות הן המספר הראשון אחרי שם השחקן`}
                   value={standingsInput}
                   onChange={(e) => setStandingsInput(e.target.value)}
                 />
@@ -794,7 +802,7 @@ PlayerB 6
                                       setShowDeckSuggestions(prev => ({ ...prev, [index]: true }));
                                     }
                                   }}
-                                  onBlur={(e) => {
+                                  onBlur={() => {
                                     // Delay hiding suggestions to allow clicking on them
                                     setTimeout(() => {
                                       setShowDeckSuggestions(prev => ({ ...prev, [index]: false }));
