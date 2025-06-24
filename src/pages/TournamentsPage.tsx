@@ -12,7 +12,7 @@ export default function TournamentsPage() {
   const { tournaments, isLoading } = useAppSelector((state) => state.tournaments);
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('upcoming');
 
   useEffect(() => {
     dispatch(fetchTournaments());
