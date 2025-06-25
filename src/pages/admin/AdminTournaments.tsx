@@ -331,7 +331,7 @@ export default function AdminTournaments() {
       
       if (newPosition === 1) tournamentPoints = 4;
       else if (newPosition === 2) tournamentPoints = 3;
-      else if (newPosition === 3) tournamentPoints = 2;
+      else if (newPosition > 2 && newPosition < 6) tournamentPoints = 2;
       
       return {
         ...standing,
@@ -772,7 +772,7 @@ PlayerB 6
 
 הנקודות הן המספר הראשון אחרי שם השחקן
 לאחר העיבוד, השחקנים יסודרו לפי נקודות ויקבלו נקודות טורניר:
-מקום 1: 4 נקודות, מקום 2: 3 נקודות, מקום 3: 2 נקודות, שאר המקומות: 1 נקודה`}
+מקום 1: 4 נקודות, מקום 2: 3 נקודות, מקום 3-5: 2 נקודות, שאר המקומות: 1 נקודה`}
                   value={standingsInput}
                   onChange={(e) => setStandingsInput(e.target.value)}
                 />
@@ -793,7 +793,7 @@ PlayerB 6
                     <strong>הערה:</strong> השחקנים סודרו לפי הנקודות המקוריות שלהם ונקודות הטורניר הוקצו מחדש:
                     <br />• מקום 1: 4 נקודות טורניר
                     <br />• מקום 2: 3 נקודות טורניר  
-                    <br />• מקום 3: 2 נקודות טורניר
+                    <br />• מקום 3-5: 2 נקודות טורניר
                     <br />• מקום 4 ומעלה: 1 נקודה טורניר
                   </div>
                   
