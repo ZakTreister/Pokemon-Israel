@@ -409,7 +409,7 @@ export default function TournamentDetailsPage() {
                                           key={iconIndex}
                                           src={icon}
                                           alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                          className="w-6 h-6 rounded object-cover"
+                                          className="h-6 rounded object-cover"
                                           onError={(e) => {
                                             e.currentTarget.style.display = 'none';
                                           }}
@@ -593,7 +593,7 @@ export default function TournamentDetailsPage() {
                                               key={iconIndex}
                                               src={icon}
                                               alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                              className="w-6 h-6 rounded object-cover"
+                                              className="h-6 rounded object-cover"
                                               onError={(e) => {
                                                 e.currentTarget.style.display = 'none';
                                               }}
@@ -647,7 +647,7 @@ export default function TournamentDetailsPage() {
                                         key={iconIndex}
                                         src={icon}
                                         alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                        className="w-6 h-6 rounded object-cover"
+                                        className="h-6 rounded object-cover"
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
                                         }}

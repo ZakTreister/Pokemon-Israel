@@ -357,7 +357,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   <img
                     src={formData.iconImage1}
                     alt="Icon 1 Preview"
-                    className="w-16 h-16 object-cover rounded-md border border-border"
+                    className="h-16 object-cover rounded-md border border-border"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -391,7 +391,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   <img
                     src={formData.iconImage2}
                     alt="Icon 2 Preview"
-                    className="w-16 h-16 object-cover rounded-md border border-border"
+                    className="h-16 object-cover rounded-md border border-border"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -404,7 +404,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
           {/* Attacker Images */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">תמונת תוקף ראשי 1</label>
+              <label className="block text-sm font-medium mb-2">תמונת תוקף ראשי</label>
               <div className="relative">
                 <input
                   type="text"
@@ -428,7 +428,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   <img
                     src={formData.attackerImage1}
                     alt="Attacker 1 Preview"
-                    className="w-16 h-20 object-cover rounded-md border border-border"
+                    className="h-20 object-cover rounded-md border border-border"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -438,7 +438,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">תמונת תוקף ראשי 2</label>
+              <label className="block text-sm font-medium mb-2">תמונת תוקף משני</label>
               <div className="relative">
                 <input
                   type="text"
@@ -462,7 +462,7 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   <img
                     src={formData.attackerImage2}
                     alt="Attacker 2 Preview"
-                    className="w-16 h-20 object-cover rounded-md border border-border"
+                    className="h-20 object-cover rounded-md border border-border"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
