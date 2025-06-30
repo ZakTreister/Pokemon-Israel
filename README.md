@@ -36,8 +36,7 @@ A comprehensive tournament management system for Pokemon card game tournaments i
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
-
+#### Backend (.env in root directory)
 ```env
 # Database Configuration
 MONGODB_URI=mongodb://localhost:27017/pokemon-tournaments
@@ -58,6 +57,13 @@ NODE_ENV=development
 CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 ```
 
+#### Frontend (.env.local in root directory)
+```env
+# API URL for production deployments
+# In development, this is automatically set to http://localhost:5000
+VITE_API_URL=https://your-api-domain.com
+```
+
 ### Installation
 
 1. Clone the repository
@@ -66,7 +72,14 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:3000
    npm install
    ```
 
-3. Start development servers:
+3. Create environment files:
+   ```bash
+   # Copy example files and edit them
+   cp .env.example .env
+   cp .env.example .env.local
+   ```
+
+4. Start development servers:
    ```bash
    npm start
    ```
@@ -83,39 +96,101 @@ This will start both the frontend (http://localhost:5173) and backend (http://lo
 
 ## Production Deployment
 
-### Building for Production
+### Frontend Deployment
+
+1. Set the API URL environment variable:
+   ```env
+   VITE_API_URL=https://your-backend-api-url.com
+   ```
+
+2. Build the frontend:
+   ```bash
+   npm run build
+   ```
+
+3. Deploy the `dist` folder to your hosting provider (Netlify, Vercel, etc.)
+
+### Backend Deployment
+
+1. Set production environment variables:
+   ```env
+   NODE_ENV=production
+   CORS_ORIGIN=https://your-frontend-domain.com
+   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/pokemon-tournaments
+   ```
+
+2. Start the production server:
+   ```bash
+   npm run production
+   ```
+
+### Full-Stack Deployment (Same Domain)
+
+If deploying both frontend and backend to the same domain:
 
 1. Build the frontend:
    ```bash
    npm run build
    ```
 
-2. Set production environment variables:
+2. Set backend environment variables:
    ```env
    NODE_ENV=production
    CORS_ORIGIN=https://your-domain.com
    MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/pokemon-tournaments
    ```
 
-3. Start the production server:
+3. Start the server (serves both API and frontend):
    ```bash
    npm run production
    ```
 
-The server will serve both the API and the built frontend from a single port.
+### Environment Variable Configuration
 
-### Production Scripts
+#### Development
+- Frontend automatically connects to `http://localhost:5000`
+- No additional configuration needed
 
-- `npm run build:full` - Build frontend and start server
-- `npm run production` - Start server in production mode
+#### Production Options
+
+**Option 1: Same Domain Deployment**
+```env
+# Frontend (.env.local)
+# Leave VITE_API_URL unset - will use same domain
+
+# Backend (.env)
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+```
+
+**Option 2: Separate API Domain**
+```env
+# Frontend (.env.local)
+VITE_API_URL=https://api.yourdomain.com
+
+# Backend (.env)
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+```
+
+**Option 3: Subdomain API**
+```env
+# Frontend (.env.local)
+VITE_API_URL=https://api.yourdomain.com
+
+# Backend (.env)
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com
+```
 
 ### Deployment Considerations
 
 1. **Database**: Use MongoDB Atlas or another cloud MongoDB service
 2. **Environment Variables**: Set all required environment variables on your hosting platform
-3. **CORS**: Configure `CORS_ORIGIN` to match your domain
-4. **SSL**: Use HTTPS in production
-5. **Process Management**: Consider using PM2 or similar for process management
+3. **CORS**: Configure `CORS_ORIGIN` to match your frontend domain
+4. **API URL**: Set `VITE_API_URL` to your backend API URL in production
+5. **SSL**: Use HTTPS in production
+6. **Process Management**: Consider using PM2 or similar for process management
 
 ## API Endpoints
 

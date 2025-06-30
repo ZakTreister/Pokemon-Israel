@@ -9,25 +9,30 @@ export const setStore = (store: Store) => {
 
 // Determine the base URL based on environment
 const getBaseURL = () => {
-  // In WebContainer, we need to use the correct internal URL
+  // In production, use environment variable
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_API_URL || window.location.origin;
+  }
+  
+  // In development mode - use the WebContainer internal URL
   if (import.meta.env.DEV) {
-    // Development mode - use the WebContainer internal URL
     // The backend should be accessible on the same host but different port
     const currentOrigin = window.location.origin;
     // Replace the port with 5000 for the backend
     const backendURL = currentOrigin.replace(/:\d+/, ':5000');
     return backendURL;
-  } else {
-    // Production mode
-    return 'https://api.pokemon-tournaments.netlify.app';
   }
+  
+  // Fallback
+  return window.location.origin;
 };
 
 const baseURL = getBaseURL();
 
 console.log('API Base URL:', baseURL);
 console.log('Environment:', import.meta.env.MODE);
-console.log('Current origin:', window.location.origin);
+console.log('Production mode:', import.meta.env.PROD);
+console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
 
 const api = axios.create({
   baseURL,
