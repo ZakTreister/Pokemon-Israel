@@ -14,18 +14,54 @@ import updateRoutes from './routes/updateRoutes.js';
 
 const app = express();
 const httpServer = createServer(app);
+
+// Configure CORS origins from environment variable
+const getAllowedOrigins = () => {
+  const corsOrigin = process.env.CORS_ORIGIN;
+  
+  if (corsOrigin) {
+    // If CORS_ORIGIN is set, use it (can be comma-separated for multiple origins)
+    return corsOrigin.split(',').map(origin => origin.trim());
+  }
+  
+  // Fallback for development - allow common development URLs
+  if (process.env.NODE_ENV === 'development') {
+    return [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ];
+  }
+  
+  // In production without CORS_ORIGIN set, be restrictive
+  return false;
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+console.log('CORS Configuration:', {
+  environment: process.env.NODE_ENV || 'development',
+  corsOrigin: process.env.CORS_ORIGIN,
+  allowedOrigins: allowedOrigins
+});
+
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow all origins in WebContainer
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true
   },
 });
 
 // Middleware
 app.use(cors({
-  origin: "*", // Allow all origins in WebContainer
+  origin: allowedOrigins,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Health check endpoint
@@ -34,7 +70,8 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    port: process.env.PORT || 5000
+    port: process.env.PORT || 5000,
+    corsOrigins: allowedOrigins
   });
 });
 
@@ -123,6 +160,7 @@ const startServer = async () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Server accessible at: http://0.0.0.0:${PORT}`);
+      console.log(`CORS Origins: ${JSON.stringify(allowedOrigins)}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
