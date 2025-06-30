@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import User from './models/userModel.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
@@ -11,6 +13,10 @@ import tournamentRoutes from './routes/tournamentRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import deckRoutes from './routes/deckRoutes.js';
 import updateRoutes from './routes/updateRoutes.js';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -82,7 +88,37 @@ app.use('/api/users', userRoutes);
 app.use('/api/decks', deckRoutes);
 app.use('/api/updates', updateRoutes);
 
-// Error Handling
+// Serve static files from the React app build directory
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, '../dist');
+  
+  // Serve static files
+  app.use(express.static(buildPath));
+  
+  // Handle React routing - send all non-API requests to index.html
+  app.get('*', (req, res) => {
+    // Don't serve index.html for API routes that weren't found
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+} else {
+  // Development mode - just show a message for non-API routes
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    
+    res.json({ 
+      message: 'Development mode - Frontend should be served by Vite dev server',
+      frontendUrl: 'http://localhost:5173'
+    });
+  });
+}
+
+// Error Handling (must be after all routes)
 app.use(notFound);
 app.use(errorHandler);
 
@@ -161,6 +197,13 @@ const startServer = async () => {
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Server accessible at: http://0.0.0.0:${PORT}`);
       console.log(`CORS Origins: ${JSON.stringify(allowedOrigins)}`);
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`✅ Serving static files from: ${path.join(__dirname, '../dist')}`);
+        console.log(`✅ Frontend and API available at: http://0.0.0.0:${PORT}`);
+      } else {
+        console.log(`🔧 Development mode - Frontend should be running on: http://localhost:5173`);
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
