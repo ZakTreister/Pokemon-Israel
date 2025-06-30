@@ -2,6 +2,7 @@ export interface PlayerStats {
   totalTournaments: number;
   wins: number;
   losses: number;
+  draws: number;
   points: number;
   winRate: number;
   bestRank: number;
@@ -23,6 +24,7 @@ export interface UserTournament {
     position: number;
     wins: number;
     losses: number;
+    draws: number;
     points: number;
   };
 }

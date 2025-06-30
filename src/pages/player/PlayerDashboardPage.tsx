@@ -192,7 +192,7 @@ export default function PlayerDashboardPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>טורנירים שיחקת</CardDescription>
@@ -200,6 +200,29 @@ export default function PlayerDashboardPage() {
           </CardHeader>
         </Card>
         
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>ניצחונות</CardDescription>
+            <CardTitle className="text-3xl text-success">{stats?.wins || 0}</CardTitle>
+          </CardHeader>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>תיקו</CardDescription>
+            <CardTitle className="text-3xl text-warning">{stats?.draws || 0}</CardTitle>
+          </CardHeader>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>הפסדים</CardDescription>
+            <CardTitle className="text-3xl text-destructive">{stats?.losses || 0}</CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>יחס ניצחונות</CardDescription>
@@ -211,6 +234,13 @@ export default function PlayerDashboardPage() {
           <CardHeader className="pb-2">
             <CardDescription>נקודות</CardDescription>
             <CardTitle className="text-3xl">{stats?.points || 0}</CardTitle>
+          </CardHeader>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>מיקום הטוב ביותר</CardDescription>
+            <CardTitle className="text-3xl">{stats?.bestRank || '-'}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -241,14 +271,18 @@ export default function PlayerDashboardPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-4 gap-4 text-center">
+                      <div className="grid grid-cols-5 gap-4 text-center">
                         <div>
                           <p className="text-muted-foreground text-sm">מיקום</p>
                           <p className="font-bold text-xl">{tournament.result.position}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground text-sm">נצחונות</p>
+                          <p className="text-muted-foreground text-sm">ניצחונות</p>
                           <p className="font-bold text-xl text-success">{tournament.result.wins}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-sm">תיקו</p>
+                          <p className="font-bold text-xl text-warning">{tournament.result.draws}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-sm">הפסדים</p>

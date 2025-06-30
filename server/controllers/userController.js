@@ -2,6 +2,20 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
 import Tournament from '../models/tournamentModel.js';
 
+// Helper function to calculate tournament rounds and player record
+const calculatePlayerRecord = (playerPoints, tournamentResults) => {
+  // Find the highest points in the tournament to determine total rounds
+  const maxPoints = Math.max(...tournamentResults.map(result => result.points));
+  const totalRounds = Math.ceil(maxPoints / 3);
+  
+  // Calculate wins, draws, and losses for the player
+  const wins = Math.floor(playerPoints / 3);
+  const draws = playerPoints % 3;
+  const losses = totalRounds - wins - draws;
+  
+  return { wins, draws, losses, totalRounds };
+};
+
 // @desc    Get user stats
 // @route   GET /api/users/stats
 // @access  Private
@@ -12,8 +26,9 @@ export const getUserStats = asyncHandler(async (req, res) => {
 
   // Calculate stats from tournament results
   let totalTournaments = 0;
-  let wins = 0;
-  let losses = 0;
+  let totalWins = 0;
+  let totalLosses = 0;
+  let totalDraws = 0;
   let points = 0;
   let bestRank = Infinity;
 
@@ -27,19 +42,26 @@ export const getUserStats = asyncHandler(async (req, res) => {
       points += playerResult.points;
       bestRank = Math.min(bestRank, playerResult.position);
       
-      // Calculate wins/losses based on GWP
-      const matches = Math.round((playerResult.gwp / 100) * 6); // Assuming 6 rounds per tournament
-      wins += matches;
-      losses += 6 - matches;
+      // Calculate wins, draws, and losses based on points and tournament structure
+      const { wins, draws, losses } = calculatePlayerRecord(
+        playerResult.points, 
+        tournament.results
+      );
+      
+      totalWins += wins;
+      totalDraws += draws;
+      totalLosses += losses;
     }
   });
 
-  const winRate = totalTournaments > 0 ? (wins / (wins + losses)) * 100 : 0;
+  const totalGames = totalWins + totalLosses + totalDraws;
+  const winRate = totalGames > 0 ? (totalWins / totalGames) * 100 : 0;
 
   res.json({
     totalTournaments,
-    wins,
-    losses,
+    wins: totalWins,
+    losses: totalLosses,
+    draws: totalDraws,
     points,
     winRate,
     bestRank: bestRank === Infinity ? 0 : bestRank,
@@ -61,18 +83,29 @@ export const getUserTournaments = asyncHandler(async (req, res) => {
       r => r.player.toString() === req.user._id.toString()
     );
 
-    return {
-      id: tournament._id,
-      title: tournament.title,
-      date: tournament.date,
-      result: {
-        position: result.position,
-        points: result.points,
-        wins: Math.round((result.gwp / 100) * 6), // Assuming 6 rounds
-        losses: 6 - Math.round((result.gwp / 100) * 6),
-      },
-    };
-  });
+    if (result) {
+      // Calculate wins, draws, and losses for this specific tournament
+      const { wins, draws, losses } = calculatePlayerRecord(
+        result.points,
+        tournament.results
+      );
+
+      return {
+        id: tournament._id,
+        title: tournament.title,
+        date: tournament.date,
+        result: {
+          position: result.position,
+          points: result.points,
+          wins,
+          draws,
+          losses,
+        },
+      };
+    }
+
+    return null;
+  }).filter(Boolean); // Remove any null entries
 
   res.json(userTournaments);
 });
