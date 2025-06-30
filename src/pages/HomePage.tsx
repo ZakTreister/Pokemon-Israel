@@ -88,12 +88,7 @@ export default function HomePage() {
         ...deck,
         winRate: deck.appearances > 0 ? (deck.wins / deck.appearances) * 100 : 0
       }))
-      .sort((a, b) => {
-        // Sort by win rate first, then by total wins, then by appearances
-        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        return b.appearances - a.appearances;
-      })
+      .sort((a, b) =>  b.appearances - a.appearances)
       .slice(0, 3);
 
     return sortedDecks;
@@ -138,7 +133,7 @@ export default function HomePage() {
                 <span>הדקים המנצחים</span>
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                הארכיטיפים המובילים בטורנירים האחרונים
+                הדקים המובילים בטורנירים האחרונים
               </p>
             </div>
 
