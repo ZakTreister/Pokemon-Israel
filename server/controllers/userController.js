@@ -3,14 +3,14 @@ import User from '../models/userModel.js';
 import Tournament from '../models/tournamentModel.js';
 
 // Helper function to calculate tournament rounds and player record
-const calculatePlayerRecord = (playerPoints, tournamentResults) => {
-  // Find the highest points in the tournament to determine total rounds
-  const maxPoints = Math.max(...tournamentResults.map(result => result.points));
-  const totalRounds = Math.ceil(maxPoints / 3);
+const calculatePlayerRecord = (rawPoints, tournamentResults) => {
+  // Find the highest raw points in the tournament to determine total rounds
+  const maxRawPoints = Math.max(...tournamentResults.map(result => result.rawPoints || 0));
+  const totalRounds = Math.ceil(maxRawPoints / 3);
   
-  // Calculate wins, draws, and losses for the player
-  const wins = Math.floor(playerPoints / 3);
-  const draws = playerPoints % 3;
+  // Calculate wins, draws, and losses for the player based on raw points
+  const wins = Math.floor(rawPoints / 3);
+  const draws = rawPoints % 3;
   const losses = totalRounds - wins - draws;
   
   return { wins, draws, losses, totalRounds };
@@ -39,12 +39,12 @@ export const getUserStats = asyncHandler(async (req, res) => {
     
     if (playerResult) {
       totalTournaments++;
-      points += playerResult.points;
+      points += playerResult.points; // Tournament ranking points
       bestRank = Math.min(bestRank, playerResult.position);
       
-      // Calculate wins, draws, and losses based on points and tournament structure
+      // Calculate wins, draws, and losses based on raw points and tournament structure
       const { wins, draws, losses } = calculatePlayerRecord(
-        playerResult.points, 
+        playerResult.rawPoints || 0, // Use raw points for calculation
         tournament.results
       );
       
@@ -86,7 +86,7 @@ export const getUserTournaments = asyncHandler(async (req, res) => {
     if (result) {
       // Calculate wins, draws, and losses for this specific tournament
       const { wins, draws, losses } = calculatePlayerRecord(
-        result.points,
+        result.rawPoints || 0, // Use raw points for calculation
         tournament.results
       );
 
@@ -96,7 +96,7 @@ export const getUserTournaments = asyncHandler(async (req, res) => {
         date: tournament.date,
         result: {
           position: result.position,
-          points: result.points,
+          points: result.points, // Tournament ranking points
           wins,
           draws,
           losses,

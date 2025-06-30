@@ -435,7 +435,19 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
   }
 
   // Update tournament with results and mark as completed
-  tournament.results = req.body.results;
+  // Map the results to include both tournament points and raw points
+  tournament.results = req.body.results.map(result => ({
+    player: result.player,
+    playerName: result.playerName,
+    position: result.position,
+    points: result.points, // Tournament ranking points (4, 3, 2, 1)
+    rawPoints: result.rawPoints, // Raw points from games (for calculating wins/draws/losses)
+    omp: result.omp || 0,
+    gwp: result.gwp || 0,
+    ogp: result.ogp || 0,
+    deck: result.deck || null
+  }));
+  
   tournament.status = 'completed';
 
   const updatedTournament = await tournament.save();

@@ -422,7 +422,7 @@ export default function AdminTournaments() {
       // Get tournament participants for name lookup
       const participants = getTournamentParticipants();
 
-      // Prepare results data with player names
+      // Prepare results data with player names and both raw points and tournament points
       const results = parsedStandings.map(row => {
         // Find the participant to get the display name
         const participant = participants.find(p => p.id === row.playerId);
@@ -432,7 +432,8 @@ export default function AdminTournaments() {
           player: row.playerId,
           playerName: playerName, // Include player name in results
           position: row.position,
-          points: row.points,
+          points: row.points, // Tournament ranking points (4, 3, 2, 1)
+          rawPoints: row.originalPoints, // Raw points from games (for calculating wins/draws/losses)
           omp: 0, // Default values for now
           gwp: 0,
           ogp: 0,
@@ -795,6 +796,7 @@ PlayerB 6
                     <br />• מקום 2: 3 נקודות טורניר  
                     <br />• מקום 3-5: 2 נקודות טורניר
                     <br />• מקום 4 ומעלה: 1 נקודה טורניר
+                    <br />• הנקודות המקוריות ישמשו לחישוב ניצחונות/תיקו/הפסדים
                   </div>
                   
                   {/* Desktop Table View */}

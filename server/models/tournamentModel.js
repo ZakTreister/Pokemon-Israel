@@ -67,7 +67,8 @@ const tournamentSchema = new mongoose.Schema({
       required: true, // Store the player's display name
     },
     position: Number,
-    points: Number,
+    points: Number, // Tournament ranking points (4, 3, 2, 1)
+    rawPoints: Number, // Raw points from games (for calculating wins/draws/losses)
     omp: Number,
     gwp: Number,
     ogp: Number,
