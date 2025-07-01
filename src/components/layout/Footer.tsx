@@ -38,16 +38,13 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-4">צור קשר</h3>
             <p className="text-muted-foreground">
-              אימייל: info@pokemon-tournaments.com
-            </p>
-            <p className="text-muted-foreground">
-              טלפון: 03-1234567
+              אימייל: adam@cardschool.co.il
             </p>
           </div>
         </div>
         
         <div className="border-t border-border mt-8 pt-6 text-center text-sm text-muted-foreground">
-          <p>© {currentYear} פוקימון טורנירים. כל הזכויות שמורות.</p>
+          <p>© {currentYear} פוקימון. כל הזכויות שמורות.</p>
         </div>
       </div>
     </footer>

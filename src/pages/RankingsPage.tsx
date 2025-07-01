@@ -202,7 +202,7 @@ export default function RankingsPage() {
       {/* Year Summary */}
       {tournamentsForYear.length > 0 && (
         <div className="mt-8 text-center">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{tournamentsForYear.length}</div>
               <div className="text-sm text-muted-foreground">טורנירים בשנת {selectedYear}</div>
@@ -210,12 +210,6 @@ export default function RankingsPage() {
             <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{sortedRankings.length}</div>
               <div className="text-sm text-muted-foreground">שחקנים פעילים</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-2xl font-bold text-primary">
-                {sortedRankings.reduce((sum, player) => sum + player.tournaments, 0)}
-              </div>
-              <div className="text-sm text-muted-foreground">סה"כ השתתפויות</div>
             </Card>
           </div>
         </div>
