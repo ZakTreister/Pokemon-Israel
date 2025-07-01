@@ -104,11 +104,22 @@ export default function HomePage() {
         <div className="container relative z-20">
           <div className="max-w-3xl mx-auto text-center text-white">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              פוקימון טורנירים ישראל
+              ליגת הקיץ של פוקימון ישראל
             </h1>
             <p className="text-xl md:text-2xl mb-8">
-              המערכת המובילה לניהול תחרויות פוקימון, מעקב דירוגים ופרופילים של שחקנים
+              המערכת לניהול ליגת הקיץ של פוקימון ישראל
+              <br />
+               מעקב דירוגים ופרופילים של שחקנים
             </p>
+            <img
+              key="logo"
+              alt="Kids Pokemon logo"
+              src="/assets/pokemon_kids_logo.jpg"
+              className="h-48 mb-8 mx-auto my-2 object-cover rounded"
+              onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              }}
+            />
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/tournaments" className="inline-block">
                 <Button size="lg" className="w-full">צפה בטורנירים</Button>
@@ -130,7 +141,7 @@ export default function HomePage() {
             <div className="mb-10 text-center">
               <h2 className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
                 <Crown className="h-8 w-8 text-primary" />
-                <span>הדקים המנצחים</span>
+                <span>הדקים המובילים</span>
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 הדקים המובילים בטורנירים האחרונים
@@ -263,31 +274,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-card">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">
-              מוכן להתחיל?
-            </h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              הצטרף לקהילת שחקני הפוקימון הגדולה בישראל והתחל להשתתף בטורנירים
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isAuthenticated ? (
-                <Link to="/dashboard">
-                  <Button size="lg">לאזור האישי</Button>
-                </Link>
-              ) : (
-                <Link to="/login">
-                  <Button size="lg">התחבר</Button>
-                </Link>
-              )}
-            </div>
-          </div>
         </div>
       </section>
     </div>

@@ -35,7 +35,7 @@ export default function Header() {
               to="/" 
               className="text-2xl font-bold text-primary flex items-center gap-2"
             >
-              <span>פוקימון טורנירים</span>
+              <span>פוקימון ישראל</span>
             </Link>
           </div>
 

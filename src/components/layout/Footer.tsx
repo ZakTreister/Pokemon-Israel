@@ -8,9 +8,9 @@ export default function Footer() {
       <div className="container py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4">פוקימון טורנירים</h3>
+            <h3 className="text-lg font-bold mb-4">ליגת הקיץ של פוקימון</h3>
             <p className="text-muted-foreground mb-4">
-              המערכת המובילה לניהול תחרויות פוקימון, מעקב דירוגים ופרופילים של שחקנים.
+              המערכת לניהול ליגת הקיץ של פוקימון ישראל, מעקב דירוגים ופרופילים של שחקנים
             </p>
           </div>
           
@@ -30,11 +30,6 @@ export default function Footer() {
               <li>
                 <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors block">
                   התחברות
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="text-muted-foreground hover:text-primary transition-colors block">
-                  הרשמה
                 </Link>
               </li>
             </ul>
