@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Button from '../components/ui/Button';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import image from '../../public/pokemon_kids_logo.jpg';
 
 interface DeckStats {
   deckId: string;
@@ -104,17 +105,17 @@ export default function HomePage() {
         <div className="container relative z-20">
           <div className="max-w-3xl mx-auto text-center text-white">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              ליגת הקיץ של פוקימון ישראל
+              ליגת הקיץ של פוקימון
             </h1>
             <p className="text-xl md:text-2xl mb-8">
-              המערכת לניהול ליגת הקיץ של פוקימון ישראל
+              המערכת לניהול ליגת הקיץ של פוקימון
               <br />
                מעקב דירוגים ופרופילים של שחקנים
             </p>
             <img
               key="logo"
               alt="Kids Pokemon logo"
-              src="/assets/pokemon_kids_logo.jpg"
+              src={image}
               className="h-48 mb-8 mx-auto my-2 object-cover rounded"
               onError={(e) => {
               e.currentTarget.style.display = 'none';

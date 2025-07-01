@@ -10,7 +10,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-4">ליגת הקיץ של פוקימון</h3>
             <p className="text-muted-foreground mb-4">
-              המערכת לניהול ליגת הקיץ של פוקימון ישראל, מעקב דירוגים ופרופילים של שחקנים
+              המערכת לניהול ליגת הקיץ של פוקימון, מעקב דירוגים ופרופילים של שחקנים
             </p>
           </div>
           
