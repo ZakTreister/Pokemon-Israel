@@ -90,7 +90,7 @@ app.use('/api/updates', updateRoutes);
 
 // Serve static files from the React app build directory
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, '../src/dist');
+  const buildPath = path.join(__dirname, '../dist');
   
   // Serve static files
   app.use(express.static(buildPath));
