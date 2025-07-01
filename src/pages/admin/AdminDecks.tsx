@@ -195,7 +195,7 @@ export default function AdminDecks() {
                           <img
                             src={getPrimaryImage(deck)}
                             alt={deck.archetype}
-                            className="h-full"
+                            className="h-full mx-auto"
                           />
                         </div>
                       </td>
