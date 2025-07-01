@@ -167,6 +167,7 @@ export default function RankingsPage() {
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום הטוב ביותר</th>
+                  <th className="px-4 py-3"></th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק מועדף</th>
                 </tr>
               </thead>
@@ -191,31 +192,31 @@ export default function RankingsPage() {
                         {player.bestRank === Infinity ? '-' : player.bestRank}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span>{deckInfo.name}</span>
-                          {deckInfo.icons.length > 0 && (
-                            <div className="flex gap-1">
-                              {deckInfo.icons.map((icon, iconIndex) => (
-                                <img
-                                  key={iconIndex}
-                                  src={icon}
-                                  alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                  className="h-6 rounded object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        {deckInfo.icons.length > 0 && (
+                          <div className="flex gap-1">
+                            {deckInfo.icons.map((icon, iconIndex) => (
+                              <img
+                                key={iconIndex}
+                                src={icon}
+                                alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                className="h-6 rounded object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {deckInfo.name}
                       </td>
                     </tr>
                   );
                 })}
                 {sortedRankings.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
                       {tournamentsForYear.length === 0 
                         ? `לא נמצאו טורנירים לשנת ${selectedYear}`
                         : 'לא נמצאו שחקנים'

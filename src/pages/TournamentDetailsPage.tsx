@@ -381,6 +381,7 @@ export default function TournamentDetailsPage() {
                         <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
                         <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
                         <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
+                        <th className="px-4 py-3"></th>
                         <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
                       </tr>
                     </thead>
@@ -400,24 +401,24 @@ export default function TournamentDetailsPage() {
                               <td className="px-4 py-3 font-medium">{result.playerName}</td>
                               <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
                               <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <span>{deckInfo.name}</span>
-                                  {deckInfo.icons.length > 0 && (
-                                    <div className="flex gap-1">
-                                      {deckInfo.icons.map((icon, iconIndex) => (
-                                        <img
-                                          key={iconIndex}
-                                          src={icon}
-                                          alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                          className="h-6 rounded object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                          }}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
+                                {deckInfo.icons.length > 0 && (
+                                  <div className="flex gap-1">
+                                    {deckInfo.icons.map((icon, iconIndex) => (
+                                      <img
+                                        key={iconIndex}
+                                        src={icon}
+                                        alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                        className="h-6 rounded object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {deckInfo.name}
                               </td>
                             </tr>
                           );
@@ -565,6 +566,7 @@ export default function TournamentDetailsPage() {
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
+                            <th className="px-4 py-3"></th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
                           </tr>
                         </thead>
@@ -584,24 +586,24 @@ export default function TournamentDetailsPage() {
                                   <td className="px-4 py-3 font-medium">{result.playerName}</td>
                                   <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
                                   <td className="px-4 py-3">
-                                    <div className="flex items-center gap-2">
-                                      <span>{deckInfo.name}</span>
-                                      {deckInfo.icons.length > 0 && (
-                                        <div className="flex gap-1">
-                                          {deckInfo.icons.map((icon, iconIndex) => (
-                                            <img
-                                              key={iconIndex}
-                                              src={icon}
-                                              alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                              className="h-6 rounded object-cover"
-                                              onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                              }}
-                                            />
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
+                                    {deckInfo.icons.length > 0 && (
+                                      <div className="flex gap-1">
+                                        {deckInfo.icons.map((icon, iconIndex) => (
+                                          <img
+                                            key={iconIndex}
+                                            src={icon}
+                                            alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                            className="h-6 rounded object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    {deckInfo.name}
                                   </td>
                                 </tr>
                               );
@@ -638,7 +640,7 @@ export default function TournamentDetailsPage() {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-muted-foreground">דק</span>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col items-end gap-2">
                                 <span>{deckInfo.name}</span>
                                 {deckInfo.icons.length > 0 && (
                                   <div className="flex gap-1">
