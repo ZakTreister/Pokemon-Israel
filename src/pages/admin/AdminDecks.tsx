@@ -79,7 +79,7 @@ export default function AdminDecks() {
 
   const handleCreateDeck = async () => {
     if (!formData.archetype.trim()) {
-      alert('שם הארכיטיפ הוא שדה חובה');
+      alert('שם הדק הוא שדה חובה');
       return;
     }
 
@@ -98,7 +98,7 @@ export default function AdminDecks() {
 
   const handleUpdateDeck = async () => {
     if (!selectedDeck || !formData.archetype.trim()) {
-      alert('שם הארכיטיפ הוא שדה חובה');
+      alert('שם הדק הוא שדה חובה');
       return;
     }
 
@@ -157,7 +157,7 @@ export default function AdminDecks() {
           </div>
           <input
             type="text"
-            placeholder="חפש לפי ארכיטיפ..."
+            placeholder="חפש לפי שם הדק..."
             className="w-full pl-3 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -175,7 +175,7 @@ export default function AdminDecks() {
               <thead>
                 <tr className="bg-muted border-b border-border text-right">
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תמונה ראשית</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">ארכיטיפ</th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם הדק</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תמונות</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">פעולות</th>
                 </tr>
@@ -195,7 +195,7 @@ export default function AdminDecks() {
                           <img
                             src={getPrimaryImage(deck)}
                             alt={deck.archetype}
-                            className="w-full h-full object-cover"
+                            className="h-full"
                           />
                         </div>
                       </td>
@@ -297,11 +297,11 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
         <div className="space-y-6">
           {/* Archetype */}
           <div>
-            <label className="block text-sm font-medium mb-2">ארכיטיפ *</label>
+            <label className="block text-sm font-medium mb-2">שם הדק *</label>
             <input
               type="text"
               className="w-full px-3 py-2 border border-input rounded-md"
-              placeholder="שם הארכיטיפ"
+              placeholder="שם הדק"
               value={formData.archetype}
               onChange={(e) => updateField('archetype', e.target.value)}
             />
