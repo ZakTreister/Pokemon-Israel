@@ -84,10 +84,19 @@ export default function RankingsPage() {
       player.playerName.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  // Get deck name by ID
-  const getDeckName = (deckId: string) => {
+  // Get deck information with icons
+  const getDeckInfo = (deckId: string) => {
     const deck = (decks || []).find(d => d.id === deckId);
-    return deck ? deck.archetype : 'לא ידוע';
+    if (!deck) return { name: 'לא ידוע', icons: [] };
+    
+    const icons = [];
+    if (deck.iconImage1) icons.push(deck.iconImage1);
+    if (deck.iconImage2) icons.push(deck.iconImage2);
+    
+    return {
+      name: deck.archetype,
+      icons: icons
+    };
   };
 
   // Get available years from tournaments
@@ -162,27 +171,48 @@ export default function RankingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedRankings.map((player, index) => (
-                  <tr key={player.playerId} className="border-b border-border">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{index + 1}</span>
-                        {index === 0 && <Trophy className="h-5 w-5 text-primary" />}
-                        {index === 1 && <Medal className="h-5 w-5 text-secondary" />}
-                        {index === 2 && <Award className="h-5 w-5 text-accent" />}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-medium">{player.playerName}</td>
-                    <td className="px-4 py-3 font-bold text-primary">{player.points}</td>
-                    <td className="px-4 py-3">{player.tournaments}</td>
-                    <td className="px-4 py-3">
-                      {player.bestRank === Infinity ? '-' : player.bestRank}
-                    </td>
-                    <td className="px-4 py-3">
-                      {player.deck ? getDeckName(player.deck) : '-'}
-                    </td>
-                  </tr>
-                ))}
+                {sortedRankings.map((player, index) => {
+                  const deckInfo = player.deck ? getDeckInfo(player.deck) : { name: '-', icons: [] };
+                  
+                  return (
+                    <tr key={player.playerId} className="border-b border-border">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{index + 1}</span>
+                          {index === 0 && <Trophy className="h-5 w-5 text-primary" />}
+                          {index === 1 && <Medal className="h-5 w-5 text-secondary" />}
+                          {index === 2 && <Award className="h-5 w-5 text-accent" />}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-medium">{player.playerName}</td>
+                      <td className="px-4 py-3 font-bold text-primary">{player.points}</td>
+                      <td className="px-4 py-3">{player.tournaments}</td>
+                      <td className="px-4 py-3">
+                        {player.bestRank === Infinity ? '-' : player.bestRank}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span>{deckInfo.name}</span>
+                          {deckInfo.icons.length > 0 && (
+                            <div className="flex gap-1">
+                              {deckInfo.icons.map((icon, iconIndex) => (
+                                <img
+                                  key={iconIndex}
+                                  src={icon}
+                                  alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                  className="h-6 rounded object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {sortedRankings.length === 0 && (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-muted-foreground">
