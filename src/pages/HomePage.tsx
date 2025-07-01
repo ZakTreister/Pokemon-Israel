@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Button from '../components/ui/Button';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
-import image from '../../public/pokemon_kids_logo.jpg';
+import image from '../../public/pokemon_kids_logo.png';
 
 interface DeckStats {
   deckId: string;
