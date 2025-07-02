@@ -158,7 +158,8 @@ export default function RankingsPage() {
         <div className="animate-pulse text-center py-12">טוען דירוגים...</div>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-muted border-b border-border text-right">
@@ -167,8 +168,8 @@ export default function RankingsPage() {
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום הטוב ביותר</th>
-                  <th className="px-4 py-3"></th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק מועדף</th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,25 +192,27 @@ export default function RankingsPage() {
                       <td className="px-4 py-3">
                         {player.bestRank === Infinity ? '-' : player.bestRank}
                       </td>
+                      <td className="px-4 py-3">{deckInfo.name}</td>
                       <td className="px-4 py-3">
                         {deckInfo.icons.length > 0 && (
                           <div className="flex gap-1">
                             {deckInfo.icons.map((icon, iconIndex) => (
-                              <img
+                              <div
                                 key={iconIndex}
-                                src={icon}
-                                alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                className="h-6 rounded object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
+                                className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                              >
+                                <img
+                                  src={icon}
+                                  alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
                             ))}
                           </div>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {deckInfo.name}
                       </td>
                     </tr>
                   );
@@ -226,6 +229,86 @@ export default function RankingsPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4 p-4">
+            {sortedRankings.map((player, index) => {
+              const deckInfo = player.deck ? getDeckInfo(player.deck) : { name: '-', icons: [] };
+              
+              return (
+                <Card key={player.playerId} className="p-4">
+                  <div className="space-y-3">
+                    {/* Rank and Player */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-bold text-primary">#{index + 1}</span>
+                        {index === 0 && <Trophy className="h-6 w-6 text-primary" />}
+                        {index === 1 && <Medal className="h-6 w-6 text-secondary" />}
+                        {index === 2 && <Award className="h-6 w-6 text-accent" />}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{player.playerName}</div>
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4 py-3 border-t border-border">
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">נקודות</div>
+                        <div className="text-xl font-bold text-primary">{player.points}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">טורנירים</div>
+                        <div className="text-xl font-bold">{player.tournaments}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground">מיקום הטוב</div>
+                        <div className="text-xl font-bold">
+                          {player.bestRank === Infinity ? '-' : player.bestRank}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Deck Info */}
+                    <div className="flex justify-between items-center pt-3 border-t border-border">
+                      <span className="text-sm text-muted-foreground">דק מועדף</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{deckInfo.name}</span>
+                        {deckInfo.icons.length > 0 && (
+                          <div className="flex gap-1">
+                            {deckInfo.icons.map((icon, iconIndex) => (
+                              <div
+                                key={iconIndex}
+                                className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                              >
+                                <img
+                                  src={icon}
+                                  alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            
+            {sortedRankings.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                {tournamentsForYear.length === 0 
+                  ? `לא נמצאו טורנירים לשנת ${selectedYear}`
+                  : 'לא נמצאו שחקנים'
+                }
+              </div>
+            )}
           </div>
         </Card>
       )}

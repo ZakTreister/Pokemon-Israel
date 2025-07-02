@@ -374,58 +374,116 @@ export default function TournamentDetailsPage() {
             <CardContent>
               {hasResults ? (
                 /* Tournament Results Table */
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-muted border-b border-border text-right">
-                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
-                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
-                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
-                        <th className="px-4 py-3"></th>
-                        <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[...activeTournament.results]
-                        .sort((a, b) => a.position - b.position)
-                        .map((result, index) => {
-                          const deckInfo = getDeckInfo(result.deck);
-                          return (
-                            <tr key={getResultKey(result, index)} className="border-b border-border">
-                              <td className="px-4 py-3">
+                <>
+                  {/* Desktop Results Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-muted border-b border-border text-right">
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...activeTournament.results]
+                          .sort((a, b) => a.position - b.position)
+                          .map((result, index) => {
+                            const deckInfo = getDeckInfo(result.deck);
+                            return (
+                              <tr key={getResultKey(result, index)} className="border-b border-border">
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold">{result.position}</span>
+                                    {getPositionIcon(result.position)}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 font-medium">{result.playerName}</td>
+                                <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                                <td className="px-4 py-3">{deckInfo.name}</td>
+                                <td className="px-4 py-3">
+                                  {deckInfo.icons.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {deckInfo.icons.map((icon, iconIndex) => (
+                                        <div
+                                          key={iconIndex}
+                                          className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                        >
+                                          <img
+                                            src={icon}
+                                            alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Results Cards */}
+                  <div className="md:hidden space-y-4">
+                    {[...activeTournament.results]
+                      .sort((a, b) => a.position - b.position)
+                      .map((result, index) => {
+                        const deckInfo = getDeckInfo(result.deck);
+                        return (
+                          <Card key={getResultKey(result, index)} className="p-4">
+                            <div className="space-y-3">
+                              {/* Position and Player */}
+                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold">{result.position}</span>
+                                  <span className="text-2xl font-bold text-primary">#{result.position}</span>
                                   {getPositionIcon(result.position)}
                                 </div>
-                              </td>
-                              <td className="px-4 py-3 font-medium">{result.playerName}</td>
-                              <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
-                              <td className="px-4 py-3">
-                                {deckInfo.icons.length > 0 && (
-                                  <div className="flex gap-1">
-                                    {deckInfo.icons.map((icon, iconIndex) => (
-                                      <img
-                                        key={iconIndex}
-                                        src={icon}
-                                        alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                        className="h-6 rounded object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-4 py-3">
-                                {deckInfo.name}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                  </table>
-                </div>
+                                <div className="text-right">
+                                  <div className="font-bold text-lg">{result.playerName}</div>
+                                  <div className="text-sm text-muted-foreground">נקודות: {result.points}</div>
+                                </div>
+                              </div>
+
+                              {/* Deck Info */}
+                              <div className="flex justify-between items-center pt-3 border-t border-border">
+                                <span className="text-sm text-muted-foreground">דק</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{deckInfo.name}</span>
+                                  {deckInfo.icons.length > 0 && (
+                                    <div className="flex gap-1">
+                                      {deckInfo.icons.map((icon, iconIndex) => (
+                                        <div
+                                          key={iconIndex}
+                                          className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                        >
+                                          <img
+                                            src={icon}
+                                            alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.style.display = 'none';
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                </>
               ) : (
                 /* Participants List */
                 <>
@@ -566,8 +624,8 @@ export default function TournamentDetailsPage() {
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
-                            <th className="px-4 py-3"></th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -585,25 +643,27 @@ export default function TournamentDetailsPage() {
                                   </td>
                                   <td className="px-4 py-3 font-medium">{result.playerName}</td>
                                   <td className="px-4 py-3 font-bold text-primary">{result.points}</td>
+                                  <td className="px-4 py-3">{deckInfo.name}</td>
                                   <td className="px-4 py-3">
                                     {deckInfo.icons.length > 0 && (
                                       <div className="flex gap-1">
                                         {deckInfo.icons.map((icon, iconIndex) => (
-                                          <img
+                                          <div
                                             key={iconIndex}
-                                            src={icon}
-                                            alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                            className="h-6 rounded object-cover"
-                                            onError={(e) => {
-                                              e.currentTarget.style.display = 'none';
-                                            }}
-                                          />
+                                            className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                          >
+                                            <img
+                                              src={icon}
+                                              alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                              className="w-full h-full object-cover"
+                                              onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                              }}
+                                            />
+                                          </div>
                                         ))}
                                       </div>
                                     )}
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    {deckInfo.name}
                                   </td>
                                 </tr>
                               );
@@ -622,38 +682,40 @@ export default function TournamentDetailsPage() {
                       const deckInfo = getDeckInfo(result.deck);
                       return (
                         <Card key={getResultKey(result, index)} className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-2xl font-bold text-primary">#{result.position}</span>
-                              {getPositionIcon(result.position)}
+                          <div className="space-y-3">
+                            {/* Position and Player */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold text-primary">#{result.position}</span>
+                                {getPositionIcon(result.position)}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-lg">{result.playerName}</div>
+                                <div className="text-sm text-muted-foreground">נקודות: {result.points}</div>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm text-muted-foreground">נקודות</div>
-                              <div className="text-xl font-bold text-primary">{result.points}</div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">שחקן</span>
-                              <span className="font-medium">{result.playerName}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
+                            
+                            {/* Deck Info */}
+                            <div className="flex justify-between items-center pt-3 border-t border-border">
                               <span className="text-sm text-muted-foreground">דק</span>
-                              <div className="flex flex-col items-end gap-2">
-                                <span>{deckInfo.name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{deckInfo.name}</span>
                                 {deckInfo.icons.length > 0 && (
                                   <div className="flex gap-1">
                                     {deckInfo.icons.map((icon, iconIndex) => (
-                                      <img
+                                      <div
                                         key={iconIndex}
-                                        src={icon}
-                                        alt={`${deckInfo.name} icon ${iconIndex + 1}`}
-                                        className="h-6 rounded object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                        }}
-                                      />
+                                        className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                      >
+                                        <img
+                                          src={icon}
+                                          alt={`${deckInfo.name} icon ${iconIndex + 1}`}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
                                     ))}
                                   </div>
                                 )}
