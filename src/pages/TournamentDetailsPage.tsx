@@ -384,7 +384,7 @@ export default function TournamentDetailsPage() {
                           <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
                           <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
                           <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
-                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
+                          <th className="px-4 py-3 text-sm font-medium text-muted-foreground"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -625,7 +625,7 @@ export default function TournamentDetailsPage() {
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
                             <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק</th>
-                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
+                            <th className="px-4 py-3 text-sm font-medium text-muted-foreground"></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -650,7 +650,7 @@ export default function TournamentDetailsPage() {
                                         {deckInfo.icons.map((icon, iconIndex) => (
                                           <div
                                             key={iconIndex}
-                                            className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                            className="h-6 rounded overflow-hidden flex-shrink-0"
                                           >
                                             <img
                                               src={icon}
@@ -705,7 +705,7 @@ export default function TournamentDetailsPage() {
                                     {deckInfo.icons.map((icon, iconIndex) => (
                                       <div
                                         key={iconIndex}
-                                        className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                        className="h-6 rounded overflow-hidden flex-shrink-0"
                                       >
                                         <img
                                           src={icon}

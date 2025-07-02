@@ -168,8 +168,8 @@ export default function RankingsPage() {
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">נקודות</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">טורנירים</th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">מיקום הטוב ביותר</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק מועדף</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">אייקונים</th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">דק בשימוש</th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody>
@@ -272,7 +272,7 @@ export default function RankingsPage() {
 
                     {/* Deck Info */}
                     <div className="flex justify-between items-center pt-3 border-t border-border">
-                      <span className="text-sm text-muted-foreground">דק מועדף</span>
+                      <span className="text-sm text-muted-foreground">דק בשימוש</span>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{deckInfo.name}</span>
                         {deckInfo.icons.length > 0 && (
@@ -280,7 +280,7 @@ export default function RankingsPage() {
                             {deckInfo.icons.map((icon, iconIndex) => (
                               <div
                                 key={iconIndex}
-                                className="w-6 h-6 rounded overflow-hidden flex-shrink-0"
+                                className="h-6 rounded overflow-hidden flex-shrink-0"
                               >
                                 <img
                                   src={icon}
