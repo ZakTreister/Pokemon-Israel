@@ -14,9 +14,7 @@ import image from '../../public/pokemon_kids_logo.png';
 interface DeckStats {
   deckId: string;
   archetype: string;
-  wins: number;
   appearances: number;
-  winRate: number;
   attackerImage1?: string | null;
   attackerImage2?: string | null;
 }
@@ -62,9 +60,7 @@ export default function HomePage() {
                 deckStats[deckId] = {
                   deckId,
                   archetype: deck.archetype,
-                  wins: 0,
                   appearances: 0,
-                  winRate: 0,
                   attackerImage1: deck.attackerImage1,
                   attackerImage2: deck.attackerImage2
                 };
@@ -73,23 +69,15 @@ export default function HomePage() {
 
             if (deckStats[deckId]) {
               deckStats[deckId].appearances++;
-              // Consider top 3 positions as "wins"
-              if (result.position <= 3) {
-                deckStats[deckId].wins++;
-              }
             }
           }
         });
       });
 
-    // Calculate win rates and sort by success
+    // Sort by appearances and return top 3
     const sortedDecks = Object.values(deckStats)
       .filter(deck => deck.appearances >= 2) // Only include decks with at least 2 appearances
-      .map(deck => ({
-        ...deck,
-        winRate: deck.appearances > 0 ? (deck.wins / deck.appearances) * 100 : 0
-      }))
-      .sort((a, b) =>  b.appearances - a.appearances)
+      .sort((a, b) => b.appearances - a.appearances)
       .slice(0, 3);
 
     return sortedDecks;
@@ -341,13 +329,13 @@ function DeckCard({ deck, rank }: DeckCardProps) {
       <CardContent className="space-y-4">
         {/* Attacker Cards Display */}
         {attackerImages.length > 0 && (
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-2 h-32">
             {attackerImages.map((image, index) => (
               <div
                 key={index}
                 className="relative overflow-hidden rounded-lg shadow-md transition-transform duration-300 group-hover:scale-105"
                 style={{ 
-                  width: attackerImages.length === 1 ? '120px' : '90px',
+                  width: '90px',
                   aspectRatio: '5/7'
                 }}
               >
@@ -365,34 +353,10 @@ function DeckCard({ deck, rank }: DeckCardProps) {
           </div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold text-primary">{deck.wins}</div>
-            <div className="text-xs text-muted-foreground">ניצחונות</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-secondary">{deck.appearances}</div>
-            <div className="text-xs text-muted-foreground">הופעות</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-accent">{deck.winRate.toFixed(0)}%</div>
-            <div className="text-xs text-muted-foreground">אחוז הצלחה</div>
-          </div>
-        </div>
-
-        {/* Performance Bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">ביצועים</span>
-            <span className="font-medium">{deck.winRate.toFixed(1)}%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(deck.winRate, 100)}%` }}
-            />
-          </div>
+        {/* Usage Statistics */}
+        <div className="text-center">
+          <div className="text-3xl font-bold text-primary mb-1">{deck.appearances}</div>
+          <div className="text-sm text-muted-foreground">הופעות בטורנירים</div>
         </div>
       </CardContent>
     </Card>
