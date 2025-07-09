@@ -342,39 +342,28 @@ export default function TournamentDetailsPage() {
             </div>
           </div>
 
-          {/* Results or Participants Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {hasResults ? (
-                  <>
-                    <Trophy className="h-5 w-5" />
-                    <span>תוצאות הטורניר</span>
-                  </>
-                ) : (
-                  <>
-                    <User className="h-5 w-5" />
-                    <span>רשימת משתתפים ({activeTournament.participants.length})</span>
-                  </>
-                )}
-              </CardTitle>
-              
-              {!hasResults && !isPastTournament && !isFull && (
-                <div className="flex justify-end">
-                  <Button 
-                    onClick={() => setShowAddUserModal(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <UserPlus size={16} />
-                    <span>הוסף משתתף</span>
-                  </Button>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              {hasResults ? (
-                /* Tournament Results Table */
-                <>
+          {/* Add Participant Button */}
+          {!isFull && (
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => setShowAddUserModal(true)}
+                className="flex items-center gap-2"
+              >
+                <UserPlus size={16} />
+                <span>הוסף משתתף</span>
+              </Button>
+            </div>
+          )}
+          {/* Tournament Results */}
+          {hasResults && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  <span>תוצאות הטורניר</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                   {/* Desktop Results Table */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
@@ -483,10 +472,19 @@ export default function TournamentDetailsPage() {
                         );
                       })}
                   </div>
-                </>
-              ) : (
-                /* Participants List */
-                <>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Participants List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                <span>רשימת משתתפים ({activeTournament.participants.length})</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
                   {activeTournament.participants.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       אין משתתפים רשומים עדיין
@@ -507,30 +505,26 @@ export default function TournamentDetailsPage() {
                               </span>
                             </div>
                             
-                            {!isPastTournament && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleRemoveParticipant(participantId, participantName)}
-                                disabled={removingParticipant === participantId}
-                              >
-                                {removingParticipant === participantId ? (
-                                  'מסיר...'
-                                ) : (
-                                  <>
-                                    <UserMinus size={16} className="ml-1" />
-                                    <span>הסר</span>
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveParticipant(participantId, participantName)}
+                              disabled={removingParticipant === participantId}
+                            >
+                              {removingParticipant === participantId ? (
+                                'מסיר...'
+                              ) : (
+                                <>
+                                  <UserMinus size={16} className="ml-1" />
+                                  <span>הסר</span>
+                                </>
+                              )}
+                            </Button>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                </>
-              )}
             </CardContent>
           </Card>
         </div>
