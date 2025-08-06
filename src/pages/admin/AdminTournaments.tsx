@@ -688,6 +688,40 @@ export default function AdminTournaments() {
                 />
               </div>
               
+              <div>
+                <label className="block text-sm font-medium mb-1">תמונת טורניר (URL)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-input rounded-md pr-10"
+                    placeholder="קישור לתמונת הטורניר (אופציונלי)"
+                    value={formData.image}
+                    onChange={(e) => setFormData({...formData, image: e.target.value})}
+                  />
+                  {formData.image && (
+                    <button
+                      type="button"
+                      className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setFormData({...formData, image: ''})}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                {formData.image && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.image}
+                      alt="Tournament Preview"
+                      className="h-20 object-cover rounded-md border border-border"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
               {!isEditing && (
                 <div className="flex items-center gap-2">
                   <input
