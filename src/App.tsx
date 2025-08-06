@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import TournamentsPage from './pages/TournamentsPage';
 import TournamentDetailsPage from './pages/TournamentDetailsPage';
 import RankingsPage from './pages/RankingsPage';
+import DeckStatsPage from './pages/DeckStatsPage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import PlayerDashboardPage from './pages/player/PlayerDashboardPage';
@@ -30,6 +31,7 @@ function App() {
           <Route path="/tournaments" element={<TournamentsPage />} />
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
+          <Route path="/deck-stats" element={<DeckStatsPage />} />
           <Route path="/login" element={<LoginPage />} />
           
           <Route element={<ProtectedRoute />}>
