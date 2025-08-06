@@ -85,7 +85,7 @@ export default function HomePage() {
             totalAppearances: 0,
             representativeDeckArchetype: details.archetype,
             representativeAttackerImage1: details.attackerImage1,
-            // representativeAttackerImage2: details.attackerImage2,
+            representativeAttackerImage2: details.attackerImage2,
           };
         } else {
           // If a group already exists, update representative archetype/images if current one is better (e.g., more complete)
