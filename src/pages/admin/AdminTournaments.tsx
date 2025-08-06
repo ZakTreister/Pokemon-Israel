@@ -166,7 +166,8 @@ export default function AdminTournaments() {
         const updateData = {
           date: formData.date,
           location: formData.location,
-          maxParticipants: formData.maxParticipants || 32
+          maxParticipants: formData.maxParticipants || 32,
+          image: formData.image
         };
         
         await api.put(`/api/tournaments/${selectedTournament.id}`, updateData);
