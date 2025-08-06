@@ -591,8 +591,15 @@ export default function AdminTournaments() {
                             <Eye size={16} className="ml-1" />
                             <span>צפה</span>
                           </Button>
-                          
-                          {tournament.status === 'completed' ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditTournament(tournament)}
+                          >
+                            <Edit size={16} className="ml-1" />
+                            <span>ערוך</span>
+                          </Button>
+                          {tournament.status === 'completed' && (
                             <Button 
                               variant="success" 
                               size="sm"
@@ -600,18 +607,6 @@ export default function AdminTournaments() {
                             >
                               הזן תוצאות
                             </Button>
-                          ) : (
-                            // Only show edit button for future tournaments
-                            !isPastTournament(tournament) && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleEditTournament(tournament)}
-                              >
-                                <Edit size={16} className="ml-1" />
-                                <span>ערוך</span>
-                              </Button>
-                            )
                           )}
                           
                           {/* Delete options - only for future tournaments */}
