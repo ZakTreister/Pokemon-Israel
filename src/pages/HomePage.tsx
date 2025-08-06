@@ -91,6 +91,9 @@ export default function HomePage() {
           // If a group already exists, update representative archetype/images if current one is better (e.g., more complete)
           // For simplicity, we'll just use the first one encountered for representative images
           // You might want more sophisticated logic here (e.g., pick the most common archetype for the group)
+          if (!details.attackerImage2) {
+            delete groupedDeckStats[primaryAttacker].representativeAttackerImage2;
+          }
         }
         groupedDeckStats[primaryAttacker].totalAppearances += deckAppearances[deckId];
       }
