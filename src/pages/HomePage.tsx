@@ -11,12 +11,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
 import image from '../../public/pokemon_kids_logo.png';
 
-interface DeckStats {
-  deckId: string;
-  archetype: string;
-  appearances: number;
-  attackerImage1?: string | null;
-  attackerImage2?: string | null;
+interface GroupedDeckStats {
+  primaryAttacker: string;
+  totalAppearances: number;
+  representativeDeckArchetype: string; // To show a full archetype name
+  representativeAttackerImage1?: string | null;
+  representativeAttackerImage2?: string | null;
+  // Optional: store a list of all decks in this group for debugging/future use
+  // groupedDecks: Array<{ archetype: string; appearances: number }>;
 }
 
 export default function HomePage() {
@@ -41,43 +43,63 @@ export default function HomePage() {
     : [];
 
   // Calculate deck statistics from tournament results
-  const getTopDecks = (): DeckStats[] => {
+  const getTopDecks = (): GroupedDeckStats[] => {
     if (!Array.isArray(tournaments) || !Array.isArray(decks)) return [];
 
-    const deckStats: Record<string, DeckStats> = {};
+    const deckAppearances: Record<string, number> = {};
+    const deckDetails: Record<string, { archetype: string; attackerImage1?: string | null; attackerImage2?: string | null }> = {};
 
     // Process all completed tournaments
     tournaments
       .filter(tournament => tournament.status === 'completed' && tournament.results)
       .forEach(tournament => {
         tournament.results?.forEach(result => {
-          if (result.deck) {
-            const deckId = typeof result.deck === 'string' ? result.deck : result.deck.id;
-            
-            if (!deckStats[deckId]) {
-              const deck = decks.find(d => d.id === deckId);
-              if (deck) {
-                deckStats[deckId] = {
-                  deckId,
-                  archetype: deck.archetype,
-                  appearances: 0,
-                  attackerImage1: deck.attackerImage1,
-                  attackerImage2: deck.attackerImage2
+          const deckId = typeof result.deck === 'string' ? result.deck : result.deck?.id;
+          if (deckId) {
+            deckAppearances[deckId] = (deckAppearances[deckId] || 0) + 1;
+            if (!deckDetails[deckId]) {
+              const fullDeck = decks.find(d => d.id === deckId);
+              if (fullDeck) {
+                deckDetails[deckId] = {
+                  archetype: fullDeck.archetype,
+                  attackerImage1: fullDeck.attackerImage1,
+                  attackerImage2: fullDeck.attackerImage2,
                 };
               }
-            }
-
-            if (deckStats[deckId]) {
-              deckStats[deckId].appearances++;
             }
           }
         });
       });
 
-    // Sort by appearances and return top 3
-    const sortedDecks = Object.values(deckStats)
-      .filter(deck => deck.appearances >= 2) // Only include decks with at least 2 appearances
-      .sort((a, b) => b.appearances - a.appearances)
+    const groupedDeckStats: Record<string, GroupedDeckStats> = {};
+
+    for (const deckId in deckAppearances) {
+      const details = deckDetails[deckId];
+      if (details) {
+        const firstWord = details.archetype.split(' ')[0];
+        const primaryAttacker = firstWord.toLowerCase();
+
+        if (!groupedDeckStats[primaryAttacker]) {
+          groupedDeckStats[primaryAttacker] = {
+            primaryAttacker: firstWord, // Keep original casing for display
+            totalAppearances: 0,
+            representativeDeckArchetype: details.archetype,
+            representativeAttackerImage1: details.attackerImage1,
+            representativeAttackerImage2: details.attackerImage2,
+          };
+        } else {
+          // If a group already exists, update representative archetype/images if current one is better (e.g., more complete)
+          // For simplicity, we'll just use the first one encountered for representative images
+          // You might want more sophisticated logic here (e.g., pick the most common archetype for the group)
+        }
+        groupedDeckStats[primaryAttacker].totalAppearances += deckAppearances[deckId];
+      }
+    }
+
+    // Sort by total appearances and return top 3
+    const sortedDecks = Object.values(groupedDeckStats)
+      .filter(group => group.totalAppearances >= 2) // Only include groups with at least 2 appearances
+      .sort((a, b) => b.totalAppearances - a.totalAppearances)
       .slice(0, 3);
 
     return sortedDecks;
@@ -139,7 +161,7 @@ export default function HomePage() {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {topDecks.map((deck, index) => (
-                <DeckCard key={deck.deckId} deck={deck} rank={index + 1} />
+                <DeckCard key={deck.primaryAttacker} deck={deck} rank={index + 1} />
               ))}
             </div>
           </div>
@@ -261,7 +283,7 @@ export default function HomePage() {
 }
 
 interface DeckCardProps {
-  deck: DeckStats;
+  deck: GroupedDeckStats;
   rank: number;
 }
 
@@ -295,8 +317,8 @@ function DeckCard({ deck, rank }: DeckCardProps) {
 
   const getAttackerImages = () => {
     const images = [];
-    if (deck.attackerImage1) images.push(deck.attackerImage1);
-    if (deck.attackerImage2) images.push(deck.attackerImage2);
+    if (deck.representativeAttackerImage1) images.push(deck.representativeAttackerImage1);
+    if (deck.representativeAttackerImage2) images.push(deck.representativeAttackerImage2);
     return images;
   };
 
@@ -312,7 +334,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getRankIcon()}
-            <CardTitle className="text-lg">{deck.archetype}</CardTitle>
+            <CardTitle className="text-lg">{deck.primaryAttacker}</CardTitle>
           </div>
         </div>
       </CardHeader>
@@ -332,7 +354,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
               >
                 <img
                   src={image}
-                  alt={`${deck.archetype} Attacker ${index + 1}`}
+                  alt={`${deck.representativeDeckArchetype} Attacker ${index + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -346,7 +368,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
 
         {/* Usage Statistics */}
         <div className="text-center">
-          <div className="text-3xl font-bold text-primary mb-1">{deck.appearances}</div>
+          <div className="text-3xl font-bold text-primary mb-1">{deck.totalAppearances}</div>
           <div className="text-sm text-muted-foreground">הופעות בטורנירים</div>
         </div>
       </CardContent>
