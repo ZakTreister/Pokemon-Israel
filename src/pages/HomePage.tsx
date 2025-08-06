@@ -12,6 +12,7 @@ import { he } from 'date-fns/locale';
 import image from '../../public/pokemon_kids_logo.png';
 
 interface GroupedDeckStats {
+  archetypeName: string;
   primaryAttacker: string;
   totalAppearances: number;
   representativeDeckArchetype: string; // To show a full archetype name
@@ -81,6 +82,7 @@ export default function HomePage() {
 
         if (!groupedDeckStats[primaryAttacker]) {
           groupedDeckStats[primaryAttacker] = {
+            archetypeName: details.archetype,
             primaryAttacker: firstWord, // Keep original casing for display
             totalAppearances: 0,
             representativeDeckArchetype: details.archetype,
@@ -93,6 +95,7 @@ export default function HomePage() {
           // You might want more sophisticated logic here (e.g., pick the most common archetype for the group)
           if (!details.attackerImage2) {
             delete groupedDeckStats[primaryAttacker].representativeAttackerImage2;
+            groupedDeckStats[primaryAttacker].archetypeName = firstWord;
           }
         }
         groupedDeckStats[primaryAttacker].totalAppearances += deckAppearances[deckId];
@@ -346,7 +349,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getRankIcon()}
-            <CardTitle className="text-lg">{deck.primaryAttacker}</CardTitle>
+            <CardTitle className="text-lg">{deck.archetypeName}</CardTitle>
           </div>
         </div>
       </CardHeader>
