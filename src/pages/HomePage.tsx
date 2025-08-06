@@ -133,7 +133,7 @@ export default function HomePage() {
                 <span>הדקים המובילים</span>
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                הדקים המובילים בטורנירים האחרונים (מקובצים לפי תוקף ראשי)
+                הדקים המובילים בטורנירים האחרונים
               </p>
             </div>
 
