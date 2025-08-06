@@ -66,7 +66,7 @@ export const createTournament = asyncHandler(async (req, res) => {
     location,
     maxParticipants,
     registrationDeadline,
-    image: req.body.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+    image: req.body.image || 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg',
     isRecurring,
   };
 
