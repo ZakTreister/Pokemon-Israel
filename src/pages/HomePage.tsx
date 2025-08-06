@@ -164,6 +164,15 @@ export default function HomePage() {
                 <DeckCard key={deck.primaryAttacker} deck={deck} rank={index + 1} />
               ))}
             </div>
+
+            <div className="text-center mt-10">
+              <Link to="/deck-stats">
+                <Button variant="outline" className="flex items-center gap-2 mx-auto">
+                  <Trophy size={18} />
+                  <span>צפה בטבלת הדירוג המלאה</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
       )}
