@@ -22,6 +22,7 @@ interface StandingsRow {
 interface TournamentFormData {
   date: string;
   location: string;
+  image: string;
   isRecurring: boolean;
   lastTournamentDate: string;
   maxParticipants?: number;
@@ -136,6 +137,7 @@ export default function AdminTournaments() {
     setFormData({
       date: formattedDate,
       location: tournament.location,
+      image: tournament.image,
       isRecurring: tournament.isRecurring || false,
       lastTournamentDate: '',
       maxParticipants: tournament.maxParticipants

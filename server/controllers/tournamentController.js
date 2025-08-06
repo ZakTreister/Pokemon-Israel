@@ -66,7 +66,7 @@ export const createTournament = asyncHandler(async (req, res) => {
     location,
     maxParticipants,
     registrationDeadline,
-    image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+    image: req.body.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
     isRecurring,
   };
 
@@ -124,15 +124,6 @@ export const updateTournament = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id);
 
   if (tournament) {
-    // Check if tournament is in the past
-    const now = new Date();
-    const tournamentDate = new Date(tournament.date);
-    
-    if (tournamentDate < now) {
-      res.status(400);
-      throw new Error('Cannot edit past tournaments');
-    }
-
     tournament.title = req.body.title || tournament.title;
     tournament.description = req.body.description || tournament.description;
     tournament.date = req.body.date || tournament.date;
