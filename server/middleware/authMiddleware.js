@@ -23,9 +23,6 @@ export const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Role hierarchy for permission checks
-const ROLE_LEVELS = { player: 1, judge: 2, admin: 3 };
-
 // Generic role-based authorization middleware.
 // Usage: authorize('admin') or authorize('judge', 'admin')
 export const authorize = (...allowedRoles) => (req, res, next) => {
@@ -34,10 +31,7 @@ export const authorize = (...allowedRoles) => (req, res, next) => {
     throw new Error('Not authorized, no user');
   }
 
-  const userLevel = ROLE_LEVELS[req.user.role] || 0;
-  const hasRole = allowedRoles.includes(req.user.role);
-
-  if (!hasRole) {
+  if (!allowedRoles.includes(req.user.role)) {
     res.status(403);
     throw new Error(`Not authorized: requires ${allowedRoles.join(' or ')}`);
   }

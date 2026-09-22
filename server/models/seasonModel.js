@@ -39,5 +39,18 @@ seasonSchema.set('toJSON', {
   },
 });
 
+// Partial unique index: at most one active season, unlimited closed seasons.
+// The filter { status: 'active' } excludes closed seasons from the uniqueness
+// constraint, so the index only applies to documents with status 'active'.
+// The sparse option is not needed here because the filter already scopes the
+// index to active documents only.
+seasonSchema.index(
+  { status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'active' },
+  }
+);
+
 const Season = mongoose.model('Season', seasonSchema);
 export default Season;

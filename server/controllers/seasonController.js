@@ -43,12 +43,21 @@ export const createSeason = asyncHandler(async (req, res) => {
     throw new Error('Cannot open a new season while another season is active');
   }
 
-  const season = await Season.create({
-    name: name.trim(),
-    status: 'active',
-    startedAt: new Date(),
-    createdBy: req.user._id,
-  });
+  let season;
+  try {
+    season = await Season.create({
+      name: name.trim(),
+      status: 'active',
+      startedAt: new Date(),
+      createdBy: req.user._id,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      res.status(400);
+      throw new Error('An active season already exists');
+    }
+    throw error;
+  }
 
   await season.populate('createdBy', 'username name');
   res.status(201).json(season);
