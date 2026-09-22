@@ -166,8 +166,7 @@ export default function AdminTournaments() {
         const updateData = {
           date: formData.date,
           location: formData.location,
-          maxParticipants: formData.maxParticipants || 32,
-          image: formData.image
+          maxParticipants: formData.maxParticipants || 32
         };
         
         await api.put(`/api/tournaments/${selectedTournament.id}`, updateData);
@@ -397,7 +396,7 @@ export default function AdminTournaments() {
     try {
       const response = await api.post('/api/decks', {
         archetype,
-        image: 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg'
+        image: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
       });
       
       // Refresh decks list

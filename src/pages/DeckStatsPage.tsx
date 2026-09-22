@@ -323,7 +323,7 @@ export default function DeckStatsPage() {
                                 {images.slice(0, 2).map((image, index) => (
                                   <div
                                     key={index}
-                                    className="h-8 rounded overflow-hidden flex-shrink-0"
+                                    className="w-8 h-8 rounded overflow-hidden flex-shrink-0"
                                   >
                                     <img
                                       src={image}
@@ -367,7 +367,7 @@ export default function DeckStatsPage() {
                           {images.slice(0, 2).map((image, index) => (
                             <div
                               key={index}
-                              className="h-12 rounded overflow-hidden flex-shrink-0"
+                              className="w-12 h-12 rounded overflow-hidden flex-shrink-0"
                             >
                               <img
                                 src={image}

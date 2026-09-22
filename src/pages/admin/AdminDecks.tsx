@@ -85,7 +85,7 @@ export default function AdminDecks() {
 
     const deckData = {
       archetype: formData.archetype.trim(),
-      image: formData.image.trim() || 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg',
+      image: formData.image.trim() || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
       ...(formData.iconImage1.trim() && { iconImage1: formData.iconImage1.trim() }),
       ...(formData.iconImage2.trim() && { iconImage2: formData.iconImage2.trim() }),
       ...(formData.attackerImage1.trim() && { attackerImage1: formData.attackerImage1.trim() }),

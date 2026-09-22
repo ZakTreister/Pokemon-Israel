@@ -38,7 +38,7 @@ export const createDeck = asyncHandler(async (req, res) => {
   try {
     const deckData = {
       archetype,
-      image: image || 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg',
+      image: image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
     };
 
     // Add optional image fields only if they are provided and not empty

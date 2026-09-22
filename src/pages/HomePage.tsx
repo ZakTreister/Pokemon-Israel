@@ -12,7 +12,6 @@ import { he } from 'date-fns/locale';
 import image from '../../public/pokemon_kids_logo.png';
 
 interface GroupedDeckStats {
-  archetypeName: string;
   primaryAttacker: string;
   totalAppearances: number;
   representativeDeckArchetype: string; // To show a full archetype name
@@ -82,7 +81,6 @@ export default function HomePage() {
 
         if (!groupedDeckStats[primaryAttacker]) {
           groupedDeckStats[primaryAttacker] = {
-            archetypeName: details.archetype,
             primaryAttacker: firstWord, // Keep original casing for display
             totalAppearances: 0,
             representativeDeckArchetype: details.archetype,
@@ -93,10 +91,6 @@ export default function HomePage() {
           // If a group already exists, update representative archetype/images if current one is better (e.g., more complete)
           // For simplicity, we'll just use the first one encountered for representative images
           // You might want more sophisticated logic here (e.g., pick the most common archetype for the group)
-          if (!details.attackerImage2) {
-            delete groupedDeckStats[primaryAttacker].representativeAttackerImage2;
-            groupedDeckStats[primaryAttacker].archetypeName = firstWord;
-          }
         }
         groupedDeckStats[primaryAttacker].totalAppearances += deckAppearances[deckId];
       }
@@ -169,15 +163,6 @@ export default function HomePage() {
               {topDecks.map((deck, index) => (
                 <DeckCard key={deck.primaryAttacker} deck={deck} rank={index + 1} />
               ))}
-            </div>
-
-            <div className="text-center mt-10">
-              <Link to="/deck-stats">
-                <Button variant="outline" className="flex items-center gap-2 mx-auto">
-                  <Trophy size={18} />
-                  <span>צפה בטבלת הדירוג המלאה</span>
-                </Button>
-              </Link>
             </div>
           </div>
         </section>
@@ -349,7 +334,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getRankIcon()}
-            <CardTitle className="text-lg">{deck.archetypeName}</CardTitle>
+            <CardTitle className="text-lg">{deck.primaryAttacker}</CardTitle>
           </div>
         </div>
       </CardHeader>

@@ -47,6 +47,18 @@ const tournamentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Tournament type — optional for backward compatibility with existing data
+  type: {
+    type: String,
+    enum: ['team_internal', 'inter_team', 'quarterly'],
+    default: null,
+  },
+  // Optional reference to the season this tournament belongs to
+  season: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Season',
+    default: null,
+  },
   participants: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,

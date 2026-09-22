@@ -9,7 +9,7 @@ interface User {
   id: string;
   name: string;
   username: string;
-  role: 'player' | 'admin';
+  role: 'player' | 'judge' | 'admin';
   tournaments: number;
 }
 
@@ -17,7 +17,7 @@ interface UserFormData {
   name: string;
   username: string;
   password: string;
-  role: 'player' | 'admin';
+  role: 'player' | 'judge' | 'admin';
 }
 
 export default function AdminUsers() {
@@ -25,7 +25,7 @@ export default function AdminUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState<'all' | 'player' | 'admin'>('all');
+  const [filterRole, setFilterRole] = useState<'all' | 'player' | 'judge' | 'admin'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -249,6 +249,14 @@ export default function AdminUsers() {
             </Button>
             <Button
               size="sm"
+              variant={filterRole === 'judge' ? 'default' : 'outline'}
+              onClick={() => setFilterRole('judge')}
+              className="ml-1"
+            >
+              שופטים
+            </Button>
+            <Button
+              size="sm"
               variant={filterRole === 'admin' ? 'default' : 'outline'}
               onClick={() => setFilterRole('admin')}
             >
@@ -294,9 +302,11 @@ export default function AdminUsers() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         user.role === 'admin' 
                           ? 'bg-primary/10 text-primary' 
-                          : 'bg-secondary/10 text-secondary'
+                          : user.role === 'judge'
+                            ? 'bg-accent/10 text-accent'
+                            : 'bg-secondary/10 text-secondary'
                       }`}>
-                        {user.role === 'admin' ? 'מנהל' : 'שחקן'}
+                        {user.role === 'admin' ? 'מנהל' : user.role === 'judge' ? 'שופט' : 'שחקן'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -377,9 +387,10 @@ export default function AdminUsers() {
                 <select 
                   className="w-full px-3 py-2 border border-input rounded-md bg-background"
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'admin'})}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'judge' | 'admin'})}
                 >
                   <option value="player">שחקן</option>
+                  <option value="judge">שופט</option>
                   <option value="admin">מנהל</option>
                 </select>
               </div>
@@ -444,9 +455,10 @@ export default function AdminUsers() {
                 <select 
                   className="w-full px-3 py-2 border border-input rounded-md bg-background"
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'admin'})}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'player' | 'judge' | 'admin'})}
                 >
                   <option value="player">שחקן</option>
+                  <option value="judge">שופט</option>
                   <option value="admin">מנהל</option>
                 </select>
               </div>

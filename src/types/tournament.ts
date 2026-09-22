@@ -15,6 +15,8 @@ export interface Tournament {
   participants: TournamentParticipant[];
   seriesId?: string; // For recurring tournaments
   isRecurring: boolean;
+  type?: 'team_internal' | 'inter_team' | 'quarterly' | null;
+  season?: string | null; // Season ID reference
 }
 
 export interface TournamentParticipant {

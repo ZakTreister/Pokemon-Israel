@@ -12,7 +12,7 @@ const deckSchema = new mongoose.Schema({
   // Legacy image field for backward compatibility
   image: {
     type: String,
-    default: 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg'
+    default: 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg'
   },
   // New image fields
   iconImage1: {

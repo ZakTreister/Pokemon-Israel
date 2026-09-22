@@ -4,6 +4,7 @@ import tournamentsReducer from '../features/tournaments/tournamentsSlice';
 import updatesReducer from '../features/updates/updatesSlice';
 import userReducer from '../features/user/userSlice';
 import decksReducer from '../features/decks/decksSlice';
+import seasonsReducer from '../features/seasons/seasonsSlice';
 import { setStore } from '../services/api';
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     updates: updatesReducer,
     user: userReducer,
     decks: decksReducer,
+    seasons: seasonsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

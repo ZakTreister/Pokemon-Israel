@@ -66,9 +66,23 @@ export const createTournament = asyncHandler(async (req, res) => {
     location,
     maxParticipants,
     registrationDeadline,
-    image: req.body.image || 'https://live.staticflickr.com/2895/14687279412_0d8568d297_z.jpg',
+    image: req.body.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
     isRecurring,
   };
+
+  // Optional new fields — not required for backward compatibility
+  if (req.body.type) {
+    const validTypes = ['team_internal', 'inter_team', 'quarterly'];
+    if (!validTypes.includes(req.body.type)) {
+      res.status(400);
+      throw new Error('Invalid tournament type');
+    }
+    baseTournamentData.type = req.body.type;
+  }
+
+  if (req.body.season) {
+    baseTournamentData.season = req.body.season;
+  }
 
   const createdTournaments = [];
 
