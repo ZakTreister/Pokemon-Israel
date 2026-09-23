@@ -68,5 +68,15 @@ userSchema.set('toJSON', {
 // Add index for better performance
 userSchema.index({ username: 1 });
 
+// One-to-one: a User can be linked to at most one Player.
+// Only applies when player is non-null; null links are unconstrained.
+userSchema.index(
+  { player: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { player: { $type: 'ObjectId' } },
+  }
+);
+
 const User = mongoose.model('User', userSchema);
 export default User;

@@ -61,6 +61,16 @@ playerSchema.index(
   }
 );
 
+// One-to-one: a Player can be linked to at most one User.
+// Only applies when user is non-null; null links are unconstrained.
+playerSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { user: { $type: 'ObjectId' } },
+  }
+);
+
 playerSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;

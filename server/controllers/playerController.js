@@ -58,6 +58,11 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
     throw new Error('First name and last name are required');
   }
 
+  if (!club || !club.trim()) {
+    res.status(400);
+    throw new Error('Club is required for club players');
+  }
+
   const normalizedFirstName = normalizeField(firstName);
   const normalizedLastName = normalizeField(lastName);
   const normalizedClub = normalizeField(club) || '';
@@ -80,7 +85,7 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
     player = await Player.create({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      club: club ? club.trim() : null,
+      club: club.trim(),
       playerType: 'quarterly',
       user: null,
       isActive: true,
@@ -196,19 +201,31 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     throw new Error('Player not found');
   }
 
-  // Recalculate normalized fields if quarterly and identity fields changed
+  // Snapshot original values for rollback
+  const originalFirstName = player.firstName;
+  const originalLastName = player.lastName;
+  const originalClub = player.club;
+  const originalIsActive = player.isActive;
+  const originalNormFirst = player.normalizedFirstName;
+  const originalNormLast = player.normalizedLastName;
+  const originalNormClub = player.normalizedClub;
+
   if (firstName !== undefined) player.firstName = firstName.trim();
   if (lastName !== undefined) player.lastName = lastName.trim();
   if (club !== undefined) player.club = club ? club.trim() : null;
   if (isActive !== undefined) player.isActive = isActive;
 
-  // For quarterly players, recompute normalized fields and check uniqueness
+  // Quarterly players must always have a non-empty club
   if (player.playerType === 'quarterly') {
+    if (!player.club || !player.club.trim()) {
+      res.status(400);
+      throw new Error('Club is required for club players');
+    }
+
     const newNormalizedFirstName = normalizeField(player.firstName);
     const newNormalizedLastName = normalizeField(player.lastName);
     const newNormalizedClub = normalizeField(player.club) || '';
 
-    // Check if identity changed
     const identityChanged =
       newNormalizedFirstName !== player.normalizedFirstName ||
       newNormalizedLastName !== player.normalizedLastName ||
@@ -234,8 +251,48 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     }
   }
 
+  // For team players, sync linked User.name when firstName/lastName changed
+  let linkedUser = null;
+  let originalUserName = null;
+  if (player.playerType === 'team' && player.user) {
+    const nameChanged =
+      (firstName !== undefined && firstName.trim() !== originalFirstName) ||
+      (lastName !== undefined && lastName.trim() !== originalLastName);
+
+    if (nameChanged) {
+      linkedUser = await User.findById(player.user);
+      if (linkedUser) {
+        originalUserName = linkedUser.name;
+        linkedUser.name = `${player.firstName} ${player.lastName}`;
+      }
+    }
+  }
+
   try {
     const updatedPlayer = await player.save();
+
+    // Save the linked User after the Player succeeds.
+    // If User.save() fails, roll back the Player to its pre-edit state.
+    // Standalone MongoDB has no transactions, so we use manual rollback.
+    if (linkedUser) {
+      try {
+        await linkedUser.save();
+      } catch (userError) {
+        // Roll back Player to original values
+        player.firstName = originalFirstName;
+        player.lastName = originalLastName;
+        player.club = originalClub;
+        player.isActive = originalIsActive;
+        player.normalizedFirstName = originalNormFirst;
+        player.normalizedLastName = originalNormLast;
+        player.normalizedClub = originalNormClub;
+        await player.save();
+
+        res.status(500);
+        throw new Error('Failed to sync linked user name');
+      }
+    }
+
     await updatedPlayer.populate('user', 'username name role');
     res.json(updatedPlayer);
   } catch (error) {
