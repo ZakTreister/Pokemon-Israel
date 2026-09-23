@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema({
     enum: ['player', 'judge', 'admin'],
     default: 'player',
   },
+  player: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Player',
+    default: null,
+  },
 }, {
   timestamps: true,
 });

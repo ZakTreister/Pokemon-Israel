@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
-import { LayoutDashboard, Users, CalendarDays, PanelLeft, Newspaper, Library, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, PanelLeft, Newspaper, Library, CalendarClock, Users2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import AdminTournaments from './AdminTournaments';
 import AdminUsers from './AdminUsers';
@@ -9,6 +9,7 @@ import AdminOverview from './AdminOverview';
 import AdminUpdates from './AdminUpdates';
 import AdminDecks from './AdminDecks';
 import AdminSeasons from './AdminSeasons';
+import AdminPlayers from './AdminPlayers';
 
 export default function AdminDashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -85,6 +86,12 @@ export default function AdminDashboardPage() {
                 label="ניהול עונות"
                 isActive={location.pathname.includes('/admin/seasons')}
               />
+              <NavLink 
+                to="/admin/players" 
+                icon={<Users2 size={18} />}
+                label="שחקנים"
+                isActive={location.pathname.includes('/admin/players')}
+              />
             </nav>
           </div>
 
@@ -97,6 +104,7 @@ export default function AdminDashboardPage() {
               <Route path="updates/*" element={<AdminUpdates />} />
               <Route path="decks/*" element={<AdminDecks />} />
               <Route path="seasons/*" element={<AdminSeasons />} />
+              <Route path="players/*" element={<AdminPlayers />} />
             </Routes>
           </div>
         </div>
