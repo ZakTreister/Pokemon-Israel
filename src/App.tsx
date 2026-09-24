@@ -15,6 +15,8 @@ import PlayerDashboardPage from './pages/player/PlayerDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import { ToastProvider } from './components/ui/ToastProvider';
+import { ConfirmProvider } from './components/ui/ConfirmProvider';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -25,7 +27,9 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="pokemon-tournament-theme">
-      <Layout>
+      <ToastProvider>
+        <ConfirmProvider>
+          <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/tournaments" element={<TournamentsPage />} />
@@ -45,6 +49,8 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>
+        </ConfirmProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

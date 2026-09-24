@@ -8,6 +8,8 @@ import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
+import { useToast } from '../components/ui/ToastProvider';
+import { useConfirm } from '../components/ui/ConfirmProvider';
 
 interface AvailableUser {
   id: string;
@@ -20,6 +22,8 @@ export default function TournamentDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
+  const { showConfirm } = useConfirm();
   const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
   const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
@@ -90,7 +94,7 @@ export default function TournamentDetailsPage() {
       setFilteredUsers(available);
     } catch (error: any) {
       console.error('Error loading users:', error);
-      alert('שגיאה בטעינת רשימת המשתמשים');
+      showToast('שגיאה בטעינת רשימת המשתמשים', 'error');
     } finally {
       setLoadingUsers(false);
     }
@@ -111,11 +115,11 @@ export default function TournamentDetailsPage() {
       // Update available users list
       setAvailableUsers(prev => prev.filter(user => user.id !== userId));
       
-      alert(`${userName} נוסף לטורניר בהצלחה!`);
+      showToast(`${userName} נוסף לטורניר בהצלחה!`, 'success');
       
     } catch (error: any) {
       console.error('Error adding user to tournament:', error);
-      alert(error.response?.data?.message || 'שגיאה בהוספת המשתמש לטורניר');
+      showToast(error.response?.data?.message || 'שגיאה בהוספת המשתמש לטורניר', 'error');
     } finally {
       setAddingUser(null);
     }
@@ -157,13 +161,27 @@ export default function TournamentDetailsPage() {
   const handleUnregister = async () => {
     if (!isAuthenticated || !id) return;
     
-    if (window.confirm('האם אתה בטוח שברצונך לבטל את ההרשמה לטורניר?')) {
+    const confirmed = await showConfirm({
+      title: 'ביטול הרשמה',
+      message: 'האם אתה בטוח שברצונך לבטל את ההרשמה לטורניר?',
+      confirmText: 'בטל הרשמה',
+      cancelText: 'חזור',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       await dispatch(unregisterFromTournament(id));
     }
   };
 
   const handleRemoveParticipant = async (participantId: string, participantName: string) => {
-    if (!window.confirm(`האם אתה בטוח שברצונך להסיר את ${participantName} מהטורניר?`)) {
+    const confirmed = await showConfirm({
+      title: 'הסרת משתתף',
+      message: `האם אתה בטוח שברצונך להסיר את ${participantName} מהטורניר?`,
+      confirmText: 'הסר',
+      cancelText: 'ביטול',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -176,10 +194,10 @@ export default function TournamentDetailsPage() {
         dispatch(fetchTournamentById(id));
       }
       
-      alert(`${participantName} הוסר מהטורניר בהצלחה`);
+      showToast(`${participantName} הוסר מהטורניר בהצלחה`, 'success');
     } catch (error: any) {
       console.error('Error removing participant:', error);
-      alert(error.response?.data?.message || 'שגיאה בהסרת המשתתף');
+      showToast(error.response?.data?.message || 'שגיאה בהסרת המשתתף', 'error');
     } finally {
       setRemovingParticipant(null);
     }

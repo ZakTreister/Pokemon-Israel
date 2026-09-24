@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, Search, Image, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Deck } from '../../types/deck';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 interface DeckFormData {
   archetype: string;
@@ -17,6 +19,8 @@ interface DeckFormData {
 
 export default function AdminDecks() {
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
+  const { showConfirm } = useConfirm();
   const { decks, isLoading } = useAppSelector((state) => state.decks);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -72,14 +76,21 @@ export default function AdminDecks() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק את הדק?')) {
+    const confirmed = await showConfirm({
+      title: 'מחיקת דק',
+      message: 'האם אתה בטוח שברצונך למחוק את הדק?',
+      confirmText: 'מחק',
+      cancelText: 'ביטול',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       await dispatch(deleteDeck(id));
     }
   };
 
   const handleCreateDeck = async () => {
     if (!formData.archetype.trim()) {
-      alert('שם הדק הוא שדה חובה');
+      showToast('שם הדק הוא שדה חובה', 'warning');
       return;
     }
 
@@ -98,7 +109,7 @@ export default function AdminDecks() {
 
   const handleUpdateDeck = async () => {
     if (!selectedDeck || !formData.archetype.trim()) {
-      alert('שם הדק הוא שדה חובה');
+      showToast('שם הדק הוא שדה חובה', 'warning');
       return;
     }
 

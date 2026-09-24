@@ -8,6 +8,8 @@ import Button from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Tournament } from '../../types/tournament';
 import api from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 interface StandingsRow {
   position: number;
@@ -36,6 +38,8 @@ interface DeckSuggestion {
 export default function AdminTournaments() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
+  const { showConfirm } = useConfirm();
   const { tournaments, isLoading } = useAppSelector((state) => state.tournaments);
   const { decks } = useAppSelector((state) => state.decks);
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,13 +155,13 @@ export default function AdminTournaments() {
       
       // Validate required fields
       if (!formData.date || !formData.location) {
-        alert('אנא מלא את כל השדות הנדרשים');
+        showToast('אנא מלא את כל השדות הנדרשים', 'warning');
         return;
       }
 
       // If recurring is selected for new tournament, validate last tournament date
       if (!isEditing && formData.isRecurring && !formData.lastTournamentDate) {
-        alert('אנא הזן תאריך טורניר אחרון עבור טורניר שבועי');
+        showToast('אנא הזן תאריך טורניר אחרון עבור טורניר שבועי', 'warning');
         return;
       }
 
@@ -170,15 +174,15 @@ export default function AdminTournaments() {
         };
         
         await api.put(`/api/tournaments/${selectedTournament.id}`, updateData);
-        alert('הטורניר עודכן בהצלחה!');
+        showToast('הטורניר עודכן בהצלחה!', 'success');
       } else {
         // Create new tournament(s)
         const response = await api.post('/api/tournaments', formData);
         
         if (formData.isRecurring) {
-          alert(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`);
+          showToast(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`, 'success');
         } else {
-          alert('הטורניר נוצר בהצלחה!');
+          showToast('הטורניר נוצר בהצלחה!', 'success');
         }
       }
       
@@ -192,37 +196,51 @@ export default function AdminTournaments() {
       
     } catch (error: any) {
       console.error('Error with tournament:', error);
-      alert(error.response?.data?.message || 'שגיאה בעיבוד הטורניר');
+      showToast(error.response?.data?.message || 'שגיאה בעיבוד הטורניר', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteSingleTournament = async (tournament: Tournament) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק את הטורניר הזה בלבד?')) return;
+    const confirmed = await showConfirm({
+      title: 'מחיקת טורניר',
+      message: 'האם אתה בטוח שברצונך למחוק את הטורניר הזה בלבד?',
+      confirmText: 'מחק',
+      cancelText: 'ביטול',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
 
     try {
       // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}`);
       dispatch(fetchTournaments());
-      alert('הטורניר נמחק בהצלחה');
+      showToast('הטורניר נמחק בהצלחה', 'success');
     } catch (error: any) {
       console.error('Error deleting tournament:', error);
-      alert(error.response?.data?.message || 'שגיאה במחיקת הטורניר');
+      showToast(error.response?.data?.message || 'שגיאה במחיקת הטורניר', 'error');
     }
   };
 
   const handleDeleteSeries = async (tournament: Tournament) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק את כל הטורנירים העתידיים בסדרה?')) return;
+    const confirmed = await showConfirm({
+      title: 'מחיקת סדרת טורנירים',
+      message: 'האם אתה בטוח שברצונך למחוק את כל הטורנירים העתידיים בסדרה?',
+      confirmText: 'מחק סדרה',
+      cancelText: 'ביטול',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
 
     try {
       // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
       dispatch(fetchTournaments());
-      alert('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה');
+      showToast('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה', 'success');
     } catch (error: any) {
       console.error('Error deleting series:', error);
-      alert(error.response?.data?.message || 'שגיאה במחיקת הסדרה');
+      showToast(error.response?.data?.message || 'שגיאה במחיקת הסדרה', 'error');
     }
   };
 
@@ -405,10 +423,10 @@ export default function AdminTournaments() {
       // Select the newly created deck
       handleDeckSelection(rowIndex, response.data.id, response.data.archetype);
       
-      alert(`דק "${archetype}" נוצר בהצלחה!`);
+      showToast(`דק "${archetype}" נוצר בהצלחה!`, 'success');
     } catch (error: any) {
       console.error('Error creating deck:', error);
-      alert(error.response?.data?.message || 'שגיאה ביצירת הדק');
+      showToast(error.response?.data?.message || 'שגיאה ביצירת הדק', 'error');
     }
   };
 
@@ -417,7 +435,7 @@ export default function AdminTournaments() {
       // Validate that all players are selected
       const unselectedPlayers = parsedStandings.filter(row => row.needsPlayerSelection);
       if (unselectedPlayers.length > 0) {
-        alert('אנא בחר שחקן עבור כל השורות');
+        showToast('אנא בחר שחקן עבור כל השורות', 'warning');
         return;
       }
 
@@ -445,7 +463,7 @@ export default function AdminTournaments() {
 
       await api.post(`/api/tournaments/${selectedTournament?.id}/results`, { results });
       
-      alert('התוצאות נשמרו בהצלחה!');
+      showToast('התוצאות נשמרו בהצלחה!', 'success');
       
       // Refresh tournament data
       dispatch(fetchTournaments());
@@ -461,7 +479,7 @@ export default function AdminTournaments() {
       
     } catch (error: any) {
       console.error('Error saving results:', error);
-      alert(error.response?.data?.message || 'שגיאה בשמירת התוצאות');
+      showToast(error.response?.data?.message || 'שגיאה בשמירת התוצאות', 'error');
     }
   };
 

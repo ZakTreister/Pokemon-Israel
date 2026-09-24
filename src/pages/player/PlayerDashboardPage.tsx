@@ -7,9 +7,11 @@ import Button from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { Trophy, Medal, Award, Calendar, User, Eye, EyeOff } from 'lucide-react';
 import api from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
 
 export default function PlayerDashboardPage() {
   const dispatch = useAppDispatch();
+  const { showToast } = useToast();
   const { stats, tournaments: userTournaments, isLoading: userLoading } = useAppSelector((state) => state.user);
   const { tournaments, isLoading: tournamentsLoading } = useAppSelector((state) => state.tournaments);
   const { user } = useAppSelector((state) => state.auth);
@@ -116,7 +118,7 @@ export default function PlayerDashboardPage() {
 
       await api.put('/api/auth/profile', updateData);
 
-      alert('הפרופיל עודכן בהצלחה!');
+      showToast('הפרופיל עודכן בהצלחה!', 'success');
       
       // Reset form and close modal
       resetProfileModal();

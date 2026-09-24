@@ -4,6 +4,8 @@ import { Search, UserPlus } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import api from '../../services/api';
+import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 interface User {
   id: string;
@@ -21,6 +23,8 @@ interface UserFormData {
 }
 
 export default function AdminUsers() {
+  const { showToast } = useToast();
+  const { showConfirm } = useConfirm();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +104,7 @@ export default function AdminUsers() {
       resetForm();
       setShowAddModal(false);
       
-      alert('המשתמש נוצר בהצלחה!');
+      showToast('המשתמש נוצר בהצלחה!', 'success');
       
     } catch (err: any) {
       console.error('Error creating user:', err);
@@ -145,7 +149,7 @@ export default function AdminUsers() {
       setShowEditModal(false);
       setSelectedUser(null);
       
-      alert('המשתמש עודכן בהצלחה!');
+      showToast('המשתמש עודכן בהצלחה!', 'success');
       
     } catch (err: any) {
       console.error('Error updating user:', err);
@@ -156,14 +160,21 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק את המשתמש?')) {
+    const confirmed = await showConfirm({
+      title: 'מחיקת משתמש',
+      message: 'האם אתה בטוח שברצונך למחוק את המשתמש?',
+      confirmText: 'מחק',
+      cancelText: 'ביטול',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
 
     try {
       await api.delete(`/api/users/${userId}`);
       setUsers(users.filter(user => user.id !== userId));
-      alert('המשתמש נמחק בהצלחה');
+      showToast('המשתמש נמחק בהצלחה', 'success');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete user');
     }
