@@ -1,5 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import Season from '../models/seasonModel.js';
+import Team from '../models/teamModel.js';
+import Player from '../models/playerModel.js';
+import TeamSeasonRoster from '../models/teamSeasonRosterModel.js';
 
 // @desc    Get all seasons
 // @route   GET /api/seasons
@@ -77,6 +80,39 @@ export const closeSeason = asyncHandler(async (req, res) => {
   if (season.status === 'closed') {
     res.status(400);
     throw new Error('Season is already closed');
+  }
+
+  // Create roster snapshots for all active teams before closing
+  const activeTeams = await Team.find({ isActive: true });
+  for (const team of activeTeams) {
+    const teamPlayers = await Player.find({
+      team: team._id,
+      isActive: true,
+    }).select('firstName lastName');
+
+    const playersSnapshot = teamPlayers.map((p) => ({
+      player: p._id,
+      firstNameSnapshot: p.firstName,
+      lastNameSnapshot: p.lastName,
+    }));
+
+    try {
+      await TeamSeasonRoster.updateOne(
+        { season: season._id, team: team._id },
+        {
+          $set: {
+            teamNameSnapshot: team.name,
+            players: playersSnapshot,
+          },
+        },
+        { upsert: true }
+      );
+    } catch (error) {
+      if (error.code !== 11000) {
+        res.status(500);
+        throw new Error('Failed to create roster snapshot: ' + (error.message || 'Unknown error'));
+      }
+    }
   }
 
   season.status = 'closed';

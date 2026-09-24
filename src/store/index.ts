@@ -6,6 +6,8 @@ import userReducer from '../features/user/userSlice';
 import decksReducer from '../features/decks/decksSlice';
 import seasonsReducer from '../features/seasons/seasonsSlice';
 import playersReducer from '../features/players/playersSlice';
+import teamsReducer from '../features/teams/teamsSlice';
+import badgesReducer from '../features/badges/badgesSlice';
 import { setStore } from '../services/api';
 
 export const store = configureStore({
@@ -17,6 +19,8 @@ export const store = configureStore({
     decks: decksReducer,
     seasons: seasonsReducer,
     players: playersReducer,
+    teams: teamsReducer,
+    badges: badgesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

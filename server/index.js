@@ -15,6 +15,8 @@ import deckRoutes from './routes/deckRoutes.js';
 import updateRoutes from './routes/updateRoutes.js';
 import seasonRoutes from './routes/seasonRoutes.js';
 import playerRoutes from './routes/playerRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
+import badgeRoutes from './routes/badgeRoutes.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -91,6 +93,8 @@ app.use('/api/decks', deckRoutes);
 app.use('/api/updates', updateRoutes);
 app.use('/api/seasons', seasonRoutes);
 app.use('/api/players', playerRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/badges', badgeRoutes);
 
 // Serve static files from the React app build directory
 if (process.env.NODE_ENV === 'production') {

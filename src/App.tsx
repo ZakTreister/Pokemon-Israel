@@ -15,8 +15,10 @@ import PlayerDashboardPage from './pages/player/PlayerDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
+import StaffRoute from './components/auth/StaffRoute';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
+import ManageDashboardPage from './pages/manage/ManageDashboardPage';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -44,6 +46,10 @@ function App() {
           
           <Route element={<AdminRoute />}>
             <Route path="/admin/*" element={<AdminDashboardPage />} />
+          </Route>
+          
+          <Route element={<StaffRoute />}>
+            <Route path="/manage/*" element={<ManageDashboardPage />} />
           </Route>
           
           <Route path="*" element={<NotFoundPage />} />

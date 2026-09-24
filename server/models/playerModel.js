@@ -35,6 +35,11 @@ const playerSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  team: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    default: null,
+  },
   // Normalized fields for duplicate detection on quarterly players.
   // Case-insensitive, whitespace-collapsed identity matching.
   normalizedFirstName: {
