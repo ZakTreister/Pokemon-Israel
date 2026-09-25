@@ -253,7 +253,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
 
   // For team players, sync linked User.name when firstName/lastName changed
   let linkedUser = null;
-  let originalUserName = null;
   if (player.playerType === 'team' && player.user) {
     const nameChanged =
       (firstName !== undefined && firstName.trim() !== originalFirstName) ||
@@ -262,7 +261,6 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     if (nameChanged) {
       linkedUser = await User.findById(player.user);
       if (linkedUser) {
-        originalUserName = linkedUser.name;
         linkedUser.name = `${player.firstName} ${player.lastName}`;
       }
     }

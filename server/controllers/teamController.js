@@ -4,12 +4,11 @@ import { normalizeTeamName } from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import Season from '../models/seasonModel.js';
 
-async function assertNoActiveSeason() {
+async function assertNoActiveSeason(res) {
   const active = await Season.findOne({ status: 'active' });
   if (active) {
-    const err = new Error('לא ניתן לבצע שינויי מבנה קבוצות בזמן עונה פעילה');
-    err.status = 400;
-    throw err;
+    res.status(409);
+    throw new Error('לא ניתן לבצע שינויי מבנה נבחרות בזמן עונה פעילה');
   }
 }
 
@@ -40,8 +39,7 @@ export const getTeams = asyncHandler(async (req, res) => {
 export const getManageablePlayers = asyncHandler(async (req, res) => {
   const players = await Player.find({ playerType: 'team' })
     .populate('team', 'name isActive')
-    .populate('user', 'username name role')
-    .select('firstName lastName isActive team user')
+    .select('firstName lastName isActive team')
     .sort({ firstName: 1, lastName: 1 });
 
   res.json(players);
@@ -58,11 +56,11 @@ export const getTeam = asyncHandler(async (req, res) => {
 
   if (!team) {
     res.status(404);
-    throw new Error('קבוצה לא נמצאה');
+    throw new Error('נבחרת לא נמצאה');
   }
 
   const players = await Player.find({ team: team._id, isActive: true })
-    .populate('user', 'username name role')
+    .select('firstName lastName isActive team')
     .sort({ firstName: 1, lastName: 1 });
 
   res.json({ ...team.toJSON(), players });
@@ -72,13 +70,13 @@ export const getTeam = asyncHandler(async (req, res) => {
 // @route   POST /api/teams
 // @access  Private (admin, judge)
 export const createTeam = asyncHandler(async (req, res) => {
-  await assertNoActiveSeason();
+  await assertNoActiveSeason(res);
 
   const { name } = req.body;
 
   if (!name || !name.trim()) {
     res.status(400);
-    throw new Error('שם קבוצה הוא שדה חובה');
+    throw new Error('שם נבחרת הוא שדה חובה');
   }
 
   const normalizedName = normalizeTeamName(name);
@@ -86,7 +84,7 @@ export const createTeam = asyncHandler(async (req, res) => {
   const existing = await Team.findOne({ normalizedName });
   if (existing) {
     res.status(409);
-    throw new Error('קבוצה בשם זה כבר קיימת');
+    throw new Error('נבחרת בשם זה כבר קיימת');
   }
 
   let team;
@@ -100,7 +98,7 @@ export const createTeam = asyncHandler(async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       res.status(409);
-      throw new Error('קבוצה בשם זה כבר קיימת');
+      throw new Error('נבחרת בשם זה כבר קיימת');
     }
     throw error;
   }
@@ -113,20 +111,20 @@ export const createTeam = asyncHandler(async (req, res) => {
 // @route   PUT /api/teams/:id
 // @access  Private (admin, judge)
 export const updateTeam = asyncHandler(async (req, res) => {
-  await assertNoActiveSeason();
+  await assertNoActiveSeason(res);
 
   const { name, isActive } = req.body;
 
   const team = await Team.findById(req.params.id);
   if (!team) {
     res.status(404);
-    throw new Error('קבוצה לא נמצאה');
+    throw new Error('נבחרת לא נמצאה');
   }
 
   if (name !== undefined) {
     if (!name.trim()) {
       res.status(400);
-      throw new Error('שם קבוצה הוא שדה חובה');
+      throw new Error('שם נבחרת הוא שדה חובה');
     }
 
     const normalizedName = normalizeTeamName(name);
@@ -137,7 +135,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
       });
       if (existing) {
         res.status(409);
-        throw new Error('קבוצה בשם זה כבר קיימת');
+        throw new Error('נבחרת בשם זה כבר קיימת');
       }
       team.name = name.trim();
       team.normalizedName = normalizedName;
@@ -153,7 +151,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       res.status(409);
-      throw new Error('קבוצה בשם זה כבר קיימת');
+      throw new Error('נבחרת בשם זה כבר קיימת');
     }
     throw error;
   }
@@ -170,19 +168,19 @@ export const updateTeam = asyncHandler(async (req, res) => {
 // @route   PUT /api/teams/:teamId/players/:playerId
 // @access  Private (admin, judge)
 export const assignPlayerToTeam = asyncHandler(async (req, res) => {
-  await assertNoActiveSeason();
+  await assertNoActiveSeason(res);
 
   const { teamId, playerId } = req.params;
 
   const team = await Team.findById(teamId);
   if (!team) {
     res.status(404);
-    throw new Error('קבוצה לא נמצאה');
+    throw new Error('נבחרת לא נמצאה');
   }
 
   if (!team.isActive) {
     res.status(400);
-    throw new Error('לא ניתן לשייך שחקן לקבוצה לא פעילה');
+    throw new Error('לא ניתן לשייך שחקן לנבחרת לא פעילה');
   }
 
   const player = await Player.findById(playerId);
@@ -193,7 +191,7 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
 
   if (player.playerType !== 'team') {
     res.status(400);
-    throw new Error('רק שחקני נבחרת יכולים להיות משויכים לקבוצה');
+    throw new Error('רק שחקני נבחרת יכולים להיות משויכים לנבחרת');
   }
 
   if (!player.isActive) {
@@ -204,16 +202,21 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
   player.team = team._id;
   await player.save();
 
-  await player.populate('user', 'username name role');
   await player.populate('team', 'name isActive');
-  res.json(player);
+  res.json({
+    id: player._id,
+    firstName: player.firstName,
+    lastName: player.lastName,
+    isActive: player.isActive,
+    team: player.team ? { id: player.team._id, name: player.team.name, isActive: player.team.isActive } : null,
+  });
 });
 
 // @desc    Remove a player from a team
 // @route   DELETE /api/teams/:teamId/players/:playerId
 // @access  Private (admin, judge)
 export const removePlayerFromTeam = asyncHandler(async (req, res) => {
-  await assertNoActiveSeason();
+  await assertNoActiveSeason(res);
 
   const { teamId, playerId } = req.params;
 
@@ -225,18 +228,22 @@ export const removePlayerFromTeam = asyncHandler(async (req, res) => {
 
   if (!player.team || player.team.toString() !== teamId) {
     res.status(400);
-    throw new Error('השחקן אינו משויך לקבוצה זו');
+    throw new Error('השחקן אינו משויך לנבחרת זו');
   }
 
   if (player.playerType !== 'team') {
     res.status(400);
-    throw new Error('רק שחקני נבחרת יכולים להיות משויכים לקבוצה');
+    throw new Error('רק שחקני נבחרת יכולים להיות משויכים לנבחרת');
   }
 
   player.team = null;
   await player.save();
 
-  await player.populate('user', 'username name role');
-  await player.populate('team', 'name isActive');
-  res.json(player);
+  res.json({
+    id: player._id,
+    firstName: player.firstName,
+    lastName: player.lastName,
+    isActive: player.isActive,
+    team: null,
+  });
 });

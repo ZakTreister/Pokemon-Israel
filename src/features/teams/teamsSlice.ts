@@ -30,7 +30,7 @@ export const fetchTeams = createAsyncThunk(
       return await teamsService.getTeams();
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת קבוצות';
+      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת נבחרות';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -56,7 +56,7 @@ export const createTeam = createAsyncThunk(
       return await teamsService.createTeam(input);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה ביצירת קבוצה';
+      const message = err.response?.data?.message || err.message || 'שגיאה ביצירת נבחרת';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -69,7 +69,7 @@ export const updateTeam = createAsyncThunk(
       return await teamsService.updateTeam(id, input);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בעדכון קבוצה';
+      const message = err.response?.data?.message || err.message || 'שגיאה בעדכון נבחרת';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -79,7 +79,9 @@ export const assignPlayer = createAsyncThunk(
   'teams/assignPlayer',
   async ({ teamId, playerId }: { teamId: string; playerId: string }, thunkAPI) => {
     try {
-      return await teamsService.assignPlayer(teamId, playerId);
+      const updatedPlayer = await teamsService.assignPlayer(teamId, playerId);
+      await thunkAPI.dispatch(fetchTeams());
+      return updatedPlayer;
     } catch (error) {
       const err = error as ApiError;
       const message = err.response?.data?.message || err.message || 'שגיאה בשיוך שחקן';
@@ -92,7 +94,9 @@ export const removePlayer = createAsyncThunk(
   'teams/removePlayer',
   async ({ teamId, playerId }: { teamId: string; playerId: string }, thunkAPI) => {
     try {
-      return await teamsService.removePlayer(teamId, playerId);
+      const updatedPlayer = await teamsService.removePlayer(teamId, playerId);
+      await thunkAPI.dispatch(fetchTeams());
+      return updatedPlayer;
     } catch (error) {
       const err = error as ApiError;
       const message = err.response?.data?.message || err.message || 'שגיאה בהסרת שחקן';
@@ -146,23 +150,11 @@ const teamsSlice = createSlice({
         state.manageablePlayers = state.manageablePlayers.map((p) =>
           p.id === action.payload.id ? action.payload : p
         );
-        state.teams = state.teams.map((t) => {
-          if (t.id === action.payload.team?.id) {
-            return { ...t, playerCount: t.playerCount + 1 };
-          }
-          return t;
-        });
       })
       .addCase(removePlayer.fulfilled, (state, action) => {
         state.manageablePlayers = state.manageablePlayers.map((p) =>
           p.id === action.payload.id ? action.payload : p
         );
-        state.teams = state.teams.map((t) => {
-          if (t.playerCount > 0) {
-            return { ...t, playerCount: t.playerCount - 1 };
-          }
-          return t;
-        });
       });
   },
 });

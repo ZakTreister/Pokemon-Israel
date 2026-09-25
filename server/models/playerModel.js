@@ -95,8 +95,12 @@ export const normalizeField = (value) => {
 };
 
 // Pre-validate hook: set normalized fields for quarterly players
+// Also enforce that quarterly players have a non-empty club at model level.
 playerSchema.pre('validate', function(next) {
   if (this.playerType === 'quarterly') {
+    if (!this.club || !this.club.trim()) {
+      this.invalidate('club', 'Club is required for quarterly players');
+    }
     this.normalizedFirstName = normalizeField(this.firstName);
     this.normalizedLastName = normalizeField(this.lastName);
     this.normalizedClub = normalizeField(this.club) || '';

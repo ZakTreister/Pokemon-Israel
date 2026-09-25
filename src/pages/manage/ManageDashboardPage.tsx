@@ -47,7 +47,7 @@ export default function ManageDashboardPage() {
               <NavLink
                 to="/manage/teams"
                 icon={<Shield size={18} />}
-                label="ניהול קבוצות"
+                label="ניהול נבחרות"
                 isActive={location.pathname.includes('/manage/teams')}
               />
               <NavLink

@@ -55,6 +55,11 @@ export default function Header() {
                 ניהול
               </Link>
             )}
+            {isAuthenticated && (user?.role === 'admin' || user?.role === 'judge') && (
+              <Link to="/manage/teams" className="text-foreground hover:text-primary transition-colors">
+                ניהול משותף
+              </Link>
+            )}
             {isAuthenticated && (
               <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
                 אזור אישי
@@ -79,6 +84,11 @@ export default function Header() {
                   {user?.role === 'admin' && (
                     <span className="mr-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
                       מנהל
+                    </span>
+                  )}
+                  {user?.role === 'judge' && (
+                    <span className="mr-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                      שופט
                     </span>
                   )}
                 </div>
@@ -140,6 +150,15 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   ניהול
+                </Link>
+              )}
+              {isAuthenticated && (user?.role === 'admin' || user?.role === 'judge') && (
+                <Link 
+                  to="/manage/teams" 
+                  className="px-2 py-1.5 text-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  ניהול משותף
                 </Link>
               )}
               {isAuthenticated && (

@@ -49,7 +49,7 @@ export default function ManageTeams() {
     try {
       setIsSubmitting(true);
       await dispatch(createTeam({ name: newTeamName.trim() })).unwrap();
-      showToast('הקבוצה נוצרה בהצלחה', 'success');
+      showToast('הנבחרת נוצרה בהצלחה', 'success');
       setNewTeamName('');
       setShowCreateForm(false);
     } catch (err) {
@@ -64,7 +64,7 @@ export default function ManageTeams() {
     try {
       setIsSubmitting(true);
       await dispatch(updateTeam({ id: editingTeam.id, input: { name: editName.trim() } })).unwrap();
-      showToast('הקבוצה עודכנה בהצלחה', 'success');
+      showToast('הנבחרת עודכנה בהצלחה', 'success');
       setEditingTeam(null);
       setEditName('');
     } catch (err) {
@@ -77,8 +77,8 @@ export default function ManageTeams() {
   const handleToggleActive = async (team: Team) => {
     const action = team.isActive ? 'להשבית' : 'להפעיל';
     const confirmed = await showConfirm({
-      title: `${action} קבוצה`,
-      message: `האם אתה בטוח שברצונך ${action} את הקבוצה "${team.name}"?`,
+      title: `${action} נבחרת`,
+      message: `האם אתה בטוח שברצונך ${action} את הנבחרת "${team.name}"?`,
       confirmText: action,
       cancelText: 'ביטול',
       variant: 'destructive',
@@ -88,7 +88,7 @@ export default function ManageTeams() {
     try {
       setIsSubmitting(true);
       await dispatch(updateTeam({ id: team.id, input: { isActive: !team.isActive } })).unwrap();
-      showToast('הקבוצה עודכנה בהצלחה', 'success');
+      showToast('הנבחרת עודכנה בהצלחה', 'success');
     } catch (err) {
       showToast(err as string, 'error');
     } finally {
@@ -98,10 +98,26 @@ export default function ManageTeams() {
 
   const handleAssign = async () => {
     if (!assigningToTeam || !selectedPlayerId) return;
+
+    const selectedPlayer = manageablePlayers.find((p) => p.id === selectedPlayerId);
+    const isTransfer = selectedPlayer?.team && selectedPlayer.team.id !== assigningToTeam.id;
+
+    if (isTransfer) {
+      const confirmed = await showConfirm({
+        title: 'העברת שחקן בין נבחרות',
+        message: `השחקן ${selectedPlayer!.firstName} ${selectedPlayer!.lastName} משויך כעת לנבחרת "${selectedPlayer!.team!.name}". האם להעבירו לנבחרת "${assigningToTeam.name}"?`,
+        confirmText: 'העבר',
+        cancelText: 'ביטול',
+        variant: 'destructive',
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setIsSubmitting(true);
       await dispatch(assignPlayer({ teamId: assigningToTeam.id, playerId: selectedPlayerId })).unwrap();
-      showToast('השחקן שויך לקבוצה בהצלחה', 'success');
+      await dispatch(fetchManageablePlayers());
+      showToast('השחקן שויך לנבחרת בהצלחה', 'success');
       setAssigningToTeam(null);
       setSelectedPlayerId('');
     } catch (err) {
@@ -113,8 +129,8 @@ export default function ManageTeams() {
 
   const handleRemovePlayer = async (team: Team, player: ManageablePlayer) => {
     const confirmed = await showConfirm({
-      title: 'הסרת שחקן מקבוצה',
-      message: `האם אתה בטוח שברצונך להסיר את ${player.firstName} ${player.lastName} מהקבוצה "${team.name}"?`,
+      title: 'הסרת שחקן מנבחרת',
+      message: `האם אתה בטוח שברצונך להסיר את ${player.firstName} ${player.lastName} מהנבחרת "${team.name}"?`,
       confirmText: 'הסר',
       cancelText: 'ביטול',
       variant: 'destructive',
@@ -124,7 +140,8 @@ export default function ManageTeams() {
     try {
       setIsSubmitting(true);
       await dispatch(removePlayer({ teamId: team.id, playerId: player.id })).unwrap();
-      showToast('השחקן הוסר מהקבוצה בהצלחה', 'success');
+      await dispatch(fetchManageablePlayers());
+      showToast('השחקן הוסר מהנבחרת בהצלחה', 'success');
     } catch (err) {
       showToast(err as string, 'error');
     } finally {
@@ -135,18 +152,21 @@ export default function ManageTeams() {
   const playersForTeam = (teamId: string) =>
     manageablePlayers.filter((p) => p.team?.id === teamId && p.isActive);
 
-  const unassignedPlayers = manageablePlayers.filter(
-    (p) => !p.team && p.isActive
-  );
+  const availablePlayersForAssignment = (currentTeamId: string) =>
+    manageablePlayers.filter(
+      (p) =>
+        p.isActive &&
+        p.team?.id !== currentTeamId
+    );
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">ניהול קבוצות</h2>
+        <h2 className="text-2xl font-bold">ניהול נבחרות</h2>
         {!showCreateForm && (
           <Button onClick={() => setShowCreateForm(true)} disabled={isLocked}>
             <Plus size={18} className="ml-1" />
-            <span>קבוצה חדשה</span>
+            <span>נבחרת חדשה</span>
           </Button>
         )}
       </div>
@@ -154,7 +174,7 @@ export default function ManageTeams() {
       {isLocked && (
         <div className="mb-4 p-3 rounded-md bg-warning/10 text-warning text-sm flex items-center gap-2">
           <AlertCircle size={16} />
-          יש עונה פעילה - שינויי מבנה קבוצות נעולים
+          יש עונה פעילה - שינויי מבנה נבחרות נעולים
         </div>
       )}
 
@@ -168,14 +188,14 @@ export default function ManageTeams() {
       {showCreateForm && (
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle>יצירת קבוצה חדשה</CardTitle>
+            <CardTitle>יצירת נבחרת חדשה</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
               <input
                 type="text"
                 className="flex-1 px-3 py-2 border border-input rounded-md bg-background"
-                placeholder="שם הקבוצה"
+                placeholder="שם הנבחרת"
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}
                 onKeyDown={(e) => {
@@ -205,11 +225,13 @@ export default function ManageTeams() {
       ) : teams.length === 0 ? (
         <div className="text-center py-12">
           <Shield size={48} className="mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">אין קבוצות עדיין</p>
+          <p className="text-muted-foreground">אין נבחרות עדיין</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {teams.map((team) => (
+          {teams.map((team) => {
+            const available = availablePlayersForAssignment(team.id);
+            return (
             <Card key={team.id} className={!team.isActive ? 'opacity-60' : ''}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
@@ -258,7 +280,7 @@ export default function ManageTeams() {
                         setAssigningToTeam(team);
                         setSelectedPlayerId('');
                       }}
-                      disabled={isLocked || isSubmitting || unassignedPlayers.length === 0}
+                      disabled={isLocked || isSubmitting || available.length === 0}
                     >
                       <UserPlus size={16} className="ml-1" />
                       <span>שייך שחקן</span>
@@ -301,10 +323,11 @@ export default function ManageTeams() {
                       value={selectedPlayerId}
                       onChange={(e) => setSelectedPlayerId(e.target.value)}
                     >
-                      <option value="">בחר שחקן לא משויך...</option>
-                      {unassignedPlayers.map((p) => (
+                      <option value="">בחר שחקן...</option>
+                      {available.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.firstName} {p.lastName}
+                          {p.team ? ` (מנבחרת: ${p.team.name})` : ' (לא משויך)'}
                         </option>
                       ))}
                     </select>
@@ -339,7 +362,7 @@ export default function ManageTeams() {
                             onClick={() => handleRemovePlayer(team, player)}
                             disabled={isLocked || isSubmitting}
                             className="text-muted-foreground hover:text-destructive transition-colors"
-                            aria-label="הסר מהקבוצה"
+                            aria-label="הסר מהנבחרת"
                           >
                             <UserMinus size={14} />
                           </button>
@@ -350,7 +373,8 @@ export default function ManageTeams() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
