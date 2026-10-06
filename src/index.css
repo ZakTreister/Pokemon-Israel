@@ -13,92 +13,128 @@
     --color-normal: 60 6% 70%;
     --color-dragon: 258 96% 64%;
     --color-dark: 240 12% 18%;
-    
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
- 
+
+    --background: 210 30% 97%;
+    --foreground: 222 70% 12%;
+
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
+    --card-foreground: 222 70% 12%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: var(--color-fire);
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: var(--color-water);
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: var(--color-electric);
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --popover-foreground: 222 70% 12%;
+
+    --primary: 43 100% 57%;
+    --primary-foreground: 222 70% 12%;
+
+    --secondary: 210 95% 42%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 30% 95%;
+    --muted-foreground: 220 15% 45%;
+
+    --accent: 199 100% 67%;
+    --accent-foreground: 222 70% 12%;
+
+    --destructive: 0 84% 53%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 71% 45%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 48 100% 50%;
-    --warning-foreground: 222.2 47.4% 11.2%;
- 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --warning: 43 100% 57%;
+    --warning-foreground: 222 70% 12%;
+
+    --border: 210 40% 91%;
+    --input: 210 40% 91%;
+    --ring: 210 95% 42%;
+
+    --radius: 0.625rem;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: var(--color-fire);
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: var(--color-water);
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: var(--color-electric);
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --background: 222 70% 7%;
+    --foreground: 210 30% 95%;
+
+    --card: 222 60% 10%;
+    --card-foreground: 210 30% 95%;
+
+    --popover: 222 60% 10%;
+    --popover-foreground: 210 30% 95%;
+
+    --primary: 43 100% 57%;
+    --primary-foreground: 222 70% 12%;
+
+    --secondary: 210 95% 52%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 222 40% 16%;
+    --muted-foreground: 215 20% 60%;
+
+    --accent: 199 100% 67%;
+    --accent-foreground: 222 70% 12%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 71% 45%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 48 100% 50%;
-    --warning-foreground: 222.2 47.4% 11.2%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --warning: 43 100% 57%;
+    --warning-foreground: 222 70% 12%;
+
+    --border: 222 40% 20%;
+    --input: 222 40% 20%;
+    --ring: 210 95% 52%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-rubik;
+    @apply bg-background text-foreground font-rubik antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
   }
 }
 
 @layer components {
   .container {
     @apply px-4 mx-auto max-w-7xl sm:px-6 lg:px-8;
+  }
+}
+
+/* Utility: cut-corner card effect */
+@layer utilities {
+  .clip-corner-tl {
+    clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
+  }
+  .clip-corner-tr {
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  }
+  .clip-corner-both {
+    clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%, 0 12px);
+  }
+  .clip-corner-tag {
+    clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  }
+  .halftone-dots {
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+  .halftone-dots-dark {
+    background-image: radial-gradient(circle, rgba(6,26,69,0.04) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+  .diagonal-lines {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,0.03) 8px,
+      rgba(255,255,255,0.03) 9px
+    );
   }
 }
