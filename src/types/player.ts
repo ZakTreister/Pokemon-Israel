@@ -2,6 +2,8 @@ export interface Player {
   id: string;
   firstName: string;
   lastName: string;
+  city?: string;
+  team?: string | null;
   club: string | null;
   playerType: 'team' | 'quarterly';
   user: {
@@ -22,11 +24,12 @@ export interface CreateQuarterlyPlayerInput {
 export interface CreateTeamPlayerInput {
   firstName: string;
   lastName: string;
-  username: string;
-  password: string;
+  city?: string;
+  teamId?: string;
 }
 
 export interface UpdatePlayerInput {
+  city?: string;
   firstName?: string;
   lastName?: string;
   club?: string | null;

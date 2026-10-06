@@ -2,6 +2,9 @@ import express from 'express';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
   getTeams,
+  getPublicTeams,
+  getPublicTeam,
+  loadTeamPlayers,
   getManageablePlayers,
   getTeam,
   createTeam,
@@ -13,6 +16,9 @@ import {
 const router = express.Router();
 
 // /manageable-players must be declared before /:id
+router.get('/public', getPublicTeams);
+router.get('/public/:id', getPublicTeam);
+router.post('/:teamId/players', protect, authorize('admin', 'judge'), loadTeamPlayers);
 router.get('/', protect, authorize('admin', 'judge'), getTeams);
 router.get('/manageable-players', protect, authorize('admin', 'judge'), getManageablePlayers);
 router.get('/:id', protect, authorize('admin', 'judge'), getTeam);

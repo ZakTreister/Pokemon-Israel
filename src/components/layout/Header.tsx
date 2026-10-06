@@ -26,11 +26,8 @@ export default function Header() {
     { to: '/tournaments', label: 'טורנירים' },
     { to: '/rankings', label: 'טבלת ניקוד' },
     { to: '/deck-stats', label: 'נתוני דקים' },
-    ...(isAuthenticated && user?.role === 'admin'
-      ? [{ to: '/admin', label: 'ניהול' }]
-      : []),
-    ...(isStaff ? [{ to: '/manage/teams', label: 'ניהול משותף' }] : []),
-    ...(isAuthenticated ? [{ to: '/dashboard', label: 'אזור אישי' }] : []),
+    { to: '/all-stars', label: 'All Stars' },
+    ...(isStaff ? [{ to: '/manage/teams', label: 'ניהול' }] : []),
   ];
   const actions = (
     <>
@@ -71,7 +68,7 @@ export default function Header() {
       ) : (
         <Button asChild size="sm">
           <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-            התחברות
+            כניסת צוות
           </Link>
         </Button>
       )}

@@ -10,7 +10,9 @@ import TournamentDetailsPage from './pages/TournamentDetailsPage';
 import RankingsPage from './pages/RankingsPage';
 import DeckStatsPage from './pages/DeckStatsPage';
 import LoginPage from './pages/LoginPage';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import { LegacyAdminRedirect } from './pages/manage/ManageDashboardPage';
+import TeamPage from './pages/TeamPage';
+import AllStarsPage from './pages/AllStarsPage';
 import PlayerDashboardPage from './pages/player/PlayerDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -38,6 +40,8 @@ function App() {
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
           <Route path="/deck-stats" element={<DeckStatsPage />} />
+          <Route path="/teams/:id" element={<TeamPage />} />
+          <Route path="/all-stars" element={<AllStarsPage />} />
           <Route path="/login" element={<LoginPage />} />
           
           <Route element={<ProtectedRoute />}>
@@ -45,7 +49,7 @@ function App() {
           </Route>
           
           <Route element={<AdminRoute />}>
-            <Route path="/admin/*" element={<AdminDashboardPage />} />
+            <Route path="/admin/*" element={<LegacyAdminRedirect />} />
           </Route>
           
           <Route element={<StaffRoute />}>

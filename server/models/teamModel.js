@@ -8,6 +8,8 @@ const teamSchema = new mongoose.Schema({
     minlength: [1, 'Team name must be at least 1 character long'],
     maxlength: [100, 'Team name cannot exceed 100 characters'],
   },
+  logo: { type: String, trim: true, maxlength: 2000, default: '' },
+  rosterLock: { token: String, expiresAt: Date },
   normalizedName: {
     type: String,
     required: true,
@@ -31,6 +33,7 @@ teamSchema.set('toJSON', {
     ret.id = ret._id;
     delete ret._id;
     delete ret.__v;
+    delete ret.rosterLock;
     return ret;
   },
 });

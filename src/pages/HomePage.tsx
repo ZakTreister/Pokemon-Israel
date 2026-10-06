@@ -1,3 +1,4 @@
+import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
@@ -9,9 +10,7 @@ import {
   MapPin,
   User,
   Trophy,
-  Crown,
   Medal,
-  Award,
   Newspaper,
   Zap,
   Layers,
@@ -31,14 +30,6 @@ import { StatCard } from '../components/ui/StatCard';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
-
-interface GroupedDeckStats {
-  primaryAttacker: string;
-  totalAppearances: number;
-  representativeDeckArchetype: string;
-  representativeAttackerImage1?: string | null;
-  representativeAttackerImage2?: string | null;
-}
 
 export default function HomePage() {
   const dispatch = useAppDispatch();
@@ -71,73 +62,6 @@ export default function HomePage() {
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 4)
     : [];
-
-  const getTopDecks = (): GroupedDeckStats[] => {
-    if (!Array.isArray(tournaments) || !Array.isArray(decks)) return [];
-
-    const deckAppearances: Record<string, number> = {};
-    const deckDetails: Record<
-      string,
-      {
-        archetype: string;
-        attackerImage1?: string | null;
-        attackerImage2?: string | null;
-      }
-    > = {};
-
-    tournaments
-      .filter(
-        (tournament) => tournament.status === 'completed' && tournament.results,
-      )
-      .forEach((tournament) => {
-        tournament.results?.forEach((result) => {
-          const deckId =
-            typeof result.deck === 'string' ? result.deck : result.deck?.id;
-          if (deckId) {
-            deckAppearances[deckId] = (deckAppearances[deckId] || 0) + 1;
-            if (!deckDetails[deckId]) {
-              const fullDeck = decks.find((d) => d.id === deckId);
-              if (fullDeck) {
-                deckDetails[deckId] = {
-                  archetype: fullDeck.archetype,
-                  attackerImage1: fullDeck.attackerImage1,
-                  attackerImage2: fullDeck.attackerImage2,
-                };
-              }
-            }
-          }
-        });
-      });
-
-    const groupedDeckStats: Record<string, GroupedDeckStats> = {};
-
-    for (const deckId in deckAppearances) {
-      const details = deckDetails[deckId];
-      if (details) {
-        const firstWord = details.archetype.split(' ')[0];
-        const primaryAttacker = firstWord.toLowerCase();
-
-        if (!groupedDeckStats[primaryAttacker]) {
-          groupedDeckStats[primaryAttacker] = {
-            primaryAttacker: firstWord,
-            totalAppearances: 0,
-            representativeDeckArchetype: details.archetype,
-            representativeAttackerImage1: details.attackerImage1,
-            representativeAttackerImage2: details.attackerImage2,
-          };
-        }
-        groupedDeckStats[primaryAttacker].totalAppearances +=
-          deckAppearances[deckId];
-      }
-    }
-
-    return Object.values(groupedDeckStats)
-      .filter((group) => group.totalAppearances >= 2)
-      .sort((a, b) => b.totalAppearances - a.totalAppearances)
-      .slice(0, 4);
-  };
-
-  const topDecks = getTopDecks();
 
   const totalTournaments = Array.isArray(tournaments) ? tournaments.length : 0;
   const completedCount = Array.isArray(tournaments)
@@ -197,7 +121,7 @@ export default function HomePage() {
                   to="/login"
                   className="text-sm font-bold text-blue-100 underline decoration-blue-cyan/50 underline-offset-4 hover:text-gold"
                 >
-                  התחברות
+                  כניסת צוות
                 </Link>
               )}
             </div>
@@ -466,34 +390,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {topDecks.length > 0 && (
-        <section className="bg-section-light py-12 md:py-14">
-          <div className="container">
-            <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-              <SectionHeading
-                title="הדקים המובילים"
-                subtitle="הדקים הבולטים בתוצאות הטורנירים בליגה."
-                icon={<Crown size={18} />}
-                className="mb-0"
-              />
-              <Button asChild variant="outline" size="sm">
-                <Link to="/deck-stats">
-                  לנתוני הדקים <ArrowUpLeft size={16} className="ms-2" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-              {topDecks.map((deck, index) => (
-                <DeckCard
-                  key={deck.primaryAttacker}
-                  deck={deck}
-                  rank={index + 1}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <AllStarsTeamsSection />
 
       <section className="relative overflow-hidden bg-navy-700 py-12 md:py-14">
         <div
@@ -626,99 +523,5 @@ function HeroArtwork() {
         className="absolute bottom-1 left-1/2 h-9 max-w-40 -translate-x-1/2 rounded bg-white/95 px-2 object-contain sm:h-10"
       />
     </div>
-  );
-}
-
-interface DeckCardProps {
-  deck: GroupedDeckStats;
-  rank: number;
-}
-
-function DeckCard({ deck, rank }: DeckCardProps) {
-  const getRankIcon = () => {
-    switch (rank) {
-      case 1:
-        return <Crown className="h-5 w-5 text-gold" />;
-      case 2:
-        return <Medal className="h-5 w-5 text-slate-400" />;
-      case 3:
-        return <Award className="h-5 w-5 text-amber-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getRankVariant = (): 'rank-1' | 'rank-2' | 'rank-3' | 'neutral' => {
-    if (rank === 1) return 'rank-1';
-    if (rank === 2) return 'rank-2';
-    if (rank === 3) return 'rank-3';
-    return 'neutral';
-  };
-
-  const getAttackerImages = () => {
-    const images = [];
-    if (deck.representativeAttackerImage1)
-      images.push(deck.representativeAttackerImage1);
-    if (deck.representativeAttackerImage2)
-      images.push(deck.representativeAttackerImage2);
-    return images;
-  };
-
-  const attackerImages = getAttackerImages();
-
-  return (
-    <Card
-      variant="public"
-      className="relative group min-h-[295px] overflow-hidden transition-transform duration-300 motion-safe:hover:-translate-y-1.5"
-    >
-      <div className="absolute top-3 end-3 z-10">
-        <Badge
-          variant={getRankVariant()}
-          className="h-8 w-8 items-center justify-center rounded-full text-sm shadow-card"
-        >
-          {rank}
-        </Badge>
-      </div>
-      <CardHeader className="min-h-20 bg-navy-gradient pb-3 pt-5 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {getRankIcon()}
-            <CardTitle className="text-base text-white pe-6">
-              {deck.primaryAttacker}
-            </CardTitle>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-5">
-        {attackerImages.length > 0 && (
-          <div className="flex justify-center gap-2 h-28">
-            {attackerImages.map((image, index) => (
-              <div
-                key={index}
-                className="relative w-12 shrink-0 self-center overflow-hidden rounded-lg shadow-card transition-transform duration-300 motion-safe:group-hover:scale-105 sm:w-20"
-                style={{ aspectRatio: '5/7' }}
-              >
-                <img
-                  src="/pokemon_kids_logo.png"
-                  alt={`${deck.representativeDeckArchetype} Attacker ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="text-center border-t border-border pt-3">
-          <div className="text-3xl font-extrabold text-blue-500 leading-none">
-            {deck.totalAppearances}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            הופעות בטורנירים
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

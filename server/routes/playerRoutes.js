@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
   getPlayers,
   getPlayer,
@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-router.get('/', protect, admin, getPlayers);
-router.get('/:id', protect, admin, getPlayer);
+router.get('/', protect, authorize('admin', 'judge'), getPlayers);
+router.get('/:id', protect, authorize('admin', 'judge'), getPlayer);
 router.post('/quarterly', protect, admin, createQuarterlyPlayer);
-router.post('/team', protect, admin, createTeamPlayer);
-router.put('/:id', protect, admin, updatePlayer);
+router.post('/team', protect, authorize('admin', 'judge'), createTeamPlayer);
+router.put('/:id', protect, authorize('admin', 'judge'), updatePlayer);
 
 export default router;

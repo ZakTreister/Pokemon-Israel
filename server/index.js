@@ -16,6 +16,8 @@ import updateRoutes from './routes/updateRoutes.js';
 import seasonRoutes from './routes/seasonRoutes.js';
 import playerRoutes from './routes/playerRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
+import internalTournamentRoutes from './routes/internalTournamentRoutes.js';
+import { getAllStarsRankings } from './controllers/internalTournamentController.js';
 import badgeRoutes from './routes/badgeRoutes.js';
 
 // Get __dirname equivalent for ES modules
@@ -95,6 +97,8 @@ app.use('/api/seasons', seasonRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/internal-tournaments', internalTournamentRoutes);
+app.get('/api/all-stars/rankings', getAllStarsRankings);
 
 // Serve static files from the React app build directory
 if (process.env.NODE_ENV === 'production') {

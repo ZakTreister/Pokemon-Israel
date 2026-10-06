@@ -9,7 +9,7 @@ import {
   removePlayer,
   clearError,
 } from '../../features/teams/teamsSlice';
-import { fetchActiveSeason } from '../../features/seasons/seasonsSlice';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { useToast } from '../../components/ui/ToastProvider';
@@ -23,12 +23,13 @@ export default function ManageTeams() {
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
   const { teams, manageablePlayers, isLoading, error } = useAppSelector((state) => state.teams);
-  const { activeSeason } = useAppSelector((state) => state.seasons);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamLogo, setNewTeamLogo] = useState('');
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [editName, setEditName] = useState('');
+  const [editLogo, setEditLogo] = useState('');
   const [assigningToTeam, setAssigningToTeam] = useState<Team | null>(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,21 +37,21 @@ export default function ManageTeams() {
   useEffect(() => {
     dispatch(fetchTeams());
     dispatch(fetchManageablePlayers());
-    dispatch(fetchActiveSeason());
+
     return () => {
       dispatch(clearError());
     };
   }, [dispatch]);
 
-  const isLocked = !!activeSeason;
 
   const handleCreate = async () => {
     if (!newTeamName.trim()) return;
     try {
       setIsSubmitting(true);
-      await dispatch(createTeam({ name: newTeamName.trim() })).unwrap();
+      await dispatch(createTeam({ name: newTeamName.trim(), logo: newTeamLogo.trim() })).unwrap();
       showToast('הנבחרת נוצרה בהצלחה', 'success');
       setNewTeamName('');
+      setNewTeamLogo('');
       setShowCreateForm(false);
     } catch (err) {
       showToast(err as string, 'error');
@@ -63,7 +64,7 @@ export default function ManageTeams() {
     if (!editingTeam || !editName.trim()) return;
     try {
       setIsSubmitting(true);
-      await dispatch(updateTeam({ id: editingTeam.id, input: { name: editName.trim() } })).unwrap();
+      await dispatch(updateTeam({ id: editingTeam.id, input: { name: editName.trim(), logo: editLogo.trim() } })).unwrap();
       showToast('הנבחרת עודכנה בהצלחה', 'success');
       setEditingTeam(null);
       setEditName('');
@@ -164,19 +165,12 @@ export default function ManageTeams() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול נבחרות</h2>
         {!showCreateForm && (
-          <Button onClick={() => setShowCreateForm(true)} disabled={isLocked}>
+          <Button onClick={() => setShowCreateForm(true)} disabled={isSubmitting}>
             <Plus size={18} className="ml-1" />
             <span>נבחרת חדשה</span>
           </Button>
         )}
       </div>
-
-      {isLocked && (
-        <div className="mb-4 p-3 rounded-md bg-warning/10 text-warning text-sm flex items-center gap-2">
-          <AlertCircle size={16} />
-          יש עונה פעילה - שינויי מבנה נבחרות נעולים
-        </div>
-      )}
 
       {error && (
         <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm flex items-center gap-2">
@@ -192,6 +186,7 @@ export default function ManageTeams() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
+              <input aria-label="כתובת סמל הנבחרת" placeholder="כתובת תמונה לסמל (רשות)" value={newTeamLogo} onChange={e => setNewTeamLogo(e.target.value)} className="min-w-0 flex-1 px-3 py-2 border rounded-md" />
               <input
                 type="text"
                 className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
@@ -207,6 +202,7 @@ export default function ManageTeams() {
                 onClick={() => {
                   setShowCreateForm(false);
                   setNewTeamName('');
+                  setNewTeamLogo('');
                 }}
                 disabled={isSubmitting}
               >
@@ -237,7 +233,7 @@ export default function ManageTeams() {
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Shield size={20} className="shrink-0 text-blue-500" /><h3 className="font-bold text-lg">{team.name}</h3>
+                      <Shield size={20} className="shrink-0 text-blue-500" /><Link to={`/teams/${team.id}`} className="font-bold text-lg hover:text-blue-500">{team.name}</Link>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         team.isActive
                           ? 'bg-success/10 text-success'
@@ -252,23 +248,25 @@ export default function ManageTeams() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    <Button size="sm" asChild><Link to={`/teams/${team.id}`}>סגל וטורנירים</Link></Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         setEditingTeam(team);
                         setEditName(team.name);
+                        setEditLogo(team.logo || '');
                       }}
-                      disabled={isLocked || isSubmitting}
+                      disabled={isSubmitting}
                     >
                       <Edit2 size={16} className="ml-1" />
-                      <span>שנה שם</span>
+                      <span>שם וסמל</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleActive(team)}
-                      disabled={isLocked || isSubmitting}
+                      disabled={isSubmitting}
                     >
                       <Power size={16} className="ml-1" />
                       <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
@@ -280,7 +278,7 @@ export default function ManageTeams() {
                         setAssigningToTeam(team);
                         setSelectedPlayerId('');
                       }}
-                      disabled={isLocked || isSubmitting || available.length === 0}
+                      disabled={!team.isActive || isSubmitting || available.length === 0}
                     >
                       <UserPlus size={16} className="ml-1" />
                       <span>שייך שחקן</span>
@@ -289,7 +287,8 @@ export default function ManageTeams() {
                 </div>
 
                 {editingTeam?.id === team.id && (
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <input aria-label="כתובת סמל הנבחרת" value={editLogo} onChange={e => setEditLogo(e.target.value)} placeholder="כתובת סמל" className="min-w-0 flex-1 px-3 py-2 border rounded-md" />
                     <input
                       type="text"
                       className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
@@ -360,7 +359,7 @@ export default function ManageTeams() {
                           <span>{player.firstName} {player.lastName}</span>
                           <button
                             onClick={() => handleRemovePlayer(team, player)}
-                            disabled={isLocked || isSubmitting}
+                            disabled={isSubmitting}
                             className="text-muted-foreground hover:text-destructive transition-colors"
                             aria-label="הסר מהנבחרת"
                           >

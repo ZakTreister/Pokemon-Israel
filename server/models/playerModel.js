@@ -15,6 +15,7 @@ const playerSchema = new mongoose.Schema({
     minlength: [1, 'Last name must be at least 1 character long'],
     maxlength: [50, 'Last name cannot exceed 50 characters'],
   },
+  city: { type: String, trim: true, maxlength: 100, default: '' },
   club: {
     type: String,
     trim: true,
@@ -56,8 +57,7 @@ const playerSchema = new mongoose.Schema({
 });
 
 // Compound unique index for quarterly players only.
-// Team players are excluded from this constraint since their identity
-// is tied to a User account, not first+last+club.
+// Keep legacy quarterly uniqueness; team children do not require User accounts.
 playerSchema.index(
   { normalizedFirstName: 1, normalizedLastName: 1, normalizedClub: 1 },
   {
@@ -72,7 +72,7 @@ playerSchema.index(
   { user: 1 },
   {
     unique: true,
-    partialFilterExpression: { user: { $type: 'ObjectId' } },
+    partialFilterExpression: { user: { $type: 'objectId' } },
   }
 );
 

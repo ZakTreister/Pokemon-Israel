@@ -12,7 +12,8 @@
     "dev:server": "nodemon server/index.js",
     "start": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build:full": "npm run build && npm run server",
-    "production": "NODE_ENV=production npm run server"
+    "production": "NODE_ENV=production npm run server",
+    "test:stage-a": "node --test server/tests/*.test.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
