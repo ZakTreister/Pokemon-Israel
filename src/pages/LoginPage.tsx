@@ -46,17 +46,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="container py-16 min-h-[calc(100vh-20rem)]">
+    <div className="cs-workspace container py-12 min-h-[calc(100vh-20rem)]">
       <div className="max-w-md mx-auto">
         <div className="mb-6 text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gold text-navy-700 mb-4 shadow-cta">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-blue-gradient text-white mb-2 shadow-button-blue">
             <Zap size={28} fill="currentColor" />
           </div>
         </div>
-        <Card>
+        <Card className="border-t-4 border-t-blue-500">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extrabold text-center">התחברות</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl font-extrabold">התחברות</CardTitle>
+            <CardDescription className="leading-relaxed">
               הזן את פרטי ההתחברות שלך כדי להיכנס לחשבונך
             </CardDescription>
           </CardHeader>
@@ -87,14 +87,16 @@ export default function LoginPage() {
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    className="w-full px-3 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-background text-foreground"
+                    className="w-full ps-3 pe-12 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-background text-foreground"
                     placeholder="הזן סיסמה"
                     autoComplete="current-password"
                     {...register('password')}
                   />
                   <button
                     type="button"
-                    className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground"
+                    className="absolute top-1/2 left-2 flex h-9 w-9 items-center justify-center transform -translate-y-1/2 text-muted-foreground"
+                    aria-label={showPassword ? 'הסתרת סיסמה' : 'הצגת סיסמה'}
+                    aria-pressed={showPassword}
                     onClick={togglePasswordVisibility}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -113,7 +115,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                variant="cta"
+                variant="default"
                 className="w-full"
                 disabled={isLoading}
               >

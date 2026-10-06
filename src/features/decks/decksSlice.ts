@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import decksService from './decksService';
 import { Deck } from '../../types/deck';
@@ -19,7 +20,8 @@ export const fetchDecks = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await decksService.getDecks();
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת הדקים';
       return thunkAPI.rejectWithValue(message);
     }
@@ -31,7 +33,8 @@ export const createDeck = createAsyncThunk(
   async (deckData: { archetype: string; image: string }, thunkAPI) => {
     try {
       return await decksService.createDeck(deckData);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה ביצירת הדק';
       return thunkAPI.rejectWithValue(message);
     }
@@ -43,7 +46,8 @@ export const updateDeck = createAsyncThunk(
   async ({ id, deckData }: { id: string; deckData: { archetype: string; image: string } }, thunkAPI) => {
     try {
       return await decksService.updateDeck(id, deckData);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בעדכון הדק';
       return thunkAPI.rejectWithValue(message);
     }
@@ -56,7 +60,8 @@ export const deleteDeck = createAsyncThunk(
     try {
       await decksService.deleteDeck(id);
       return id;
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה במחיקת הדק';
       return thunkAPI.rejectWithValue(message);
     }

@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import updatesService from './updatesService';
 import { Update } from '../../types/update';
@@ -19,7 +20,8 @@ export const fetchUpdates = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await updatesService.getUpdates();
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת העדכונים';
       return thunkAPI.rejectWithValue(message);
     }

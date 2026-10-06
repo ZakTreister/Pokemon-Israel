@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
-import { Calendar, MapPin, User, Search } from 'lucide-react';
+import { Calendar, MapPin, User, Search, Trophy } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -65,7 +65,7 @@ export default function TournamentsPage() {
 
       <div className="container py-12">
         {/* Search and Filters */}
-        <div className="mb-8">
+        <div className="mb-8 rounded-lg border border-border bg-card p-4 shadow-panel">
           <div className="grid gap-4 md:grid-cols-[1fr_auto]">
             <div className="relative">
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -74,12 +74,13 @@ export default function TournamentsPage() {
               <input
                 type="text"
                 placeholder="חפש טורנירים..."
+                aria-label="חיפוש טורנירים"
                 className="w-full pl-3 pr-10 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-card text-card-foreground"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 pb-1">
               <Button
                 variant={filterStatus === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('all')}
@@ -109,14 +110,14 @@ export default function TournamentsPage() {
         ) : (
           <>
             {sortedTournaments.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
                 <p className="text-lg text-muted-foreground mb-4">לא נמצאו טורנירים התואמים את החיפוש שלך</p>
                 <Button variant="outline" onClick={() => { setSearchQuery(''); setFilterStatus('all'); }}>
                   נקה סינון
                 </Button>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
                 {sortedTournaments.map((tournament) => (
                   <TournamentCard
                     key={tournament.id}
@@ -150,12 +151,14 @@ function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCard
   const getButtonVariant: 'outline' | 'success' | 'cta' = isPast ? 'outline' : isUserRegistered ? 'success' : 'cta';
 
   return (
-    <Card className="overflow-hidden group transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-      <div className="relative h-44 overflow-hidden">
+    <Card variant="public" className="group flex min-h-[370px] flex-col overflow-hidden transition-transform duration-300 motion-safe:hover:-translate-y-1.5">
+      <div className="relative h-36 shrink-0 overflow-hidden bg-navy-gradient">
+        <Trophy aria-hidden="true" className="absolute inset-0 m-auto h-16 w-16 text-blue-cyan/40" />
         <img
           src={tournament.image}
           alt={tournament.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="relative w-full h-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
+          onError={e => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="absolute top-3 right-3 flex gap-1.5">
           {isPast ? (
@@ -171,7 +174,7 @@ function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCard
           <h3 className="text-white text-lg font-bold">{tournament.title}</h3>
         </div>
       </div>
-      <CardContent className="pt-4">
+      <CardContent className="flex-1 pt-4">
         <div className="space-y-2.5">
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Calendar size={16} className="text-blue-400" />
@@ -187,7 +190,7 @@ function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCard
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="pb-6">
         <Link to={`/tournaments/${tournament.id}`} className="w-full">
           <Button className="w-full" variant={getButtonVariant}>
             {getButtonText()}

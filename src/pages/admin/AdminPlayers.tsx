@@ -220,7 +220,7 @@ export default function AdminPlayers() {
     <div>
       <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
         <h2 className="text-2xl font-bold">שחקנים</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => setShowTeamModal(true)} variant="default">
             <UserPlus size={18} className="ml-1" />
             <span>הוסף שחקן נבחרת</span>
@@ -366,7 +366,7 @@ export default function AdminPlayers() {
 
       {/* Add Team Player Modal */}
       {showTeamModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">הוסף שחקן נבחרת</h3>
@@ -431,7 +431,7 @@ export default function AdminPlayers() {
 
       {/* Add Quarterly Player Modal */}
       {showQuarterlyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">הוסף שחקן חוגים</h3>
@@ -487,7 +487,7 @@ export default function AdminPlayers() {
 
       {/* Edit Player Modal */}
       {showEditModal && selectedPlayer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">עריכת שחקן</h3>

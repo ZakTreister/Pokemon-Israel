@@ -191,10 +191,10 @@ export default function ManageTeams() {
             <CardTitle>יצירת נבחרת חדשה</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 type="text"
-                className="flex-1 px-3 py-2 border border-input rounded-md bg-background"
+                className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
                 placeholder="שם הנבחרת"
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}
@@ -232,12 +232,12 @@ export default function ManageTeams() {
           {teams.map((team) => {
             const available = availablePlayersForAssignment(team.id);
             return (
-            <Card key={team.id} className={!team.isActive ? 'opacity-60' : ''}>
+            <Card key={team.id} className={`border-s-4 border-s-blue-500 ${!team.isActive ? 'opacity-60' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-lg">{team.name}</h3>
+                      <Shield size={20} className="shrink-0 text-blue-500" /><h3 className="font-bold text-lg">{team.name}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         team.isActive
                           ? 'bg-success/10 text-success'
@@ -251,7 +251,7 @@ export default function ManageTeams() {
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -292,7 +292,7 @@ export default function ManageTeams() {
                   <div className="flex gap-2 mb-4">
                     <input
                       type="text"
-                      className="flex-1 px-3 py-2 border border-input rounded-md bg-background"
+                      className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       onKeyDown={(e) => {
@@ -319,7 +319,7 @@ export default function ManageTeams() {
                 {assigningToTeam?.id === team.id && (
                   <div className="flex gap-2 mb-4 p-3 rounded-md bg-muted">
                     <select
-                      className="flex-1 px-3 py-2 border border-input rounded-md bg-background"
+                      className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
                       value={selectedPlayerId}
                       onChange={(e) => setSelectedPlayerId(e.target.value)}
                     >

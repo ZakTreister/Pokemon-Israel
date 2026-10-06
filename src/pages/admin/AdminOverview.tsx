@@ -30,8 +30,8 @@ export default function AdminOverview() {
         <div className="animate-pulse text-center py-12">טוען נתונים...</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
+          <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-3 mb-8">
+            <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>טורנירים קרובים</CardDescription>
                 <CardTitle className="text-3xl">{upcomingTournaments}</CardTitle>
@@ -47,7 +47,7 @@ export default function AdminOverview() {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>סה"כ משתתפים</CardDescription>
                 <CardTitle className="text-3xl">{totalParticipants}</CardTitle>
@@ -63,7 +63,7 @@ export default function AdminOverview() {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>אחוז תפוסה בטורנירים</CardDescription>
                 <CardTitle className="text-3xl">

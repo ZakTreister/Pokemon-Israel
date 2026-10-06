@@ -1,8 +1,10 @@
+import type { RequestError } from '../../types/api';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchUserStats, fetchUserTournaments } from '../../features/user/userSlice';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
+import { StatCard } from '../../components/ui/StatCard';
 import Button from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { Trophy, Medal, Award, Calendar, User, Eye, EyeOff } from 'lucide-react';
@@ -107,7 +109,7 @@ export default function PlayerDashboardPage() {
       }
 
       // Update profile
-      const updateData: any = {
+      const updateData: { name: string; username: string; password?: string } = {
         name: profileData.name.trim(),
         username: profileData.username.trim()
       };
@@ -126,7 +128,8 @@ export default function PlayerDashboardPage() {
       // Refresh the page to update user data in the UI
       window.location.reload();
 
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error updating profile:', error);
       
       if (error.response?.status === 401) {
@@ -177,8 +180,8 @@ export default function PlayerDashboardPage() {
   }
 
   return (
-    <div className="container py-12">
-      <div className="mb-8 flex justify-between items-start">
+    <div className="cs-workspace container py-8">
+      <div className="mb-8 flex flex-wrap justify-between items-start gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-3xl font-extrabold text-foreground mb-2">שלום, {user?.name || user?.username}</h1>
           <p className="text-muted-foreground">ברוך הבא לאזור האישי שלך</p>
@@ -194,61 +197,20 @@ export default function PlayerDashboardPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>טורנירים שיחקת</CardDescription>
-            <CardTitle className="text-3xl">{stats?.totalTournaments || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>ניצחונות</CardDescription>
-            <CardTitle className="text-3xl text-success">{stats?.wins || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>תיקו</CardDescription>
-            <CardTitle className="text-3xl text-warning">{stats?.draws || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>הפסדים</CardDescription>
-            <CardTitle className="text-3xl text-destructive">{stats?.losses || 0}</CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4 mb-7">
+        <StatCard icon={<Calendar size={20} />} value={stats?.totalTournaments || 0} label="טורנירים שיחקת" />
+        <StatCard icon={<Trophy size={20} />} value={stats?.wins || 0} label="ניצחונות" accent="gold" />
+        <StatCard icon={<Medal size={20} />} value={stats?.draws || 0} label="תיקו" accent="navy" />
+        <StatCard icon={<User size={20} />} value={stats?.losses || 0} label="הפסדים" accent="red" />
+      </div>
+      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-3 mb-8">
+        <StatCard icon={<Award size={20} />} value={`${stats?.winRate?.toFixed(1) || 0}%`} label="יחס ניצחונות" />
+        <StatCard icon={<Trophy size={20} />} value={stats?.points || 0} label="נקודות" />
+        <StatCard icon={<Medal size={20} />} value={stats?.bestRank || '-'} label="מיקום הטוב ביותר" accent="gold" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>יחס ניצחונות</CardDescription>
-            <CardTitle className="text-3xl">{stats?.winRate?.toFixed(1) || 0}%</CardTitle>
-          </CardHeader>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>נקודות</CardDescription>
-            <CardTitle className="text-3xl">{stats?.points || 0}</CardTitle>
-          </CardHeader>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>מיקום הטוב ביותר</CardDescription>
-            <CardTitle className="text-3xl">{stats?.bestRank || '-'}</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-5">
+        <div className="min-w-0 space-y-8">
           <div>
             <h2 className="text-2xl font-extrabold text-foreground mb-4">היסטוריית טורנירים</h2>
             {userTournaments.length === 0 ? (
@@ -273,7 +235,7 @@ export default function PlayerDashboardPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-5 gap-4 text-center">
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 text-center">
                         <div>
                           <p className="text-muted-foreground text-sm">מיקום</p>
                           <p className="font-bold text-xl">{tournament.result.position}</p>
@@ -377,7 +339,7 @@ export default function PlayerDashboardPage() {
 
       {/* Profile Edit Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <User size={20} />

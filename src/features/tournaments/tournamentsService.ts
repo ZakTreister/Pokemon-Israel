@@ -35,7 +35,7 @@ const unregisterFromTournament = async (id: string) => {
   return data;
 };
 
-const submitTournamentResults = async (id: string, results: any) => {
+const submitTournamentResults = async (id: string, results: unknown) => {
   const { data } = await api.post<Tournament>(`/api/tournaments/${id}/results`, { results });
   return data;
 };
