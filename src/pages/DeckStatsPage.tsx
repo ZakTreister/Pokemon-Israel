@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { StatCard } from '../components/ui/StatCard';
 import { PageHero } from '../components/ui/PageHero';
@@ -134,7 +134,7 @@ export default function DeckStatsPage() {
     return (
       <div className="container py-16">
         <div className="flex justify-center items-center min-h-[50vh]">
-          <div className="animate-pulse text-ink-muted">טוען סטטיסטיקות דקים...</div>
+          <div className="animate-pulse text-muted-foreground">טוען סטטיסטיקות דקים...</div>
         </div>
       </div>
     );
@@ -154,15 +154,15 @@ export default function DeckStatsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard value={totalDecks} label="סהכ דקים" accent="blue" />
             <StatCard value={totalAppearances} label="סהכ הופעות" accent="navy" />
-            <Card className="p-4 bg-card-tint">
-              <div className="text-xs font-medium text-ink-muted mb-1">דק הכי פופולרי</div>
-              <div className="text-sm font-bold text-navy-700 truncate">{mostPopularDeck?.archetype || '-'}</div>
-              <div className="text-xs text-ink-muted">{mostPopularDeck?.totalAppearances || 0} הופעות</div>
+            <Card className="p-4">
+              <div className="text-xs font-medium text-muted-foreground mb-1">דק הכי פופולרי</div>
+              <div className="text-sm font-bold text-foreground truncate">{mostPopularDeck?.archetype || '-'}</div>
+              <div className="text-xs text-muted-foreground">{mostPopularDeck?.totalAppearances || 0} הופעות</div>
             </Card>
-            <Card className="p-4 bg-card-tint">
-              <div className="text-xs font-medium text-ink-muted mb-1">דק הכי מצליח</div>
-              <div className="text-sm font-bold text-navy-700 truncate">{mostSuccessfulDeck?.archetype || '-'}</div>
-              <div className="text-xs text-ink-muted">{mostSuccessfulDeck?.winRate?.toFixed(1) || 0}% הצלחה</div>
+            <Card className="p-4">
+              <div className="text-xs font-medium text-muted-foreground mb-1">דק הכי מצליח</div>
+              <div className="text-sm font-bold text-foreground truncate">{mostSuccessfulDeck?.archetype || '-'}</div>
+              <div className="text-xs text-muted-foreground">{mostSuccessfulDeck?.winRate?.toFixed(1) || 0}% הצלחה</div>
             </Card>
           </div>
         )}
@@ -171,12 +171,12 @@ export default function DeckStatsPage() {
         <div className="mb-8">
           <div className="relative max-w-md mx-auto">
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <Search className="h-5 w-5 text-ink-muted" />
+              <Search className="h-5 w-5 text-muted-foreground" />
             </div>
             <input
               type="text"
               placeholder="חפש דק..."
-              className="w-full pl-3 pr-10 py-2.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-navy-700"
+              className="w-full pl-3 pr-10 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-card text-card-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -185,8 +185,8 @@ export default function DeckStatsPage() {
 
         {filteredDecks.length === 0 ? (
           <div className="text-center py-12">
-            <BarChart3 size={48} className="mx-auto text-ink-muted mb-4 opacity-40" />
-            <p className="text-lg text-ink-muted">
+            <BarChart3 size={48} className="mx-auto text-muted-foreground mb-4 opacity-40" />
+            <p className="text-lg text-muted-foreground">
               {deckStatistics.length === 0
                 ? 'לא נמצאו נתוני דקים מטורנירים שהסתיימו'
                 : 'לא נמצאו דקים התואמים את החיפוש שלך'}
@@ -216,8 +216,8 @@ export default function DeckStatsPage() {
                       {filteredDecks.map((deck) => {
                         const images = getDeckImages(deck);
                         return (
-                          <tr key={deck.deckId} className="border-b border-line-light hover:bg-blue-50/50 transition-colors">
-                            <td className="px-4 py-3 font-bold text-navy-700">{deck.archetype}</td>
+                          <tr key={deck.deckId} className="border-b border-border hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3 font-bold text-foreground">{deck.archetype}</td>
                             <td className="px-4 py-3"><span className="text-lg font-extrabold text-blue-500">{deck.totalAppearances}</span></td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-1">
@@ -278,8 +278,8 @@ export default function DeckStatsPage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-lg text-navy-700">{deck.archetype}</h3>
-                          <div className="text-sm text-ink-muted">{deck.totalAppearances} הופעות בטורנירים</div>
+                          <h3 className="font-bold text-lg text-foreground">{deck.archetype}</h3>
+                          <div className="text-sm text-muted-foreground">{deck.totalAppearances} הופעות בטורנירים</div>
                         </div>
                         {images.length > 0 && (
                           <div className="flex gap-1">
@@ -303,9 +303,9 @@ export default function DeckStatsPage() {
                         <StatCard value={deck.thirdPlaceFinishes} label="מקום 3" accent="navy" />
                       </div>
 
-                      <div className="text-center pt-3 border-t border-line-light">
-                        <div className="text-xs text-ink-muted mb-1">אחוז הצלחה (טופ 3)</div>
-                        <div className={`text-2xl font-extrabold ${deck.winRate >= 50 ? 'text-success' : deck.winRate >= 25 ? 'text-gold-600' : 'text-ink-muted'}`}>
+                      <div className="text-center pt-3 border-t border-border">
+                        <div className="text-xs text-muted-foreground mb-1">אחוז הצלחה (טופ 3)</div>
+                        <div className={`text-2xl font-extrabold ${deck.winRate >= 50 ? 'text-success' : deck.winRate >= 25 ? 'text-gold-600' : 'text-muted-foreground'}`}>
                           {deck.winRate.toFixed(1)}%
                         </div>
                       </div>

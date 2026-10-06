@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, LogOut, Sun, Moon, Menu as MenuIcon, Zap } from 'lucide-react';
+import { X, LogOut, Sun, Moon, Menu as MenuIcon, Zap } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../features/auth/authSlice';
 import { useTheme } from '../ThemeProvider';

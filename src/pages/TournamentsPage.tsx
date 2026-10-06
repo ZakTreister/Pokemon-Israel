@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
-import { Calendar, MapPin, User, Search, Trophy } from 'lucide-react';
+import { Calendar, MapPin, User, Search } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -69,12 +69,12 @@ export default function TournamentsPage() {
           <div className="grid gap-4 md:grid-cols-[1fr_auto]">
             <div className="relative">
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <Search className="h-5 w-5 text-ink-muted" />
+                <Search className="h-5 w-5 text-muted-foreground" />
               </div>
               <input
                 type="text"
                 placeholder="חפש טורנירים..."
-                className="w-full pl-3 pr-10 py-2.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-navy-700"
+                className="w-full pl-3 pr-10 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-card text-card-foreground"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -104,13 +104,13 @@ export default function TournamentsPage() {
 
         {isLoading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-pulse text-ink-muted">טוען טורנירים...</div>
+            <div className="animate-pulse text-muted-foreground">טוען טורנירים...</div>
           </div>
         ) : (
           <>
             {sortedTournaments.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-lg text-ink-muted mb-4">לא נמצאו טורנירים התואמים את החיפוש שלך</p>
+                <p className="text-lg text-muted-foreground mb-4">לא נמצאו טורנירים התואמים את החיפוש שלך</p>
                 <Button variant="outline" onClick={() => { setSearchQuery(''); setFilterStatus('all'); }}>
                   נקה סינון
                 </Button>
@@ -173,15 +173,15 @@ function TournamentCard({ tournament, isUserRegistered, isPast }: TournamentCard
       </div>
       <CardContent className="pt-4">
         <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-ink-muted text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Calendar size={16} className="text-blue-400" />
             <span>{new Date(tournament.date).toLocaleDateString('he-IL')}</span>
           </div>
-          <div className="flex items-center gap-2 text-ink-muted text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <MapPin size={16} className="text-blue-400" />
             <span>{tournament.location}</span>
           </div>
-          <div className="flex items-center gap-2 text-ink-muted text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <User size={16} className="text-blue-400" />
             <span>{tournament.currentParticipants} / {tournament.maxParticipants} משתתפים</span>
           </div>

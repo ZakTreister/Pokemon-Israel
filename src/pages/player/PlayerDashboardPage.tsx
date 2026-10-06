@@ -180,7 +180,7 @@ export default function PlayerDashboardPage() {
     <div className="container py-12">
       <div className="mb-8 flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold mb-2">שלום, {user?.name || user?.username}</h1>
+          <h1 className="text-3xl font-extrabold text-foreground mb-2">שלום, {user?.name || user?.username}</h1>
           <p className="text-muted-foreground">ברוך הבא לאזור האישי שלך</p>
         </div>
         
@@ -250,7 +250,7 @@ export default function PlayerDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div>
-            <h2 className="text-2xl font-bold mb-4">היסטוריית טורנירים</h2>
+            <h2 className="text-2xl font-extrabold text-foreground mb-4">היסטוריית טורנירים</h2>
             {userTournaments.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center">
@@ -305,7 +305,7 @@ export default function PlayerDashboardPage() {
 
         <div className="space-y-8">
           <div>
-            <h2 className="text-2xl font-bold mb-4">טורנירים קרובים</h2>
+            <h2 className="text-2xl font-extrabold text-foreground mb-4">טורנירים קרובים</h2>
             {tournamentsLoading ? (
               <div className="animate-pulse p-4">טוען טורנירים...</div>
             ) : upcomingTournaments.length === 0 ? (
@@ -339,7 +339,7 @@ export default function PlayerDashboardPage() {
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold mb-4">הישגים</h2>
+            <h2 className="text-2xl font-extrabold text-foreground mb-4">הישגים</h2>
             {!stats?.achievements || stats.achievements.length === 0 ? (
               <Card>
                 <CardContent className="py-6 text-center">
@@ -353,13 +353,13 @@ export default function PlayerDashboardPage() {
                 {stats.achievements.map((achievement) => (
                   <Card key={achievement.id}>
                     <div className="flex p-4 items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-full">
+                      <div className="bg-blue-50 dark:bg-blue-500/15 p-2 rounded-full">
                         {achievement.title.includes('אלוף') ? (
-                          <Trophy className="h-5 w-5 text-primary" />
+                          <Trophy className="h-5 w-5 text-gold-600" />
                         ) : achievement.title.includes('ניצחונות') ? (
-                          <Award className="h-5 w-5 text-primary" />
+                          <Award className="h-5 w-5 text-blue-500" />
                         ) : (
-                          <Medal className="h-5 w-5 text-primary" />
+                          <Medal className="h-5 w-5 text-blue-500" />
                         )}
                       </div>
                       <div>

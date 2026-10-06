@@ -38,7 +38,7 @@ export function PageHero({
         'relative overflow-hidden',
         variant === 'dark'
           ? 'bg-hero-navy text-white'
-          : 'bg-section-light text-navy-700',
+          : 'bg-section-light text-foreground',
         className
       )}
     >
@@ -55,7 +55,7 @@ export function PageHero({
             {renderTitle()}
           </h1>
           {subtitle && (
-            <p className={cn('text-lg md:text-xl mb-6', variant === 'dark' ? 'text-blue-200' : 'text-ink-muted')}>
+            <p className={cn('text-lg md:text-xl mb-6', variant === 'dark' ? 'text-blue-200' : 'text-muted-foreground')}>
               {subtitle}
             </p>
           )}

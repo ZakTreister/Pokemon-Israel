@@ -3,10 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Calendar, MapPin, User, Clock, Trash2, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
+import { Calendar, MapPin, User, Clock, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
 import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
@@ -288,7 +287,7 @@ export default function TournamentDetailsPage() {
     return (
       <div className="container py-16">
         <div className="flex justify-center items-center min-h-[50vh]">
-          <div className="animate-pulse text-ink-muted">טוען פרטי טורניר...</div>
+          <div className="animate-pulse text-muted-foreground">טוען פרטי טורניר...</div>
         </div>
       </div>
     );
@@ -298,8 +297,8 @@ export default function TournamentDetailsPage() {
     return (
       <div className="container py-16">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold text-navy-700 mb-4">טורניר לא נמצא</h1>
-          <p className="text-ink-muted mb-6">
+          <h1 className="text-2xl font-extrabold text-foreground mb-4">טורניר לא נמצא</h1>
+          <p className="text-muted-foreground mb-6">
             הטורניר המבוקש לא נמצא במערכת.
           </p>
           <Button variant="outline" onClick={() => navigate('/tournaments')}>
@@ -322,40 +321,40 @@ export default function TournamentDetailsPage() {
       {isAdmin ? (
         <div className="space-y-8">
           {/* Tournament Header */}
-          <div className="border-b border-line pb-6">
-            <h1 className="text-3xl font-extrabold text-navy-700 mb-2">{activeTournament.title}</h1>
-            <p className="text-ink-muted mb-4">{activeTournament.description}</p>
+          <div className="border-b border-border pb-6">
+            <h1 className="text-3xl font-extrabold text-foreground mb-2">{activeTournament.title}</h1>
+            <p className="text-muted-foreground mb-4">{activeTournament.description}</p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="text-sm text-ink-muted">תאריך</p>
-                  <p className="font-bold text-navy-700">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
+                  <p className="text-sm text-muted-foreground">תאריך</p>
+                  <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="text-sm text-ink-muted">שעה</p>
-                  <p className="font-bold text-navy-700">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-sm text-muted-foreground">שעה</p>
+                  <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="text-sm text-ink-muted">מיקום</p>
-                  <p className="font-bold text-navy-700">{activeTournament.location}</p>
+                  <p className="text-sm text-muted-foreground">מיקום</p>
+                  <p className="font-bold text-foreground">{activeTournament.location}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-blue-500" />
                 <div>
-                  <p className="text-sm text-ink-muted">משתתפים</p>
-                  <p className="font-bold text-navy-700">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                  <p className="text-sm text-muted-foreground">משתתפים</p>
+                  <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
                 </div>
               </div>
             </div>
@@ -402,14 +401,14 @@ export default function TournamentDetailsPage() {
                           .map((result, index) => {
                             const deckInfo = getDeckInfo(result.deck);
                             return (
-                              <tr key={getResultKey(result, index)} className="border-b border-line-light hover:bg-blue-50/50 transition-colors">
+                              <tr key={getResultKey(result, index)} className="border-b border-border hover:bg-muted/50 transition-colors">
                                 <td className="px-4 py-3">
                                   <div className="flex items-center gap-2">
-                                    <span className="font-extrabold text-navy-700">{result.position}</span>
+                                    <span className="font-extrabold text-foreground">{result.position}</span>
                                     {getPositionIcon(result.position)}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 font-bold text-navy-700">{result.playerName}</td>
+                                <td className="px-4 py-3 font-bold text-foreground">{result.playerName}</td>
                                 <td className="px-4 py-3"><span className="text-lg font-extrabold text-blue-500">{result.points}</span></td>
                                 <td className="px-4 py-3 text-sm">{deckInfo.name}</td>
                                 <td className="px-4 py-3">
@@ -574,47 +573,47 @@ export default function TournamentDetailsPage() {
             </div>
 
             <div className="mb-8">
-              <h2 className="text-2xl font-extrabold text-navy-700 mb-4">פרטי הטורניר</h2>
-              <p className="mb-6 text-ink-muted leading-relaxed">{activeTournament.description}</p>
+              <h2 className="text-2xl font-extrabold text-foreground mb-4">פרטי הטורניר</h2>
+              <p className="mb-6 text-muted-foreground leading-relaxed">{activeTournament.description}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-card-tint border border-line">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Calendar className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-ink-muted">תאריך</p>
-                    <p className="font-bold text-navy-700">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
+                    <p className="text-xs text-muted-foreground">תאריך</p>
+                    <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-card-tint border border-line">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Clock className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-ink-muted">שעה</p>
-                    <p className="font-bold text-navy-700">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-xs text-muted-foreground">שעה</p>
+                    <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-card-tint border border-line">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <MapPin className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-ink-muted">מיקום</p>
-                    <p className="font-bold text-navy-700">{activeTournament.location}</p>
+                    <p className="text-xs text-muted-foreground">מיקום</p>
+                    <p className="font-bold text-foreground">{activeTournament.location}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-card-tint border border-line">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <User className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-ink-muted">משתתפים</p>
-                    <p className="font-bold text-navy-700">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                    <p className="text-xs text-muted-foreground">משתתפים</p>
+                    <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
                   </div>
                 </div>
               </div>
@@ -623,7 +622,7 @@ export default function TournamentDetailsPage() {
             {/* Tournament Results Section for Regular Users */}
             {hasResults && (
               <div className="mb-8">
-                <h2 className="text-2xl font-extrabold text-navy-700 mb-4 flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold text-foreground mb-4 flex items-center gap-2">
                   <Trophy className="h-6 w-6 text-gold-600" />
                   <span>תוצאות הטורניר</span>
                 </h2>
@@ -648,14 +647,14 @@ export default function TournamentDetailsPage() {
                             .map((result, index) => {
                               const deckInfo = getDeckInfo(result.deck);
                               return (
-                                <tr key={getResultKey(result, index)} className="border-b border-line-light hover:bg-blue-50/50 transition-colors">
+                                <tr key={getResultKey(result, index)} className="border-b border-border hover:bg-muted/50 transition-colors">
                                   <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-extrabold text-navy-700">{result.position}</span>
+                                      <span className="font-extrabold text-foreground">{result.position}</span>
                                       {getPositionIcon(result.position)}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 font-bold text-navy-700">{result.playerName}</td>
+                                  <td className="px-4 py-3 font-bold text-foreground">{result.playerName}</td>
                                   <td className="px-4 py-3"><span className="text-lg font-extrabold text-blue-500">{result.points}</span></td>
                                   <td className="px-4 py-3 text-sm">{deckInfo.name}</td>
                                   <td className="px-4 py-3">

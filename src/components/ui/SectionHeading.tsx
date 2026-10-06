@@ -39,14 +39,14 @@ export function SectionHeading({
       <h2
         className={cn(
           'text-3xl md:text-4xl font-extrabold mb-2 leading-tight',
-          dark ? 'text-white' : 'text-navy-700'
+          dark ? 'text-white' : 'text-foreground'
         )}
       >
         {icon && <span className="inline-flex items-center gap-2.5">{icon}{renderTitle()}</span>}
         {!icon && renderTitle()}
       </h2>
       {subtitle && (
-        <p className={cn('max-w-2xl', center && 'mx-auto', dark ? 'text-blue-200' : 'text-ink-muted')}>
+        <p className={cn('max-w-2xl', center && 'mx-auto', dark ? 'text-blue-200' : 'text-muted-foreground')}>
           {subtitle}
         </p>
       )}

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
-import { CalendarDays, Users, TrendingUp, ArrowRight } from 'lucide-react';
+import { CalendarDays, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminOverview() {
@@ -24,7 +24,7 @@ export default function AdminOverview() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">סקירה כללית</h2>
+      <h2 className="text-2xl font-extrabold text-foreground mb-6">סקירה כללית</h2>
       
       {isLoading ? (
         <div className="animate-pulse text-center py-12">טוען נתונים...</div>
@@ -39,7 +39,7 @@ export default function AdminOverview() {
               <CardContent>
                 <Link 
                   to="/admin/tournaments" 
-                  className="text-sm text-primary flex items-center hover:underline"
+                  className="text-sm text-blue-500 flex items-center hover:underline font-bold"
                 >
                   <span>ניהול טורנירים</span>
                   <ArrowRight size={14} className="mr-1" />
@@ -55,7 +55,7 @@ export default function AdminOverview() {
               <CardContent>
                 <Link 
                   to="/admin/users" 
-                  className="text-sm text-primary flex items-center hover:underline"
+                  className="text-sm text-blue-500 flex items-center hover:underline font-bold"
                 >
                   <span>ניהול משתמשים</span>
                   <ArrowRight size={14} className="mr-1" />
@@ -111,7 +111,7 @@ export default function AdminOverview() {
                       <div className="pt-3">
                         <Link 
                           to={`/admin/tournaments/${nearestTournament.id}`} 
-                          className="text-primary hover:underline"
+                          className="text-blue-500 hover:underline font-bold"
                         >
                           ניהול הטורניר
                         </Link>

@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Calendar, MapPin, User, Trophy, Crown, Medal, Award, Zap, Newspaper } from 'lucide-react';
+import { Calendar, MapPin, User, Trophy, Crown, Medal, Award, Newspaper } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -25,7 +25,7 @@ export default function HomePage() {
   const dispatch = useAppDispatch();
   const { tournaments, isLoading: tournamentsLoading } = useAppSelector((state) => state.tournaments);
   const { updates, isLoading: updatesLoading } = useAppSelector((state) => state.updates);
-  const { decks, isLoading: decksLoading } = useAppSelector((state) => state.decks);
+  const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function HomePage() {
           />
           {tournamentsLoading ? (
             <div className="flex justify-center py-12">
-              <div className="animate-pulse text-ink-muted">טוען טורנירים...</div>
+              <div className="animate-pulse text-muted-foreground">טוען טורנירים...</div>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -190,19 +190,19 @@ export default function HomePage() {
                   </div>
                   <CardContent className="pt-4">
                     <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-ink-muted text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <Calendar size={16} className="text-blue-400" />
                         <span>{new Date(tournament.date).toLocaleDateString('he-IL')}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-ink-muted text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <MapPin size={16} className="text-blue-400" />
                         <span>{tournament.location}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-ink-muted text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <User size={16} className="text-blue-400" />
                         <span>{tournament.currentParticipants} / {tournament.maxParticipants} משתתפים</span>
                       </div>
-                      <div className="flex items-center gap-2 text-ink-muted text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <Trophy size={16} className="text-gold-600" />
                         <span>פרסים: {tournament.prizePool}</span>
                       </div>
@@ -304,7 +304,7 @@ function DeckCard({ deck, rank }: DeckCardProps) {
   const attackerImages = getAttackerImages();
 
   return (
-    <Card className="relative group transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 bg-card-tint">
+    <Card className="relative group transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
       <div className="absolute -top-2 -left-2 z-10">
         <Badge variant={getRankVariant()} className="h-8 w-8 items-center justify-center rounded-full text-sm shadow-card">
           {rank}
@@ -337,9 +337,9 @@ function DeckCard({ deck, rank }: DeckCardProps) {
             ))}
           </div>
         )}
-        <div className="text-center border-t border-line pt-3">
+        <div className="text-center border-t border-border pt-3">
           <div className="text-3xl font-extrabold text-blue-500 leading-none">{deck.totalAppearances}</div>
-          <div className="text-xs text-ink-muted mt-1">הופעות בטורנירים</div>
+          <div className="text-xs text-muted-foreground mt-1">הופעות בטורנירים</div>
         </div>
       </CardContent>
     </Card>

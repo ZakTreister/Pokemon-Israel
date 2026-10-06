@@ -19,7 +19,7 @@ export default function ManageDashboardPage() {
     <div className="min-h-[calc(100vh-16rem)]">
       <div className="container py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">אזור ניהול משותף</h1>
+          <h1 className="text-3xl font-extrabold text-foreground">אזור ניהול משותף</h1>
           <Button
             variant="outline"
             size="icon"
@@ -37,8 +37,8 @@ export default function ManageDashboardPage() {
           `}>
             <div className="mb-6 pb-4 border-b border-border">
               <div className="text-sm text-muted-foreground">שלום,</div>
-              <div className="font-medium">{user?.username}</div>
-              <div className="text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5 w-fit mt-1">
+              <div className="font-bold text-foreground">{user?.username}</div>
+              <div className="text-xs bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300 rounded-full px-2 py-0.5 w-fit mt-1 font-bold">
                 {user?.role === 'admin' ? 'מנהל' : 'שופט'}
               </div>
             </div>
@@ -85,7 +85,7 @@ function NavLink({ to, icon, label, isActive }: NavLinkProps) {
       className={`
         flex items-center gap-2 px-3 py-2 rounded-md transition-colors
         ${isActive
-          ? 'bg-primary/10 text-primary'
+          ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300 font-bold'
           : 'text-foreground hover:bg-muted'
         }
       `}

@@ -1,4 +1,4 @@
-import { forwardRef, ComponentPropsWithoutRef } from 'react';
+import { forwardRef, ComponentPropsWithoutRef, cloneElement, isValidElement, ReactElement } from 'react';
 import { cn } from '../../utils/cn';
 
 export interface ButtonProps
@@ -18,9 +18,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         'bg-red-400 text-white hover:bg-red-500 shadow-glow-red': variant === 'live',
         'bg-destructive text-destructive-foreground hover:bg-destructive/90': variant === 'destructive',
         'bg-success text-success-foreground hover:bg-success/90': variant === 'success',
-        'border-2 border-navy-500/20 bg-white text-navy-700 hover:border-blue-400 hover:bg-blue-50': variant === 'outline',
+        'border-2 border-navy-500/20 bg-card text-card-foreground hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-navy-600/40': variant === 'outline',
         'bg-blue-gradient text-white hover:opacity-90 shadow-card': variant === 'secondary',
-        'bg-transparent text-navy-700 hover:bg-navy-50': variant === 'ghost',
+        'bg-transparent text-foreground hover:bg-muted': variant === 'ghost',
         'text-blue-500 underline-offset-4 hover:underline': variant === 'link',
         'h-10 px-5 py-2': size === 'default',
         'h-9 rounded-md px-4': size === 'sm',
@@ -31,10 +31,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (asChild) {
-      const child = children as React.ReactElement;
-      if (child && child.type) {
-        return React.cloneElement(child, {
-          className: cn(baseClasses, child.props.className),
+      const child = children as ReactElement;
+      if (isValidElement(child)) {
+        return cloneElement(child, {
+          className: cn(baseClasses, (child.props as Record<string, unknown>)?.className as string),
           ...props
         });
       }

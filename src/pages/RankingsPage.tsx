@@ -113,8 +113,8 @@ export default function RankingsPage() {
         {/* Year Selection and Search */}
         <div className="mb-8 space-y-4">
           <div className="flex justify-center">
-            <div className="flex items-center gap-2 bg-white border border-line rounded-xl p-1.5 shadow-card">
-              <Calendar size={18} className="text-ink-muted mx-2" />
+            <div className="flex items-center gap-2 bg-card border border-border rounded-xl p-1.5 shadow-card">
+              <Calendar size={18} className="text-muted-foreground mx-2" />
               {availableYears.length > 0 ? (
                 availableYears.map(year => (
                   <Button
@@ -134,12 +134,12 @@ export default function RankingsPage() {
 
           <div className="relative max-w-md mx-auto">
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <Search className="h-5 w-5 text-ink-muted" />
+              <Search className="h-5 w-5 text-muted-foreground" />
             </div>
             <input
               type="text"
               placeholder="חפש שחקן..."
-              className="w-full pl-3 pr-10 py-2.5 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-navy-700"
+              className="w-full pl-3 pr-10 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-card text-card-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -147,7 +147,7 @@ export default function RankingsPage() {
         </div>
 
         {isLoading ? (
-          <div className="animate-pulse text-center py-12 text-ink-muted">טוען דירוגים...</div>
+          <div className="animate-pulse text-center py-12 text-muted-foreground">טוען דירוגים...</div>
         ) : (
           <Card className="overflow-hidden">
             {/* Desktop Table */}
@@ -168,7 +168,7 @@ export default function RankingsPage() {
                   {sortedRankings.map((player, index) => {
                     const deckInfo = player.deck ? getDeckInfo(player.deck) : { name: '-', icons: [] };
                     return (
-                      <tr key={player.playerId} className="border-b border-line-light hover:bg-blue-50/50 transition-colors">
+                      <tr key={player.playerId} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <Badge variant={getRankBadgeVariant(index)} className="h-7 w-7 items-center justify-center rounded-full text-sm">
@@ -179,7 +179,7 @@ export default function RankingsPage() {
                             {index === 2 && <Award className="h-4 w-4 text-amber-500" />}
                           </div>
                         </td>
-                        <td className="px-4 py-3 font-bold text-navy-700">{player.playerName}</td>
+                        <td className="px-4 py-3 font-bold text-foreground">{player.playerName}</td>
                         <td className="px-4 py-3">
                           <span className="text-xl font-extrabold text-blue-500">{player.points}</span>
                         </td>
@@ -209,7 +209,7 @@ export default function RankingsPage() {
                   })}
                   {sortedRankings.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-ink-muted">
+                      <td colSpan={7} className="text-center py-8 text-muted-foreground">
                         {tournamentsForYear.length === 0
                           ? `לא נמצאו טורנירים לשנת ${selectedYear}`
                           : 'לא נמצאו שחקנים'}
@@ -236,7 +236,7 @@ export default function RankingsPage() {
                         {index === 2 && <Award className="h-5 w-5 text-amber-500" />}
                       </div>
                       <div className="text-left">
-                        <div className="font-bold text-navy-700">{player.playerName}</div>
+                        <div className="font-bold text-foreground">{player.playerName}</div>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -245,8 +245,8 @@ export default function RankingsPage() {
                       <StatCard value={player.bestRank === Infinity ? '-' : player.bestRank} label="מיקום הטוב" accent="gold" />
                     </div>
                     {deckInfo.name !== '-' && (
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-line-light">
-                        <span className="text-xs text-ink-muted">דק בשימוש</span>
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
+                        <span className="text-xs text-muted-foreground">דק בשימוש</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{deckInfo.name}</span>
                           {deckInfo.icons.length > 0 && (
@@ -270,7 +270,7 @@ export default function RankingsPage() {
                 );
               })}
               {sortedRankings.length === 0 && (
-                <div className="text-center py-8 text-ink-muted">
+                <div className="text-center py-8 text-muted-foreground">
                   {tournamentsForYear.length === 0
                     ? `לא נמצאו טורנירים לשנת ${selectedYear}`
                     : 'לא נמצאו שחקנים'}
