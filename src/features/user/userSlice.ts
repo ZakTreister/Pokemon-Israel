@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import userService from './userService';
 import { PlayerStats, UserTournament } from '../../types/user';
@@ -21,7 +22,8 @@ export const fetchUserStats = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await userService.getUserStats();
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת נתוני המשתמש';
       return thunkAPI.rejectWithValue(message);
     }
@@ -33,7 +35,8 @@ export const fetchUserTournaments = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await userService.getUserTournaments();
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת טורנירי המשתמש';
       return thunkAPI.rejectWithValue(message);
     }

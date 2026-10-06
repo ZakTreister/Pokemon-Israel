@@ -4,14 +4,33 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Calendar, MapPin, User, Trophy, Crown, Medal, Award, Newspaper } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import {
+  Calendar,
+  MapPin,
+  User,
+  Trophy,
+  Crown,
+  Medal,
+  Award,
+  Newspaper,
+  Zap,
+  Layers,
+  ArrowUpLeft,
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { StatCard } from '../components/ui/StatCard';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
-import image from '../../public/pokemon_kids_logo.png';
 
 interface GroupedDeckStats {
   primaryAttacker: string;
@@ -23,9 +42,21 @@ interface GroupedDeckStats {
 
 export default function HomePage() {
   const dispatch = useAppDispatch();
-  const { tournaments, isLoading: tournamentsLoading } = useAppSelector((state) => state.tournaments);
-  const { updates, isLoading: updatesLoading } = useAppSelector((state) => state.updates);
-  const { decks } = useAppSelector((state) => state.decks);
+  const {
+    tournaments,
+    isLoading: tournamentsLoading,
+    error: tournamentsError,
+  } = useAppSelector((state) => state.tournaments);
+  const {
+    updates,
+    isLoading: updatesLoading,
+    error: updatesError,
+  } = useAppSelector((state) => state.updates);
+  const {
+    decks,
+    isLoading: decksLoading,
+    error: decksError,
+  } = useAppSelector((state) => state.decks);
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
@@ -38,24 +69,34 @@ export default function HomePage() {
     ? tournaments
         .filter((tournament) => tournament.status === 'upcoming')
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 3)
+        .slice(0, 4)
     : [];
 
   const getTopDecks = (): GroupedDeckStats[] => {
     if (!Array.isArray(tournaments) || !Array.isArray(decks)) return [];
 
     const deckAppearances: Record<string, number> = {};
-    const deckDetails: Record<string, { archetype: string; attackerImage1?: string | null; attackerImage2?: string | null }> = {};
+    const deckDetails: Record<
+      string,
+      {
+        archetype: string;
+        attackerImage1?: string | null;
+        attackerImage2?: string | null;
+      }
+    > = {};
 
     tournaments
-      .filter(tournament => tournament.status === 'completed' && tournament.results)
-      .forEach(tournament => {
-        tournament.results?.forEach(result => {
-          const deckId = typeof result.deck === 'string' ? result.deck : result.deck?.id;
+      .filter(
+        (tournament) => tournament.status === 'completed' && tournament.results,
+      )
+      .forEach((tournament) => {
+        tournament.results?.forEach((result) => {
+          const deckId =
+            typeof result.deck === 'string' ? result.deck : result.deck?.id;
           if (deckId) {
             deckAppearances[deckId] = (deckAppearances[deckId] || 0) + 1;
             if (!deckDetails[deckId]) {
-              const fullDeck = decks.find(d => d.id === deckId);
+              const fullDeck = decks.find((d) => d.id === deckId);
               if (fullDeck) {
                 deckDetails[deckId] = {
                   archetype: fullDeck.archetype,
@@ -85,179 +126,439 @@ export default function HomePage() {
             representativeAttackerImage2: details.attackerImage2,
           };
         }
-        groupedDeckStats[primaryAttacker].totalAppearances += deckAppearances[deckId];
+        groupedDeckStats[primaryAttacker].totalAppearances +=
+          deckAppearances[deckId];
       }
     }
 
     return Object.values(groupedDeckStats)
-      .filter(group => group.totalAppearances >= 2)
+      .filter((group) => group.totalAppearances >= 2)
       .sort((a, b) => b.totalAppearances - a.totalAppearances)
-      .slice(0, 3);
+      .slice(0, 4);
   };
 
   const topDecks = getTopDecks();
 
+  const totalTournaments = Array.isArray(tournaments) ? tournaments.length : 0;
+  const completedCount = Array.isArray(tournaments)
+    ? tournaments.filter((t) => t.status === 'completed').length
+    : 0;
+  const upcomingCount = Array.isArray(tournaments)
+    ? tournaments.filter((t) => t.status === 'upcoming').length
+    : 0;
+  const featuredTournament = upcomingTournaments[0];
+
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-hero-navy">
-        <div className="absolute inset-0 bg-hero-glow" />
-        <div className="absolute inset-0 halftone-dots opacity-30" />
-        <div className="absolute inset-0 diagonal-lines" />
-        {/* Decorative glow orbs */}
-        <div className="absolute top-1/4 right-10 h-40 w-40 rounded-full bg-blue-bright/10 blur-3xl" />
-        <div className="absolute bottom-1/4 left-10 h-32 w-32 rounded-full bg-gold/10 blur-3xl" />
-
-        <div className="container relative py-20 md:py-28">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 mb-6">
-              <Badge variant="live" pulse>טורנירים פעילים</Badge>
+      <section className="relative overflow-hidden bg-hero-navy text-white">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 halftone-dots"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 diagonal-lines"
+        />
+        <div className="container relative grid items-center gap-2 py-10 sm:py-12 lg:grid-cols-[1.03fr_.97fr] lg:gap-8 lg:py-16">
+          <div className="relative z-10 min-w-0">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-cyan/30 bg-navy-700/30 px-3 py-1.5 text-xs font-bold text-blue-100">
+              <span
+                className="h-2 w-2 rounded-full bg-gold"
+                aria-hidden="true"
+              />
+              <span dir="ltr">CARDSCHOOL IL • POKÉMON TCG</span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-              ליגת <span className="text-gold">הפוקימון</span>
+            <h1 className="text-5xl font-black leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
+              המשחק שלך.
+              <br />
+              <span className="text-gold">הליגה שלנו.</span>
             </h1>
-            <p className="text-lg md:text-xl text-blue-200 mb-8 max-w-xl mx-auto">
-              המערכת הלאומית לניהול תחרויות פוקימון — דירוגים, טורנירים ופרופילי שחקנים
+            <p className="mt-5 max-w-md text-base leading-relaxed text-blue-100 sm:text-lg">
+              הבית של ליגת הפוקימון הישראלית. בחר את הטורניר הבא שלך, עקוב אחרי
+              הדירוגים ופגוש את הקהילה.
             </p>
-            <img
-              key="logo"
-              alt="Kids Pokemon logo"
-              src={image}
-              className="h-40 mb-8 mx-auto object-cover rounded-xl shadow-glow-blue"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/tournaments">
-                <Button variant="cta" size="lg">צפה בטורנירים</Button>
-              </Link>
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <Button asChild variant="cta" size="lg">
+                <Link to="/tournaments">
+                  לטורניר הבא <ArrowUpLeft className="ms-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link to="/rankings">
+                  טבלת הדירוג <Trophy className="ms-2 h-4 w-4" />
+                </Link>
+              </Button>
               {!isAuthenticated && (
-                <Link to="/login">
-                  <Button variant="outline" size="lg" className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:border-white/50">התחבר</Button>
+                <Link
+                  to="/login"
+                  className="text-sm font-bold text-blue-100 underline decoration-blue-cyan/50 underline-offset-4 hover:text-gold"
+                >
+                  התחברות
                 </Link>
               )}
             </div>
+            <div className="mt-9 flex gap-6 border-t border-white/20 pt-5 sm:gap-9">
+              <div>
+                <strong className="block text-2xl font-black text-white tabular-nums">
+                  {tournamentsLoading || tournamentsError
+                    ? '—'
+                    : totalTournaments}
+                </strong>
+                <span className="text-xs text-blue-200">טורנירים בליגה</span>
+              </div>
+              <div>
+                <strong className="block text-2xl font-black text-gold tabular-nums">
+                  {tournamentsLoading || tournamentsError ? '—' : upcomingCount}
+                </strong>
+                <span className="text-xs text-blue-200">טורנירים קרובים</span>
+              </div>
+              <div>
+                <strong className="block text-2xl font-black text-white tabular-nums">
+                  {decksLoading || decksError ? '—' : decks.length}
+                </strong>
+                <span className="text-xs text-blue-200">דקים במערכת</span>
+              </div>
+            </div>
+          </div>
+          <HeroArtwork />
+        </div>
+      </section>
+
+      {upcomingTournaments.length > 0 && (
+        <div
+          className="cs-ticker overflow-hidden py-3 text-white"
+          aria-label="טורנירים קרובים בליגה"
+        >
+          <div className="container overflow-hidden">
+            <div className="cs-ticker-track">
+              <span className="flex shrink-0 items-center gap-2 text-xs font-black">
+                <Calendar size={16} /> בקרוב בליגה
+              </span>
+              {upcomingTournaments.map((t) => (
+                <Link
+                  key={t.id}
+                  to={`/tournaments/${t.id}`}
+                  className="flex shrink-0 items-center gap-3 text-sm font-bold hover:underline"
+                >
+                  <Zap size={15} className="text-gold" />
+                  {t.title}
+                  <span className="font-normal text-white/90">
+                    {new Date(t.date).toLocaleDateString('he-IL')}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="bg-section-light py-12">
+        <div className="container">
+          <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+            <StatCard
+              icon={<Trophy size={20} />}
+              value={
+                tournamentsLoading || tournamentsError ? '—' : totalTournaments
+              }
+              label="טורנירים בליגה"
+            />
+            <StatCard
+              icon={<Calendar size={20} />}
+              value={
+                tournamentsLoading || tournamentsError ? '—' : upcomingCount
+              }
+              label="טורנירים קרובים"
+              accent="gold"
+            />
+            <StatCard
+              icon={<Medal size={20} />}
+              value={
+                tournamentsLoading || tournamentsError ? '—' : completedCount
+              }
+              label="טורנירים שהסתיימו"
+              accent="navy"
+            />
+            <StatCard
+              icon={<Layers size={20} />}
+              value={decksLoading || decksError ? '—' : decks.length}
+              label="דקים במערכת"
+            />
           </div>
         </div>
       </section>
 
-      {/* Top Winning Decks Banner */}
-      {topDecks.length > 0 && (
-        <section className="py-16 bg-section-light">
-          <div className="container">
+      <section className="bg-card py-12 md:py-14">
+        <div className="container">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-7">
             <SectionHeading
-              title="הדקים המובילים"
-              highlightWord="מובילים"
-              subtitle="הדקים החזקים ביותר בטורנירים האחרונים"
-              icon={<Crown className="h-8 w-8 text-gold" />}
+              title="הטורניר הבא שלך"
+              subtitle="נפגשים, מתחרים ועולים בדירוג."
+              icon={<Calendar size={18} />}
+              className="mb-0"
             />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/tournaments">
+                כל הטורנירים <ArrowUpLeft size={16} className="ms-2" />
+              </Link>
+            </Button>
+          </div>
+          {tournamentsError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              {tournamentsError}
+            </p>
+          )}
+          {tournamentsLoading ? (
+            <p
+              role="status"
+              className="py-12 text-center text-muted-foreground"
+            >
+              טוען טורנירים...
+            </p>
+          ) : upcomingTournaments.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-background p-8 text-center">
+              <Calendar className="mx-auto mb-3 h-8 w-8 text-blue-500" />
+              <h3 className="text-lg font-bold">אין כרגע טורנירים קרובים</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                טורנירים חדשים יופיעו כאן לאחר פרסומם.
+              </p>
+              <Button asChild variant="link" className="mt-3">
+                <Link to="/tournaments">לכל הטורנירים</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              {upcomingTournaments.map((tournament) => (
+                <Card
+                  key={tournament.id}
+                  variant="public"
+                  className="group flex min-h-[380px] flex-col overflow-hidden transition-transform duration-300 motion-safe:hover:-translate-y-1.5"
+                >
+                  <div className="relative h-36 shrink-0 overflow-hidden bg-navy-gradient">
+                    {tournament.image ? (
+                      <img
+                        src={tournament.image}
+                        alt={tournament.title}
+                        className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
+                      />
+                    ) : (
+                      <Trophy
+                        aria-hidden="true"
+                        className="absolute inset-0 m-auto h-16 w-16 text-blue-cyan/40"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-700 to-transparent" />
+                    <Badge
+                      variant="upcoming"
+                      className="absolute start-3 top-3"
+                    >
+                      קרוב
+                    </Badge>
+                    <h3 className="absolute inset-x-4 bottom-3 text-lg font-extrabold leading-tight text-white">
+                      {tournament.title}
+                    </h3>
+                  </div>
+                  <CardContent className="flex-1 pt-4">
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar
+                          size={16}
+                          className="shrink-0 text-blue-500"
+                        />
+                        <span>
+                          {new Date(tournament.date).toLocaleDateString(
+                            'he-IL',
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin size={16} className="shrink-0 text-blue-500" />
+                        <span>{tournament.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="shrink-0 text-blue-500" />
+                        <span>
+                          {tournament.currentParticipants} /{' '}
+                          {tournament.maxParticipants} משתתפים
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Trophy size={16} className="shrink-0 text-gold-600" />
+                        <span>פרסים: {tournament.prizePool}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pb-6">
+                    <Button asChild className="w-full">
+                      <Link to={`/tournaments/${tournament.id}`}>
+                        פרטים והרשמה <ArrowUpLeft size={15} className="ms-2" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {featuredTournament && (
+        <section className="py-12 md:py-14">
+          <div className="container">
+            <div className="cs-public-card relative overflow-hidden bg-feature p-6 text-white shadow-card-hover sm:p-8 md:p-10">
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 halftone-dots opacity-50"
+              />
+              <div className="relative grid items-center gap-6 md:grid-cols-[1.4fr_1fr]">
+                <div>
+                  <p className="mb-3 flex items-center gap-2 text-xs font-bold text-blue-cyan">
+                    <Calendar size={16} /> האירוע הבא בליגה
+                  </p>
+                  <h2 className="text-3xl font-black sm:text-4xl">
+                    {featuredTournament.title}
+                  </h2>
+                  <p className="mt-3 text-blue-100">
+                    {new Date(featuredTournament.date).toLocaleDateString(
+                      'he-IL',
+                    )}{' '}
+                    · {featuredTournament.location}
+                  </p>
+                  <div className="mt-6 flex flex-wrap gap-4">
+                    <Button asChild variant="cta">
+                      <Link to={`/tournaments/${featuredTournament.id}`}>
+                        פרטים והרשמה
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                    >
+                      <Link to="/tournaments">כל אירועי הליגה</Link>
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-5 border-s-4 border-gold ps-5">
+                  <Trophy className="h-16 w-16 shrink-0 text-gold" />
+                  <div>
+                    <p className="text-xs font-bold text-blue-200">
+                      פרסים בטורניר
+                    </p>
+                    <p className="mt-2 text-xl font-extrabold">
+                      {featuredTournament.prizePool}
+                    </p>
+                    <p className="mt-2 text-sm text-blue-100">
+                      {featuredTournament.currentParticipants} /{' '}
+                      {featuredTournament.maxParticipants} משתתפים
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {topDecks.length > 0 && (
+        <section className="bg-section-light py-12 md:py-14">
+          <div className="container">
+            <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+              <SectionHeading
+                title="הדקים המובילים"
+                subtitle="הדקים הבולטים בתוצאות הטורנירים בליגה."
+                icon={<Crown size={18} />}
+                className="mb-0"
+              />
+              <Button asChild variant="outline" size="sm">
+                <Link to="/deck-stats">
+                  לנתוני הדקים <ArrowUpLeft size={16} className="ms-2" />
+                </Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
               {topDecks.map((deck, index) => (
-                <DeckCard key={deck.primaryAttacker} deck={deck} rank={index + 1} />
+                <DeckCard
+                  key={deck.primaryAttacker}
+                  deck={deck}
+                  rank={index + 1}
+                />
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* Upcoming Tournaments Section */}
-      <section className="py-16">
-        <div className="container">
-          <SectionHeading
-            title="טורנירים קרובים"
-            highlightWord="קרובים"
-            subtitle="בחר את הטורניר הבא שלך והרשם עוד היום"
-          />
-          {tournamentsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-pulse text-muted-foreground">טוען טורנירים...</div>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingTournaments.map((tournament) => (
-                <Card key={tournament.id} className="overflow-hidden group transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-                  <div className="relative h-44 overflow-hidden">
-                    <img
-                      src={tournament.image}
-                      alt={tournament.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute top-3 right-3">
-                      <Badge variant="upcoming">קרוב</Badge>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-navy-800/90 via-navy-700/50 to-transparent p-4">
-                      <h3 className="text-white text-lg font-bold">{tournament.title}</h3>
-                    </div>
-                  </div>
-                  <CardContent className="pt-4">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Calendar size={16} className="text-blue-400" />
-                        <span>{new Date(tournament.date).toLocaleDateString('he-IL')}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <MapPin size={16} className="text-blue-400" />
-                        <span>{tournament.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <User size={16} className="text-blue-400" />
-                        <span>{tournament.currentParticipants} / {tournament.maxParticipants} משתתפים</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Trophy size={16} className="text-gold-600" />
-                        <span>פרסים: {tournament.prizePool}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Link to={`/tournaments/${tournament.id}`} className="w-full">
-                      <Button variant="default" className="w-full">פרטים והרשמה</Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-          <div className="text-center mt-10">
-            <Link to="/tournaments">
-              <Button variant="outline">צפה בכל הטורנירים</Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Recent Updates Section */}
-      <section className="py-16 bg-navy-700 relative overflow-hidden">
-        <div className="absolute inset-0 halftone-dots opacity-20" />
+      <section className="relative overflow-hidden bg-navy-700 py-12 md:py-14">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 halftone-dots opacity-30"
+        />
         <div className="container relative">
           <SectionHeading
-            title="עדכונים אחרונים"
-            highlightWord="אחרונים"
-            subtitle="הישאר מעודכן בחדשות ועדכונים"
+            title="מה חדש בליגה?"
+            subtitle="חדשות, הכרזות ועדכונים מהקהילה."
+            icon={<Newspaper size={18} />}
             dark
           />
+          {updatesError && (
+            <p
+              role="alert"
+              className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600"
+            >
+              {updatesError}
+            </p>
+          )}
           {updatesLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-pulse text-blue-200">טוען עדכונים...</div>
-            </div>
+            <p role="status" className="py-12 text-center text-blue-200">
+              טוען עדכונים...
+            </p>
+          ) : updates.length === 0 ? (
+            <p className="border-t border-white/15 py-6 text-blue-200">
+              עדכונים חדשים מהליגה יופיעו כאן.
+            </p>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               {(Array.isArray(updates) ? updates : []).map((update) => (
-                <Card key={update.id} className="bg-navy-600/40 border-navy-500/30 text-white animate-slide-in backdrop-blur-sm">
+                <Card
+                  key={update.id}
+                  variant="public"
+                  className="overflow-hidden"
+                >
+                  <div className="cs-news-art">
+                    <Newspaper
+                      aria-hidden="true"
+                      className="absolute end-5 top-5 h-20 w-20 rotate-[-12deg] text-white/20"
+                    />
+                    <span
+                      className="absolute start-4 bottom-4 text-xs font-black tracking-[.2em] text-white"
+                      dir="ltr"
+                    >
+                      LEAGUE NEWS
+                    </span>
+                  </div>
                   <CardHeader>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-blue-cyan">
-                        <Newspaper size={20} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-white">{update.title}</CardTitle>
-                        <CardDescription className="text-blue-200">
-                          {formatDistanceToNow(new Date(update.date), { addSuffix: true, locale: he })}
-                        </CardDescription>
-                      </div>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <Badge variant="info">עדכון מהליגה</Badge>
+                      <CardDescription className="text-xs">
+                        {formatDistanceToNow(new Date(update.date), {
+                          addSuffix: true,
+                          locale: he,
+                        })}
+                      </CardDescription>
                     </div>
+                    <CardTitle>{update.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-blue-100/90 text-sm leading-relaxed">{update.content}</p>
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                      {update.content}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -265,6 +566,65 @@ export default function HomePage() {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+function HeroArtwork() {
+  return (
+    <div className="cs-hero-art" aria-hidden="true">
+      <div className="cs-orbit" />
+      <div className="cs-hero-lightning absolute start-[8%] top-[6%] h-32 w-14 rotate-12 bg-gold" />
+      <div className="cs-hero-lightning absolute end-[7%] bottom-[8%] h-24 w-10 rotate-12 bg-gold" />
+      <div className="cs-trading-card cs-trading-card-back">
+        <div className="flex justify-between text-[10px] font-black">
+          <span>STRATEGY</span>
+          <Zap size={14} className="text-gold" />
+        </div>
+        <div className="cs-card-art">
+          <Layers className="relative h-20 w-20 text-blue-cyan" />
+        </div>
+        <div className="text-center text-sm font-black text-white">
+          כל קלף קובע.
+        </div>
+        <div className="mx-auto mt-3 h-1 w-20 bg-gold" />
+      </div>
+      <div className="cs-trading-card cs-trading-card-front">
+        <div className="flex justify-between text-[10px] font-black">
+          <span>COMMUNITY</span>
+          <User size={14} className="text-gold" />
+        </div>
+        <div className="cs-card-art">
+          <Trophy className="relative h-20 w-20 text-gold" />
+        </div>
+        <div className="text-center text-sm font-black text-white">
+          משחקים ביחד.
+        </div>
+        <div className="mx-auto mt-3 h-1 w-20 bg-gold" />
+      </div>
+      <div className="cs-trading-card cs-trading-card-main">
+        <div className="flex items-center justify-between text-[10px] font-black">
+          <span dir="ltr">CARDSCHOOL IL</span>
+          <Zap size={14} className="text-gold" fill="currentColor" />
+        </div>
+        <div className="cs-card-art">
+          <div className="cs-pokeball" />
+        </div>
+        <p className="text-center text-base font-black text-white">
+          נפגשים בליגה.
+        </p>
+        <p
+          dir="ltr"
+          className="mt-2 text-center text-[9px] font-bold tracking-[.16em] text-blue-200"
+        >
+          POKÉMON TRADING CARD GAME
+        </p>
+      </div>
+      <img
+        src="/pokemon_kids_logo.png"
+        alt=""
+        className="absolute bottom-1 left-1/2 h-9 max-w-40 -translate-x-1/2 rounded bg-white/95 px-2 object-contain sm:h-10"
+      />
     </div>
   );
 }
@@ -288,58 +648,75 @@ function DeckCard({ deck, rank }: DeckCardProps) {
     }
   };
 
-  const getRankVariant = (): 'rank-1' | 'rank-2' | 'rank-3' => {
+  const getRankVariant = (): 'rank-1' | 'rank-2' | 'rank-3' | 'neutral' => {
     if (rank === 1) return 'rank-1';
     if (rank === 2) return 'rank-2';
-    return 'rank-3';
+    if (rank === 3) return 'rank-3';
+    return 'neutral';
   };
 
   const getAttackerImages = () => {
     const images = [];
-    if (deck.representativeAttackerImage1) images.push(deck.representativeAttackerImage1);
-    if (deck.representativeAttackerImage2) images.push(deck.representativeAttackerImage2);
+    if (deck.representativeAttackerImage1)
+      images.push(deck.representativeAttackerImage1);
+    if (deck.representativeAttackerImage2)
+      images.push(deck.representativeAttackerImage2);
     return images;
   };
 
   const attackerImages = getAttackerImages();
 
   return (
-    <Card className="relative group transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
-      <div className="absolute -top-2 -left-2 z-10">
-        <Badge variant={getRankVariant()} className="h-8 w-8 items-center justify-center rounded-full text-sm shadow-card">
+    <Card
+      variant="public"
+      className="relative group min-h-[295px] overflow-hidden transition-transform duration-300 motion-safe:hover:-translate-y-1.5"
+    >
+      <div className="absolute top-3 end-3 z-10">
+        <Badge
+          variant={getRankVariant()}
+          className="h-8 w-8 items-center justify-center rounded-full text-sm shadow-card"
+        >
           {rank}
         </Badge>
       </div>
-      <CardHeader className="pb-3">
+      <CardHeader className="min-h-20 bg-navy-gradient pb-3 pt-5 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getRankIcon()}
-            <CardTitle className="text-base">{deck.primaryAttacker}</CardTitle>
+            <CardTitle className="text-base text-white pe-6">
+              {deck.primaryAttacker}
+            </CardTitle>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 pt-5">
         {attackerImages.length > 0 && (
           <div className="flex justify-center gap-2 h-28">
             {attackerImages.map((image, index) => (
               <div
                 key={index}
-                className="relative overflow-hidden rounded-lg shadow-card transition-transform duration-300 group-hover:scale-105"
-                style={{ width: '80px', aspectRatio: '5/7' }}
+                className="relative w-12 shrink-0 self-center overflow-hidden rounded-lg shadow-card transition-transform duration-300 motion-safe:group-hover:scale-105 sm:w-20"
+                style={{ aspectRatio: '5/7' }}
               >
                 <img
-                  src={image}
+                  src="/pokemon_kids_logo.png"
                   alt={`${deck.representativeDeckArchetype} Attacker ${index + 1}`}
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               </div>
             ))}
           </div>
         )}
         <div className="text-center border-t border-border pt-3">
-          <div className="text-3xl font-extrabold text-blue-500 leading-none">{deck.totalAppearances}</div>
-          <div className="text-xs text-muted-foreground mt-1">הופעות בטורנירים</div>
+          <div className="text-3xl font-extrabold text-blue-500 leading-none">
+            {deck.totalAppearances}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            הופעות בטורנירים
+          </div>
         </div>
       </CardContent>
     </Card>

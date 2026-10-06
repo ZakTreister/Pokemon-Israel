@@ -1,61 +1,64 @@
 import { Link } from 'react-router-dom';
-import { Zap } from 'lucide-react';
+import { Zap, ArrowUpLeft, Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="bg-navy-700 text-blue-100">
-      <div className="container py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="relative border-t-4 border-gold bg-navy-700 text-blue-100">
+      <div className="container py-10 md:py-12">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <h3 className="text-lg font-extrabold mb-4 text-white flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold text-navy-700">
-                <Zap size={18} fill="currentColor" />
+            <Link to="/" className="mb-4 flex items-center gap-3 text-white">
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold text-navy-700">
+                <Zap size={23} fill="currentColor" />
               </span>
-              ליגת הפוקימון
-            </h3>
-            <p className="text-blue-200/80 text-sm mb-4">
-              המערכת לניהול ליגת הפוקימון, מעקב דירוגים ופרופילים של שחקנים
+              <span dir="ltr" className="text-2xl font-black">
+                CardSchool <span className="text-gold">IL</span>
+              </span>
+            </Link>
+            <p className="max-w-xs text-sm leading-relaxed text-blue-200">
+              הבית של ליגת הפוקימון הישראלית. טורנירים, דירוגים ופרופילי שחקנים
+              — כל הליגה במקום אחד.
             </p>
           </div>
-
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">קישורים מהירים</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-blue-200/80 hover:text-gold transition-colors block">
-                  דף הבית
+            <h2 className="mb-4 text-sm font-bold text-white">על המגרש</h2>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              {[
+                ['/', 'דף הבית'],
+                ['/tournaments', 'טורנירים'],
+                ['/rankings', 'טבלת ניקוד'],
+                ['/deck-stats', 'נתוני דקים'],
+                ['/login', 'התחברות'],
+              ].map(([to, label]) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="flex items-center gap-1 transition-colors hover:text-gold"
+                >
+                  {label}
+                  <ArrowUpLeft size={13} />
                 </Link>
-              </li>
-              <li>
-                <Link to="/tournaments" className="text-blue-200/80 hover:text-gold transition-colors block">
-                  טורנירים
-                </Link>
-              </li>
-              <li>
-                <Link to="/rankings" className="text-blue-200/80 hover:text-gold transition-colors block">
-                  טבלת ניקוד
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="text-blue-200/80 hover:text-gold transition-colors block">
-                  התחברות
-                </Link>
-              </li>
-            </ul>
+              ))}
+            </div>
           </div>
-
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">צור קשר</h3>
-            <p className="text-blue-200/80 text-sm">
-              אימייל: adam@cardschool.co.il
-            </p>
+            <h2 className="mb-4 text-sm font-bold text-white">נשארים בקשר</h2>
+            <a
+              href="mailto:adam@cardschool.co.il"
+              className="inline-flex items-center gap-2 text-sm hover:text-gold"
+            >
+              <Mail size={17} />
+              <span dir="ltr">adam@cardschool.co.il</span>
+            </a>
+            <div aria-hidden="true" className="cs-section-mark mt-5" />
           </div>
         </div>
-
-        <div className="border-t border-navy-600/50 mt-8 pt-6 text-center text-sm text-blue-200/60">
-          <p>© {currentYear} פוקימון. כל הזכויות שמורות.</p>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-5 text-xs text-blue-200">
+          <p>© {currentYear} CardSchool IL. כל הזכויות שמורות.</p>
+          <span dir="ltr" className="font-bold tracking-[.15em]">
+            PLAY. COMPETE. CONNECT.
+          </span>
         </div>
       </div>
     </footer>

@@ -1,3 +1,4 @@
+import type { RequestError } from '../types/api';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
@@ -6,6 +7,7 @@ import { fetchDecks } from '../features/decks/decksSlice';
 import { Calendar, MapPin, User, Clock, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import type { Deck } from '../types/deck';
 import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
@@ -92,7 +94,8 @@ export default function TournamentDetailsPage() {
       
       setAvailableUsers(available);
       setFilteredUsers(available);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error loading users:', error);
       showToast('שגיאה בטעינת רשימת המשתמשים', 'error');
     } finally {
@@ -117,7 +120,8 @@ export default function TournamentDetailsPage() {
       
       showToast(`${userName} נוסף לטורניר בהצלחה!`, 'success');
       
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error adding user to tournament:', error);
       showToast(error.response?.data?.message || 'שגיאה בהוספת המשתמש לטורניר', 'error');
     } finally {
@@ -195,7 +199,8 @@ export default function TournamentDetailsPage() {
       }
       
       showToast(`${participantName} הוסר מהטורניר בהצלחה`, 'success');
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error removing participant:', error);
       showToast(error.response?.data?.message || 'שגיאה בהסרת המשתתף', 'error');
     } finally {
@@ -222,7 +227,7 @@ export default function TournamentDetailsPage() {
   };
 
   // Helper function to get deck information with icons
-  const getDeckInfo = (deckData: any) => {
+  const getDeckInfo = (deckData: Deck | string | null | undefined) => {
     if (!deckData) return { name: '-', icons: [] };
     
     // If deckData is populated (object), use it directly
@@ -261,9 +266,9 @@ export default function TournamentDetailsPage() {
   const getPositionIcon = (position: number) => {
     switch (position) {
       case 1:
-        return <Trophy className="h-5 w-5 text-yellow-500" />;
+        return <Trophy className="h-5 w-5 text-gold-600" />;
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
+        return <Medal className="h-5 w-5 text-slate-400" />;
       case 3:
         return <Award className="h-5 w-5 text-amber-600" />;
       default:
@@ -272,7 +277,7 @@ export default function TournamentDetailsPage() {
   };
 
   // Helper function to get unique key for results
-  const getResultKey = (result: any, index: number) => {
+  const getResultKey = (result: { player?: string | { _id?: string; id?: string }; position: number; playerName?: string }, index: number) => {
     // Try to get player ID first
     if (typeof result.player === 'string') {
       return result.player;
@@ -316,7 +321,7 @@ export default function TournamentDetailsPage() {
   const hasResults = activeTournament.results && activeTournament.results.length > 0;
 
   return (
-    <div className="container py-12">
+    <div className={`container py-8 md:py-12 ${isAdmin ? 'cs-workspace' : ''}`}>
       {/* Admin View - No Banner */}
       {isAdmin ? (
         <div className="space-y-8">
@@ -515,8 +520,8 @@ export default function TournamentDetailsPage() {
                         const participantId = getParticipantId(participant);
                         
                         return (
-                          <div key={participantId || index} className="flex items-center justify-between p-3 border border-border rounded-md">
-                            <div className="flex items-center gap-3">
+                          <div key={participantId || index} className="flex flex-wrap items-center justify-between gap-3 p-3 border border-border rounded-md">
+                            <div className="flex flex-wrap items-center gap-3">
                               <span className="text-sm text-muted-foreground w-8">#{index + 1}</span>
                               <span className="font-medium">{participantName}</span>
                               <span className="text-sm text-muted-foreground">
@@ -549,10 +554,10 @@ export default function TournamentDetailsPage() {
         </div>
       ) : (
         /* Regular User View - With Banner */
-        <div className="grid md:grid-cols-[2fr_1fr] gap-8">
+        <div className="grid min-w-0 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-5">
           {/* Main Content */}
           <div>
-            <div className="relative rounded-xl overflow-hidden h-[300px] mb-8 shadow-card">
+            <div className="cs-public-card relative overflow-hidden h-[280px] sm:h-[340px] mb-8 bg-hero-navy shadow-card-hover">
               <img
                 src={activeTournament.image}
                 alt={activeTournament.title}
@@ -562,7 +567,7 @@ export default function TournamentDetailsPage() {
                 <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
                   {activeTournament.title}
                 </h1>
-                <div className="flex items-center text-white gap-2 text-sm">
+                <div className="flex flex-wrap items-center text-white gap-2 text-sm">
                   <Calendar size={18} className="text-gold" />
                   <span>{new Date(activeTournament.date).toLocaleDateString('he-IL')}</span>
                   <span className="mx-2">•</span>
@@ -576,8 +581,8 @@ export default function TournamentDetailsPage() {
               <h2 className="text-2xl font-extrabold text-foreground mb-4">פרטי הטורניר</h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">{activeTournament.description}</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+              <div className="grid grid-cols-2 gap-3.5 mb-6">
+                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Calendar className="h-5 w-5 text-blue-500" />
                   </div>
@@ -587,7 +592,7 @@ export default function TournamentDetailsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Clock className="h-5 w-5 text-blue-500" />
                   </div>
@@ -597,7 +602,7 @@ export default function TournamentDetailsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <MapPin className="h-5 w-5 text-blue-500" />
                   </div>
@@ -607,7 +612,7 @@ export default function TournamentDetailsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <User className="h-5 w-5 text-blue-500" />
                   </div>
@@ -797,8 +802,9 @@ export default function TournamentDetailsPage() {
                         {isLoading ? 'מבטל הרשמה...' : 'בטל הרשמה'}
                       </Button>
                     ) : (
-                      <Button 
-                        className="w-full" 
+                      <Button
+                        variant="cta"
+                        className="w-full"
                         disabled={
                           isPastTournament || 
                           isFull || 
@@ -836,7 +842,7 @@ export default function TournamentDetailsPage() {
 
       {/* Add User Modal */}
       {showAddUserModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold flex items-center gap-2">
@@ -881,8 +887,8 @@ export default function TournamentDetailsPage() {
               ) : (
                 <div className="space-y-2">
                   {filteredUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 border border-border rounded-md">
-                      <div className="flex items-center gap-3">
+                    <div key={user.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border border-border rounded-md">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div>
                           <div className="font-medium">{user.name}</div>
                           <div className="text-sm text-muted-foreground">@{user.username}</div>

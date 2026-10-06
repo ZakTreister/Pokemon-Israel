@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from './authService';
 
@@ -30,7 +31,8 @@ export const login = createAsyncThunk(
   async (credentials: { username: string; password: string }, thunkAPI) => {
     try {
       return await authService.login(credentials);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'התחברות נכשלה';
       return thunkAPI.rejectWithValue(message);
     }
@@ -42,7 +44,8 @@ export const register = createAsyncThunk(
   async (userData: { username: string; email?: string; password: string; phone: string }, thunkAPI) => {
     try {
       return await authService.register(userData);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'הרשמה נכשלה';
       return thunkAPI.rejectWithValue(message);
     }
@@ -51,10 +54,10 @@ export const register = createAsyncThunk(
 
 export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
-  async (_, thunkAPI) => {
+  async () => {
     try {
       return await authService.checkAuth();
-    } catch (error) {
+    } catch {
       // Just return null if not authenticated - not an error
       return null;
     }

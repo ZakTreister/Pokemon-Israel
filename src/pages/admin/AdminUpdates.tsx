@@ -106,7 +106,7 @@ export default function AdminUpdates() {
 
       {/* Add Update Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">הוספת עדכון חדש</h3>
             <div className="space-y-4">
@@ -149,7 +149,7 @@ export default function AdminUpdates() {
 
       {/* Edit Update Modal */}
       {showEditModal && selectedUpdate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">עריכת עדכון</h3>
             <div className="space-y-4">

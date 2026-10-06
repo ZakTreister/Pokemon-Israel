@@ -1,5 +1,5 @@
+import type { RequestError } from '../../types/api';
 import { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { Search, UserPlus } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -52,7 +52,8 @@ export default function AdminUsers() {
       setIsLoading(true);
       const { data } = await api.get('/api/users');
       setUsers(data);
-    } catch (err: any) {
+    } catch (caughtError) {
+      const err = caughtError as RequestError;
       setError(err.response?.data?.message || 'Failed to fetch users');
     } finally {
       setIsLoading(false);
@@ -106,7 +107,8 @@ export default function AdminUsers() {
       
       showToast('המשתמש נוצר בהצלחה!', 'success');
       
-    } catch (err: any) {
+    } catch (caughtError) {
+      const err = caughtError as RequestError;
       console.error('Error creating user:', err);
       setError(err.response?.data?.message || 'שגיאה ביצירת המשתמש');
     } finally {
@@ -151,7 +153,8 @@ export default function AdminUsers() {
       
       showToast('המשתמש עודכן בהצלחה!', 'success');
       
-    } catch (err: any) {
+    } catch (caughtError) {
+      const err = caughtError as RequestError;
       console.error('Error updating user:', err);
       setError(err.response?.data?.message || 'שגיאה בעדכון המשתמש');
     } finally {
@@ -175,7 +178,8 @@ export default function AdminUsers() {
       await api.delete(`/api/users/${userId}`);
       setUsers(users.filter(user => user.id !== userId));
       showToast('המשתמש נמחק בהצלחה', 'success');
-    } catch (err: any) {
+    } catch (caughtError) {
+      const err = caughtError as RequestError;
       setError(err.response?.data?.message || 'Failed to delete user');
     }
   };
@@ -359,7 +363,7 @@ export default function AdminUsers() {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">הוספת משתמש חדש</h3>
             <div className="space-y-4">
@@ -427,7 +431,7 @@ export default function AdminUsers() {
 
       {/* Edit User Modal */}
       {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">עריכת משתמש</h3>
             <div className="space-y-4">

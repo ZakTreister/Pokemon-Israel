@@ -13,13 +13,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = cn(
       'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-bold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
       {
-        'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-glow-blue': variant === 'default',
-        'bg-gold text-navy-700 hover:bg-gold-light shadow-cta hover:shadow-cta-hover': variant === 'cta',
+        'bg-blue-gradient text-white shadow-button-blue hover:brightness-110 motion-safe:hover:-translate-y-0.5': variant === 'default' || variant === 'secondary',
+        'bg-gold-gradient text-navy-700 shadow-button-gold hover:brightness-105 motion-safe:hover:-translate-y-0.5': variant === 'cta',
         'bg-red-400 text-white hover:bg-red-500 shadow-glow-red': variant === 'live',
         'bg-destructive text-destructive-foreground hover:bg-destructive/90': variant === 'destructive',
         'bg-success text-success-foreground hover:bg-success/90': variant === 'success',
-        'border-2 border-navy-500/20 bg-card text-card-foreground hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-navy-600/40': variant === 'outline',
-        'bg-blue-gradient text-white hover:opacity-90 shadow-card': variant === 'secondary',
+        'border-2 border-navy-500 bg-card text-card-foreground hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-navy-600/40': variant === 'outline',
         'bg-transparent text-foreground hover:bg-muted': variant === 'ghost',
         'text-blue-500 underline-offset-4 hover:underline': variant === 'link',
         'h-10 px-5 py-2': size === 'default',

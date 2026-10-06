@@ -26,7 +26,9 @@ export function PageHero({
     return (
       <>
         {parts[0]}
-        <span className={variant === 'dark' ? 'text-gold' : 'text-blue-500'}>{highlightWord}</span>
+        <span className={variant === 'dark' ? 'text-gold' : 'text-blue-500'}>
+          {highlightWord}
+        </span>
         {parts[1]}
       </>
     );
@@ -39,7 +41,7 @@ export function PageHero({
         variant === 'dark'
           ? 'bg-hero-navy text-white'
           : 'bg-section-light text-foreground',
-        className
+        className,
       )}
     >
       {variant === 'dark' && (
@@ -49,17 +51,29 @@ export function PageHero({
           <div className="absolute inset-0 diagonal-lines" />
         </>
       )}
-      <div className="container relative py-16 md:py-24">
-        <div className={cn('max-w-3xl', !subtitle && !children && 'mx-auto text-center')}>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+      <div
+        aria-hidden="true"
+        className="cs-hero-lightning absolute left-[12%] top-8 hidden h-36 w-16 bg-gold/15 md:block"
+      />
+      <div className="container relative py-12 md:py-16">
+        <div className="max-w-3xl">
+          <p className="mb-4 text-xs font-bold tracking-[.2em] text-blue-cyan">
+            CARDSCHOOL IL / POKÉMON TCG
+          </p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-4">
             {renderTitle()}
           </h1>
           {subtitle && (
-            <p className={cn('text-lg md:text-xl mb-6', variant === 'dark' ? 'text-blue-200' : 'text-muted-foreground')}>
+            <p
+              className={cn(
+                'text-base md:text-lg mb-6',
+                variant === 'dark' ? 'text-blue-200' : 'text-muted-foreground',
+              )}
+            >
               {subtitle}
             </p>
           )}
-          {children && <div className="flex flex-col sm:flex-row gap-4">{children}</div>}
+          {children && <div className="flex flex-wrap gap-3">{children}</div>}
         </div>
       </div>
     </section>

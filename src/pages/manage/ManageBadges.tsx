@@ -94,9 +94,6 @@ export default function ManageBadges() {
     }
   };
 
-  const awardsForPlayer = (playerId: string) =>
-    awards.filter((a) => a.player.id === playerId);
-
   const teamPlayers = manageablePlayers.filter((p) => p.isActive);
 
   return (

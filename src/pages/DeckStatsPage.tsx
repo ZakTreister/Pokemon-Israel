@@ -1,3 +1,4 @@
+import type { Deck } from '../types/deck';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
@@ -48,7 +49,7 @@ export default function DeckStatsPage() {
     if (!Array.isArray(tournaments) || !Array.isArray(decks)) return [];
 
     const deckAppearances: Record<string, DeckTournamentAppearance[]> = {};
-    const deckDetails: Record<string, any> = {};
+    const deckDetails: Record<string, Deck> = {};
 
     tournaments
       .filter(tournament => tournament.status === 'completed' && tournament.results)
@@ -151,15 +152,15 @@ export default function DeckStatsPage() {
       <div className="container py-12">
         {/* Summary Statistics */}
         {deckStatistics.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard value={totalDecks} label="סהכ דקים" accent="blue" />
-            <StatCard value={totalAppearances} label="סהכ הופעות" accent="navy" />
-            <Card className="p-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-8">
+            <StatCard icon={<BarChart3 size={20} />} value={totalDecks} label="סהכ דקים" accent="blue" />
+            <StatCard icon={<Trophy size={20} />} value={totalAppearances} label="סהכ הופעות" accent="navy" />
+            <Card variant="public" className="cs-stat min-h-[150px] p-4">
               <div className="text-xs font-medium text-muted-foreground mb-1">דק הכי פופולרי</div>
               <div className="text-sm font-bold text-foreground truncate">{mostPopularDeck?.archetype || '-'}</div>
               <div className="text-xs text-muted-foreground">{mostPopularDeck?.totalAppearances || 0} הופעות</div>
             </Card>
-            <Card className="p-4">
+            <Card variant="public" className="cs-stat min-h-[150px] p-4">
               <div className="text-xs font-medium text-muted-foreground mb-1">דק הכי מצליח</div>
               <div className="text-sm font-bold text-foreground truncate">{mostSuccessfulDeck?.archetype || '-'}</div>
               <div className="text-xs text-muted-foreground">{mostSuccessfulDeck?.winRate?.toFixed(1) || 0}% הצלחה</div>
@@ -169,13 +170,14 @@ export default function DeckStatsPage() {
 
         {/* Search */}
         <div className="mb-8">
-          <div className="relative max-w-md mx-auto">
+          <div className="relative max-w-md">
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <Search className="h-5 w-5 text-muted-foreground" />
             </div>
             <input
               type="text"
               placeholder="חפש דק..."
+              aria-label="חיפוש דק"
               className="w-full pl-3 pr-10 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-card text-card-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -270,11 +272,11 @@ export default function DeckStatsPage() {
             </div>
 
             {/* Mobile Cards */}
-            <div className="lg:hidden space-y-4">
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:hidden">
               {filteredDecks.map((deck) => {
                 const images = getDeckImages(deck);
                 return (
-                  <Card key={deck.deckId} className="p-4">
+                  <Card variant="public" key={deck.deckId} className="p-4">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
@@ -293,14 +295,14 @@ export default function DeckStatsPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <StatCard value={deck.averagePosition.toFixed(1)} label="מיקום ממוצע" accent="navy" />
-                        <StatCard value={deck.averagePoints.toFixed(1)} label="נקודות ממוצעות" accent="blue" />
+                        <StatCard compact value={deck.averagePosition.toFixed(1)} label="מיקום ממוצע" accent="navy" />
+                        <StatCard compact value={deck.averagePoints.toFixed(1)} label="נקודות ממוצעות" accent="blue" />
                       </div>
 
                       <div className="grid grid-cols-3 gap-3">
-                        <StatCard value={deck.firstPlaceFinishes} label="מקום 1" accent="gold" />
-                        <StatCard value={deck.secondPlaceFinishes} label="מקום 2" accent="navy" />
-                        <StatCard value={deck.thirdPlaceFinishes} label="מקום 3" accent="navy" />
+                        <StatCard compact value={deck.firstPlaceFinishes} label="מקום 1" accent="gold" />
+                        <StatCard compact value={deck.secondPlaceFinishes} label="מקום 2" accent="navy" />
+                        <StatCard compact value={deck.thirdPlaceFinishes} label="מקום 3" accent="navy" />
                       </div>
 
                       <div className="text-center pt-3 border-t border-border">

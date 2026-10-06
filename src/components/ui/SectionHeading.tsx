@@ -16,7 +16,7 @@ export function SectionHeading({
   subtitle,
   icon,
   highlightWord,
-  center = true,
+  center = false,
   dark = false,
   className,
 }: SectionHeadingProps) {
@@ -28,25 +28,48 @@ export function SectionHeading({
     return (
       <>
         {parts[0]}
-        <span className="text-gold">{highlightWord}</span>
+        <span className={dark ? 'text-gold' : 'text-blue-500'}>
+          {highlightWord}
+        </span>
         {parts[1]}
       </>
     );
   };
 
   return (
-    <div className={cn(center && 'text-center', 'mb-10', className)}>
+    <div className={cn(center && 'text-center', 'mb-7', className)}>
+      <div
+        aria-hidden="true"
+        className={cn('cs-section-mark mb-3', center && 'mx-auto')}
+      />
+      {icon && (
+        <div
+          className={cn(
+            'mb-2 flex items-center gap-2 text-sm font-bold',
+            center && 'justify-center',
+            dark ? 'text-blue-cyan' : 'text-blue-500',
+          )}
+        >
+          {icon}
+          <span>CARDSCHOOL IL</span>
+        </div>
+      )}
       <h2
         className={cn(
-          'text-3xl md:text-4xl font-extrabold mb-2 leading-tight',
-          dark ? 'text-white' : 'text-foreground'
+          'text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 leading-tight',
+          dark ? 'text-white' : 'text-foreground',
         )}
       >
-        {icon && <span className="inline-flex items-center gap-2.5">{icon}{renderTitle()}</span>}
-        {!icon && renderTitle()}
+        {renderTitle()}
       </h2>
       {subtitle && (
-        <p className={cn('max-w-2xl', center && 'mx-auto', dark ? 'text-blue-200' : 'text-muted-foreground')}>
+        <p
+          className={cn(
+            'max-w-2xl',
+            center && 'mx-auto',
+            dark ? 'text-blue-200' : 'text-muted-foreground',
+          )}
+        >
           {subtitle}
         </p>
       )}

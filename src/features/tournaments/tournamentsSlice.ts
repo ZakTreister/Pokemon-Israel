@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import tournamentsService from './tournamentsService';
 import { Tournament } from '../../types/tournament';
@@ -21,7 +22,8 @@ export const fetchTournaments = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await tournamentsService.getTournaments();
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת הטורנירים';
       return thunkAPI.rejectWithValue(message);
     }
@@ -33,7 +35,8 @@ export const fetchTournamentById = createAsyncThunk(
   async (id: string, thunkAPI) => {
     try {
       return await tournamentsService.getTournamentById(id);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת הטורניר';
       return thunkAPI.rejectWithValue(message);
     }
@@ -45,7 +48,8 @@ export const registerForTournament = createAsyncThunk(
   async (tournamentId: string, thunkAPI) => {
     try {
       return await tournamentsService.registerForTournament(tournamentId);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בהרשמה לטורניר';
       return thunkAPI.rejectWithValue(message);
     }
@@ -57,7 +61,8 @@ export const unregisterFromTournament = createAsyncThunk(
   async (tournamentId: string, thunkAPI) => {
     try {
       return await tournamentsService.unregisterFromTournament(tournamentId);
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בביטול ההרשמה';
       return thunkAPI.rejectWithValue(message);
     }

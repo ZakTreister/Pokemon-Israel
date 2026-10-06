@@ -1,3 +1,4 @@
+import type { RequestError } from '../../types/api';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -194,7 +195,8 @@ export default function AdminTournaments() {
       setShowTournamentModal(false);
       setSelectedTournament(null);
       
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error with tournament:', error);
       showToast(error.response?.data?.message || 'שגיאה בעיבוד הטורניר', 'error');
     } finally {
@@ -217,7 +219,8 @@ export default function AdminTournaments() {
       await api.delete(`/api/tournaments/${tournament.id}`);
       dispatch(fetchTournaments());
       showToast('הטורניר נמחק בהצלחה', 'success');
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error deleting tournament:', error);
       showToast(error.response?.data?.message || 'שגיאה במחיקת הטורניר', 'error');
     }
@@ -238,7 +241,8 @@ export default function AdminTournaments() {
       await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
       dispatch(fetchTournaments());
       showToast('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה', 'success');
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error deleting series:', error);
       showToast(error.response?.data?.message || 'שגיאה במחיקת הסדרה', 'error');
     }
@@ -424,7 +428,8 @@ export default function AdminTournaments() {
       handleDeckSelection(rowIndex, response.data.id, response.data.archetype);
       
       showToast(`דק "${archetype}" נוצר בהצלחה!`, 'success');
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error creating deck:', error);
       showToast(error.response?.data?.message || 'שגיאה ביצירת הדק', 'error');
     }
@@ -477,7 +482,8 @@ export default function AdminTournaments() {
       setDeckSuggestions({});
       setShowDeckSuggestions({});
       
-    } catch (error: any) {
+    } catch (caughtError) {
+      const error = caughtError as RequestError;
       console.error('Error saving results:', error);
       showToast(error.response?.data?.message || 'שגיאה בשמירת התוצאות', 'error');
     }
@@ -664,7 +670,7 @@ export default function AdminTournaments() {
 
       {/* Tournament Modal (Create/Edit) */}
       {showTournamentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">
@@ -801,7 +807,7 @@ export default function AdminTournaments() {
 
       {/* Results Modal */}
       {showResultsModal && selectedTournament && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50 p-4">
           <div className="bg-card p-6 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">הזנת תוצאות טורניר</h3>
             <div className="space-y-4">
