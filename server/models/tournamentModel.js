@@ -1,5 +1,29 @@
 import mongoose from 'mongoose';
 
+const standingSchema = new mongoose.Schema({
+  player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
+  playerName: { type: String, required: true },
+  position: { type: Number, required: true },
+  points: { type: Number, required: true, min: 0 },
+  omp: { type: Number, default: null }, gwp: { type: Number, default: null }, ogp: { type: Number, default: null },
+  matchesPlayed: Number, wins: Number, draws: Number, losses: Number, byes: Number,
+  gameWins: Number, gameDraws: Number, gamesPlayed: Number,
+}, { _id: false });
+const matchSchema = new mongoose.Schema({
+  table: Number,
+  player1: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
+  player2: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', default: null },
+  result: {
+    type: new mongoose.Schema({
+      winner: { type: String, enum: ['player1', 'player2', 'draw', 'bye'], required: true },
+      score1: Number, score2: Number, drawnGames: { type: Number, default: 0 },
+      enteredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, enteredAt: Date,
+    }, { _id: false }),
+    default: null,
+  },
+});
+const roundSchema = new mongoose.Schema({ number: Number, createdAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, matches: [matchSchema] });
+
 const tournamentSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -59,6 +83,24 @@ const tournamentSchema = new mongoose.Schema({
     ref: 'Season',
     default: null,
   },
+  // Isolated Player-based engine; legacy User-based participants/results remain intact.
+  engineVersion: { type: String, default: null },
+  scoringPolicy: String,
+  team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+  teamNameSnapshot: String, teamLogoSnapshot: String,
+  competitionYear: { type: String, default: null },
+  phase: { type: String, enum: ['setup', 'running', 'completed'], default: null },
+  source: { type: String, enum: ['live', 'historical'], default: null },
+  revision: { type: Number, default: 0 },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, closedAt: Date,
+  playerParticipants: [{
+    player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
+    nameSnapshot: { type: String, required: true }, citySnapshot: String,
+  }],
+  rounds: [roundSchema],
+  finalStandings: [standingSchema],
+  invalidatedRounds: [{ invalidatedAt: Date, invalidatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, reason: String, rounds: [roundSchema] }],
   participants: [{
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -92,6 +134,8 @@ const tournamentSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 });
+
+tournamentSchema.index({ engineVersion: 1, team: 1, status: 1, competitionYear: 1 });
 
 // Transform _id to id and remove __v when converting to JSON
 tournamentSchema.set('toJSON', {

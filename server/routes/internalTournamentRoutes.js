@@ -1,0 +1,14 @@
+import express from 'express';
+import { protect, authorize } from '../middleware/authMiddleware.js';
+import { createInternalTournament, getInternalTournaments, getInternalTournament, changeInternalParticipants, pairRound, enterMatchResult, closeInternalTournament, createHistoricalInternal } from '../controllers/internalTournamentController.js';
+const router = express.Router();
+router.use(protect, authorize('admin', 'judge'));
+router.get('/', getInternalTournaments);
+router.post('/', createInternalTournament);
+router.post('/historical', createHistoricalInternal);
+router.get('/:id', getInternalTournament);
+router.put('/:id/participants', changeInternalParticipants);
+router.post('/:id/rounds', pairRound);
+router.put('/:id/rounds/:roundNumber/matches/:matchId', enterMatchResult);
+router.post('/:id/close', closeInternalTournament);
+export default router;

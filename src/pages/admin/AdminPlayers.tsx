@@ -26,8 +26,7 @@ type FilterType = 'all' | 'team' | 'quarterly';
 interface TeamFormData {
   firstName: string;
   lastName: string;
-  username: string;
-  password: string;
+  city: string;
 }
 
 interface QuarterlyFormData {
@@ -59,8 +58,7 @@ export default function AdminPlayers() {
   const [teamForm, setTeamForm] = useState<TeamFormData>({
     firstName: '',
     lastName: '',
-    username: '',
-    password: '',
+    city: '',
   });
 
   const [quarterlyForm, setQuarterlyForm] = useState<QuarterlyFormData>({
@@ -94,7 +92,7 @@ export default function AdminPlayers() {
   }, [dispatch]);
 
   const resetTeamForm = () => {
-    setTeamForm({ firstName: '', lastName: '', username: '', password: '' });
+    setTeamForm({ firstName: '', lastName: '', city: '' });
     setFormError(null);
   };
 
@@ -109,7 +107,7 @@ export default function AdminPlayers() {
   };
 
   const handleCreateTeamPlayer = async () => {
-    if (!teamForm.firstName.trim() || !teamForm.lastName.trim() || !teamForm.username.trim() || !teamForm.password.trim()) {
+    if (!teamForm.firstName.trim() || !teamForm.lastName.trim()) {
       setFormError('כל השדות הם חובה');
       return;
     }
@@ -120,8 +118,7 @@ export default function AdminPlayers() {
         createTeamPlayer({
           firstName: teamForm.firstName.trim(),
           lastName: teamForm.lastName.trim(),
-          username: teamForm.username.trim(),
-          password: teamForm.password.trim(),
+          city: teamForm.city.trim(),
         })
       ).unwrap();
       resetTeamForm();
@@ -399,22 +396,9 @@ export default function AdminPlayers() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">שם משתמש *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={teamForm.username}
-                  onChange={(e) => setTeamForm({ ...teamForm, username: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">סיסמה ראשונית *</label>
-                <input
-                  type="password"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={teamForm.password}
-                  onChange={(e) => setTeamForm({ ...teamForm, password: e.target.value })}
-                />
+                <label className="block text-sm font-medium mb-1">עיר (רשות)</label>
+                <input className="w-full px-3 py-2 border rounded-md" value={teamForm.city} onChange={e => setTeamForm({ ...teamForm, city: e.target.value })} />
+                <p className="text-sm text-muted-foreground mt-2">רישום ילד בלבד, ללא חשבון התחברות.</p>
               </div>
               <div className="flex justify-end gap-2 mt-6">
                 <Button variant="outline" onClick={closeAllModals} disabled={isSubmitting}>

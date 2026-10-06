@@ -29,7 +29,7 @@ export default function Footer() {
                 ['/tournaments', 'טורנירים'],
                 ['/rankings', 'טבלת ניקוד'],
                 ['/deck-stats', 'נתוני דקים'],
-                ['/login', 'התחברות'],
+                ['/login', 'כניסת צוות'],
               ].map(([to, label]) => (
                 <Link
                   key={to}

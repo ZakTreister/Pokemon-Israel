@@ -65,8 +65,7 @@ userSchema.set('toJSON', {
   }
 });
 
-// Add index for better performance
-userSchema.index({ username: 1 });
+// The unique username field already defines its index.
 
 // One-to-one: a User can be linked to at most one Player.
 // Only applies when player is non-null; null links are unconstrained.
@@ -74,7 +73,7 @@ userSchema.index(
   { player: 1 },
   {
     unique: true,
-    partialFilterExpression: { player: { $type: 'ObjectId' } },
+    partialFilterExpression: { player: { $type: 'objectId' } },
   }
 );
 

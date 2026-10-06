@@ -1,5 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Player from '../models/playerModel.js';
+import Team from '../models/teamModel.js';
+import { withRosterLocks } from '../services/rosterLock.js';
 import User from '../models/userModel.js';
 import { normalizeField } from '../models/playerModel.js';
 
@@ -9,8 +11,8 @@ import { normalizeField } from '../models/playerModel.js';
 export const getPlayers = asyncHandler(async (req, res) => {
   const { type, search } = req.query;
 
-  const query = {};
-  if (type && (type === 'team' || type === 'quarterly')) {
+  const query = req.user.role === 'judge' ? { playerType: 'team' } : {};
+  if (req.user.role !== 'judge' && type && (type === 'team' || type === 'quarterly')) {
     query.playerType = type;
   }
 
@@ -38,6 +40,10 @@ export const getPlayer = asyncHandler(async (req, res) => {
     'user',
     'username name role'
   );
+
+  if (player && req.user.role === 'judge' && player.playerType !== 'team') {
+    res.status(403); throw new Error('Not authorized for club players');
+  }
 
   if (!player) {
     res.status(404);
@@ -104,88 +110,16 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
   res.status(201).json(player);
 });
 
-// @desc    Create a team player (Player + linked User)
-// @route   POST /api/players/team
-// @access  Private/Admin
+// Team children have no login. Existing User-linked records remain supported.
 export const createTeamPlayer = asyncHandler(async (req, res) => {
-  const { firstName, lastName, username, password } = req.body;
-
-  if (!firstName || !firstName.trim() || !lastName || !lastName.trim()) {
-    res.status(400);
-    throw new Error('First name and last name are required');
+  const { firstName, lastName, city = '', teamId = req.body.team || null } = req.body;
+  if (typeof firstName !== 'string' || !firstName.trim() || typeof lastName !== 'string' || !lastName.trim() || typeof city !== 'string') {
+    res.status(400); throw new Error('First name and last name are required; city must be text');
   }
-
-  if (!username || !username.trim() || !password || !password.trim()) {
-    res.status(400);
-    throw new Error('Username and password are required');
-  }
-
-  // Check if username already exists
-  const userExists = await User.findOne({ username: username.trim() });
-  if (userExists) {
-    res.status(400);
-    throw new Error('Username already exists');
-  }
-
-  // Create Player first, then User, then link them.
-  // Manual rollback since standalone MongoDB doesn't support transactions.
-  let player;
-  let user;
-
-  try {
-    player = await Player.create({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      club: null,
-      playerType: 'team',
-      user: null,
-      isActive: true,
-    });
-  } catch (error) {
-    res.status(400);
-    throw new Error('Failed to create player: ' + (error.message || 'Unknown error'));
-  }
-
-  try {
-    user = await User.create({
-      name: `${firstName.trim()} ${lastName.trim()}`,
-      username: username.trim(),
-      password,
-      role: 'player',
-      player: player._id,
-    });
-  } catch (error) {
-    // Rollback: delete the orphaned Player
-    await Player.findByIdAndDelete(player._id);
-
-    if (error.code === 11000) {
-      res.status(400);
-      throw new Error('Username already exists');
-    }
-
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err) => err.message);
-      res.status(400);
-      throw new Error(messages.join(', '));
-    }
-
-    res.status(400);
-    throw new Error('Failed to create user: ' + (error.message || 'Unknown error'));
-  }
-
-  // Link Player to User
-  try {
-    player.user = user._id;
-    await player.save();
-  } catch (error) {
-    // Rollback both
-    await User.findByIdAndDelete(user._id);
-    await Player.findByIdAndDelete(player._id);
-    res.status(500);
-    throw new Error('Failed to link player and user');
-  }
-
-  await player.populate('user', 'username name role');
+  const player = await withRosterLocks([teamId], async () => {
+    if (teamId && !(await Team.findById(teamId))?.isActive) { res.status(400); throw new Error('Team must be active'); }
+    return Player.create({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), playerType: 'team', team: teamId, user: null });
+  });
   res.status(201).json(player);
 });
 
@@ -193,9 +127,13 @@ export const createTeamPlayer = asyncHandler(async (req, res) => {
 // @route   PUT /api/players/:id
 // @access  Private/Admin
 export const updatePlayer = asyncHandler(async (req, res) => {
-  const { firstName, lastName, club, isActive } = req.body;
+  const { firstName, lastName, club, city, isActive } = req.body;
 
   const player = await Player.findById(req.params.id);
+  if (player && req.user.role === 'judge' && player.playerType !== 'team') {
+    res.status(403); throw new Error('Not authorized for club players');
+  }
+
   if (!player) {
     res.status(404);
     throw new Error('Player not found');
@@ -205,6 +143,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   const originalFirstName = player.firstName;
   const originalLastName = player.lastName;
   const originalClub = player.club;
+  const originalCity = player.city;
   const originalIsActive = player.isActive;
   const originalNormFirst = player.normalizedFirstName;
   const originalNormLast = player.normalizedLastName;
@@ -213,6 +152,10 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (firstName !== undefined) player.firstName = firstName.trim();
   if (lastName !== undefined) player.lastName = lastName.trim();
   if (club !== undefined) player.club = club ? club.trim() : null;
+  if (city !== undefined) {
+    if (typeof city !== 'string') { res.status(400); throw new Error('City must be text'); }
+    player.city = city.trim();
+  }
   if (isActive !== undefined) player.isActive = isActive;
 
   // Quarterly players must always have a non-empty club
@@ -267,7 +210,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   }
 
   try {
-    const updatedPlayer = await player.save();
+    const updatedPlayer = await withRosterLocks([player.team], async () => {
+      if (player.team && player.isActive && !(await Team.findById(player.team))?.isActive) { res.status(409); throw new Error('Cannot activate a player in an inactive team'); }
+      const current = await Player.findById(player._id);
+      if (String(current.team) !== String(player.team)) { res.status(409); throw new Error('Player team changed; reload before editing'); }
+      return player.save();
+    });
 
     // Save the linked User after the Player succeeds.
     // If User.save() fails, roll back the Player to its pre-edit state.
@@ -280,6 +228,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         player.firstName = originalFirstName;
         player.lastName = originalLastName;
         player.club = originalClub;
+        player.city = originalCity;
         player.isActive = originalIsActive;
         player.normalizedFirstName = originalNormFirst;
         player.normalizedLastName = originalNormLast;

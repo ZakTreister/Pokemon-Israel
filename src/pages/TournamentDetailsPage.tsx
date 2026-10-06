@@ -816,7 +816,7 @@ export default function TournamentDetailsPage() {
                         {isLoading
                           ? 'מבצע רישום...'
                           : !isAuthenticated
-                          ? 'התחבר כדי להירשם'
+                          ? 'כניסת צוות להרשמה'
                           : isPastTournament
                           ? 'הטורניר הסתיים'
                           : isFull
@@ -829,7 +829,7 @@ export default function TournamentDetailsPage() {
                     
                     {!isAuthenticated && (
                       <p className="text-sm text-muted-foreground text-center">
-                        עליך להתחבר כדי להירשם לטורניר
+                        להרשמה פנו לצוות. ילדים אינם נדרשים לחשבון התחברות.
                       </p>
                     )}
                   </div>

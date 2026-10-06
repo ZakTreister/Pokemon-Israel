@@ -55,9 +55,9 @@ export default function LoginPage() {
         </div>
         <Card className="border-t-4 border-t-blue-500">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-extrabold">התחברות</CardTitle>
+            <CardTitle className="text-2xl font-extrabold">כניסת צוות</CardTitle>
             <CardDescription className="leading-relaxed">
-              הזן את פרטי ההתחברות שלך כדי להיכנס לחשבונך
+              כניסה למנהלים ולשופטים עם פרטי הצוות שלך
             </CardDescription>
           </CardHeader>
           <CardContent>

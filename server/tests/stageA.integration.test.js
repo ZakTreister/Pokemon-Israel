@@ -1,0 +1,611 @@
+import test, { before, after } from "node:test";
+import assert from "node:assert/strict";
+import { randomUUID, randomBytes } from "node:crypto";
+import express from "express";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+import Player from "../models/playerModel.js";
+import Team from "../models/teamModel.js";
+import Tournament from "../models/tournamentModel.js";
+import Season from "../models/seasonModel.js";
+import "../models/deckModel.js";
+import teamRoutes from "../routes/teamRoutes.js";
+import playerRoutes from "../routes/playerRoutes.js";
+import internalRoutes from "../routes/internalTournamentRoutes.js";
+import tournamentRoutes from "../routes/tournamentRoutes.js";
+import badgeRoutes from "../routes/badgeRoutes.js";
+import { getAllStarsRankings } from "../controllers/internalTournamentController.js";
+import { errorHandler } from "../middleware/errorMiddleware.js";
+let server, origin;
+const tokens = {};
+const database = `stage_a_test_${randomUUID().replaceAll("-", "")}`;
+async function request(path, method = "GET", body, role = "judge") {
+  const response = await fetch(`${origin}/api${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(role ? { Authorization: `Bearer ${tokens[role]}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  return { status: response.status, body: await response.json() };
+}
+async function ok(path, method = "GET", body, role = "judge", status = 200) {
+  const response = await request(path, method, body, role);
+  assert.equal(response.status, status, JSON.stringify(response.body));
+  return response.body;
+}
+before(async () => {
+  process.env.JWT_SECRET = randomBytes(32).toString("hex");
+  // Always choose a newly generated database, even when a custom server URI is supplied.
+  await mongoose.connect(
+    process.env.STAGE_A_TEST_MONGO_URI || "mongodb://127.0.0.1:27017",
+    { dbName: database },
+  );
+  await Promise.all([
+    User.init(),
+    Player.init(),
+    Team.init(),
+    Tournament.init(),
+    Season.init(),
+  ]);
+  for (const role of ["admin", "judge", "player"]) {
+    const user = await User.create({
+      name: `Test ${role}`,
+      username: `test-${role}`,
+      password: randomBytes(24).toString("hex"),
+      role,
+    });
+    tokens[role] = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+  }
+  const app = express();
+  app.use(express.json());
+  app.use("/api/teams", teamRoutes);
+  app.use("/api/players", playerRoutes);
+  app.use("/api/internal-tournaments", internalRoutes);
+  app.use("/api/tournaments", tournamentRoutes);
+  app.use("/api/badges", badgeRoutes);
+  app.get("/api/all-stars/rankings", getAllStarsRankings);
+  app.use(errorHandler);
+  server = await new Promise((resolve) => {
+    const running = app.listen(0, "127.0.0.1", () => resolve(running));
+  });
+  origin = `http://127.0.0.1:${server.address().port}`;
+});
+after(async () => {
+  if (server) await new Promise((resolve) => server.close(resolve));
+  if (mongoose.connection.readyState) {
+    assert.equal(mongoose.connection.name, database);
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+  }
+});
+
+test("complete Stage A workflow on standalone Mongo with compatibility and concurrent updates", async () => {
+  assert.equal(
+    (await request("/internal-tournaments", "GET", undefined, null)).status,
+    401,
+  );
+  assert.equal(
+    (await request("/internal-tournaments", "GET", undefined, "player")).status,
+    403,
+  );
+  assert.equal((await request("/badges")).status, 403);
+  const admin = await User.findOne({ role: "admin" });
+  await Season.create({ name: "Active badge season", createdBy: admin._id });
+  const team = await ok(
+    "/teams",
+    "POST",
+    { name: " First Team ", logo: "https://example.org/emblem.png" },
+    "judge",
+    201,
+  );
+  assert.equal(
+    (await request("/teams", "POST", { name: " first   team " })).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request("/teams", "POST", {
+        name: "bad logo",
+        logo: "javascript:alert(1)",
+      })
+    ).status,
+    400,
+  );
+  const target = await ok(
+    "/teams",
+    "POST",
+    { name: "Second Team" },
+    "judge",
+    201,
+  );
+  const userCount = await User.countDocuments();
+  const children = await ok(
+    `/teams/${team.id}/players`,
+    "POST",
+    {
+      players: ["Alpha", "Bravo", "Charlie", "Delta", "Echo"].map(
+        (firstName) => ({ firstName, lastName: "Child", city: "Town" }),
+      ),
+    },
+    "judge",
+    201,
+  );
+  assert.equal(await User.countDocuments(), userCount);
+  assert.ok(children.every((p) => p.user === null));
+  const unassigned = await ok(
+    "/players/team",
+    "POST",
+    { firstName: "Unassigned", lastName: "Child", city: "City" },
+    "judge",
+    201,
+  );
+  assert.equal(unassigned.user, null);
+  const club = await ok(
+    "/players/quarterly",
+    "POST",
+    { firstName: "Club", lastName: "Child", club: "Club" },
+    "admin",
+    201,
+  );
+  assert.equal((await request(`/players/${club.id}`)).status, 403);
+  assert.equal(
+    (await request(`/players/${club.id}`, "PUT", { firstName: "Forbidden" }))
+      .status,
+    403,
+  );
+  assert.ok(
+    (await ok("/players?type=quarterly")).every((p) => p.playerType === "team"),
+  );
+  const publicTeam = await ok(
+    `/teams/public/${team.id}`,
+    "GET",
+    undefined,
+    null,
+  );
+  assert.equal(publicTeam.playerCount, 5);
+  assert.equal(publicTeam.officialStats, null);
+  assert.equal(publicTeam.createdBy, undefined);
+  assert.ok(publicTeam.players.every((p) => !("user" in p)));
+  assert.equal(
+    (await request(`/teams/${team.id}`, "PUT", { isActive: false })).status,
+    409,
+  );
+  await ok(`/teams/${target.id}/players/${children[4].id}`, "PUT", {});
+  assert.equal(String((await Player.findById(children[4].id)).team), target.id);
+  await ok(`/teams/${target.id}/players/${children[4].id}`, "DELETE");
+  await ok(`/teams/${target.id}`, "PUT", { isActive: false });
+  assert.equal(
+    (await request(`/teams/${target.id}/players/${children[4].id}`, "PUT", {}))
+      .status,
+    400,
+  );
+  const linkedUser = await User.findOne({ role: "player" });
+  const linked = await Player.create({
+    firstName: "Legacy",
+    lastName: "Linked",
+    playerType: "team",
+    user: linkedUser._id,
+  });
+  linkedUser.player = linked._id;
+  await linkedUser.save();
+  await ok(
+    `/players/${linked.id}`,
+    "PUT",
+    { firstName: "Renamed", city: "New town" },
+    "admin",
+  );
+  assert.equal((await User.findById(linkedUser._id)).name, "Renamed Linked");
+  assert.equal(String((await Player.findById(linked._id)).user), linkedUser.id);
+  assert.equal(
+    (await request(`/teams/${team.id}/players`, "POST", { players: [null] }))
+      .status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("/internal-tournaments", "POST", {
+        teamId: team.id,
+        title: 123,
+      })
+    ).status,
+    400,
+  );
+  let t = await ok(
+    "/internal-tournaments",
+    "POST",
+    { teamId: team.id },
+    "judge",
+    201,
+  );
+  assert.equal(t.type, "team_internal");
+  assert.equal(t.playerParticipants.length, 4);
+  assert.equal(t.participants.length, 0);
+  assert.equal(t.season, null);
+  const absent = t.playerParticipants.at(-1).player;
+  t = await ok(`/internal-tournaments/${t.id}/participants`, "PUT", {
+    expectedRevision: t.revision,
+    playerIds: t.playerParticipants
+      .filter((p) => p.player !== absent)
+      .map((p) => p.player),
+  });
+  const concurrent = await Promise.all([
+    request(`/internal-tournaments/${t.id}/rounds`, "POST", {
+      expectedRevision: t.revision,
+    }),
+    request(
+      `/internal-tournaments/${t.id}/rounds`,
+      "POST",
+      { expectedRevision: t.revision },
+      "admin",
+    ),
+  ]);
+  assert.deepEqual(concurrent.map((r) => r.status).sort(), [200, 409]);
+  t = await ok(`/internal-tournaments/${t.id}`);
+  assert.equal(t.rounds.length, 1);
+  assert.equal(t.currentParticipants, 3);
+  assert.equal(
+    (
+      await request(`/internal-tournaments/${t.id}/participants`, "PUT", {
+        expectedRevision: t.revision,
+        playerIds: children.slice(0, 4).map((p) => p.id),
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/internal-tournaments/${t.id}/close`, "POST", {
+        expectedRevision: t.revision,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request(`/internal-tournaments/${t.id}/rounds`, "POST", {
+        expectedRevision: t.revision,
+      })
+    ).status,
+    400,
+  );
+  let match = t.rounds[0].matches.find((m) => m.player2);
+  const beforeResultRevision = t.revision;
+  t = await ok(
+    `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+    "PUT",
+    {
+      expectedRevision: t.revision,
+      result: { winner: "player1", score1: 1, score2: 0 },
+    },
+  );
+  assert.equal(
+    (
+      await request(
+        `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+        "PUT",
+        {
+          expectedRevision: beforeResultRevision,
+          result: { winner: "draw", score1: 1, score2: 1 },
+        },
+      )
+    ).status,
+    409,
+  );
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, "POST", {
+    expectedRevision: t.revision,
+  });
+  const correction = {
+    expectedRevision: t.revision,
+    result: { winner: "draw", score1: 1, score2: 1, drawnGames: 1 },
+  };
+  assert.equal(
+    (
+      await request(
+        `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+        "PUT",
+        correction,
+      )
+    ).body.code,
+    "DOWNSTREAM_ROUNDS",
+  );
+  t = await ok(
+    `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+    "PUT",
+    { ...correction, invalidateLaterRounds: true },
+  );
+  assert.equal(t.rounds.length, 1);
+  assert.equal(t.invalidatedRounds.length, 1);
+  assert.equal(t.invalidatedRounds[0].rounds.length, 1);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, "POST", {
+    expectedRevision: t.revision,
+  });
+  match = t.rounds[1].matches.find((m) => m.player2);
+  t = await ok(
+    `/internal-tournaments/${t.id}/rounds/2/matches/${match._id}`,
+    "PUT",
+    {
+      expectedRevision: t.revision,
+      result: { winner: "player2", score1: 1, score2: 2 },
+    },
+    "admin",
+  );
+  t = await ok(`/internal-tournaments/${t.id}/close`, "POST", {
+    expectedRevision: t.revision,
+  });
+  assert.equal(t.status, "completed");
+  assert.equal(t.finalStandings.length, 3);
+  assert.equal(
+    (
+      await request(`/internal-tournaments/${t.id}/rounds`, "POST", {
+        expectedRevision: t.revision,
+      })
+    ).status,
+    409,
+  );
+  const resumed = await ok(
+    `/internal-tournaments/${t.id}`,
+    "GET",
+    undefined,
+    "admin",
+  );
+  assert.deepEqual(resumed.standings, t.finalStandings);
+  assert.equal((await request(`/tournaments/${t.id}`)).status, 404);
+  assert.equal(
+    (await request(`/tournaments/${t.id}`, "DELETE", undefined, "admin"))
+      .status,
+    404,
+  );
+  const legacy = await Tournament.create({
+    title: "Legacy public event",
+    description: "Preserved",
+    date: new Date(),
+    location: "Club",
+    maxParticipants: 16,
+    registrationDeadline: new Date(),
+    image: "/legacy.png",
+    type: "team_internal",
+    participants: [{ user: admin._id }],
+    results: [
+      { player: admin._id, playerName: admin.name, position: 1, points: 1000 },
+    ],
+    status: "completed",
+  });
+  const regularList = await ok("/tournaments", "GET", undefined, null);
+  assert.ok(regularList.some((row) => row.id === legacy.id));
+  assert.ok(!regularList.some((row) => row.id === t.id));
+  const legacyRead = await ok(
+    `/tournaments/${legacy.id}`,
+    "GET",
+    undefined,
+    null,
+  );
+  assert.equal(legacyRead.participants[0].user.id, admin.id);
+  assert.equal(legacyRead.results[0].playerName, admin.name);
+  const regular = await ok(
+    "/tournaments",
+    "POST",
+    {
+      date: new Date(Date.now() + 86400000).toISOString(),
+      location: "Legacy Club",
+      maxParticipants: 16,
+    },
+    "admin",
+    201,
+  );
+  const registered = await ok(
+    `/tournaments/${regular.id}/register`,
+    "POST",
+    {},
+    "player",
+  );
+  assert.equal(registered.currentParticipants, 1);
+  await ok(
+    `/tournaments/${regular.id}`,
+    "PUT",
+    { title: "Legacy edited" },
+    "admin",
+  );
+  await ok(
+    `/tournaments/${regular.id}/results`,
+    "POST",
+    {
+      results: [
+        {
+          player: linkedUser.id,
+          playerName: "Renamed Linked",
+          position: 1,
+          points: 4,
+          rawPoints: 9,
+        },
+      ],
+    },
+    "admin",
+  );
+  const regularResults = await ok(
+    `/tournaments/${regular.id}/results`,
+    "GET",
+    undefined,
+    null,
+  );
+  assert.equal(regularResults[0].points, 4);
+  assert.equal(regularResults[0].player.id, linkedUser.id);
+  let ranks = await ok("/all-stars/rankings", "GET", undefined, null);
+  assert.equal(ranks.rankings.length, 3);
+  assert.equal(
+    ranks.rankings.reduce((sum, row) => sum + row.points, 0),
+    t.finalStandings.reduce((sum, row) => sum + row.points, 0),
+  );
+  const historicalResults = children
+    .slice(0, 4)
+    .map((p, i) => ({ player: p.id, position: i + 1, points: 9 - i }));
+  assert.equal(
+    (
+      await request("/internal-tournaments/historical", "POST", {
+        teamId: team.id,
+        date: "2026-10-04",
+        results: historicalResults.map((row) => ({ ...row, position: 1 })),
+      })
+    ).status,
+    400,
+  );
+  const historical = await ok(
+    "/internal-tournaments/historical",
+    "POST",
+    { teamId: team.id, date: "2026-10-04", results: historicalResults },
+    "judge",
+    201,
+  );
+  assert.equal(historical.source, "historical");
+  assert.equal(historical.phase, "completed");
+  assert.equal(historical.rounds.length, 0);
+  assert.equal(historical.finalStandings[0].omp, null);
+  ranks = await ok("/all-stars/rankings", "GET", undefined, null);
+  assert.equal(ranks.rankings.length, 4);
+  assert.equal(
+    ranks.rankings.reduce((sum, row) => sum + row.points, 0),
+    t.finalStandings.reduce((sum, row) => sum + row.points, 0) + 30,
+  );
+  await Season.updateMany({}, { status: "closed" });
+  await Season.create({ name: "Next badge season", createdBy: admin._id });
+  assert.deepEqual(
+    (await ok("/all-stars/rankings", "GET", undefined, null)).rankings,
+    ranks.rankings,
+  );
+  const totals = await ok(`/teams/public/${team.id}`, "GET", undefined, null);
+  assert.equal(totals.completedInternalTournamentCount, 2);
+  assert.equal(totals.officialStats, null);
+  await ok(`/teams/${target.id}`, "PUT", { isActive: true });
+  await ok(`/teams/${target.id}/players/${children[0].id}`, "PUT", {});
+  const teamRank = await ok(
+    `/all-stars/rankings?teamId=${target.id}`,
+    "GET",
+    undefined,
+    null,
+  );
+  assert.equal(teamRank.rankings.length, 1);
+  assert.equal(teamRank.rankings[0].playerId, children[0].id);
+  // Reopening the database connection simulates a process restart without losing state.
+  await mongoose.disconnect();
+  await mongoose.connect(
+    process.env.STAGE_A_TEST_MONGO_URI || "mongodb://127.0.0.1:27017",
+    { dbName: database },
+  );
+  const persisted = await ok(`/internal-tournaments/${t.id}`);
+  assert.deepEqual(persisted.finalStandings, t.finalStandings);
+  assert.equal(persisted.rounds.length, 2);
+});
+
+test("judges retry conflicting results and roster transitions never deactivate an occupied team", async () => {
+  const team = await ok(
+    "/teams",
+    "POST",
+    { name: "Concurrent results" },
+    "admin",
+    201,
+  );
+  await ok(
+    `/teams/${team.id}/players`,
+    "POST",
+    {
+      players: Array.from({ length: 4 }, (_, index) => ({
+        firstName: `Concurrent ${index}`,
+        lastName: "Child",
+      })),
+    },
+    "judge",
+    201,
+  );
+  let t = await ok(
+    "/internal-tournaments",
+    "POST",
+    { teamId: team.id },
+    "judge",
+    201,
+  );
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, "POST", {
+    expectedRevision: t.revision,
+  });
+  const matches = t.rounds[0].matches;
+  const writes = await Promise.all(
+    matches.map((match, index) =>
+      request(
+        `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+        "PUT",
+        {
+          expectedRevision: t.revision,
+          result: { winner: "player1", score1: 2, score2: index },
+        },
+        index ? "admin" : "judge",
+      ),
+    ),
+  );
+  assert.deepEqual(
+    writes.map((response) => response.status).sort(),
+    [200, 409],
+  );
+  t = await ok(`/internal-tournaments/${t.id}`);
+  assert.equal(t.rounds[0].matches.filter((match) => match.result).length, 1);
+  const retry = t.rounds[0].matches.find((match) => !match.result);
+  t = await ok(
+    `/internal-tournaments/${t.id}/rounds/1/matches/${retry._id}`,
+    "PUT",
+    {
+      expectedRevision: t.revision,
+      result: { winner: "draw", score1: 1, score2: 1 },
+    },
+    "admin",
+  );
+  assert.ok(t.rounds[0].matches.every((match) => match.result));
+  const transitions = await Promise.all([
+    request(`/internal-tournaments/${t.id}/close`, "POST", {
+      expectedRevision: t.revision,
+    }),
+    request(
+      `/internal-tournaments/${t.id}/rounds`,
+      "POST",
+      { expectedRevision: t.revision },
+      "admin",
+    ),
+  ]);
+  assert.deepEqual(
+    transitions.map((response) => response.status).sort(),
+    [200, 409],
+  );
+  t = await ok(`/internal-tournaments/${t.id}`);
+  assert.ok(
+    (t.phase === "completed" &&
+      t.rounds.length === 1 &&
+      t.finalStandings.length === 4) ||
+      (t.phase === "running" &&
+        t.rounds.length === 2 &&
+        !t.finalStandings.length),
+  );
+  const emptyTeam = await ok(
+    "/teams",
+    "POST",
+    { name: "Concurrent roster" },
+    "judge",
+    201,
+  );
+  const child = await ok(
+    "/players/team",
+    "POST",
+    { firstName: "Roster", lastName: "Race" },
+    "judge",
+    201,
+  );
+  const rosterWrites = await Promise.all([
+    request(`/teams/${emptyTeam.id}`, "PUT", { isActive: false }),
+    request(`/teams/${emptyTeam.id}/players/${child.id}`, "PUT", {}, "admin"),
+  ]);
+  assert.ok(rosterWrites.some((response) => response.status !== 200));
+  const storedTeam = await Team.findById(emptyTeam.id);
+  const activeChildren = await Player.countDocuments({
+    team: emptyTeam.id,
+    isActive: true,
+  });
+  assert.ok(storedTeam.isActive || activeChildren === 0);
+});

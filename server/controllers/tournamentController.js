@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 // @route   GET /api/tournaments
 // @access  Public
 export const getTournaments = asyncHandler(async (req, res) => {
-  const tournaments = await Tournament.find({})
+  const tournaments = await Tournament.find({ engineVersion: { $ne: 'swiss-v1' } })
     .populate('participants.user', 'username')
     .sort({ date: 1 });
   res.json(tournaments);
@@ -17,7 +17,7 @@ export const getTournaments = asyncHandler(async (req, res) => {
 // @route   GET /api/tournaments/:id
 // @access  Public
 export const getTournamentById = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id)
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } })
     .populate('participants.user', 'username')
     .populate('results.player', 'username')
     .populate({
@@ -71,6 +71,9 @@ export const createTournament = asyncHandler(async (req, res) => {
   };
 
   // Optional new fields — not required for backward compatibility
+  if (req.body.type === 'team_internal') {
+    res.status(400); throw new Error('Create internal team tournaments from the team page');
+  }
   if (req.body.type) {
     const validTypes = ['team_internal', 'inter_team', 'quarterly'];
     if (!validTypes.includes(req.body.type)) {
@@ -135,7 +138,7 @@ export const createTournament = asyncHandler(async (req, res) => {
 // @route   PUT /api/tournaments/:id
 // @access  Private/Admin
 export const updateTournament = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (tournament) {
     tournament.title = req.body.title || tournament.title;
@@ -160,7 +163,7 @@ export const updateTournament = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const deleteTournament = asyncHandler(async (req, res) => {
   const { deleteSeries } = req.query; // Optional query parameter
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (!tournament) {
     res.status(404);
@@ -172,6 +175,7 @@ export const deleteTournament = asyncHandler(async (req, res) => {
     const now = new Date();
     const deleteResult = await Tournament.deleteMany({ 
       seriesId: tournament.seriesId,
+      engineVersion: { $ne: 'swiss-v1' },
       date: { $gte: now } // Only delete future tournaments
     });
     res.json({ 
@@ -198,7 +202,7 @@ export const deleteTournament = asyncHandler(async (req, res) => {
 // @route   GET /api/tournaments/series/:seriesId
 // @access  Public
 export const getTournamentsBySeries = asyncHandler(async (req, res) => {
-  const tournaments = await Tournament.find({ seriesId: req.params.seriesId })
+  const tournaments = await Tournament.find({ seriesId: req.params.seriesId, engineVersion: { $ne: 'swiss-v1' } })
     .populate('participants.user', 'username')
     .sort({ date: 1 });
   
@@ -209,7 +213,7 @@ export const getTournamentsBySeries = asyncHandler(async (req, res) => {
 // @route   POST /api/tournaments/:id/register
 // @access  Private
 export const registerForTournament = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (!tournament) {
     res.status(404);
@@ -277,7 +281,7 @@ export const registerForTournament = asyncHandler(async (req, res) => {
 // @route   DELETE /api/tournaments/:id/register
 // @access  Private
 export const unregisterFromTournament = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (!tournament) {
     res.status(404);
@@ -314,7 +318,7 @@ export const unregisterFromTournament = asyncHandler(async (req, res) => {
 // @route   POST /api/tournaments/:id/participants
 // @access  Private/Admin
 export const addParticipant = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
   const { userId } = req.body;
 
   if (!tournament) {
@@ -383,7 +387,7 @@ export const addParticipant = asyncHandler(async (req, res) => {
 // @route   DELETE /api/tournaments/:id/participants/:participantId
 // @access  Private/Admin
 export const removeParticipant = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (!tournament) {
     res.status(404);
@@ -415,7 +419,7 @@ export const removeParticipant = asyncHandler(async (req, res) => {
 // @route   POST /api/tournaments/:id/results
 // @access  Private/Admin
 export const submitTournamentResults = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id);
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
 
   if (!tournament) {
     res.status(404);
@@ -464,7 +468,7 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
 // @route   GET /api/tournaments/:id/results
 // @access  Public
 export const getTournamentResults = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findById(req.params.id)
+  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } })
     .populate('results.player', 'username')
     .populate({
       path: 'results.deck',
