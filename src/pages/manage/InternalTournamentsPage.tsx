@@ -35,7 +35,7 @@ export default function InternalTournamentsPage() {
           <Link to="/manage/teams">פתח טורניר מעמוד נבחרת</Link>
         </Button>
       </div>
-      {teamId && <div className="flex flex-wrap gap-3 mb-5"><Button asChild variant="outline"><Link to={`/manage/teams/${teamId}`}>→ חזרה לנבחרת</Link></Button><Button asChild><Link to={`/manage/teams/${teamId}/historical`}>הזנת טורניר היסטורי</Link></Button></div>}
+      {teamId && <div className="flex flex-wrap gap-3 mb-5"><Button asChild><Link to={`/manage/teams/${teamId}/historical`}>הזנת טורניר היסטורי</Link></Button></div>}
       {error && <p role="alert">{error}</p>}
       {tournaments === null ? (
         <p>טוען...</p>

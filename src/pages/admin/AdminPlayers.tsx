@@ -367,9 +367,9 @@ export default function AdminPlayers() {
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">הוסף שחקן נבחרת</h3>
-              <button onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
+              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -419,9 +419,9 @@ export default function AdminPlayers() {
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">הוסף שחקן חוגים</h3>
-              <button onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
+              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
@@ -475,9 +475,9 @@ export default function AdminPlayers() {
           <div className="bg-card p-6 rounded-lg w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">עריכת שחקן</h3>
-              <button onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
+              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">

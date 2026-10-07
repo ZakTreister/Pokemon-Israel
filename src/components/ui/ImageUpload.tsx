@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, useRef } from 'react';
 import { uploadImage, type UploadedImage } from '../../services/media';
 import { requestError } from '../../utils/requestError';
 import Button from './Button';
@@ -17,6 +17,7 @@ export default function ImageUpload({
   disabled,
 }: Props) {
   const id = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const select = async (file?: File) => {
@@ -52,11 +53,21 @@ export default function ImageUpload({
           className="w-20 h-20 object-contain rounded-md border bg-white"
         />
       )}
+      <Button
+        type="button"
+        variant="outline"
+        disabled={disabled || busy}
+        onClick={() => inputRef.current?.click()}
+        aria-controls={id}
+      >
+        {busy ? 'מעלה תמונה…' : 'בחר תמונה להעלאה'}
+      </Button>
       <input
+        ref={inputRef}
         id={id}
         type="file"
         accept="image/png,image/jpeg,image/webp"
-        className="block w-full min-w-0 text-sm file:rounded-md file:border-0 file:bg-blue-500 file:text-white file:px-3 file:py-2 file:me-2"
+        className="sr-only"
         disabled={disabled || busy}
         onChange={(e) => {
           void select(e.target.files?.[0]);

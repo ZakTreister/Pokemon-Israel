@@ -136,21 +136,24 @@ export default function ManageDashboardPage() {
           </nav>
           <div className="min-w-0 bg-card border rounded-lg p-4 sm:p-6 shadow-panel">
             {nested && (
-              <Link
-                className="inline-block mb-5 font-bold text-blue-500"
-                to={
-                  location.pathname.startsWith('/manage/teams/')
+              <Button asChild variant="outline" className="mb-5">
+                <Link
+                  to={
+                    location.pathname.startsWith('/manage/teams/')
+                      ? location.pathname.split('/').filter(Boolean).length > 3
+                        ? `/${teamParent}`
+                        : '/manage/teams'
+                      : '/manage/tournaments'
+                  }
+                >
+                  → חזרה ל
+                  {location.pathname.startsWith('/manage/teams/')
                     ? location.pathname.split('/').filter(Boolean).length > 3
-                      ? `/${teamParent}`
-                      : '/manage/teams'
-                    : '/manage/tournaments'
-                }
-              >
-                → חזרה ל
-                {location.pathname.startsWith('/manage/teams/')
-                  ? 'נבחרות All-Stars'
-                  : 'טורנירים'}
-              </Link>
+                      ? 'נבחרת'
+                      : 'נבחרות All-Stars'
+                    : 'טורנירים'}
+                </Link>
+              </Button>
             )}
             <Routes>
               <Route

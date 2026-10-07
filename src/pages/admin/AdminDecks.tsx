@@ -330,13 +330,13 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                 onChange={(e) => updateField('image', e.target.value)}
               />
               {formData.image && (
-                <button
+                <Button variant="outline" size="icon"
                   type="button"
                   className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   onClick={() => clearField('image')}
                 >
                   <X size={16} />
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -354,13 +354,13 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   onChange={(e) => updateField('iconImage1', e.target.value)}
                 />
                 {formData.iconImage1 && (
-                  <button
+                  <Button variant="outline" size="icon"
                     type="button"
                     className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => clearField('iconImage1')}
                   >
                     <X size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
               {formData.iconImage1 && (
@@ -388,13 +388,13 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   onChange={(e) => updateField('iconImage2', e.target.value)}
                 />
                 {formData.iconImage2 && (
-                  <button
+                  <Button variant="outline" size="icon"
                     type="button"
                     className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => clearField('iconImage2')}
                   >
                     <X size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
               {formData.iconImage2 && (
@@ -425,13 +425,13 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   onChange={(e) => updateField('attackerImage1', e.target.value)}
                 />
                 {formData.attackerImage1 && (
-                  <button
+                  <Button variant="outline" size="icon"
                     type="button"
                     className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => clearField('attackerImage1')}
                   >
                     <X size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
               {formData.attackerImage1 && (
@@ -459,13 +459,13 @@ function DeckModal({ title, formData, setFormData, onSave, onClose, saveButtonTe
                   onChange={(e) => updateField('attackerImage2', e.target.value)}
                 />
                 {formData.attackerImage2 && (
-                  <button
+                  <Button variant="outline" size="icon"
                     type="button"
                     className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => clearField('attackerImage2')}
                   >
                     <X size={16} />
-                  </button>
+                  </Button>
                 )}
               </div>
               {formData.attackerImage2 && (

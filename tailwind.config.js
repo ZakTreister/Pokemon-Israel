@@ -143,6 +143,7 @@ export default {
         'card': '0 14px 34px rgba(6,26,69,.18)',
         'card-hover': '0 20px 48px rgba(6,26,69,.26)',
         'panel': '0 4px 18px rgba(6,26,69,.07)',
+        'button': '0 4px 0 #092B6E',
         'button-blue': '0 5px 0 #084D9C',
         'button-gold': '0 5px 0 #B78D00',
         'glow-blue': '0 0 24px -4px rgba(22, 136, 242, 0.35)',

@@ -717,13 +717,13 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                     onChange={(e) => setFormData({...formData, image: e.target.value})}
                   />
                   {formData.image && (
-                    <button
+                    <Button variant="outline" size="icon"
                       type="button"
                       className="absolute top-1/2 left-3 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       onClick={() => setFormData({...formData, image: ''})}
                     >
                       <X size={16} />
-                    </button>
+                    </Button>
                   )}
                 </div>
                 {formData.image && (
@@ -923,23 +923,23 @@ PlayerB 6
                                   <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
                                     {deckSuggestions[index]?.length > 0 ? (
                                       deckSuggestions[index].map(deck => (
-                                        <button
+                                        <Button variant="outline" size="icon"
                                           key={deck.id}
                                           className="w-full px-3 py-2 text-right hover:bg-muted"
                                           onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                           onClick={() => handleDeckSelection(index, deck.id, deck.archetype)}
                                         >
                                           {deck.archetype}
-                                        </button>
+                                        </Button>
                                       ))
                                     ) : deckInputs[index] && deckInputs[index].trim().length > 0 ? (
-                                      <button
+                                      <Button variant="outline" size="icon"
                                         className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
                                         onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                         onClick={() => handleCreateDeck(index, deckInputs[index].trim())}
                                       >
                                         + צור דק "{deckInputs[index].trim()}"
-                                      </button>
+                                      </Button>
                                     ) : null}
                                   </div>
                                 )}
@@ -1026,23 +1026,23 @@ PlayerB 6
                                 <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
                                   {deckSuggestions[index]?.length > 0 ? (
                                     deckSuggestions[index].map(deck => (
-                                      <button
+                                      <Button variant="outline" size="icon"
                                         key={deck.id}
                                         className="w-full px-3 py-2 text-right hover:bg-muted"
                                         onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                         onClick={() => handleDeckSelection(index, deck.id, deck.archetype)}
                                       >
                                         {deck.archetype}
-                                      </button>
+                                      </Button>
                                     ))
                                   ) : deckInputs[index] && deckInputs[index].trim().length > 0 ? (
-                                    <button
+                                    <Button variant="outline" size="icon"
                                       className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
                                       onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                       onClick={() => handleCreateDeck(index, deckInputs[index].trim())}
                                     >
                                       + צור דק "{deckInputs[index].trim()}"
-                                    </button>
+                                    </Button>
                                   ) : null}
                                 </div>
                               )}

@@ -13,6 +13,7 @@ import type {
 } from '../../types/internalTournament';
 import type { TeamRosterPlayer } from '../../types/team';
 import Button from '../../components/ui/Button';
+import MatchEditor from '../../components/MatchEditor';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 function Standings({ rows }: { rows: Standing[] }) {
@@ -52,161 +53,6 @@ function Standings({ rows }: { rows: Standing[] }) {
     </div>
   );
 }
-interface MatchEditorProps {
-  match: InternalMatch;
-  name: (id: string | null) => string;
-  disabled: boolean;
-  revision: number;
-  save: (result: MatchResult, revision: number) => Promise<void>;
-}
-function MatchEditor({
-  match,
-  name,
-  disabled,
-  revision,
-  save,
-}: MatchEditorProps) {
-  const [winner, setWinner] = useState<MatchResult['winner'] | ''>(
-    match.result?.winner || '',
-  );
-  const [score, setScore] = useState(
-    match.result ? `${match.result.score1}-${match.result.score2}` : '',
-  );
-  const [drawnGames, setDrawnGames] = useState(match.result?.drawnGames ?? 0);
-  // The revision captured when this editor was loaded protects an unsaved draft
-  // from silently replacing another judge's more recent result.
-  const [draftRevision, setDraftRevision] = useState(revision);
-  const [dirty, setDirty] = useState(false);
-  useEffect(() => {
-    if (!dirty) {
-      setWinner(match.result?.winner || '');
-      setScore(
-        match.result ? `${match.result.score1}-${match.result.score2}` : '',
-      );
-      setDrawnGames(match.result?.drawnGames ?? 0);
-      setDraftRevision(revision);
-    }
-  }, [match.result, revision, dirty]);
-  const options =
-    winner === 'player1'
-      ? ['2-0', '2-1', '1-0']
-      : winner === 'player2'
-        ? ['0-2', '1-2', '0-1']
-        : ['0-0', '1-1'];
-  if (!match.player2)
-    return (
-      <div className="border rounded-lg p-4 bg-muted">
-        <strong>
-          שולחן {match.table}: {name(match.player1)}
-        </strong>
-        <p>Bye · 3 נקודות</p>
-      </div>
-    );
-  return (
-    <div className="border rounded-lg p-4 space-y-3">
-      <p className="font-bold">
-        שולחן {match.table}: {name(match.player1)} מול {name(match.player2)}
-      </p>
-      {disabled ? (
-        <p>
-          {match.result
-            ? `${match.result.winner === 'draw' ? 'תיקו' : name(match.result.winner === 'player1' ? match.player1 : match.player2)} · ${match.result.score1}–${match.result.score2}${match.result.drawnGames ? ` · ${match.result.drawnGames} משחקים בתיקו` : ''}`
-            : 'טרם הוזנה תוצאה'}
-        </p>
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2">
-            {(['player1', 'draw', 'player2'] as const).map((value) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={winner === value ? 'default' : 'outline'}
-                onClick={() => {
-                  setDirty(true);
-                  setWinner(value);
-                  setScore('');
-                  setDrawnGames(0);
-                }}
-              >
-                {value === 'draw'
-                  ? 'תיקו'
-                  : name(value === 'player1' ? match.player1 : match.player2)}
-              </Button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-3 items-end">
-            <label className="text-sm">
-              תוצאה (Bo3)
-              <select
-                aria-label={`תוצאה בשולחן ${match.table}`}
-                disabled={!winner}
-                className="block border rounded-md p-2 bg-background"
-                value={score}
-                onChange={(e) => {
-                  setDirty(true);
-                  setScore(e.target.value);
-                  setDrawnGames(0);
-                }}
-              >
-                <option value="">בחר ניקוד</option>
-                {options.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm">
-              משחקים בתיקו
-              <input
-                aria-label={`משחקים בתיקו בשולחן ${match.table}`}
-                type="number"
-                min={0}
-                max={
-                  score
-                    ? 3 -
-                      score
-                        .split('-')
-                        .reduce((sum, value) => sum + Number(value), 0)
-                    : 3
-                }
-                className="block border rounded-md p-2 w-24 bg-background"
-                value={drawnGames}
-                onChange={(e) => {
-                  setDirty(true);
-                  setDrawnGames(Number(e.target.value));
-                }}
-              />
-            </label>
-            <Button
-              size="sm"
-              disabled={!winner || !score}
-              onClick={() => {
-                const [score1, score2] = score.split('-').map(Number);
-                void save(
-                  {
-                    winner: winner as MatchResult['winner'],
-                    score1,
-                    score2,
-                    drawnGames,
-                  },
-                  draftRevision,
-                ).finally(() => setDirty(false));
-              }}
-            >
-              שמור תוצאה
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {match.result
-              ? 'תוצאה שמורה; שינויים נשמרים רק בלחיצה על שמור.'
-              : 'תוצאה זו עדיין לא נשמרה.'}
-          </p>
-        </>
-      )}
-    </div>
-  );
-}
 export default function InternalTournamentPage() {
   const { id = '' } = useParams();
   const { showConfirm } = useConfirm();
@@ -217,6 +63,10 @@ export default function InternalTournamentPage() {
   const [resultsView, setResultsView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [syncError, setSyncError] = useState('');
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [failedMatches, setFailedMatches] = useState<string[]>([]);
+  const busyRef = useRef(false);
   const connectedRef = useRef(false);
   const [connected, setConnected] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -239,6 +89,10 @@ export default function InternalTournamentPage() {
     let active = true;
     revisionRef.current = -1;
     setDeleted(false);
+    setSaveFailed(false);
+    setFailedMatches([]);
+    setSyncError('');
+    setRoster([]);
     setTournament(null);
     setError('');
     internalTournaments
@@ -265,10 +119,17 @@ export default function InternalTournamentPage() {
       }
       try {
         const data = await internalTournaments.get(id);
-        if (active) accept(data);
+        if (active) {
+          accept(data);
+          setSyncError('');
+        }
       } catch (e) {
-        if (active && isAxiosError(e) && e.response?.status === 404) setDeleted(true);
-        else if (active) setError(requestError(e));
+        if (active && isAxiosError(e) && e.response?.status === 404)
+          setDeleted(true);
+        else if (active)
+          setSyncError(
+            'לא הצלחנו לרענן את הטורניר. אפשר לצפות במצב האחרון; בדקו את החיבור ונסו לרענן.',
+          );
       }
     };
     const unsubscribe = subscribeTournament(
@@ -297,27 +158,36 @@ export default function InternalTournamentPage() {
     return (
       <div>
         <p>הטורניר נמחק על ידי מנהל.</p>
-        <Link to="/manage/tournaments">חזרה לטורנירים</Link>
       </div>
     );
   const mutate = async (
     operation: () => Promise<InternalTournament>,
     after?: (data: InternalTournament) => void,
-  ) => {
+    resultMutation = false,
+  ): Promise<'saved' | 'failed'> => {
+    if (busyRef.current) return 'failed';
+    busyRef.current = true;
     setBusy(true);
     setError('');
     try {
       const data = await operation();
       accept(data);
       after?.(data);
+      if (!resultMutation) setSaveFailed(false);
+      return 'saved';
     } catch (e) {
-      setError(requestError(e));
+      if (!resultMutation) setSaveFailed(true);
+      setError(
+        `השינוי לא אושר כשמור. ${requestError(e)} אל תמשיכו לסיבוב הבא או לסיום לפני אישור השמירה.`,
+      );
       try {
         await reload();
       } catch {
         /* Keep the visible error and last server snapshot for retry. */
       }
+      return 'failed';
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
@@ -325,7 +195,25 @@ export default function InternalTournamentPage() {
     return (
       <div>
         {error && <p role="alert">{error}</p>}
-        <p>טוען טורניר...</p>
+        {error ? (
+          <Button
+            onClick={() => {
+              setError('');
+              void reload()
+                .then(async (data) => {
+                  const team = await teamsService.getTeam(data.team);
+                  setRoster(team.players);
+                })
+                .catch((e) =>
+                  setError(`לא הצלחנו לטעון את הטורניר. ${requestError(e)}`),
+                );
+            }}
+          >
+            נסה לטעון שוב
+          </Button>
+        ) : (
+          <p role="status">טוען טורניר...</p>
+        )}
       </div>
     );
   const closed = tournament.phase === 'completed';
@@ -347,7 +235,7 @@ export default function InternalTournamentPage() {
     result: MatchResult,
     revision: number,
   ) => {
-    if (!round) return;
+    if (!round) return 'cancelled' as const;
     const changed =
       !match.result ||
       (['winner', 'score1', 'score2', 'drawnGames'] as const).some(
@@ -364,17 +252,26 @@ export default function InternalTournamentPage() {
         variant: 'destructive',
       }))
     )
-      return;
-    await mutate(() =>
-      internalTournaments.result(
-        id,
-        revision,
-        round.number,
-        match._id,
-        result,
-        invalidate,
-      ),
+      return 'cancelled' as const;
+    const outcome = await mutate(
+      () =>
+        internalTournaments.result(
+          id,
+          revision,
+          round.number,
+          match._id,
+          result,
+          invalidate,
+        ),
+      undefined,
+      true,
     );
+    setFailedMatches((current) =>
+      outcome === 'saved'
+        ? current.filter((value) => value !== match._id)
+        : [...new Set([...current, match._id])],
+    );
+    return outcome;
   };
   const pair = () =>
     mutate(
@@ -421,19 +318,58 @@ export default function InternalTournamentPage() {
           </p>
         </div>
       </div>
-      {error && (
-        <p
-          role="alert"
-          className="p-3 bg-destructive/10 text-destructive rounded-md"
-        >
-          {error}
-        </p>
-      )}
+      <div className="min-h-16" aria-live="polite">
+        {error && (
+          <p
+            role="alert"
+            className="p-3 bg-destructive/10 text-destructive rounded-md"
+          >
+            {error}
+          </p>
+        )}
+        {saveFailed && (
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() =>
+              void reload()
+                .then(() => {
+                  setSaveFailed(false);
+                  setError('');
+                })
+                .catch(() =>
+                  setError(
+                    'לא הצלחנו לבדוק אם השינוי נשמר. בדקו את החיבור ונסו שוב.',
+                  ),
+                )
+            }
+          >
+            בדוק את המצב האחרון מהשרת לפני המשך
+          </Button>
+        )}
+      </div>
       <p className="text-xs text-muted-foreground" role="status">
         {connected
           ? 'עדכון חי מחובר'
-          : 'מתחבר לעדכון חי; המצב מסתנכרן אוטומטית'}
+          : 'החיבור לעדכון חי נותק. אפשר להמשיך לצפות; מנסים להתחבר מחדש והמצב מתרענן אוטומטית.'}
       </p>
+      {syncError && (
+        <div role="status">
+          <p>{syncError}</p>
+          <Button
+            variant="outline"
+            onClick={() =>
+              void reload()
+                .then(() => setSyncError(''))
+                .catch(() =>
+                  setSyncError('הרענון נכשל. בדקו את החיבור ונסו שוב.'),
+                )
+            }
+          >
+            רענן טורניר
+          </Button>
+        </div>
+      )}
       <p className="text-sm text-muted-foreground">
         כל תוצאה נשמרת מיד בשרת. לאחר רענון או כניסה ממכשיר אחר אפשר להמשיך
         מכאן. בעת עדכון מקביל המצב מתעדכן אוטומטית ויש להזין שוב.
@@ -444,7 +380,7 @@ export default function InternalTournamentPage() {
           <p className="text-sm">
             הסירו ילדים חסרים. לאחר תחילת הסיבובים הסגל נעול.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
             {[
               ...tournament.playerParticipants.map((p) => ({
                 id: p.player,
@@ -479,7 +415,7 @@ export default function InternalTournamentPage() {
               </label>
             ))}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
             <Button
               disabled={busy || selected.length < 2 || !participantsChanged}
               onClick={() =>
@@ -492,11 +428,16 @@ export default function InternalTournamentPage() {
                 )
               }
             >
-              שמור נוכחות
+              {busy ? 'שומר…' : 'שמור נוכחות'}
             </Button>
             <Button
               variant="outline"
-              disabled={busy || participantsChanged}
+              disabled={
+                busy ||
+                saveFailed ||
+                failedMatches.length > 0 ||
+                participantsChanged
+              }
               onClick={() => void pair()}
             >
               הגרל סיבוב 1
@@ -505,11 +446,12 @@ export default function InternalTournamentPage() {
         </div>
       )}
       {tournament.rounds.length > 0 && (
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:items-center">
           <label>
             סיבוב{' '}
             <select
               className="p-2 border rounded-md bg-background"
+              disabled={busy || saveFailed || failedMatches.length > 0}
               value={roundNumber}
               onChange={(e) => {
                 setRoundNumber(Number(e.target.value));
@@ -525,6 +467,7 @@ export default function InternalTournamentPage() {
           </label>
           <Button
             variant="outline"
+            disabled={busy || saveFailed || failedMatches.length > 0}
             onClick={() => setResultsView(!resultsView)}
           >
             {resultsView ? 'חזור למשחקים' : 'הצג דירוג ותוצאות'}
@@ -551,23 +494,39 @@ export default function InternalTournamentPage() {
               match={match}
               name={name}
               revision={tournament.revision}
-              disabled={closed || busy}
+              discard={async () => {
+                await reload();
+                setFailedMatches((current) =>
+                  current.filter((value) => value !== match._id),
+                );
+                setError('');
+              }}
+              readOnly={closed}
+              disabled={busy}
               save={(result, revision) => saveResult(match, result, revision)}
             />
           ))}
         </div>
       )}
       {!closed && tournament.phase === 'running' && (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <Button
-            disabled={busy || !allComplete || tournament.rounds.length >= 16}
+            disabled={
+              busy ||
+              saveFailed ||
+              failedMatches.length > 0 ||
+              !allComplete ||
+              tournament.rounds.length >= 16
+            }
             onClick={() => void pair()}
           >
             הגרל סיבוב נוסף
           </Button>
           <Button
             variant="outline"
-            disabled={busy || !allComplete}
+            disabled={
+              busy || saveFailed || failedMatches.length > 0 || !allComplete
+            }
             onClick={() => void close()}
           >
             סיים טורניר
