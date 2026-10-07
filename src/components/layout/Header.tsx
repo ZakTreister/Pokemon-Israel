@@ -114,11 +114,11 @@ export default function Header() {
                 key={to}
                 to={to}
                 end={to === '/'}
-                className={`cs-nav-link${construction ? ' cs-nav-construction' : ''}`}
+                className="cs-nav-link"
               >
                 {label}
                 {construction && (
-                  <span className="absolute top-0 left-0 rounded-full border border-blue-500 bg-white px-1.5 text-[9px] font-medium leading-3 text-blue-500">
+                  <span className="pointer-events-none absolute -top-1 left-0 whitespace-nowrap rounded-[3px] border border-blue-200 bg-blue-50 px-1 py-0.5 text-[8px] font-semibold leading-none text-blue-600 shadow-sm">
                     בהקמה
                   </span>
                 )}
@@ -153,12 +153,12 @@ export default function Header() {
                   key={to}
                   to={to}
                   end={to === '/'}
-                  className={`cs-nav-link px-3${construction ? ' cs-nav-construction' : ''}`}
+                  className="cs-nav-link px-3"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {label}
                   {construction && (
-                    <span className="absolute top-0 left-0 rounded-full border border-blue-500 bg-white px-1.5 text-[9px] font-medium leading-3 text-blue-500">
+                    <span className="pointer-events-none absolute -top-1 left-0 whitespace-nowrap rounded-[3px] border border-blue-200 bg-blue-50 px-1 py-0.5 text-[8px] font-semibold leading-none text-blue-600 shadow-sm">
                       בהקמה
                     </span>
                   )}
