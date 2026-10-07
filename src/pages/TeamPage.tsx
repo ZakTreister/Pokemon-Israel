@@ -69,12 +69,13 @@ export default function TeamPage() {
   };
   return (
     <div className={management ? 'py-6' : 'container py-12'}>
-      <Link
-        to={staff ? '/manage/teams' : '/all-stars'}
-        className="block mb-5 font-bold text-blue-500"
-      >
-        → חזרה לנבחרות All-Stars
-      </Link>
+      {!management && (
+        <Button asChild variant="outline" className="mb-5">
+          <Link to={staff ? '/manage/teams' : '/all-stars'}>
+            → חזרה לנבחרות All-Stars
+          </Link>
+        </Button>
+      )}
       {error && (
         <p
           role="alert"

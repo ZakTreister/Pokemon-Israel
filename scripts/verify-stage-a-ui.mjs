@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import React from 'react';
+import TestRenderer, { act } from 'react-test-renderer';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -135,7 +136,149 @@ try {
     /href="\/manage\/teams"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/manage\/teams"/,
   );
   assert.ok(nested.includes('הזנת טורניר היסטורי'));
-  assert.ok(nested.includes('חזרה לנבחרת'));
+  assert.ok(nested.includes('נבחרת'));
+  assert.equal((nested.match(/חזרה ל/g) || []).length, 1);
+  // Exercise the actual editor while a save is pending and after a network
+  // failure, including a concurrent server revision and a cancelled correction.
+  const Editor = await load('components/MatchEditor.tsx');
+  const Button = await load('components/ui/Button.tsx');
+  for (const variant of [
+    'default',
+    'secondary',
+    'outline',
+    'destructive',
+    'ghost',
+    'link',
+    'success',
+    'cta',
+    'live',
+  ]) {
+    assert.match(
+      render(Button, '/', null, {}, { variant, children: 'פעולה' }),
+      /shadow-button/,
+    );
+  }
+  const { requestError } = await vite.ssrLoadModule(
+    '/src/utils/requestError.ts',
+  );
+  assert.ok(
+    !requestError(new Error('Network Error')).includes('Network Error'),
+  );
+  assert.match(requestError(new Error('Network Error')), /חיבור/);
+  let finish;
+  let calls = 0;
+  let sent;
+  const fixture = {
+    _id: 'match',
+    table: 1,
+    player1: 'a',
+    player2: 'b',
+    result: null,
+  };
+  let props = {
+    match: fixture,
+    revision: 3,
+    name: (id) => (id === 'a' ? 'שחקן ראשון' : 'שחקן שני'),
+    disabled: false,
+    readOnly: false,
+    discard: async () => {},
+    save: (result, revision) => {
+      calls++;
+      sent = { result, revision };
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    },
+  };
+  let editor;
+  act(() => {
+    editor = TestRenderer.create(element(Editor, props));
+  });
+  const buttons = () => editor.root.findAllByType('button');
+  act(() => buttons()[0].props.onClick());
+  act(() =>
+    editor.root
+      .findByType('select')
+      .props.onChange({ target: { value: '1-0' } }),
+  );
+  let pending;
+  const submit = buttons()[3].props.onClick;
+  act(() => {
+    pending = submit();
+    void submit();
+  });
+  assert.equal(calls, 1, 'Rapid duplicate submission is prevented');
+  assert.equal(sent.revision, 3);
+  assert.equal(sent.result.score1, 1);
+  assert.ok(buttons().every((button) => button.props.disabled));
+  assert.match(JSON.stringify(editor.toJSON()), /שומר את התוצאה/);
+  assert.ok(!JSON.stringify(editor.toJSON()).includes('טרם הוזנה תוצאה'));
+  await act(async () => {
+    finish('failed');
+    await pending;
+  });
+  assert.equal(
+    editor.root.findByType('select').props.value,
+    '1-0',
+    'Failure preserves the draft',
+  );
+  assert.match(JSON.stringify(editor.toJSON()), /השמירה לא אושרה/);
+  props = {
+    ...props,
+    revision: 4,
+    match: {
+      ...fixture,
+      result: { winner: 'player2', score1: 0, score2: 2, drawnGames: 0 },
+    },
+  };
+  act(() => editor.update(element(Editor, props)));
+  assert.equal(
+    editor.root.findByType('select').props.value,
+    '1-0',
+    'Concurrent canonical update must not overwrite a draft',
+  );
+  await act(async () => {
+    await buttons()[4].props.onClick();
+  });
+  assert.equal(
+    editor.root.findByType('select').props.value,
+    '0-2',
+    'Discard adopts the canonical result',
+  );
+  act(() => buttons()[0].props.onClick());
+  act(() =>
+    editor.root
+      .findByType('select')
+      .props.onChange({ target: { value: '2-1' } }),
+  );
+  act(() => {
+    pending = buttons()[3].props.onClick();
+  });
+  assert.equal(sent.revision, 4);
+  await act(async () => {
+    finish('cancelled');
+    await pending;
+  });
+  assert.equal(
+    editor.root.findByType('select').props.value,
+    '2-1',
+    'Cancelled confirmation preserves draft',
+  );
+  act(() => {
+    pending = buttons()[3].props.onClick();
+  });
+  await act(async () => {
+    props = {
+      ...props,
+      revision: 5,
+      match: { ...fixture, result: sent.result },
+    };
+    editor.update(element(Editor, props));
+    finish('saved');
+    await pending;
+  });
+  assert.match(JSON.stringify(editor.toJSON()), /התוצאה נשמרה בשרת/);
+  act(() => editor.unmount());
   const Home = await load('pages/HomePage.tsx');
   const future = new Date(Date.now() + 86400000).toISOString();
   const state = store.getState();
@@ -186,7 +329,7 @@ try {
   for (const title of ['חנות', 'על הליגה', 'הזמנת יום הולדת'])
     assert.ok(render(Construction, '/', null, {}, { title }).includes('בהקמה'));
   console.log(
-    'Stage A UI checks passed: public menu, role-aware management, nested team context, homepage sources and static pages.',
+    'Stage A UI checks passed: public menu, role-aware management, nested team context, homepage sources, shared button surfaces, duplicate-save protection, pending/failure/cancelled saves and canonical result recovery.',
   );
 } finally {
   await vite.close();

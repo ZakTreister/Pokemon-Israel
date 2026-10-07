@@ -7,6 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from 'react';
+import Button from './Button';
 import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -94,13 +95,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <div className="flex items-start gap-3 p-4">
                 <Icon size={20} className="flex-shrink-0 mt-0.5" />
                 <p className="flex-1 text-sm font-medium leading-relaxed">{toast.message}</p>
-                <button
+                <Button variant="outline" size="icon"
                   onClick={() => removeToast(toast.id)}
                   className="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity"
                   aria-label="סגור"
                 >
                   <X size={16} />
-                </button>
+                </Button>
               </div>
               <div className="h-1 bg-black/20">
                 <div

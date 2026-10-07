@@ -466,14 +466,14 @@ export default function ManageTeams() {
                             <span>
                               {player.firstName} {player.lastName}
                             </span>
-                            <button
+                            <Button size="icon" variant="outline"
                               onClick={() => handleRemovePlayer(team, player)}
                               disabled={uploading || isSubmitting}
                               className="text-muted-foreground hover:text-destructive transition-colors"
                               aria-label="הסר מהנבחרת"
                             >
                               <UserMinus size={14} />
-                            </button>
+                            </Button>
                           </div>
                         ))}
                       </div>
