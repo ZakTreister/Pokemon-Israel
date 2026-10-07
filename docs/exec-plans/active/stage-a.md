@@ -173,6 +173,8 @@ Keep team-transfer behavior coherent and preserve the rule that a player belongs
 
 Do not allow deactivating a team while active players are still assigned.
 
+The inline remove-player control is contextual inside the roster item and must NOT receive the strong page-level `shadow-button` emphasis.
+
 ### 12. Mobile management UX
 Make the management navigation closable on mobile:
 - visible close affordance
@@ -182,17 +184,22 @@ Make the management navigation closable on mobile:
 
 Fix the create-team form on mobile so it lays out cleanly without squeezed controls or horizontal overflow.
 
-### 13. Button styling — all buttons
-The previous “important actions” wording was too weak.
+### 13. Button styling — standalone vs embedded
+Apply the prominent CardSchool `shadow-button` treatment to **standalone action buttons**.
 
-In management and tournament-operation UI, **all actual buttons** must receive the CardSchool button surface and visible `shadow-button` treatment.
+Do NOT apply it indiscriminately to controls embedded inside another component.
 
-This includes normal, secondary and destructive action buttons.
-Variants may differ by semantic styling, but buttons must still look clickable and elevated.
+Prominent:
+- create/save/open/start/close/back/upload actions that stand on their own
 
-Fix existing flat/plain action buttons throughout the Stage A management/tournament surfaces.
+Not prominent:
+- main header menu items
+- management sidebar items
+- inline remove-player/remove-user controls
+- compact row/table/card actions
+- filter chips/tabs that already have their own component surface
 
-Tiny icon-only controls may stay compact, but still use the button component/surface.
+Use the exact hierarchy rules in `docs/product/management-ui.md`.
 
 ### 14. Reusable Cloudinary image upload
 Implement/preserve the reusable Cloudinary-backed image-upload flow described in `docs/architecture/media-upload.md`.
@@ -225,6 +232,8 @@ Requirements:
 - keep desktop and mobile navigation polished and RTL-safe
 - do not implement store commerce
 - do not invent CMS infrastructure for the static pages
+- main-menu items themselves do NOT use `shadow-button`
+- render each **בהקמה** marker as an absolutely positioned small elliptical/pill badge at the visual top-left of its menu item, not as inline text
 
 ### 16. Events and News public entry points
 Reuse existing capabilities rather than creating duplicate systems.
@@ -288,7 +297,8 @@ Requirements:
 - responsive RTL layout
 - strong visual hierarchy
 - cards should feel intentional, not default/plain
-- buttons follow the Stage A button styling rules
+- standalone actions follow the Stage A button styling rules
+- embedded controls retain lighter component-level styling
 - remove obsolete top-deck homepage logic if it is no longer used
 
 ## Existing Stage A core behavior that must remain working

@@ -17,27 +17,38 @@ Do not use:
 - a standalone “עונות” tab
 
 ## Buttons
-All actual buttons in management and tournament-operation UI must look like buttons.
+Use the CardSchool button system consistently.
 
-Use the CardSchool button system consistently and apply the visible `shadow-button` treatment to all normal action buttons, not only a small subset of “primary” actions.
+### Standalone action buttons
+Standalone actions that sit directly on the page/card/modal as their own action should have a clearly visible button surface and the `shadow-button` treatment.
 
-This includes, for example:
-- create
+Examples:
+- create team
 - save / submit
-- edit
-- delete
 - open tournament
 - historical result entry
 - start round / next round
 - close tournament
 - back
-- filter/apply actions
 - upload/select image
-- modal actions
+- primary modal confirmation
 
-Primary/destructive/secondary variants may differ in emphasis, but they must still have a clear button surface/elevation and must not look like plain text links.
+Primary/destructive/secondary variants may differ in color and emphasis, but standalone actions should still read clearly as buttons.
 
-Tiny icon-only controls may remain compact, but should still use the project button component/surface rather than appearing as unstyled icons.
+### Embedded / contextual controls
+Controls that already live **inside another visual component** should NOT receive the same prominent `shadow-button` treatment.
+
+Examples:
+- main/site navigation items
+- management sidebar/menu items
+- compact remove-player/remove-user control inside a roster row/card
+- inline edit/delete controls inside a table/list item
+- icon-only actions inside an existing card/row
+- filter chips/tabs that already have their own selected/unselected surface
+
+These controls should remain visually lighter so the parent component keeps the hierarchy.
+
+In short: use strong elevation for standalone actions, not for every clickable element.
 
 ## Back navigation
 Every nested management page must provide an obvious way to return to the previous/parent context.

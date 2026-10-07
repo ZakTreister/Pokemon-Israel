@@ -11,10 +11,21 @@ Existing legacy links may remain backward compatible.
 The approved main site menu and the homepage content defined in `docs/product/navigation-content.md` and `docs/product/homepage.md` are now part of Stage A.
 They are not deferred to a later polish phase.
 
-## 2026-10 — All buttons should look prominent
-In management and tournament operation screens, every real action button should use the CardSchool button component/surface with visible `shadow-button` styling.
-Do not reserve the prominent treatment only for a few primary buttons.
-Hierarchy may still differ by variant, but buttons must not look like plain links.
+## 2026-10 — Prominent button treatment applies to standalone actions
+Use the CardSchool `shadow-button` treatment for standalone action buttons.
+
+Do NOT apply the same strong elevation to controls that already live inside another component, including:
+- header/menu navigation items
+- management sidebar items
+- inline remove-player/remove-user controls
+- inline table/list actions
+- compact icon actions
+
+Embedded controls should use the parent component's lighter interaction styling.
+
+## 2026-10 — “בהקמה” is an attached menu badge
+In the main site menu, **בהקמה** is not inline text.
+It is an absolutely positioned small pill badge at the visual top-left of the relevant menu item, with an elliptical/rounded-full border.
 
 ## 2026-10 — Nested pages use one back action
 Provide one clear back control on nested management/team/tournament pages.
