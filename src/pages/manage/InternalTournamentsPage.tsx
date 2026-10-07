@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useParams } from "react-router-dom";
 import { internalTournaments } from "../../services/internalTournaments";
 import { requestError } from "../../utils/requestError";
 import type { InternalTournamentSummary } from "../../types/internalTournament";
 import Button from "../../components/ui/Button";
 export default function InternalTournamentsPage() {
   const [params] = useSearchParams();
-  const teamId = params.get("teamId") || undefined;
+  const route = useParams();
+  const teamId = route.teamId || params.get("teamId") || undefined;
   const [tournaments, setTournaments] = useState<
     InternalTournamentSummary[] | null
   >(null);
@@ -29,19 +30,12 @@ export default function InternalTournamentsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h2 className="text-2xl font-bold">טורנירים פנימיים</h2>
+        <h2 className="text-2xl font-bold">היסטוריית טורנירים בנבחרת</h2>
         <Button asChild variant="outline">
           <Link to="/manage/teams">פתח טורניר מעמוד נבחרת</Link>
         </Button>
       </div>
-      {teamId && (
-        <Link
-          to="/manage/internal-tournaments"
-          className="text-blue-500 block mb-4"
-        >
-          הצג את כל הנבחרות
-        </Link>
-      )}
+      {teamId && <div className="flex flex-wrap gap-3 mb-5"><Button asChild variant="outline"><Link to={`/manage/teams/${teamId}`}>→ חזרה לנבחרת</Link></Button><Button asChild><Link to={`/manage/teams/${teamId}/historical`}>הזנת טורניר היסטורי</Link></Button></div>}
       {error && <p role="alert">{error}</p>}
       {tournaments === null ? (
         <p>טוען...</p>
@@ -52,7 +46,7 @@ export default function InternalTournamentsPage() {
           {tournaments.map((t) => (
             <Link
               key={t.id}
-              to={`/manage/internal-tournaments/${t.id}`}
+              to={`/manage/tournaments/${t.id}`}
               className="block border rounded-lg p-4 hover:bg-muted"
             >
               <h3 className="font-bold">{t.title}</h3>

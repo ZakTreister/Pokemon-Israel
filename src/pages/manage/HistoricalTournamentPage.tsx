@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import teamsService from "../../features/teams/teamsService";
 import { internalTournaments } from "../../services/internalTournaments";
 import { requestError } from "../../utils/requestError";
@@ -16,9 +16,10 @@ interface ResultRow {
 export default function HistoricalTournamentPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const route = useParams();
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<ManageablePlayer[]>([]);
-  const [teamId, setTeamId] = useState(params.get("teamId") || "");
+  const [teamId, setTeamId] = useState(route.teamId || params.get("teamId") || "");
   const [date, setDate] = useState("2026-10-04");
   const [rows, setRows] = useState<ResultRow[]>([]);
   const [includeTransferred, setIncludeTransferred] = useState(false);
@@ -75,7 +76,7 @@ export default function HistoricalTournamentPage() {
         date,
         results,
       );
-      navigate(`/manage/internal-tournaments/${tournament.id}`);
+      navigate(`/manage/tournaments/${tournament.id}`);
     } catch (e) {
       setError(requestError(e));
     } finally {

@@ -19,6 +19,9 @@ import teamRoutes from './routes/teamRoutes.js';
 import internalTournamentRoutes from './routes/internalTournamentRoutes.js';
 import { getAllStarsRankings } from './controllers/internalTournamentController.js';
 import badgeRoutes from './routes/badgeRoutes.js';
+import { getNationalRankings } from './controllers/rankingController.js';
+import mediaRoutes from './routes/mediaRoutes.js';
+import { configureTournamentLive } from './services/tournamentLive.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -66,6 +69,9 @@ const io = new Server(httpServer, {
   },
 });
 
+app.set('io', io);
+configureTournamentLive(io);
+
 // Middleware
 app.use(cors({
   origin: allowedOrigins,
@@ -97,8 +103,10 @@ app.use('/api/seasons', seasonRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/media', mediaRoutes);
 app.use('/api/internal-tournaments', internalTournamentRoutes);
 app.get('/api/all-stars/rankings', getAllStarsRankings);
+app.get('/api/rankings', getNationalRankings);
 
 // Serve static files from the React app build directory
 if (process.env.NODE_ENV === 'production') {

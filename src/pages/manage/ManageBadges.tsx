@@ -1,3 +1,4 @@
+import BadgeSeasonsControls from './BadgeSeasonsControls';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
@@ -98,6 +99,7 @@ export default function ManageBadges() {
 
   return (
     <div>
+      <div className="mb-8 pb-8 border-b"><BadgeSeasonsControls /><p className="text-sm text-muted-foreground mt-4">עונות התגים אינן משנות את הדירוגים ואינן נועלות נבחרות או טורנירים.</p></div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול תגים</h2>
         {!showCreateForm && (

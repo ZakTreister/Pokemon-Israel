@@ -22,6 +22,7 @@ const deleteUpdate = async (id: string) => {
 
 const updatesService = {
   getUpdates,
+  getUpdate: async (id: string) => (await api.get<Update>(`/api/updates/${id}`)).data,
   createUpdate,
   updateUpdate,
   deleteUpdate,

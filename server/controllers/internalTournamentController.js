@@ -1,3 +1,4 @@
+import { notifyTournament } from '../services/tournamentLive.js';
 import asyncHandler from "express-async-handler";
 import Tournament from "../models/tournamentModel.js";
 import Team from "../models/teamModel.js";
@@ -52,7 +53,7 @@ function revision(req, tournament) {
   if (tournament.revision !== req.body.expectedRevision)
     fail(
       409,
-      "הטורניר עודכן על ידי איש צוות אחר. נא לרענן ולנסות שוב",
+      "הטורניר עודכן על ידי איש צוות אחר. בדקו את המצב החדש ונסו שוב",
       "STALE_REVISION",
     );
   if (tournament.phase === "completed")
@@ -70,7 +71,8 @@ async function commit(req, updates) {
     { new: true, runValidators: true },
   );
   if (!tournament)
-    fail(409, "הטורניר עודכן במקביל. נא לרענן ולנסות שוב", "STALE_REVISION");
+    fail(409, "הטורניר עודכן במקביל. בדקו את המצב החדש ונסו שוב", "STALE_REVISION");
+  notifyTournament(req, tournament);
   return serialize(tournament);
 }
 function base(team, participants, req, source) {

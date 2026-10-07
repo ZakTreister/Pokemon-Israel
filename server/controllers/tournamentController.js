@@ -83,9 +83,6 @@ export const createTournament = asyncHandler(async (req, res) => {
     baseTournamentData.type = req.body.type;
   }
 
-  if (req.body.season) {
-    baseTournamentData.season = req.body.season;
-  }
 
   const createdTournaments = [];
 
@@ -155,46 +152,6 @@ export const updateTournament = asyncHandler(async (req, res) => {
   } else {
     res.status(404);
     throw new Error('Tournament not found');
-  }
-});
-
-// @desc    Delete a tournament or entire series
-// @route   DELETE /api/tournaments/:id
-// @access  Private/Admin
-export const deleteTournament = asyncHandler(async (req, res) => {
-  const { deleteSeries } = req.query; // Optional query parameter
-  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
-
-  if (!tournament) {
-    res.status(404);
-    throw new Error('Tournament not found');
-  }
-
-  if (deleteSeries === 'true' && tournament.seriesId) {
-    // Delete only future tournaments in the series
-    const now = new Date();
-    const deleteResult = await Tournament.deleteMany({ 
-      seriesId: tournament.seriesId,
-      engineVersion: { $ne: 'swiss-v1' },
-      date: { $gte: now } // Only delete future tournaments
-    });
-    res.json({ 
-      message: `Deleted ${deleteResult.deletedCount} future tournaments from series`,
-      deletedCount: deleteResult.deletedCount 
-    });
-  } else {
-    // Check if tournament is in the past
-    const now = new Date();
-    const tournamentDate = new Date(tournament.date);
-    
-    if (tournamentDate < now) {
-      res.status(400);
-      throw new Error('Cannot delete past tournaments');
-    }
-
-    // Delete single tournament
-    await tournament.deleteOne();
-    res.json({ message: 'Tournament removed' });
   }
 });
 

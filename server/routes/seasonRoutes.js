@@ -9,8 +9,8 @@ import {
 
 const router = express.Router();
 
-router.get('/', protect, getSeasons);
-router.get('/active', protect, getActiveSeason);
+router.get('/', protect, admin, getSeasons);
+router.get('/active', protect, admin, getActiveSeason);
 router.post('/', protect, admin, createSeason);
 router.post('/:id/close', protect, admin, closeSeason);
 

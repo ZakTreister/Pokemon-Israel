@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import { CalendarPlus, Lock, AlertCircle, CheckCircle2, Archive } from 'lucide-react';
 
-export default function AdminSeasons() {
+export default function BadgeSeasonsControls() {
   const dispatch = useAppDispatch();
   const { seasons, activeSeason, isLoading, error } = useAppSelector((state) => state.seasons);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -58,7 +58,7 @@ export default function AdminSeasons() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">עונות</h2>
+        <h2 className="text-2xl font-bold">עונות תגים</h2>
         {!activeSeason && !showCreateForm && (
           <Button onClick={() => setShowCreateForm(true)}>
             <CalendarPlus size={18} className="ml-1" />

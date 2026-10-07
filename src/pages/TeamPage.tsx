@@ -1,32 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useAppSelector } from "../hooks/redux";
-import { publicTeams } from "../services/publicTeams";
-import teamsService from "../features/teams/teamsService";
-import { internalTournaments } from "../services/internalTournaments";
-import api from "../services/api";
-import { requestError } from "../utils/requestError";
-import type { TeamWithRoster } from "../types/team";
-import type { AllStarsRanking } from "../types/internalTournament";
-import { TeamEmblem } from "../components/teams/TeamCard";
-import Button from "../components/ui/Button";
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useAppSelector } from '../hooks/redux';
+import { publicTeams } from '../services/publicTeams';
+import teamsService from '../features/teams/teamsService';
+import { internalTournaments } from '../services/internalTournaments';
+import api from '../services/api';
+import { requestError } from '../utils/requestError';
+import type { TeamWithRoster } from '../types/team';
+import type { AllStarsRanking } from '../types/internalTournament';
+import { TeamEmblem } from '../components/teams/TeamCard';
+import Button from '../components/ui/Button';
 interface ChildRow {
   firstName: string;
   lastName: string;
   city: string;
 }
-const emptyChild = (): ChildRow => ({ firstName: "", lastName: "", city: "" });
+const emptyChild = (): ChildRow => ({ firstName: '', lastName: '', city: '' });
 export default function TeamPage() {
-  const { id = "" } = useParams();
+  const { id = '' } = useParams();
   const navigate = useNavigate();
+  const management = useLocation().pathname.startsWith('/manage/');
   const { user } = useAppSelector((state) => state.auth);
-  const staff = user?.role === "admin" || user?.role === "judge";
+  const staff = user?.role === 'admin' || user?.role === 'judge';
   const [team, setTeam] = useState<TeamWithRoster | null>(null);
   const [rankings, setRankings] = useState<AllStarsRanking[]>([]);
   const [children, setChildren] = useState<ChildRow[]>([emptyChild()]);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const load = useCallback(async () => {
     const [t, r] = await Promise.all([
       staff ? teamsService.getTeam(id) : publicTeams.get(id),
@@ -37,15 +38,15 @@ export default function TeamPage() {
   }, [id, staff]);
   useEffect(() => {
     setTeam(null);
-    setError("");
+    setError('');
     load().catch((e) => setError(requestError(e)));
   }, [load]);
   const create = async () => {
     setBusy(true);
-    setError("");
+    setError('');
     try {
       const tournament = await internalTournaments.create(id);
-      navigate(`/manage/internal-tournaments/${tournament.id}`);
+      navigate(`/manage/tournaments/${tournament.id}`);
     } catch (e) {
       setError(requestError(e));
     } finally {
@@ -54,7 +55,7 @@ export default function TeamPage() {
   };
   const loadChildren = async () => {
     setBusy(true);
-    setError("");
+    setError('');
     try {
       await api.post(`/api/teams/${id}/players`, { players: children });
       setChildren([emptyChild()]);
@@ -67,7 +68,13 @@ export default function TeamPage() {
     }
   };
   return (
-    <div className="container py-12">
+    <div className={management ? 'py-6' : 'container py-12'}>
+      <Link
+        to={staff ? '/manage/teams' : '/all-stars'}
+        className="block mb-5 font-bold text-blue-500"
+      >
+        → חזרה לנבחרות All-Stars
+      </Link>
       {error && (
         <p
           role="alert"
@@ -86,7 +93,7 @@ export default function TeamPage() {
               <p className="text-blue-500 font-bold">ALL STARS</p>
               <h1 className="text-4xl font-extrabold">{team.name}</h1>
               <p className="mt-2">
-                {team.playerCount} שחקנים פעילים ·{" "}
+                {team.playerCount} שחקנים פעילים ·{' '}
                 {team.completedInternalTournamentCount ?? 0} טורנירים פנימיים
                 שהסתיימו
               </p>
@@ -109,12 +116,12 @@ export default function TeamPage() {
                 הוסף / טען ילדים
               </Button>
               <Button variant="outline" asChild>
-                <Link to={`/manage/historical?teamId=${id}`}>
+                <Link to={`/manage/teams/${id}/historical`}>
                   הזנת טורניר היסטורי
                 </Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link to={`/manage/internal-tournaments?teamId=${id}`}>
+                <Link to={`/manage/teams/${id}/history`}>
                   היסטוריית טורנירים
                 </Link>
               </Button>
@@ -138,14 +145,14 @@ export default function TeamPage() {
               </p>
               {children.map((row, index) => (
                 <div key={index} className="grid gap-2 sm:grid-cols-4">
-                  {(["firstName", "lastName", "city"] as const).map(
+                  {(['firstName', 'lastName', 'city'] as const).map(
                     (field, i) => (
                       <input
                         key={field}
-                        required={field !== "city"}
-                        maxLength={field === "city" ? 100 : 50}
-                        aria-label={`${["שם פרטי", "שם משפחה", "עיר"][i]} ${index + 1}`}
-                        placeholder={["שם פרטי", "שם משפחה", "עיר (רשות)"][i]}
+                        required={field !== 'city'}
+                        maxLength={field === 'city' ? 100 : 50}
+                        aria-label={`${['שם פרטי', 'שם משפחה', 'עיר'][i]} ${index + 1}`}
+                        placeholder={['שם פרטי', 'שם משפחה', 'עיר (רשות)'][i]}
                         value={row[field]}
                         onChange={(e) =>
                           setChildren(
@@ -182,7 +189,7 @@ export default function TeamPage() {
                   שורה נוספת
                 </Button>
                 <Button disabled={busy}>
-                  {busy ? "שומר..." : "שמור ילדים בסגל"}
+                  {busy ? 'שומר...' : 'שמור ילדים בסגל'}
                 </Button>
               </div>
             </form>
@@ -195,7 +202,7 @@ export default function TeamPage() {
               <table className="w-full text-right">
                 <thead className="bg-muted">
                   <tr>
-                    {["שחקן", "עיר", "מקום", "נקודות", "טורנירים"].map((h) => (
+                    {['שחקן', 'עיר', 'מקום', 'נקודות', 'טורנירים'].map((h) => (
                       <th key={h} className="p-3">
                         {h}
                       </th>
@@ -212,8 +219,8 @@ export default function TeamPage() {
                         <td className="p-3 font-bold">
                           {player.firstName} {player.lastName}
                         </td>
-                        <td className="p-3">{player.city || "—"}</td>
-                        <td className="p-3">{rank?.position ?? "—"}</td>
+                        <td className="p-3">{player.city || '—'}</td>
+                        <td className="p-3">{rank?.position ?? '—'}</td>
                         <td className="p-3">{rank?.points ?? 0}</td>
                         <td className="p-3">{rank?.tournaments ?? 0}</td>
                       </tr>

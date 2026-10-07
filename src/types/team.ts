@@ -3,6 +3,7 @@ export interface Team {
   name: string;
   isActive: boolean;
   logo?: string;
+  logoPublicId?: string;
   completedInternalTournamentCount?: number;
   officialStats?: { position: number; gamesPlayed: number; winRate: number } | null;
   createdBy?: {
@@ -41,11 +42,13 @@ export interface ManageablePlayer extends TeamRosterPlayer {
 
 export interface CreateTeamInput {
   logo?: string;
+  logoPublicId?: string;
   name: string;
 }
 
 export interface UpdateTeamInput {
   logo?: string;
+  logoPublicId?: string;
   name?: string;
   isActive?: boolean;
 }
