@@ -87,7 +87,8 @@ export default function ManageDashboardPage() {
       <div className="container py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-extrabold">ניהול</h1>
-          <Button contextual
+          <Button
+            contextual
             className="lg:hidden"
             variant="outline"
             size="icon"
@@ -165,7 +166,7 @@ export default function ManageDashboardPage() {
                     <div>
                       <h2 className="font-bold text-2xl mb-4">סקירה כללית</h2>
                       <p>
-                        בחרו נבחרת לניהול סגל ופתיחת טורניר, או המשיכו לטורניר
+                        בחרו נבחרת לצפייה בסגל ולפתיחת טורניר, או המשיכו לטורניר
                         פעיל.
                       </p>
                     </div>
@@ -180,7 +181,13 @@ export default function ManageDashboardPage() {
               />
               <Route
                 path="teams/:teamId/historical"
-                element={<HistoricalTournamentPage />}
+                element={
+                  admin ? (
+                    <HistoricalTournamentPage />
+                  ) : (
+                    <Navigate replace to="/manage/teams" />
+                  )
+                }
               />
               <Route path="tournaments" element={<ManageTournaments />} />
               <Route

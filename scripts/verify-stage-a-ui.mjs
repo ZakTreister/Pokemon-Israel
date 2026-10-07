@@ -138,7 +138,12 @@ try {
     nested,
     /href="\/manage\/teams"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/manage\/teams"/,
   );
-  assert.ok(nested.includes('הזנת טורניר היסטורי'));
+  assert.ok(!nested.includes('הזנת טורניר היסטורי'));
+  assert.ok(render(Manage, '/manage/teams/012345678901234567890123/history', 'admin').includes('הזנת טורניר היסטורי'));
+  for (const role of ['admin', 'judge']) {
+    const direct = render(Manage, '/manage/teams/012345678901234567890123/historical', role);
+    assert.equal(direct.includes('שמור טורניר היסטורי שהסתיים'), role === 'admin');
+  }
   assert.ok(nested.includes('נבחרת'));
   assert.equal((nested.match(/חזרה ל/g) || []).length, 1);
   // Exercise the actual editor while a save is pending and after a network
@@ -288,9 +293,17 @@ try {
   act(() => editor.unmount());
   const ManageTeams = await load('pages/manage/ManageTeams.tsx');
   const teamState = store.getState();
-  const teamRow = render(ManageTeams, '/', 'admin', {
+  const teamFixture = {
     teams: { ...teamState.teams, isLoading: false, teams: [{ id: 'fixture-team', name: 'נבחרת בדיקה', isActive: true, playerCount: 1 }], manageablePlayers: [{ id: 'fixture-player', firstName: 'ילד', lastName: 'בדיקה', team: { id: 'fixture-team', name: 'נבחרת בדיקה' }, type: 'team', isActive: true }] },
-  });
+  };
+  const teamRow = render(ManageTeams, '/', 'admin', teamFixture);
+  const judgeTeamRow = render(ManageTeams, '/', 'judge', teamFixture);
+  assert.ok(judgeTeamRow.includes('סגל וטורנירים'));
+  assert.ok(judgeTeamRow.includes('ילד'));
+  for (const forbidden of ['נבחרת חדשה', 'שם וסמל', 'שייך שחקן', 'השבת', 'הסר מהנבחרת']) assert.ok(!judgeTeamRow.includes(forbidden));
+  const TournamentList = await load('pages/manage/ManageTournaments.tsx');
+  assert.ok(!render(TournamentList, '/', 'judge').includes('Excel'));
+  assert.ok(render(TournamentList, '/', 'admin').includes('Excel'));
   for (const label of ['סגל וטורנירים', 'שם וסמל', 'השבת', 'שייך שחקן']) {
     const labelIndex = teamRow.indexOf(label);
     assert.ok(labelIndex >= 0, `Team row action: ${label}`);

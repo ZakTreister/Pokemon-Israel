@@ -33,6 +33,7 @@ import type { Team } from '../../types/team';
 import type { ManageablePlayer } from '../../types/team';
 
 export default function ManageTeams() {
+  const admin = useAppSelector((state) => state.auth.user?.role === 'admin');
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
@@ -206,7 +207,7 @@ export default function ManageTeams() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול נבחרות</h2>
-        {!showCreateForm && (
+        {admin && !showCreateForm && (
           <Button
             onClick={() => setShowCreateForm(true)}
             disabled={uploading || isSubmitting}
@@ -224,7 +225,7 @@ export default function ManageTeams() {
         </div>
       )}
 
-      {showCreateForm && (
+      {admin && showCreateForm && (
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>יצירת נבחרת חדשה</CardTitle>
@@ -325,49 +326,53 @@ export default function ManageTeams() {
                           סגל וטורנירים
                         </Link>
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingTeam(team);
-                          setEditName(team.name);
-                          setEditLogo(team.logo || '');
-                          setEditPublicId(team.logoPublicId || '');
-                        }}
-                        disabled={uploading || isSubmitting}
-                      >
-                        <Edit2 size={16} className="ml-1" />
-                        <span>שם וסמל</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleActive(team)}
-                        disabled={uploading || isSubmitting}
-                      >
-                        <Power size={16} className="ml-1" />
-                        <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setAssigningToTeam(team);
-                          setSelectedPlayerId('');
-                        }}
-                        disabled={
-                          !team.isActive ||
-                          isSubmitting ||
-                          available.length === 0
-                        }
-                      >
-                        <UserPlus size={16} className="ml-1" />
-                        <span>שייך שחקן</span>
-                      </Button>
+                      {admin && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingTeam(team);
+                              setEditName(team.name);
+                              setEditLogo(team.logo || '');
+                              setEditPublicId(team.logoPublicId || '');
+                            }}
+                            disabled={uploading || isSubmitting}
+                          >
+                            <Edit2 size={16} className="ml-1" />
+                            <span>שם וסמל</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleActive(team)}
+                            disabled={uploading || isSubmitting}
+                          >
+                            <Power size={16} className="ml-1" />
+                            <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setAssigningToTeam(team);
+                              setSelectedPlayerId('');
+                            }}
+                            disabled={
+                              !team.isActive ||
+                              isSubmitting ||
+                              available.length === 0
+                            }
+                          >
+                            <UserPlus size={16} className="ml-1" />
+                            <span>שייך שחקן</span>
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  {editingTeam?.id === team.id && (
+                  {admin && editingTeam?.id === team.id && (
                     <div className="flex flex-wrap gap-2 mb-4">
                       <div className="w-full">
                         <ImageUpload
@@ -412,7 +417,7 @@ export default function ManageTeams() {
                     </div>
                   )}
 
-                  {assigningToTeam?.id === team.id && (
+                  {admin && assigningToTeam?.id === team.id && (
                     <div className="flex gap-2 mb-4 p-3 rounded-md bg-muted">
                       <select
                         className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
@@ -466,14 +471,19 @@ export default function ManageTeams() {
                             <span>
                               {player.firstName} {player.lastName}
                             </span>
-                            <Button contextual size="icon" variant="outline"
-                              onClick={() => handleRemovePlayer(team, player)}
-                              disabled={uploading || isSubmitting}
-                              className="text-muted-foreground hover:text-destructive transition-colors"
-                              aria-label="הסר מהנבחרת"
-                            >
-                              <UserMinus size={14} />
-                            </Button>
+                            {admin && (
+                              <Button
+                                contextual
+                                size="icon"
+                                variant="outline"
+                                onClick={() => handleRemovePlayer(team, player)}
+                                disabled={uploading || isSubmitting}
+                                className="text-muted-foreground hover:text-destructive transition-colors"
+                                aria-label="הסר מהנבחרת"
+                              >
+                                <UserMinus size={14} />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>

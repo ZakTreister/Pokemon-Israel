@@ -21,6 +21,7 @@ export default function TeamPage() {
   const navigate = useNavigate();
   const management = useLocation().pathname.startsWith('/manage/');
   const { user } = useAppSelector((state) => state.auth);
+  const admin = user?.role === 'admin';
   const staff = user?.role === 'admin' || user?.role === 'judge';
   const [team, setTeam] = useState<TeamWithRoster | null>(null);
   const [rankings, setRankings] = useState<AllStarsRanking[]>([]);
@@ -109,29 +110,35 @@ export default function TeamPage() {
               >
                 פתח טורניר פנימי
               </Button>
-              <Button
-                variant="outline"
-                disabled={busy || !team.isActive}
-                onClick={() => setEditing(!editing)}
-              >
-                הוסף / טען ילדים
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to={`/manage/teams/${id}/historical`}>
-                  הזנת טורניר היסטורי
-                </Link>
-              </Button>
+              {admin && (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={busy || !team.isActive}
+                    onClick={() => setEditing(!editing)}
+                  >
+                    הוסף / טען ילדים
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to={`/manage/teams/${id}/historical`}>
+                      הזנת טורניר היסטורי
+                    </Link>
+                  </Button>
+                </>
+              )}
               <Button variant="outline" asChild>
                 <Link to={`/manage/teams/${id}/history`}>
                   היסטוריית טורנירים
                 </Link>
               </Button>
-              <Button variant="outline" asChild>
-                <Link to="/manage/teams">העברה והסרת שחקנים</Link>
-              </Button>
+              {admin && (
+                <Button variant="outline" asChild>
+                  <Link to="/manage/teams">העברה והסרת שחקנים</Link>
+                </Button>
+              )}
             </div>
           )}
-          {staff && editing && (
+          {admin && editing && (
             <form
               className="border bg-card rounded-lg p-4 mb-6 space-y-3"
               onSubmit={(e) => {
@@ -168,7 +175,8 @@ export default function TeamPage() {
                       />
                     ),
                   )}
-                  <Button contextual
+                  <Button
+                    contextual
                     type="button"
                     variant="outline"
                     disabled={children.length === 1 || busy}

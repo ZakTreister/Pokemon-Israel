@@ -13,7 +13,7 @@ const router = express.Router();
 router.get('/', protect, authorize('admin', 'judge'), getPlayers);
 router.get('/:id', protect, authorize('admin', 'judge'), getPlayer);
 router.post('/quarterly', protect, admin, createQuarterlyPlayer);
-router.post('/team', protect, authorize('admin', 'judge'), createTeamPlayer);
-router.put('/:id', protect, authorize('admin', 'judge'), updatePlayer);
+router.post('/team', protect, authorize('admin'), createTeamPlayer);
+router.put('/:id', protect, authorize('admin'), updatePlayer);
 
 export default router;

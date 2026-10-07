@@ -62,22 +62,24 @@ export default function ManageTournaments() {
       <div className="flex flex-wrap gap-3">
         {user?.role === 'admin' && (
           <Button asChild>
-            <Link to="/manage/tournaments/regular">
-              צור טורניר חוגים
-            </Link>
+            <Link to="/manage/tournaments/regular">צור טורניר חוגים</Link>
           </Button>
         )}
         <Button asChild variant="outline">
           <Link to="/manage/teams">פתח טורניר מעמוד נבחרת</Link>
         </Button>
-        <Button disabled variant="outline">
-          ייבוא היסטוריית חוגים מ־Excel · בקרוב
-        </Button>
+        {user?.role === 'admin' && (
+          <Button disabled variant="outline">
+            ייבוא היסטוריית חוגים מ־Excel · בקרוב
+          </Button>
+        )}
       </div>
-      <p className="text-sm text-muted-foreground">
-        ייבוא כחמש שנות תוצאות חוגים ייפתח לאחר קבלת הקובץ. טורניר פנימי היסטורי
-        מזינים מעמוד הנבחרת.
-      </p>
+      {user?.role === 'admin' && (
+        <p className="text-sm text-muted-foreground">
+          ייבוא כחמש שנות תוצאות חוגים ייפתח לאחר קבלת הקובץ. טורניר פנימי
+          היסטורי מזינים מעמוד הנבחרת.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <label>
           מצב
