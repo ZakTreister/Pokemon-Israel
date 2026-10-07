@@ -10,12 +10,14 @@ An All Stars team has at least:
 Team names must remain uniquely normalized as in the existing model.
 
 ## Creating and managing teams
-- Staff with the required permission may create a team.
+- Team configuration is admin-only.
+- Judges may view team information as needed to open/manage tournaments, but may not change team settings.
+- Only admin may create, edit, activate/deactivate or delete a team.
+- Only admin may upload/change a team logo.
+- Only admin may add, edit, transfer, assign, remove or unassign players from a team roster.
 - Team creation is NOT blocked by an active Season.
 - General team/roster administration is not globally locked because a Season is active.
 - A player may belong to only one active team at a time.
-- Team players may be transferred between teams through management flows.
-- Staff must be able to remove/unassign a player from a team.
 - Do not deactivate a team while active players are still assigned to it. Require transfer/unassignment first.
 
 ## Management label

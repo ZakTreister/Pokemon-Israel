@@ -5,6 +5,32 @@
 - `inter_team`: official encounter between teams
 - `quarterly`: regular/club tournament (legacy internal name currently used by the project)
 
+## Tournament permissions
+A judge is a **live-tournament operator**, not a league/team administrator.
+
+Judge may:
+- open/start a tournament
+- enter the active tournament management screen
+- remove absent participants from that tournament before round 1 (this changes tournament participation only, not the team roster)
+- enter and correct match results while the tournament is active
+- complete/end a round and generate/proceed to the next round
+- view standings/results needed to operate the event
+- finish/close the tournament
+- perform other actions directly required to operate that live tournament
+
+Judge may NOT:
+- create/edit/delete teams or players
+- alter permanent team rosters
+- delete tournaments
+- edit historical/completed tournament data after the event is closed
+- manually enter historical internal-team tournaments
+- import historical regular/club tournaments from Excel
+- manage badges/Seasons or other league configuration
+
+Admin retains those administrative permissions as specified elsewhere.
+
+See `docs/architecture/permissions.md`.
+
 ## Unified management page
 The user-facing management page is **טורנירים** and contains all tournament types.
 
@@ -176,7 +202,7 @@ Codex should inspect the current implementation first and:
 - fix/integrate it if incomplete
 - do not create a duplicate standalone workflow
 
-The entry point belongs on the relevant team page/history area.
+The entry point belongs on the relevant team page/history area and is **admin-only**. Judges must not see or invoke the historical-entry action.
 
 It is:
 - manual
@@ -198,6 +224,8 @@ Their player ranking accumulates over the player's lifetime.
 
 ## Future regular-tournament historical import
 The unified **טורנירים** page should reserve a visible future action/button for importing historical regular/club tournament results from approximately the last five years.
+
+That future import action is **admin-only**. Judges must not see or invoke it.
 
 Stage A must NOT implement the Excel workflow itself.
 

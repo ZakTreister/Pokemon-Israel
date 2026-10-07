@@ -102,7 +102,8 @@ Do not expose:
 - standalone **עונות**
 
 Admins see all authorized admin functions.
-Judges see only operational functions they are allowed to use.
+
+Judges see only live-tournament operational functions. They must not receive team/player configuration actions, roster editing, historical-entry/import actions, tournament deletion, badge/Season administration, or other league configuration controls. Team/player pages may be visible to a judge when needed to open or operate a tournament, but configuration controls must be absent/read-only.
 
 ## Management route context
 Nested pages should keep the parent management section visibly active.

@@ -51,4 +51,11 @@ Planned team-player profile fields:
 - earned badges
 
 ## Editing player profile data
-Because children do not log in in Stage A, child/team profile information is managed by authorized staff, not by the child.
+Because children do not log in in Stage A, child/team profile information is managed by admin, not by the child.
+
+Judges have read-only access to player/team identity data needed for tournament operation. Judges may not:
+- create a player
+- edit a player's profile/details
+- delete/deactivate a player
+- assign/unassign/transfer a player between teams
+- change a player's team settings or media

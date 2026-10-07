@@ -19,6 +19,7 @@ Read:
 - `docs/product/news-events.md`
 - `docs/product/navigation-content.md`
 - `docs/product/management-ui.md`
+- `docs/architecture/permissions.md`
 - `docs/architecture/media-upload.md`
 - `docs/decisions.md`
 
@@ -94,6 +95,8 @@ Deletion must clean dependent state and ensure deleted results no longer affect 
 ### 5. Internal historical tournament entry
 This is mandatory Stage A functionality and is expected to already exist.
 
+This workflow is **admin-only**. A judge must not see or use it.
+
 Do NOT create a separate historical-tournaments tab.
 
 The action belongs on the relevant team page/team tournament history.
@@ -110,7 +113,8 @@ It remains manual, not Excel-based.
 On the unified **טורנירים** page, reserve a visible future action/button for importing approximately five years of historical regular/club tournament results.
 
 Stage A:
-- show the future action/placeholder as appropriate
+- show the future action/placeholder to admin only
+- do not show it to judges
 - do NOT implement Excel parsing/import
 - do NOT guess the file structure
 
@@ -166,14 +170,24 @@ Requirements:
 
 Prefer clean full-width stacking on very narrow devices over compressed multi-column layout.
 
-### 11. Team roster actions
-Staff must be able to remove/unassign a player from a team.
+### 11. Team/player permissions and roster actions
+Permanent team/player configuration is admin-only.
+
+Admin must be able to remove/unassign a player from a team and perform the other roster actions defined in the product specs.
+
+A judge may view the roster and use it to open a tournament, but must not be able to:
+- add/edit/delete a team
+- add/edit/delete a player
+- assign/unassign/transfer roster members
+- edit team/player settings or media
+
+Inside an active tournament, a judge may remove an absent participant before round 1. This modifies the tournament participant list only and must never alter the permanent team roster.
 
 Keep team-transfer behavior coherent and preserve the rule that a player belongs to at most one active team at a time.
 
 Do not allow deactivating a team while active players are still assigned.
 
-The inline remove-player control is contextual inside the roster item and must NOT receive the strong page-level `shadow-button` emphasis.
+The inline admin remove-player control is contextual inside the roster item and must NOT receive the strong page-level `shadow-button` emphasis.
 
 ### 12. Mobile management UX
 Make the management navigation closable on mobile:
@@ -293,6 +307,13 @@ Requirements:
 - standalone actions follow the Stage A button styling rules
 - embedded controls retain lighter component-level styling
 - remove obsolete top-deck homepage logic if it is no longer used
+
+### 22. Enforce permissions in backend and frontend
+Implement the role boundary in `docs/architecture/permissions.md`.
+
+Do not rely only on hidden buttons. Backend routes/mutations must reject unauthorized judge actions.
+
+Judge is allowed to operate a live tournament only. Configuration and historical administration are admin-only.
 
 ## Existing Stage A core behavior that must remain working
 Do not regress:

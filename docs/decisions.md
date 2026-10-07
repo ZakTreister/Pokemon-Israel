@@ -35,6 +35,15 @@ Show a short Hebrew explanation plus the required next action and whether normal
 After a tournament match result is submitted and before server confirmation, show **שומר את התוצאה…** (or equivalent) rather than “לא הוזנה תוצאה”.
 On failure, clearly state that the result was not saved and allow retry.
 
+## 2026-10 — Judge is a live-tournament operator only
+Judge permissions are limited to operating tournaments that are being opened or are currently active.
+
+A judge may open a tournament, manage its pre-round participant list, enter/correct live results, advance/end rounds and close the tournament.
+
+A judge may not create/edit/delete teams or players, change permanent rosters, delete tournaments, edit completed historical data, perform historical manual entry or Excel import, or manage badges/Seasons.
+
+Administrative configuration belongs to admin.
+
 ## 2026-10 — One management area
 The user-facing management concept is only **ניהול**.
 Remove/avoid **ניהול משותף** as a separate management area.

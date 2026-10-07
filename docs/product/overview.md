@@ -19,9 +19,13 @@ Cardschool IL manages the Israeli Pokémon league, All Stars teams, tournaments,
 - Team-player score accumulates during a team competition year and resets only when a new team competition year is explicitly started.
 
 ## Staff roles
-- `admin`: super-admin / highest management.
-- `judge`: operational tournament staff.
+- `admin`: super-admin / highest management. Owns configuration, teams, players, historical data and destructive administration.
+- `judge`: live-tournament operator only.
 - Children do not log in during Stage A.
+
+Judge permissions are intentionally narrow. A judge may open and operate a live tournament, including participant check-in/removal before round 1, result entry/correction while active, round transitions and tournament completion. A judge may not create/edit/delete teams or players, change rosters, manage badges/Seasons, delete tournaments, or enter/import historical tournament data.
+
+See `docs/architecture/permissions.md` for the authoritative permission matrix.
 
 ## Management UX
 There is one user-facing management area named **ניהול**.
