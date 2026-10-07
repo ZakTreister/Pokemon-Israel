@@ -81,12 +81,29 @@ export default function ManageDashboardPage() {
     .filter(Boolean)
     .slice(0, 3)
     .join('/');
+  const tournamentOperation =
+    /^\/manage\/tournaments\/(?!regular(?:\/|$))[^/]+\/?$/.test(
+      location.pathname,
+    );
   const nested = location.pathname.split('/').filter(Boolean).length > 2;
   return (
     <div className="cs-workspace">
       <div className="container py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-extrabold">ניהול</h1>
+        <div
+          className={`flex items-center justify-between ${tournamentOperation ? 'mb-3' : 'mb-6'}`}
+        >
+          <h1
+            className={
+              tournamentOperation ? 'sr-only' : 'text-3xl font-extrabold'
+            }
+          >
+            ניהול
+          </h1>
+          {tournamentOperation && (
+            <Button asChild variant="outline">
+              <Link to="/manage/tournaments">→ חזרה לטורנירים</Link>
+            </Button>
+          )}
           <Button
             contextual
             className="lg:hidden"
@@ -135,8 +152,14 @@ export default function ManageDashboardPage() {
               );
             })}
           </nav>
-          <div className="min-w-0 bg-card border rounded-lg p-4 sm:p-6 shadow-panel">
-            {nested && (
+          <div
+            className={
+              tournamentOperation
+                ? 'min-w-0'
+                : 'min-w-0 bg-card border rounded-lg p-4 sm:p-6 shadow-panel'
+            }
+          >
+            {nested && !tournamentOperation && (
               <Button asChild variant="outline" className="mb-5">
                 <Link
                   to={
