@@ -6,6 +6,8 @@ import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../../features/decks/decksSlice';
 import { Plus, Calendar, MapPin, User, Search, X, Trash2, Edit, Eye } from 'lucide-react';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import { selectLegacyTournamentList } from '../../features/tournaments/utils/legacyTournamentList';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Tournament } from '../../types/tournament';
 import api from '../../services/api';
@@ -75,31 +77,11 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     dispatch(fetchDecks());
   }, [dispatch]);
 
-  // Create a mutable copy of tournaments with updated statuses
-  const processedTournaments = (tournaments || []).map(tournament => {
-    const tournamentDate = new Date(tournament.date);
-    const now = new Date();
-    if (tournamentDate < now && tournament.status !== 'completed') {
-      return { ...tournament, status: 'completed' as const };
-    }
-    return tournament;
-  });
-
-  // Filter tournaments
-  const filteredTournaments = processedTournaments.filter((tournament) => {
-    const matchesSearch = tournament.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         tournament.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         tournament.location.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = filterStatus === 'all' || tournament.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  // Sort tournaments by date (upcoming first)
-  const sortedTournaments = [...filteredTournaments].sort((a, b) => {
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
+  const sortedTournaments = selectLegacyTournamentList(
+    tournaments || [],
+    searchQuery,
+    filterStatus,
+  );
 
   const resetForm = () => {
     setFormData({
@@ -669,21 +651,11 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       </>}
       {/* Tournament Modal (Create/Edit) */}
       {showTournamentModal && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">
-                {isEditing ? 'עריכת טורניר' : 'יצירת טורניר חדש'}
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowTournamentModal(false)}
-              >
-                <X size={20} />
-              </Button>
-            </div>
-            
+        <Modal
+          title={isEditing ? 'עריכת טורניר' : 'יצירת טורניר חדש'}
+          onClose={() => setShowTournamentModal(false)}
+          closeVariant="ghost"
+        >
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">תאריך ושעה *</label>
@@ -800,15 +772,15 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Results Modal */}
       {showResultsModal && selectedTournament && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50 p-4">
-          <div className="bg-card p-6 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">הזנת תוצאות טורניר</h3>
+        <Modal
+          title="הזנת תוצאות טורניר"
+          panelClassName="max-w-6xl max-h-[90vh] overflow-y-auto"
+        >
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">טבלת תוצאות</label>
@@ -1078,8 +1050,7 @@ PlayerB 6
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

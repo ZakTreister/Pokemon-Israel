@@ -14,7 +14,7 @@
     "build:full": "npm run build && npm run server",
     "production": "NODE_ENV=production npm run server",
     "test:stage-a": "node --test server/tests/*.test.js",
-    "test:stage-a:ui": "node scripts/verify-stage-a-ui.mjs && node scripts/verify-internal-tournament-ui.mjs"
+    "test:stage-a:ui": "node scripts/verify-stage-a-ui.mjs && node scripts/verify-internal-tournament-ui.mjs && node scripts/verify-frontend-refactor.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
