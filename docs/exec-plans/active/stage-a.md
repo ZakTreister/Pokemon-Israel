@@ -1,7 +1,7 @@
-# Stage A — Internal All Stars Tournament MVP
+# Stage A — Internal All Stars Tournament MVP + Public Site Shell
 
 ## Goal
-Deliver the first operational version of Cardschool IL for All Stars internal team tournaments, and complete the Stage A corrections required after the first Codex implementation.
+Deliver the first operational version of Cardschool IL for All Stars internal team tournaments, complete the Stage A corrections required after the first Codex implementation, and implement the approved public site navigation/homepage.
 
 The current repository already contains a substantial Stage A implementation.
 Inspect and reuse what exists before changing it.
@@ -16,6 +16,7 @@ Read:
 - `docs/product/rankings.md`
 - `docs/product/badges-seasons.md`
 - `docs/product/homepage.md`
+- `docs/product/news-events.md`
 - `docs/product/navigation-content.md`
 - `docs/product/management-ui.md`
 - `docs/architecture/media-upload.md`
@@ -157,11 +158,90 @@ The repository/deployment owner will provide Cloudinary environment variables in
 
 Never expose the API secret to the frontend.
 
-### 12. Team/homepage behavior
-Preserve the Stage A homepage All Stars section.
+### 12. Main public site navigation
+Implement the approved main menu exactly as defined in `docs/product/navigation-content.md`.
 
-Do not fabricate true team win rate/ranking from internal tournaments.
-Until inter-team competition exists, show only statistics that are actually derivable.
+Stage A menu:
+- **ניהול** — staff only
+- **הליגה הישראלית**
+- **All Stars**
+- **אירועים**
+- **חדשות**
+- **חנות** — **בהקמה**
+- **על הליגה** — repository-managed static/under-construction page
+- **הזמנת יום הולדת** — repository-managed static/under-construction page
+
+Requirements:
+- remove child/player-login navigation from the public Stage A UX
+- preserve role-aware management visibility
+- keep desktop and mobile navigation polished and RTL-safe
+- do not implement store commerce
+- do not invent CMS infrastructure for the static pages
+
+### 13. Events and News public entry points
+Reuse existing capabilities rather than creating duplicate systems.
+
+#### אירועים
+Use the existing tournaments page/data as the basis for the public Events page:
+- upcoming events
+- registration CTA where available
+- previous tournament archive/details
+
+#### חדשות
+Use existing Updates as the basis for:
+- News feed/page
+- full-post presentation
+- homepage news banner
+- latest-update homepage card
+
+Manual publishing remains sufficient for Stage A.
+Do not implement WhatsApp ingestion.
+
+### 14. Homepage — All Stars
+Remove the top-decks section.
+
+Show up to four active All Stars teams.
+
+Because inter-team competition is not yet implemented:
+- do not claim they are truly ranked “top four” based on internal tournament data
+- do not calculate team win rate from internal tournaments
+- show only real derivable data such as logo, name, player count and completed internal-tournament count
+- prepare the API/component for later real inter-team standings/win-rate data
+
+### 15. Homepage — national leaders
+Show a table of the leading regular/club children from the national lifetime ranking.
+
+Requirements:
+- regular/club ranking only
+- use canonical ranking data
+- link to the full **הליגה הישראלית** page
+
+### 16. Homepage — upcoming club tournament
+Show the nearest upcoming regular/club tournament/event.
+
+Requirements:
+- do not select a team-internal tournament for this section
+- show event details
+- show registration CTA/link when available
+- link to the event details
+
+### 17. Homepage — news and action cards
+Implement:
+- running/top news banner using Updates/News
+- **הרשמה לחוג הקרוב לביתכם** card linking to the configured Rav Messer destination
+- **העדכון האחרון** card showing the latest update and opening the full post
+
+Keep external URLs configurable rather than burying them in business logic when practical.
+
+### 18. Homepage visual quality
+Keep the existing CardSchool visual system.
+
+Requirements:
+- responsive RTL layout
+- strong visual hierarchy
+- cards should feel intentional, not default/plain
+- important CTA buttons should use the site's prominent/`shadow-button` treatment where appropriate
+- remove obsolete top-deck homepage logic if it is no longer used
 
 ## Existing Stage A core behavior that must remain working
 Do not regress:
@@ -189,10 +269,9 @@ Do NOT implement:
 - child login/self-service
 - national-ID storage/encryption
 - WhatsApp Channel ingestion
-- full News redesign
-- Store
-- About the League static page
-- Birthday Booking static page
+- Store commerce
+- finished About the League editorial content beyond the repository-managed under-construction page/state
+- finished Birthday Booking content beyond the repository-managed under-construction page/state
 - inter-team tournament engine beyond existing scaffolding
 - true team league win-rate/standings if inter-team encounters are not implemented
 - annual team competition-year reset UI unless separately requested

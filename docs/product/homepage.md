@@ -1,41 +1,87 @@
 # Homepage
 
-## Navigation
-See `navigation-content.md`.
+The Stage A homepage is part of the required deliverable, not a future-only concept.
+
+## Main navigation
+See `docs/product/navigation-content.md`.
+The public site header/navigation must expose the approved Stage A menu and remain usable on desktop and mobile.
+
+## Running news banner
+Show a prominent running/top news banner using the existing Updates/News data source.
+
+Requirements:
+- use the latest/relevant published updates
+- clicking an item opens the full news/update post
+- do not depend on WhatsApp integration in Stage A
 
 ## All Stars team section
 The homepage should feature up to four All Stars teams.
 
 When real inter-team standings exist, show the four leading teams for the current team competition year.
 
-Each team card should support:
+Each team card should ultimately support:
 - team logo
 - team name
 - active player count
 - number of official inter-team encounters played
 - win percentage
 
-Definitions:
+Definitions when inter-team encounters exist:
 - encounters played = completed official `inter_team` encounters
 - win percentage = encounter wins / encounters played * 100
 - draws count as played but not won
 
 ### Stage A fallback
-Stage A does not yet implement inter-team competition.
-Therefore do not invent a competitive rank or win rate from internal tournaments.
-Until inter-team standings exist, the homepage may show up to four active All Stars teams and statistics that are actually derivable, such as player count and internal-tournament count, while keeping the component ready for later true standings.
+Stage A does not yet implement official inter-team competition.
+Therefore:
+- do not fabricate a competitive ranking
+- do not calculate team win rate from internal tournaments
+- show up to four active All Stars teams using real data available now
+- show team logo and name
+- show active player count
+- show completed internal-tournament count if useful
+- keep the component/API structured so true standings, games played and win rate can replace the fallback later
+
+Each team card should link into the relevant All Stars/team experience where appropriate.
 
 ## National regular-player leaders
 Further down the homepage, show a table of the leading children in the national regular/club ranking.
-That ranking is lifetime cumulative.
+
+Requirements:
+- use the existing canonical national ranking source
+- ranking is lifetime cumulative for regular/club players
+- provide a clear link to the full **הליגה הישראלית** ranking page
+
+Do not show team-player scores in this table.
 
 ## Upcoming club event
-Show the nearest upcoming regular/club tournament/event with its registration link when available.
+Show the nearest upcoming regular/club tournament/event.
 
-## Bottom cards
-Include:
-- **הרשמה לחוג הקרוב לביתכם** — links to the relevant Rav Messer destination
-- **העדכון האחרון** — shows the latest news/update and opens the full post
+Requirements:
+- use the existing tournament/event data
+- show the nearest future regular/club event
+- show a clear registration CTA when a registration URL/action exists
+- link to the event/tournament details
+
+Do not accidentally feature an internal team tournament as the public “next club event”.
+
+## Bottom action cards
+Include these homepage cards:
+
+### הרשמה לחוג הקרוב לביתכם
+- links to the configured Rav Messer destination
+- if the URL is environment/config-driven, keep it out of hard-coded business logic
+- use a clear prominent CTA
+
+### העדכון האחרון
+- show the latest published news/update
+- show a useful excerpt/summary
+- clicking it opens the full post
 
 ## Remove
-Remove the “top decks / leading decks” homepage area.
+Remove the **הדקים המובילים / top decks** homepage area completely.
+
+## Visual behavior
+Preserve the CardSchool visual system.
+Use strong card hierarchy and prominent CTA/button styling consistent with the site's `shadow-button` treatment where appropriate.
+Keep the page responsive and RTL-safe.

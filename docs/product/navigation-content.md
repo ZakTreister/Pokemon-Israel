@@ -1,15 +1,60 @@
 # Navigation and Content Pages
 
-Main public navigation should contain:
+The approved main site navigation is part of Stage A.
 
-- **ניהול** — visible only to judges/admins; contents filtered by permission
-- **הליגה הישראלית** — national lifetime ranking of club/regular players
-- **All Stars** — All Stars/team standings/ranking area
-- **אירועים** — events/tournaments page
-- **חדשות** — news feed
-- **חנות** — currently marked **בהקמה**
-- **על הליגה** — static HTML/content page maintained in the repository; currently **בהקמה**
-- **הזמנת יום הולדת** — static HTML/content page maintained in the repository; currently **בהקמה**
+## Main public navigation
+The header/menu should contain:
+
+- **ניהול** — visible only to authenticated judges/admins; contents filtered by permission
+- **הליגה הישראלית** — links to the national lifetime ranking of regular/club players
+- **All Stars** — links to the All Stars/team ranking/standings area
+- **אירועים** — links to the events/tournaments page
+- **חדשות** — links to the news feed
+- **חנות** — show a visible **בהקמה** indicator in Stage A
+- **על הליגה** — repository-managed static HTML/content page; show **בהקמה** in Stage A
+- **הזמנת יום הולדת** — repository-managed static HTML/content page; show **בהקמה** in Stage A
+
+Do not expose child/player login navigation in Stage A.
+
+## Stage A route behavior
+
+### ניהול
+Only judges/admins see this item.
+It opens the single management area described below.
+
+### הליגה הישראלית
+Use the existing national rankings capability/page, adapted to the current product terminology.
+
+### All Stars
+Use the All Stars/team public area.
+It should be the public entry point to team standings/ranking and team pages.
+
+### אירועים
+Reuse/upgrade the existing tournaments page as the user-facing Events page.
+Do not build a disconnected duplicate events system.
+
+### חדשות
+Reuse the existing Updates data/capability as the basis for the News feed.
+The menu item should lead to the user-facing News experience.
+
+### חנות
+Stage A needs only the menu presence plus a clear **בהקמה** state.
+Do not build commerce functionality.
+
+### על הליגה
+This is intended to be a static repository-managed page.
+For Stage A, a repository-managed under-construction page/state is sufficient.
+
+### הזמנת יום הולדת
+This is intended to be a static repository-managed page.
+For Stage A, a repository-managed under-construction page/state is sufficient.
+
+## Responsive public navigation
+The main site menu must work well on mobile:
+- no clipped items
+- clear open/close behavior
+- RTL-safe layout
+- management visibility remains role-aware
 
 ## Management navigation
 There is one management entry only.

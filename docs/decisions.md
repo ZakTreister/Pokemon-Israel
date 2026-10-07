@@ -7,6 +7,10 @@ Neither club players nor All Stars players log in.
 Team-player workflows must not require User accounts.
 Existing legacy links may remain backward compatible.
 
+## 2026-10 — Stage A includes the public navigation and homepage
+The approved main site menu and the homepage content defined in `docs/product/navigation-content.md` and `docs/product/homepage.md` are now part of Stage A.
+They are not deferred to a later polish phase.
+
 ## 2026-10 — One management area
 The user-facing management concept is only **ניהול**.
 Remove/avoid **ניהול משותף** as a separate management area.
@@ -79,6 +83,10 @@ Initial page load/refresh still fetches canonical server state.
 Do not calculate team win rate from internal tournaments.
 True team standings/win rate come from official inter-team encounters.
 Stage A may show active teams without pretending they are competitively ranked.
+
+## 2026-10 — Homepage top decks are removed
+The top/leading decks area is not part of the current homepage.
+Replace that space with the approved All Stars, ranking, event and news content.
 
 ## 2026-10 — Badge administration is super-admin only
 The Badges page, badge definition management and Season transition UX are restricted to the super-admin unless changed later.
