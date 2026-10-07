@@ -35,6 +35,7 @@ Current product decisions override older code, comments, and earlier implementat
 - `docs/product/news-events.md`
 - `docs/product/navigation-content.md`
 - `docs/product/management-ui.md`
+- `docs/product/internal-tournament-ui.md`
 - `docs/architecture/security.md`
 - `docs/architecture/permissions.md`
 - `docs/architecture/media-upload.md`

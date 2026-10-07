@@ -24,6 +24,20 @@ Team names must remain uniquely normalized as in the existing model.
 The management navigation label is **נבחרות All-Stars**.
 Do not use **נבחרות וסגלים** as the primary label.
 
+## Team-list primary actions
+On the team-management list, replace the old combined **סגל וטורנירים** action with two actions:
+
+- **סגל** — navigates to the existing team roster/ranking/details page
+- **התחל טורניר** — starts/opens a new internal tournament for that team
+
+The **התחל טורניר** action should be the more prominent operational action.
+
+Do not merge these two meanings into one button.
+
+Permanent configuration controls remain admin-only. Judges may use the tournament-start action according to live-tournament permissions.
+
+See `docs/product/internal-tournament-ui.md`.
+
 ## Team page
 A team page should show:
 - team logo

@@ -88,3 +88,12 @@ The create-team form in particular must:
 - avoid squeezed multi-column fields
 - keep labels, upload control and submit action readable
 - avoid horizontal overflow
+
+
+## Tournament operation density
+The running internal-tournament page is an operational screen and should prioritize the current matches over secondary explanatory/status content.
+
+Do not reserve blank mobile space for errors that do not exist.
+Do not wrap the full match list in a redundant outer Card.
+
+See `docs/product/internal-tournament-ui.md` for the approved information hierarchy and match-card layout.

@@ -91,6 +91,13 @@ If save fails:
 - tell the judge what to do next
 - do not pretend the result is committed
 
+### Approved internal-tournament operation layout
+For the current approved screen hierarchy, match-card placement, mobile density, error-space behavior, and connection-info placement, follow:
+
+- `docs/product/internal-tournament-ui.md`
+
+That document is the more specific source of truth for this screen.
+
 ### Mobile tournament management layout
 Tournament operation on mobile must be intentionally designed, not merely the desktop layout stacked vertically.
 

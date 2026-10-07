@@ -19,6 +19,7 @@ Read:
 - `docs/product/news-events.md`
 - `docs/product/navigation-content.md`
 - `docs/product/management-ui.md`
+- `docs/product/internal-tournament-ui.md`
 - `docs/architecture/permissions.md`
 - `docs/architecture/media-upload.md`
 - `docs/decisions.md`
@@ -314,6 +315,21 @@ Implement the role boundary in `docs/architecture/permissions.md`.
 Do not rely only on hidden buttons. Backend routes/mutations must reject unauthorized judge actions.
 
 Judge is allowed to operate a live tournament only. Configuration and historical administration are admin-only.
+
+### 23. Approved internal-tournament operation UI
+Apply the approved layout in `docs/product/internal-tournament-ui.md`.
+
+In particular:
+- replace the combined **סגל וטורנירים** team action with separate **סגל** and **התחל טורניר** actions
+- **סגל** navigates to the team roster/ranking/details page
+- **התחל טורניר** starts the team's internal-tournament flow
+- remove empty reserved mobile error space
+- render match cards directly in the page content, without a redundant outer match-list Card
+- on mobile, place the current-round matches immediately after the compact header/round controls and any error that actually exists
+- move healthy connection/explanatory copy below the matches or into a compact/collapsible secondary area
+- preserve all existing tournament behavior and backend semantics
+
+This correction is primarily frontend layout/interaction work. Do not rebuild the tournament engine.
 
 ## Existing Stage A core behavior that must remain working
 Do not regress:
