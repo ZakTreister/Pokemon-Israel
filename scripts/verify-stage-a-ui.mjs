@@ -298,13 +298,15 @@ try {
   };
   const teamRow = render(ManageTeams, '/', 'admin', teamFixture);
   const judgeTeamRow = render(ManageTeams, '/', 'judge', teamFixture);
-  assert.ok(judgeTeamRow.includes('סגל וטורנירים'));
+  assert.ok(judgeTeamRow.includes('התחל טורניר'));
   assert.ok(judgeTeamRow.includes('ילד'));
+  assert.ok(judgeTeamRow.includes('href="/manage/teams/fixture-team"'));
+  assert.ok(!teamRow.includes('סגל וטורנירים'));
   for (const forbidden of ['נבחרת חדשה', 'שם וסמל', 'שייך שחקן', 'השבת', 'הסר מהנבחרת']) assert.ok(!judgeTeamRow.includes(forbidden));
   const TournamentList = await load('pages/manage/ManageTournaments.tsx');
   assert.ok(!render(TournamentList, '/', 'judge').includes('Excel'));
   assert.ok(render(TournamentList, '/', 'admin').includes('Excel'));
-  for (const label of ['סגל וטורנירים', 'שם וסמל', 'השבת', 'שייך שחקן']) {
+  for (const label of ['סגל', 'התחל טורניר']) {
     const labelIndex = teamRow.indexOf(label);
     assert.ok(labelIndex >= 0, `Team row action: ${label}`);
     const actionStart = Math.max(teamRow.lastIndexOf('<button', labelIndex), teamRow.lastIndexOf('<a ', labelIndex));

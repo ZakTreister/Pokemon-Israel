@@ -300,17 +300,17 @@ export default function InternalTournamentPage() {
       );
   };
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       <div className="flex flex-wrap gap-3 justify-between">
         <div>
-          <h2 className="text-2xl font-bold">{tournament.title}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">{tournament.title}</h2>
           <Link
             to={`/manage/teams/${tournament.team}`}
             className="text-blue-500"
           >
             {tournament.teamNameSnapshot}
           </Link>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {new Date(tournament.date).toLocaleDateString('he-IL')} ·{' '}
             {tournament.currentParticipants} משתתפים ·{' '}
             {closed
@@ -321,42 +321,84 @@ export default function InternalTournamentPage() {
             {tournament.source === 'historical' ? ' · הזנה היסטורית ידנית' : ''}
           </p>
         </div>
-      </div>
-      <div className="min-h-16" aria-live="polite">
-        {error && (
-          <p
-            role="alert"
-            className="p-3 bg-destructive/10 text-destructive rounded-md"
-          >
-            {error}
-          </p>
+        {connected && (
+          <span role="status" className="text-xs text-green-700">
+            ● עדכון חי מחובר
+          </span>
         )}
-        {saveFailed && (
+      </div>
+      {tournament.rounds.length > 0 && (
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-navy-700 p-3 text-white">
+          <label className="flex min-w-0 items-center gap-2 text-sm font-bold">
+            סיבוב{' '}
+            <select
+              aria-label="סיבוב נוכחי"
+              className="min-w-0 h-10 p-2 border border-navy-400 rounded-md bg-navy-600 text-white"
+              disabled={busy || saveFailed || failedMatches.length > 0}
+              value={roundNumber}
+              onChange={(e) => {
+                setRoundNumber(Number(e.target.value));
+                setResultsView(false);
+              }}
+            >
+              {tournament.rounds.map((r) => (
+                <option key={r.number} value={r.number}>
+                  סיבוב {r.number}
+                </option>
+              ))}
+            </select>
+          </label>
           <Button
+            contextual
+            className="h-auto min-h-10 whitespace-normal px-3 py-2"
             variant="outline"
-            disabled={busy}
-            onClick={() =>
-              void reload()
-                .then(() => {
-                  setSaveFailed(false);
-                  setError('');
-                })
-                .catch(() =>
-                  setError(
-                    'לא הצלחנו לבדוק אם השינוי נשמר. בדקו את החיבור ונסו שוב.',
-                  ),
-                )
-            }
+            disabled={busy || saveFailed || failedMatches.length > 0}
+            onClick={() => setResultsView(!resultsView)}
           >
-            בדוק את המצב האחרון מהשרת לפני המשך
+            {resultsView ? 'חזור למשחקים' : 'דירוג ותוצאות'}
           </Button>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground" role="status">
-        {connected
-          ? 'עדכון חי מחובר'
-          : 'החיבור לעדכון חי נותק. אפשר להמשיך לצפות; מנסים להתחבר מחדש והמצב מתרענן אוטומטית.'}
-      </p>
+        </div>
+      )}
+      {(error || saveFailed) && (
+        <div className="space-y-2" aria-live="polite">
+          {error && (
+            <p
+              role="alert"
+              className="p-3 bg-destructive/10 text-destructive rounded-md"
+            >
+              {error}
+            </p>
+          )}
+          {saveFailed && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() =>
+                void reload()
+                  .then(() => {
+                    setSaveFailed(false);
+                    setError('');
+                  })
+                  .catch(() =>
+                    setError(
+                      'לא הצלחנו לבדוק אם השינוי נשמר. בדקו את החיבור ונסו שוב.',
+                    ),
+                  )
+              }
+            >
+              בדוק את המצב האחרון מהשרת לפני המשך
+            </Button>
+          )}
+        </div>
+      )}
+      {!connected && (
+        <p
+          role="status"
+          className="rounded-md bg-amber-50 p-2 text-xs text-amber-900"
+        >
+          עדכון חי מנותק. מנסים להתחבר מחדש; אפשר לצפות במצב האחרון.
+        </p>
+      )}
       {syncError && (
         <div role="status">
           <p>{syncError}</p>
@@ -374,10 +416,6 @@ export default function InternalTournamentPage() {
           </Button>
         </div>
       )}
-      <p className="text-sm text-muted-foreground">
-        כל תוצאה נשמרת מיד בשרת. לאחר רענון או כניסה ממכשיר אחר אפשר להמשיך
-        מכאן. בעת עדכון מקביל המצב מתעדכן אוטומטית ויש להזין שוב.
-      </p>
       {!readOnly && tournament.phase === 'setup' && (
         <div className="border rounded-lg p-4 space-y-4">
           <h3 className="font-bold">נוכחות לפני סיבוב 1</h3>
@@ -449,35 +487,6 @@ export default function InternalTournamentPage() {
           </div>
         </div>
       )}
-      {tournament.rounds.length > 0 && (
-        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:items-center">
-          <label>
-            סיבוב{' '}
-            <select
-              className="p-2 border rounded-md bg-background"
-              disabled={busy || saveFailed || failedMatches.length > 0}
-              value={roundNumber}
-              onChange={(e) => {
-                setRoundNumber(Number(e.target.value));
-                setResultsView(false);
-              }}
-            >
-              {tournament.rounds.map((r) => (
-                <option key={r.number} value={r.number}>
-                  סיבוב {r.number}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button
-            variant="outline"
-            disabled={busy || saveFailed || failedMatches.length > 0}
-            onClick={() => setResultsView(!resultsView)}
-          >
-            {resultsView ? 'חזור למשחקים' : 'הצג דירוג ותוצאות'}
-          </Button>
-        </div>
-      )}
       {(resultsView || readOnly) && (
         <>
           <h3 className="font-bold text-xl">
@@ -515,6 +524,7 @@ export default function InternalTournamentPage() {
       {!readOnly && tournament.phase === 'running' && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <Button
+            variant="cta"
             disabled={
               busy ||
               saveFailed ||
@@ -542,6 +552,13 @@ export default function InternalTournamentPage() {
           )}
         </div>
       )}
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer py-2">מידע על שמירה וסנכרון</summary>
+        <p className="pt-2">
+          התוצאות שנשמרו נמצאות בשרת. לאחר רענון או כניסה ממכשיר אחר אפשר להמשיך
+          מכאן. בעת עדכון מקביל המצב מתעדכן אוטומטית ויש להזין שוב.
+        </p>
+      </details>
       {!!tournament.invalidatedRounds.length && (
         <p className="text-sm text-muted-foreground">
           {tournament.invalidatedRounds.length} תיקונים ביטלו סיבובים מאוחרים;

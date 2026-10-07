@@ -55,7 +55,11 @@ export default function MatchEditor({
         : ['0-0', '1-1'];
   if (!match.player2)
     return (
-      <div className="border rounded-lg p-4 bg-muted">
+      <div
+        role="article"
+        aria-label={`שולחן ${match.table}: ${name(match.player1)} · Bye`}
+        className="min-w-0 border rounded-lg bg-card p-3 sm:p-4 shadow-panel"
+      >
         <strong>
           שולחן {match.table}: {name(match.player1)}
         </strong>
@@ -63,10 +67,17 @@ export default function MatchEditor({
       </div>
     );
   return (
-    <div className="min-w-0 border rounded-lg p-4 space-y-4">
-      <p className="font-bold">
-        שולחן {match.table}: {name(match.player1)} מול {name(match.player2)}
-      </p>
+    <div
+      role="article"
+      aria-label={`שולחן ${match.table}: ${name(match.player1)} מול ${name(match.player2)}`}
+      className="min-w-0 border rounded-lg bg-card p-3 sm:p-4 shadow-panel space-y-3"
+    >
+      <h3 className="text-sm font-bold">שולחן {match.table}</h3>
+      {readOnly && (
+        <p className="text-sm">
+          {name(match.player1)} מול {name(match.player2)}
+        </p>
+      )}
       {readOnly ? (
         <p>
           {match.result
@@ -75,12 +86,13 @@ export default function MatchEditor({
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 min-[360px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2">
             {(['player1', 'draw', 'player2'] as const).map((value) => (
-              <Button contextual
+              <Button
+                contextual
                 key={value}
                 aria-pressed={winner === value}
-                className="min-h-12 h-auto whitespace-normal break-words py-3 w-full"
+                className="min-w-0 min-h-11 h-auto whitespace-normal break-words px-3 py-2 w-full"
                 disabled={disabled || saving}
                 variant={winner === value ? 'default' : 'outline'}
                 onClick={() => {
@@ -96,13 +108,13 @@ export default function MatchEditor({
               </Button>
             ))}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-            <label className="min-w-0 text-sm">
+          <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-3 gap-3 items-end">
+            <label className="min-w-0 text-sm order-1">
               תוצאה (Bo3)
               <select
                 aria-label={`תוצאה בשולחן ${match.table}`}
                 disabled={!winner || disabled || saving}
-                className="block w-full min-h-12 border rounded-md p-2 bg-background"
+                className="block w-full min-h-11 border rounded-md p-2 bg-background"
                 value={score}
                 onChange={(e) => {
                   setDirty(true);
@@ -112,17 +124,13 @@ export default function MatchEditor({
               >
                 <option value="">בחר ניקוד</option>
                 {options.map((value) => (
-                  <option
-                    key={value}
-                    aria-pressed={winner === value}
-                    value={value}
-                  >
+                  <option key={value} value={value}>
                     {value}
                   </option>
                 ))}
               </select>
             </label>
-            <label className="min-w-0 text-sm">
+            <label className="min-w-0 text-sm order-3 min-[360px]:col-span-2 min-[360px]:flex min-[360px]:items-center min-[360px]:gap-2 sm:order-2 sm:col-span-1 sm:block">
               משחקים בתיקו
               <input
                 aria-label={`משחקים בתיקו בשולחן ${match.table}`}
@@ -137,7 +145,7 @@ export default function MatchEditor({
                         .reduce((sum, value) => sum + Number(value), 0)
                     : 3
                 }
-                className="block border rounded-md p-2 w-full min-h-12 bg-background"
+                className="block border rounded-md p-2 w-full min-h-11 bg-background min-[360px]:w-20 sm:w-full"
                 value={drawnGames}
                 onChange={(e) => {
                   setDirty(true);
@@ -146,7 +154,7 @@ export default function MatchEditor({
               />
             </label>
             <Button
-              className="min-h-12 whitespace-normal"
+              className="order-2 sm:order-3 min-h-11 whitespace-normal px-3"
               disabled={!winner || !score || disabled || saving}
               onClick={async () => {
                 if (savingRef.current) return;
@@ -210,7 +218,7 @@ export default function MatchEditor({
             </Button>
           )}
           <p
-            className="min-h-12 text-sm text-muted-foreground"
+            className={`text-xs ${match.result && !dirty && !failed && !saving ? 'text-green-700' : 'text-muted-foreground'}`}
             role="status"
             aria-live="polite"
           >

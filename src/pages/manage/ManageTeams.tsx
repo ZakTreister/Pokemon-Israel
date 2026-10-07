@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
   fetchTeams,
@@ -10,7 +10,9 @@ import {
   clearError,
 } from '../../features/teams/teamsSlice';
 import ImageUpload from '../../components/ui/ImageUpload';
-import { Link } from 'react-router-dom';
+import { internalTournaments } from '../../services/internalTournaments';
+import { requestError } from '../../utils/requestError';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -35,6 +37,9 @@ import type { ManageablePlayer } from '../../types/team';
 export default function ManageTeams() {
   const admin = useAppSelector((state) => state.auth.user?.role === 'admin');
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const [startingTeam, setStartingTeam] = useState<string | null>(null);
+  const startingRef = useRef(false);
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
   const { teams, manageablePlayers, isLoading, error } = useAppSelector(
@@ -62,6 +67,21 @@ export default function ManageTeams() {
       dispatch(clearError());
     };
   }, [dispatch]);
+
+  const startTournament = async (team: Team) => {
+    if (startingRef.current || !team.isActive || team.playerCount < 2) return;
+    startingRef.current = true;
+    setStartingTeam(team.id);
+    try {
+      const tournament = await internalTournaments.create(team.id);
+      navigate(`/manage/tournaments/${tournament.id}`);
+    } catch (error) {
+      showToast(requestError(error), 'error');
+    } finally {
+      startingRef.current = false;
+      setStartingTeam(null);
+    }
+  };
 
   const handleCreate = async () => {
     if (uploading || isSubmitting || !newTeamName.trim()) return;
@@ -321,55 +341,69 @@ export default function ManageTeams() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" asChild>
-                        <Link to={`/manage/teams/${team.id}`}>
-                          סגל וטורנירים
-                        </Link>
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/manage/teams/${team.id}`}>סגל</Link>
                       </Button>
-                      {admin && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingTeam(team);
-                              setEditName(team.name);
-                              setEditLogo(team.logo || '');
-                              setEditPublicId(team.logoPublicId || '');
-                            }}
-                            disabled={uploading || isSubmitting}
-                          >
-                            <Edit2 size={16} className="ml-1" />
-                            <span>שם וסמל</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleActive(team)}
-                            disabled={uploading || isSubmitting}
-                          >
-                            <Power size={16} className="ml-1" />
-                            <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setAssigningToTeam(team);
-                              setSelectedPlayerId('');
-                            }}
-                            disabled={
-                              !team.isActive ||
-                              isSubmitting ||
-                              available.length === 0
-                            }
-                          >
-                            <UserPlus size={16} className="ml-1" />
-                            <span>שייך שחקן</span>
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        size="sm"
+                        disabled={
+                          startingTeam !== null ||
+                          !team.isActive ||
+                          team.playerCount < 2
+                        }
+                        onClick={() => void startTournament(team)}
+                      >
+                        {startingTeam === team.id
+                          ? 'פותח טורניר…'
+                          : 'התחל טורניר'}
+                      </Button>
                     </div>
+                    {admin && (
+                      <div className="flex w-full flex-wrap gap-2 border-t border-border pt-3">
+                        <Button
+                          contextual
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingTeam(team);
+                            setEditName(team.name);
+                            setEditLogo(team.logo || '');
+                            setEditPublicId(team.logoPublicId || '');
+                          }}
+                          disabled={uploading || isSubmitting}
+                        >
+                          <Edit2 size={16} className="ml-1" />
+                          <span>שם וסמל</span>
+                        </Button>
+                        <Button
+                          contextual
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleActive(team)}
+                          disabled={uploading || isSubmitting}
+                        >
+                          <Power size={16} className="ml-1" />
+                          <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
+                        </Button>
+                        <Button
+                          contextual
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAssigningToTeam(team);
+                            setSelectedPlayerId('');
+                          }}
+                          disabled={
+                            !team.isActive ||
+                            isSubmitting ||
+                            available.length === 0
+                          }
+                        >
+                          <UserPlus size={16} className="ml-1" />
+                          <span>שייך שחקן</span>
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {admin && editingTeam?.id === team.id && (
