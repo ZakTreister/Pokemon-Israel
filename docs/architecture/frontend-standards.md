@@ -647,3 +647,647 @@ Before finishing a frontend change, verify as applicable:
 - relevant existing tests pass
 
 As formatting/CI infrastructure is introduced, its checks also become part of Definition of Done.
+
+
+---
+
+## 26. SPA architecture
+
+Cardschool IL is a React Router + Vite single-page application and should remain a true SPA.
+
+Normal user actions must not reload the entire document.
+
+Avoid:
+- `window.location.reload()`
+- `window.location.href` for internal application routes
+- raw `<a href="/internal-route">` when React Router navigation is appropriate
+
+Prefer:
+- `Link`
+- `NavLink`
+- `useNavigate`
+- updating/refetching application state after mutations
+
+After create/update/delete actions:
+- update the relevant Redux/client state, or
+- refetch the relevant resource, or
+- refresh authenticated user data through the auth/store layer
+
+Do not reload the whole page only to make changed data appear.
+
+Preserve:
+- browser history
+- back/forward behavior
+- direct route access
+- route params
+- mounted global providers/layout during route transitions
+
+### Route loading
+
+Large route pages may be loaded with `React.lazy` + `Suspense` when this safely reduces the initial bundle.
+
+Good lazy-loading candidates include substantial:
+- management pages
+- player dashboard pages
+- public data-heavy pages
+
+Do not lazy-load every small component.
+
+Do not introduce Next.js, Remix, SSR, or a new routing framework.
+React + Vite + React Router remains the frontend architecture.
+
+---
+
+## 27. Shared component extraction map
+
+The following are current high-value extraction candidates.
+
+This is a roadmap, not an instruction to create every component immediately.
+
+### Generic UI candidates
+
+Extract when repeated use is concrete:
+
+- `PageHeader`
+- `Modal` / `Dialog`
+- `FormField`
+- `FormActions`
+- `EmptyState`
+- `LoadingState`
+- `ErrorState`
+- `SearchField`
+- `FilterBar`
+- `StatusBadge`
+- `ActionMenu`
+- `DataTable` shell
+- responsive table wrapper
+- `ResponsiveCardGrid`
+
+### Modal standard
+
+The shared modal should preferably use the already-installed `@headlessui/react` Dialog.
+
+It should support:
+- correct dialog semantics
+- `aria-modal`
+- labelled title
+- focus trap
+- Escape dismissal when dismissal is allowed
+- focus restoration
+- keyboard accessibility
+- explicit `type="button"` for close controls
+- long-content scrolling
+- configurable panel width
+
+Keep the API small.
+Do not build a universal modal framework.
+
+### FormField standard
+
+The shared field wrapper should support:
+- label
+- `htmlFor`
+- required marker
+- optional description/help text
+- validation error
+- `aria-describedby`
+- `aria-invalid`
+
+Keep input/select/textarea elements composable children.
+
+---
+
+## 28. AdminTournaments refactor map
+
+`src/pages/admin/AdminTournaments.tsx` currently combines several responsibilities and should gradually become an orchestration page.
+
+Potential presentation components:
+
+- `TournamentAdminCard`
+- `TournamentFilters`
+- `TournamentForm`
+- `TournamentFormModal`
+- `TournamentResultsModal`
+- `TournamentResultsTable`
+- `DeckAutocomplete`
+- `TournamentActions`
+
+Do not blindly create all of these.
+Extract only clear, coherent boundaries.
+
+### Business/domain logic candidates
+
+Move these out of JSX/event handlers when practical:
+
+- `parseStandingsInput(...)`
+- `calculateTournamentRankingPoints(...)`
+- `normalizeImportedStandings(...)`
+- `matchImportedPlayer(...)`
+- `buildTournamentResultsPayload(...)`
+- tournament display-status derivation
+- tournament filter/sort rules
+- date-to-input conversion
+- deck suggestion filtering
+- participant-name matching
+- stable deck/result association
+
+Pure rules should live under the tournament feature and be unit-testable without React.
+
+API operations such as:
+- result submission
+- deck creation
+- tournament update/create
+
+should preferably go through typed feature/service boundaries rather than raw Axios calls deeply embedded in page code.
+
+Preserve all legacy behavior unless an existing bug is intentionally fixed.
+
+---
+
+## 29. ManageTeams refactor map
+
+`src/pages/manage/ManageTeams.tsx` currently coordinates:
+
+- team loading
+- manageable-player loading
+- create/edit forms
+- image state
+- active/inactive state
+- player assignment
+- player transfer
+- player removal
+- starting tournaments
+- confirmations
+- navigation
+- derived player lists
+
+Potential presentation components:
+
+- `TeamManagementCard`
+- `CreateTeamForm`
+- `EditTeamForm`
+- `TeamRoster`
+- `TeamPlayerList`
+- `PlayerAssignmentPanel` / `PlayerAssignmentModal`
+- `TeamAdminActions`
+
+The existing public `TeamCard` does not need to be forced into management usage if the responsibilities are genuinely different.
+
+### Business/domain logic candidates
+
+Prefer pure typed selectors/functions for:
+
+- `playersForTeam(teamId, players)`
+- `availablePlayersForAssignment(teamId, players)`
+- determining whether an assignment is a transfer
+- `canStartTournament(team)`
+- team form normalization
+- assignment eligibility
+- active-player filtering
+
+A focused hook such as `useTeamManagement()` is acceptable if it creates a clear mutation/loading boundary.
+
+Do not move the entire page into one giant hook.
+
+Keep confirmation UI at the interaction layer.
+Keep mutation/domain operations clearly separated from presentation.
+
+---
+
+## 30. InternalTournament refactor map
+
+`src/pages/manage/InternalTournamentPage.tsx` contains important real-time tournament behavior.
+
+Preserve:
+- server as canonical tournament state
+- revision conflict protection
+- Socket.IO synchronization
+- fallback reload/polling while disconnected
+- later-round invalidation behavior
+- current permissions
+- save guarantees
+- multi-judge safety
+
+Never weaken concurrency protection while refactoring.
+
+### Live synchronization hook
+
+A hook such as:
+
+```text
+useInternalTournamentLive(id)
+```
+
+may own:
+- initial load
+- Socket.IO subscription
+- connection state
+- accepting only newer revisions
+- deleted-tournament handling
+- fallback polling
+- cleanup
+
+### Mutation hook
+
+A focused hook such as:
+
+```text
+useInternalTournamentMutations(...)
+```
+
+may own:
+- busy state
+- canonical response handling
+- request error normalization
+- revision-conflict handling
+- uncertain-save recovery
+- mutation outcome
+
+Do not mix unrelated visual state into these hooks.
+
+### Derived domain utilities/selectors
+
+Good extraction candidates:
+
+- `isTournamentReadOnly(...)`
+- `areAllMatchesComplete(...)`
+- `participantsChanged(...)`
+- `getParticipantName(...)`
+- `currentRound(...)`
+- `canPairNextRound(...)`
+- `canCloseTournament(...)`
+
+### Presentation components
+
+Good candidates:
+
+- `TournamentHeader`
+- `TournamentConnectionStatus`
+- `RoundSelector`
+- `TournamentAttendance`
+- `TournamentRound`
+- `TournamentRoundActions`
+- `TournamentSyncError`
+- `TournamentStandings`
+
+The intended direction is for the page to read mostly like composition/orchestration.
+
+Example shape:
+
+```tsx
+<TournamentHeader />
+<TournamentConnectionStatus />
+<RoundSelector />
+
+{setup && <TournamentAttendance />}
+
+{showStandings ? (
+  <TournamentStandings />
+) : (
+  <TournamentRound />
+)}
+
+<TournamentRoundActions />
+```
+
+This is an architectural example, not a required exact API.
+
+---
+
+## 31. MatchEditor refactor map
+
+`src/components/MatchEditor.tsx` currently mixes result-domain rules with editing presentation.
+
+Extract pure tournament-result rules where practical.
+
+High-value examples:
+
+- `getAllowedScores(winner)`
+- `buildMatchResult(...)`
+- `getMaxDrawnGames(score)`
+- `formatMatchResult(...)`
+- `isMatchDraftValid(...)`
+
+Current Bo3 score choices are domain rules:
+
+Player 1 wins:
+- 2-0
+- 2-1
+- 1-0
+
+Player 2 wins:
+- 0-2
+- 1-2
+- 0-1
+
+Draw:
+- 0-0
+- 1-1
+
+These rules should not remain buried in JSX ternaries.
+
+Likewise, maximum drawn-games calculation should be a named pure function.
+
+If draft/save/retry/revision behavior forms a genuinely reusable concept, a focused hook such as `useMatchResultDraft(...)` is acceptable.
+
+Do not hide simple local UI state behind abstraction only for style.
+
+---
+
+## 32. PlayerDashboard refactor map
+
+`src/pages/player/PlayerDashboardPage.tsx` currently mixes:
+
+- dashboard presentation
+- profile form state
+- profile validation
+- password verification
+- profile update API calls
+- error interpretation
+- tournament derivation
+- full-page reload behavior
+
+Potential presentation components:
+
+- `ProfileEditModal`
+- `ProfileForm`
+- `TournamentHistory`
+- `UpcomingTournamentList`
+- `AchievementList`
+
+### Profile domain boundary
+
+Profile validation should be independent from JSX.
+
+Prefer the existing React Hook Form + Zod stack for this non-trivial form if integration is clean.
+
+A natural home may be an existing auth/user feature rather than creating a new feature folder only for organizational purity.
+
+The profile flow should separate:
+- validation
+- current-password verification
+- update payload construction
+- API mutation
+- error mapping
+- presentation state
+
+### SPA requirement
+
+Remove any `window.location.reload()` behavior used to refresh profile state.
+
+After profile update:
+- update the relevant auth/user state, or
+- dispatch/refetch the existing authenticated-user action
+
+The visible name/username must update without a full document reload.
+
+### Derived data
+
+Upcoming tournament selection should be a named selector/helper if it is reused:
+
+- upcoming only
+- chronological sort
+- first N
+
+---
+
+## 33. AdminPlayers refactor map
+
+The current `PlayerNameFields` extraction is a good direction.
+
+Further candidates when duplication is real:
+
+- `PlayerFormModal`
+- `PlayerTypeBadge`
+- `PlayerStatusBadge`
+- `PlayerTable`
+- `PlayerFilters`
+
+Do not force team-player creation, quarterly-player creation, and editing into one giant component with many optional props.
+
+Prefer composable shared pieces:
+
+```tsx
+<PlayerNameFields />
+<FormField />
+<FormActions />
+```
+
+with thin domain-specific forms.
+
+Potential pure logic:
+
+- player-name validation
+- trimming/normalization
+- create/update payload normalization
+- player type labels
+- filter helpers
+
+Use the shared request error utility rather than creating new local API-error shapes when possible.
+
+---
+
+## 34. API/service standardization
+
+The repository currently mixes:
+
+- feature services
+- Redux thunks
+- direct `api.*` calls in pages
+- custom request-error casting
+- shared `requestError`
+
+Gradually standardize toward:
+
+```text
+Page / component
+    ↓
+feature hook / thunk / service
+    ↓
+shared api client
+```
+
+Good candidates to move out of pages when touched:
+
+- tournament result submission
+- deck creation from tournament result UI
+- profile update
+- password verification/profile update flow
+
+Do not create meaningless one-line wrappers only to add layers.
+Create domain operations with typed inputs/outputs.
+
+Use one consistent error-normalization strategy.
+
+---
+
+## 35. Derived data and selectors
+
+Do not store values in React state when they can safely be derived.
+
+Prefer named pure selectors/utilities for reusable rules.
+
+Current candidates include:
+
+- upcoming tournaments
+- sorted tournament lists
+- available players
+- active team roster
+- tournament display status
+- whether all matches are complete
+- participant lookup maps
+- result display strings
+- permissions-derived action availability
+
+Use `useMemo` only when it provides real render/reference value.
+Do not memoize everything automatically.
+
+The primary goal is a named, testable rule.
+
+---
+
+## 36. Standard loading/error/empty states
+
+The project still contains repeated patterns such as:
+
+```tsx
+<div className="animate-pulse">...</div>
+```
+
+and page-specific error/empty blocks.
+
+As duplication becomes concrete, consolidate:
+
+- `LoadingState`
+- `ErrorState`
+- `EmptyState`
+
+They may support:
+- icon
+- title
+- message
+- optional action
+
+Avoid separate near-identical implementations for admin, player, and tournament pages unless their behavior truly differs.
+
+---
+
+## 37. Status/badge reuse
+
+Repeated page-specific status spans should be consolidated where appropriate.
+
+Current examples include:
+
+- tournament upcoming/completed
+- recurring tournament
+- team active/inactive
+- player type
+- player active/inactive
+- live connection status
+
+Use the shared `Badge` system or thin domain wrappers such as:
+
+```tsx
+<TournamentStatusBadge status={...} />
+<TeamStatusBadge active={...} />
+```
+
+Do not duplicate the same Tailwind status classes across pages.
+
+---
+
+## 38. Form migration strategy
+
+Do not rewrite every form at once.
+
+When a non-trivial form is already being touched and local state/validation is becoming complex, prefer:
+
+- React Hook Form
+- Zod
+- shared FormField/FormActions primitives
+
+Strong candidates include:
+
+- profile editing
+- tournament create/edit
+- larger management forms
+
+Do not migrate a simple stable form merely for stylistic consistency.
+
+---
+
+## 39. Current refactor priorities
+
+For the current gradual cleanup, prioritize in roughly this order:
+
+1. improve shared `Modal` accessibility and `FormField`
+2. remove SPA-breaking full-page reload behavior
+3. extract pure business rules from `AdminTournaments`
+4. extract real-time/revision orchestration from `InternalTournamentPage`
+5. extract team-management derivations and coherent management components
+6. separate profile form/domain behavior from `PlayerDashboardPage`
+7. extract match score rules from `MatchEditor`
+8. consolidate repeated loading/error/empty/status patterns
+9. standardize direct page-level API calls when those areas are touched
+10. consider route-level lazy loading where safe
+
+Do not require all ten items in every refactor commit.
+Keep commits reviewable and behavior-preserving.
+
+---
+
+## 40. Refactor verification
+
+For focused frontend refactor work, run:
+
+```bash
+npm run lint
+npm run build
+npm run test:stage-a
+npm run test:stage-a:ui
+```
+
+When formatting/unit/component/E2E infrastructure is added, include those checks as well.
+
+For SPA-related changes verify:
+- normal internal navigation does not reload the document
+- profile editing updates displayed state without `window.location.reload()`
+- direct URL access still works
+- browser back/forward behavior still works
+- protected/manage/admin routes still behave correctly
+
+If route lazy loading is introduced, verify representative routes including:
+
+- `/`
+- `/tournaments`
+- `/rankings`
+- `/all-stars`
+- `/dashboard`
+- `/manage/*`
+- `/admin/*`
+
+For multi-judge tournament work, specifically verify that:
+- newer server revisions win
+- stale edits are not silently accepted
+- disconnect/reconnect behavior remains safe
+- fallback refresh behavior still works
+
+---
+
+## 41. Refactor reporting
+
+At the end of a substantial frontend refactor, report:
+
+1. reusable components created
+2. hooks created
+3. pure business/domain utilities extracted
+4. pages simplified
+5. duplicated production code removed
+6. direct page-level API calls moved to feature/service boundaries
+7. SPA reload/navigation issues removed
+8. tests added or updated
+9. exact status of lint/build/test commands
+10. areas intentionally left unchanged and why
+11. final commit SHA
+
+A good refactor should make future feature work easier without changing product behavior.
