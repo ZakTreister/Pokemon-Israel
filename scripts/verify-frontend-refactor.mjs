@@ -145,6 +145,53 @@ try {
   assert.ok(inputs().every((input) => input.props.disabled));
   await act(async () => attendance.unmount());
 
+  const { default: FormField } = await load('components/ui/FormField.tsx');
+  let field;
+  await act(async () => {
+    field = TestRenderer.create(
+      element(
+        FormField,
+        {
+          label: 'שם',
+          htmlFor: 'name',
+          required: true,
+          description: 'שם מלא',
+          error: 'נדרש שם',
+        },
+        element('input', { id: 'name', 'aria-describedby': 'existing-help' }),
+      ),
+    );
+  });
+  const control = field.root.findByType('input');
+  assert.equal(control.props['aria-invalid'], true);
+  assert.equal(
+    control.props['aria-describedby'],
+    [
+      'existing-help',
+      ...field.root.findAllByType('p').map((p) => p.props.id),
+    ].join(' '),
+  );
+  assert.equal(
+    field.root.findByProps({ role: 'alert' }).children.join(''),
+    'נדרש שם',
+  );
+  assert.equal(field.root.findByType('label').children.join(''), 'שם *');
+  await act(async () => {
+    field.update(
+      element(
+        FormField,
+        { label: 'שם', htmlFor: 'name' },
+        element('input', { id: 'name' }),
+      ),
+    );
+  });
+  assert.equal(field.root.findByType('input').props['aria-invalid'], undefined);
+  assert.equal(
+    field.root.findByType('input').props['aria-describedby'],
+    undefined,
+  );
+  await act(async () => field.unmount());
+
   const { default: PlayerNameFields } = await load(
     'features/players/components/PlayerNameFields.tsx',
   );
