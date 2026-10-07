@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-blue-200">
-              הבית של ליגת הפוקימון הישראלית. טורנירים, דירוגים ופרופילי שחקנים
+              הבית של ליגת הפוקימון הישראלית. אירועים, נבחרות ודירוגים
               — כל הליגה במקום אחד.
             </p>
           </div>
@@ -26,9 +26,13 @@ export default function Footer() {
             <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               {[
                 ['/', 'דף הבית'],
-                ['/tournaments', 'טורנירים'],
-                ['/rankings', 'טבלת ניקוד'],
-                ['/deck-stats', 'נתוני דקים'],
+                ['/tournaments', 'אירועים'],
+                ['/rankings', 'הליגה הישראלית'],
+                ['/all-stars', 'All Stars'],
+                ['/news', 'חדשות'],
+                ['/store', 'חנות · בהקמה'],
+                ['/about', 'על הליגה · בהקמה'],
+                ['/birthday', 'הזמנת יום הולדת · בהקמה'],
                 ['/login', 'כניסת צוות'],
               ].map(([to, label]) => (
                 <Link

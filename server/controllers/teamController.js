@@ -12,6 +12,10 @@ export function validateLogo(logo) {
   }
   return logo.trim();
 }
+function validatePublicId(value = '') {
+  if (typeof value !== 'string' || value.length > 255 || (value && !/^[a-z\d_/-]+$/i.test(value))) fail(400, 'מזהה תמונה לא חוקי');
+  return value;
+}
 async function counts(team) {
   const [playerCount, completedInternalTournamentCount] = await Promise.all([
     Player.countDocuments({ team: team._id, isActive: true, playerType: 'team' }),
@@ -45,10 +49,10 @@ export const getTeam = asyncHandler(async (req, res) => {
   res.json({ ...team.toJSON(), ...await counts(team), players });
 });
 export const createTeam = asyncHandler(async (req, res) => {
-  const { name, logo = '' } = req.body;
+  const { name, logo = '', logoPublicId = '' } = req.body;
   if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
   try {
-    const team = await Team.create({ name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), createdBy: req.user._id });
+    const team = await Team.create({ name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), logoPublicId: validatePublicId(logoPublicId), createdBy: req.user._id });
     await team.populate('createdBy', 'username name');
     res.status(201).json({ ...team.toJSON(), playerCount: 0, completedInternalTournamentCount: 0 });
   } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
@@ -57,13 +61,14 @@ export const updateTeam = asyncHandler(async (req, res) => {
   const output = await withRosterLocks([req.params.id], async () => {
     const team = await Team.findById(req.params.id);
     if (!team) fail(404, 'נבחרת לא נמצאה');
-    const { name, logo, isActive } = req.body;
+    const { name, logo, logoPublicId, isActive } = req.body;
     if (name !== undefined) {
       if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
       team.name = name.trim();
       team.normalizedName = normalizeTeamName(name);
     }
-    if (logo !== undefined) team.logo = validateLogo(logo);
+    if (logo !== undefined) { team.logo = validateLogo(logo); team.logoPublicId = validatePublicId(logoPublicId); }
+    else if (logoPublicId !== undefined) team.logoPublicId = validatePublicId(logoPublicId);
     if (isActive !== undefined) {
       if (typeof isActive !== 'boolean') fail(400, 'מצב נבחרת לא חוקי');
       if (!isActive && await Player.exists({ team: team._id, isActive: true })) fail(409, 'יש להעביר או להסיר את השחקנים הפעילים לפני השבתת הנבחרת');

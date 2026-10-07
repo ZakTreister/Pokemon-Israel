@@ -1,11 +1,10 @@
 import express from 'express';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
   getTournaments,
   getTournamentById,
   createTournament,
   updateTournament,
-  deleteTournament,
   registerForTournament,
   unregisterFromTournament,
   addParticipant,
@@ -15,7 +14,9 @@ import {
   getTournamentsBySeries,
 } from '../controllers/tournamentController.js';
 
+import { getManagedTournaments, hardDeleteTournament } from '../controllers/tournamentManagementController.js';
 const router = express.Router();
+router.get('/management', protect, authorize('admin', 'judge'), getManagedTournaments);
 
 router.route('/')
   .get(getTournaments)
@@ -24,7 +25,7 @@ router.route('/')
 router.route('/:id')
   .get(getTournamentById)
   .put(protect, admin, updateTournament)
-  .delete(protect, admin, deleteTournament);
+  .delete(protect, admin, hardDeleteTournament);
 
 router.get('/series/:seriesId', getTournamentsBySeries);
 

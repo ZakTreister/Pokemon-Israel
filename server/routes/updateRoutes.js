@@ -2,6 +2,7 @@ import express from 'express';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import {
   getUpdates,
+  getUpdate,
   createUpdate,
   updateUpdate,
   deleteUpdate,
@@ -14,6 +15,7 @@ router.route('/')
   .post(protect, admin, createUpdate);
 
 router.route('/:id')
+  .get(getUpdate)
   .put(protect, admin, updateUpdate)
   .delete(protect, admin, deleteUpdate);
 

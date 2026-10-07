@@ -36,7 +36,7 @@ interface DeckSuggestion {
   archetype: string;
 }
 
-export default function AdminTournaments() {
+export default function AdminTournaments({ embeddedCreate = false }: { embeddedCreate?: boolean }) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
@@ -47,7 +47,7 @@ export default function AdminTournaments() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [showTournamentModal, setShowTournamentModal] = useState(embeddedCreate);
   const [isEditing, setIsEditing] = useState(false);
   const [standingsInput, setStandingsInput] = useState('');
   const [parsedStandings, setParsedStandings] = useState<StandingsRow[]>([]);
@@ -59,6 +59,10 @@ export default function AdminTournaments() {
     lastTournamentDate: '',
     maxParticipants: undefined
   });
+
+  useEffect(() => {
+    if (embeddedCreate && !showTournamentModal) navigate('/manage/tournaments');
+  }, [embeddedCreate, showTournamentModal, navigate]);
 
   // Deck autocomplete states
   const [deckInputs, setDeckInputs] = useState<Record<number, string>>({});
@@ -96,13 +100,6 @@ export default function AdminTournaments() {
   const sortedTournaments = [...filteredTournaments].sort((a, b) => {
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
-
-  // Helper function to check if tournament is in the past
-  const isPastTournament = (tournament: Tournament) => {
-    const now = new Date();
-    const tournamentDate = new Date(tournament.date);
-    return tournamentDate < now;
-  };
 
   const resetForm = () => {
     setFormData({
@@ -491,6 +488,7 @@ export default function AdminTournaments() {
 
   return (
     <div>
+      {!embeddedCreate && <>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול טורנירים</h2>
         <Button onClick={handleCreateTournament}>
@@ -633,8 +631,8 @@ export default function AdminTournaments() {
                             </Button>
                           )}
                           
-                          {/* Delete options - only for future tournaments */}
-                          {!isPastTournament(tournament) && (
+                          {/* Super-admin may delete any tournament, including completed events. */}
+                          {(
                             <>
                               <Button 
                                 variant="destructive" 
@@ -668,6 +666,7 @@ export default function AdminTournaments() {
         </>
       )}
 
+      </>}
       {/* Tournament Modal (Create/Edit) */}
       {showTournamentModal && (
         <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">

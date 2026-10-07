@@ -55,3 +55,9 @@ export const deleteUpdate = asyncHandler(async (req, res) => {
     throw new Error('Update not found');
   }
 });
+export const getUpdate = asyncHandler(async (req, res) => {
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('Update not found'); }
+  const update = await Update.findById(req.params.id);
+  if (!update) { res.status(404); throw new Error('Update not found'); }
+  res.json(update);
+});

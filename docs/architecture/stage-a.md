@@ -21,7 +21,7 @@ staff identities, User links, or lock data. There are no new child-login CTAs.
 Create a tournament from the active team roster, adjust attendance while in
 `setup`, then create rounds. Every mutation carries `expectedRevision`. A single
 Mongo `findOneAndUpdate` compares the revision and increments it atomically.
-A conflict returns HTTP 409 / `STALE_REVISION`; clients reload and require a retry.
+A conflict returns HTTP 409 / `STALE_REVISION`; clients automatically reconcile and require a retry.
 This covers results, attendance, pairings and closure, without transactions or a
 replica set. Two judges cannot start the same round from the same revision.
 
@@ -96,3 +96,69 @@ The configured Vite build transpiles successfully. Existing duplicate Deck index
 warnings remain unrelated to Stage A. Player/User index initialization was fixed
 by using Mongo's `objectId` type alias and removing the conflicting redundant
 username index declaration, preserving the unique indexes and legacy data.
+
+
+## October 2026 Stage A corrections
+
+Management now has one all-type tournament list at `/manage/tournaments`.
+Team details/history/manual entry live under `/manage/teams/:id`, with legacy
+URLs redirected to their new context. The first menu item is Overview for both
+staff roles. The mobile menu has explicit open/close controls and closes on
+navigation. Existing regular creation/results tools are reused rather than
+reimplemented. Season controls are reused exclusively inside Badges; closing a
+badge Season no longer creates team roster snapshots. Old snapshot documents
+and optional legacy Tournament.season values remain readable, but new events
+ignore the Season field and no ranking query uses it.
+
+Admin-only `DELETE /api/tournaments/:id` atomically hard-deletes any canonical
+tournament, including completed internal, inter-team and legacy tournaments.
+Embedded matches/results/archives disappear with it and derived rankings/counts
+exclude it immediately. Judges cannot delete. A concurrent CAS mutation cannot
+recreate the deleted document. The existing future-series delete action remains
+supported. All-type management summaries expose lifecycle and permission data.
+
+The existing Socket.IO server now authenticates staff with the existing JWT.
+Clients join one validated internal tournament room and receive notifications
+only after successful canonical writes. They fetch authoritative state on entry,
+notification and reconnect; revision checks prevent older responses replacing a
+newer snapshot. A ten-second automatic fallback fetch handles connection loss.
+No normal manual refresh button remains. Dirty match drafts keep their captured
+revision across other judges' updates; a stale save requires re-entry against the
+new canonical result. Structural CAS protections remain unchanged.
+
+### Cloudinary configuration
+
+Set these **server-only** variables in deployment `.env`:
+`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+The reusable `POST /api/media/images` endpoint accepts raw PNG/JPEG/WebP image
+bodies (maximum 5 MiB) from authenticated judges/admins. It checks both MIME and
+file signature, signs the fixed upload parameters on the server, uploads to
+Cloudinary's image endpoint, and returns secure URL, public ID, dimensions and
+format. Provider failures return a generic error; secrets never reach the
+browser. Team create/edit use the shared ImageUpload component and persist URL
+and public ID. Existing URL-only logos remain compatible. Removing a logo only
+unassigns it; it does not delete possibly shared Cloudinary media.
+
+Missing provider credentials produce an explicit 503 response. Tests verify the
+signed provider contract with a mock and the real HTTP authorization/type/size
+boundary; live provider delivery requires the deployment owner's credentials.
+
+### Public shell and homepage
+
+The approved header menu links to lifetime club rankings, All Stars, existing
+Events, Updates-based News, and repository-managed Store/About/Birthday pages
+marked under construction. Staff management stays role-aware. News uses existing
+Update records and safe escaped text with HTTP(S) links, without raw HTML.
+
+`GET /api/rankings` derives lifetime national points from completed regular/club
+records (including untyped legacy regular events), excluding internal/inter-team
+contexts. Both homepage leaders and the full rankings page consume this endpoint.
+The homepage features only future regular events, up to four active teams, a
+latest-news banner/full-post links, and the two required bottom action cards.
+Set frontend build variable `VITE_RAV_MESSER_URL` to the intended HTTP(S) enrollment
+URL. Until configured the enrollment card shows a disabled pending-link state;
+no destination is invented. Build again after changing a Vite environment value.
+
+`npm run test:stage-a:ui` renders real React routes with fixture data to verify
+menu order, roles, nested team context, nearest club-event selection and static
+page states. It creates no screenshots or manual checklist.

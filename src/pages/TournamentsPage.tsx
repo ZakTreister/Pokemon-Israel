@@ -44,11 +44,11 @@ export default function TournamentsPage() {
                          tournament.location.toLowerCase().includes(searchQuery.toLowerCase());
     let matchesStatus = true;
     if (filterStatus === 'upcoming') {
-      matchesStatus = !isPastTournament(tournament);
+      matchesStatus = tournament.status !== 'completed' && !isPastTournament(tournament);
     } else if (filterStatus === 'completed') {
       matchesStatus = isPastTournament(tournament);
     }
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && tournament.type !== 'team_internal';
   });
 
   const sortedTournaments = [...filteredTournaments].sort((a, b) => {
@@ -58,9 +58,9 @@ export default function TournamentsPage() {
   return (
     <div>
       <PageHero
-        title="טורנירים"
-        highlightWord="טורנירים"
-        subtitle="מצא את הטורנירים הקרובים והרשם להשתתף"
+        title="אירועים"
+        highlightWord="אירועים"
+        subtitle="האירועים הקרובים וארכיון הטורנירים והתוצאות של הליגה"
       />
 
       <div className="container py-12">

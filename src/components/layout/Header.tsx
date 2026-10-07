@@ -22,12 +22,14 @@ export default function Header() {
   const isStaff =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'judge');
   const links = [
-    { to: '/', label: 'ראשי' },
-    { to: '/tournaments', label: 'טורנירים' },
-    { to: '/rankings', label: 'טבלת ניקוד' },
-    { to: '/deck-stats', label: 'נתוני דקים' },
-    { to: '/all-stars', label: 'All Stars' },
-    ...(isStaff ? [{ to: '/manage/teams', label: 'ניהול' }] : []),
+    ...(isStaff ? [{ to: '/manage', label: 'ניהול', construction: false }] : []),
+    { to: '/rankings', label: 'הליגה הישראלית', construction: false },
+    { to: '/all-stars', label: 'All Stars', construction: false },
+    { to: '/tournaments', label: 'אירועים', construction: false },
+    { to: '/news', label: 'חדשות', construction: false },
+    { to: '/store', label: 'חנות', construction: true },
+    { to: '/about', label: 'על הליגה', construction: true },
+    { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
   ];
   const actions = (
     <>
@@ -101,24 +103,24 @@ export default function Header() {
           </Link>
           <nav
             aria-label="ניווט ראשי"
-            className="hidden items-center gap-4 xl:gap-5 lg:flex"
+            className="hidden items-center gap-3 text-sm xl:flex"
           >
-            {links.map(({ to, label }) => (
+            {links.map(({ to, label, construction }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={to === '/'}
                 className="cs-nav-link"
               >
-                {label}
+                {label}{construction && <span className="block text-[9px] text-blue-500 leading-tight">בהקמה</span>}
               </NavLink>
             ))}
           </nav>
-          <div className="hidden items-center gap-1 lg:flex">{actions}</div>
+          <div className="hidden items-center gap-1 xl:flex">{actions}</div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-navy-700 lg:hidden"
+            className="text-navy-700 xl:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? 'סגירת תפריט' : 'פתיחת תפריט'}
             aria-expanded={isMenuOpen}
@@ -130,13 +132,13 @@ export default function Header() {
         {isMenuOpen && (
           <div
             id="mobile-navigation"
-            className="border-t border-line py-4 lg:hidden"
+            className="border-t border-line py-4 xl:hidden"
           >
             <nav
               aria-label="ניווט ראשי בנייד"
               className="grid grid-cols-2 gap-2"
             >
-              {links.map(({ to, label }) => (
+              {links.map(({ to, label, construction }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -144,7 +146,7 @@ export default function Header() {
                   className="cs-nav-link px-3"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {label}
+                  {label}{construction && <span className="block text-[9px] text-blue-500 leading-tight">בהקמה</span>}
                 </NavLink>
               ))}
             </nav>
