@@ -11,21 +11,17 @@ Existing legacy links may remain backward compatible.
 The approved main site menu and the homepage content defined in `docs/product/navigation-content.md` and `docs/product/homepage.md` are now part of Stage A.
 They are not deferred to a later polish phase.
 
-## 2026-10 — Prominent button treatment applies to standalone actions
-Use the CardSchool `shadow-button` treatment for standalone action buttons.
+## 2026-10 — Shadow buttons are consistent within an action row
+If any button in a visual action row/group uses `shadow-button-<color>`, every button in that same row/group must also use an appropriate shadow treatment.
 
-Do NOT apply the same strong elevation to controls that already live inside another component, including:
-- header/menu navigation items
-- management sidebar items
-- inline remove-player/remove-user controls
-- inline table/list actions
-- compact icon actions
+Embedded/contextual controls outside that action row — such as navigation items, sidebar items, inline remove-player controls and compact row actions — remain flat unless they themselves belong to a shadowed action group.
 
-Embedded controls should use the parent component's lighter interaction styling.
+## 2026-10 — “בהקמה” uses a floating micro-tag
+Do not use the old pill/elliptical badge.
+Use a compact floating rounded-rectangle micro-tag with subtle background/border styling.
 
-## 2026-10 — “בהקמה” is an attached menu badge
-In the main site menu, **בהקמה** is not inline text.
-It is an absolutely positioned small pill badge at the visual top-left of the relevant menu item, with an elliptical/rounded-full border.
+It must be absolutely positioned and must not affect menu-item layout.
+All main-menu items must remain aligned on the same baseline and vertical line whether or not they have the tag.
 
 ## 2026-10 — Nested pages use one back action
 Provide one clear back control on nested management/team/tournament pages.

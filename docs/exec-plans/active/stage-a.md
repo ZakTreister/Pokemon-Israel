@@ -184,22 +184,14 @@ Make the management navigation closable on mobile:
 
 Fix the create-team form on mobile so it lays out cleanly without squeezed controls or horizontal overflow.
 
-### 13. Button styling — standalone vs embedded
-Apply the prominent CardSchool `shadow-button` treatment to **standalone action buttons**.
+### 13. Button shadow consistency
+Use the row/group rule from `docs/product/management-ui.md`.
 
-Do NOT apply it indiscriminately to controls embedded inside another component.
+If one button in a visual action row/group uses `shadow-button-<color>`, all buttons in that same row/group must also use an appropriate shadow treatment.
 
-Prominent:
-- create/save/open/start/close/back/upload actions that stand on their own
+Do not leave mixed flat/elevated buttons in the same action row.
 
-Not prominent:
-- main header menu items
-- management sidebar items
-- inline remove-player/remove-user controls
-- compact row/table/card actions
-- filter chips/tabs that already have their own component surface
-
-Use the exact hierarchy rules in `docs/product/management-ui.md`.
+Embedded controls outside that action group — main navigation, management sidebar, inline remove-player controls, compact row/table/card actions and filter chips — remain visually lighter unless they themselves are part of a shadowed action group.
 
 ### 14. Reusable Cloudinary image upload
 Implement/preserve the reusable Cloudinary-backed image-upload flow described in `docs/architecture/media-upload.md`.
@@ -233,7 +225,8 @@ Requirements:
 - do not implement store commerce
 - do not invent CMS infrastructure for the static pages
 - main-menu items themselves do NOT use `shadow-button`
-- render each **בהקמה** marker as an absolutely positioned small elliptical/pill badge at the visual top-left of its menu item, not as inline text
+- replace the old pill **בהקמה** treatment with the floating micro-tag defined in `docs/product/navigation-content.md`
+- keep every desktop menu item on the same baseline/vertical line, whether or not it has a **בהקמה** tag
 
 ### 16. Events and News public entry points
 Reuse existing capabilities rather than creating duplicate systems.

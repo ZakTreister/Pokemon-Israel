@@ -16,21 +16,28 @@ The header/menu should contain:
 
 Do not expose child/player login navigation in Stage A.
 
-## “בהקמה” badge styling in the main menu
-For menu items that are not yet active/complete, render **בהקמה** as a small badge attached to the menu item itself.
+## “בהקמה” status treatment in the main menu
+Do not use the previous pill/elliptical treatment.
 
-Required visual treatment:
-- the menu item wrapper is `position: relative`
-- the badge is `position: absolute`
-- place it at the **visual top-left** corner of the menu item
-- use a compact pill / elliptical outline
-- visible border
-- rounded-full / fully elliptical shape
-- small typography so it does not compete with the menu label
-- keep enough offset/padding so it does not cover the label
-- preserve correct placement in RTL on desktop and mobile
+Use a small **floating micro-tag** attached to the menu item:
+- compact rounded rectangle, not a pill
+- subtle tinted background using the existing CardSchool palette
+- thin border
+- very small semibold text
+- tiny soft shadow if it fits the existing visual language
+- absolutely positioned so it does not affect layout flow
+- position it slightly above/over the visual top-left area of the item without covering the label
 
-Do not render **בהקמה** as normal inline text beside the label.
+Most importantly, all main-menu items must stay on the **same baseline and same vertical line** regardless of whether they have the **בהקמה** tag.
+
+Implementation guidance:
+- give all desktop menu-item wrappers the same height/min-height
+- center the main label consistently with flex alignment
+- the badge must not add height/margin to only some items
+- reserve enough header/menu vertical breathing room globally if needed, rather than shifting only tagged items
+- preserve the same principle on mobile
+
+Do not render **בהקמה** as normal inline text and do not let it push the menu item itself up/down.
 
 ## Stage A route behavior
 
@@ -78,7 +85,7 @@ The main site menu must work well on mobile:
 - clear open/close behavior
 - RTL-safe layout
 - management visibility remains role-aware
-- the absolute **בהקמה** badges remain legible and do not overlap labels
+- **בהקמה** micro-tags remain legible, do not overlap labels, and do not disturb the shared menu baseline
 
 ## Management navigation
 There is one management entry only.

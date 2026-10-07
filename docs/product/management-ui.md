@@ -19,24 +19,17 @@ Do not use:
 ## Buttons
 Use the CardSchool button system consistently.
 
-### Standalone action buttons
-Standalone actions that sit directly on the page/card/modal as their own action should have a clearly visible button surface and the `shadow-button` treatment.
+### Shadow consistency is decided per action row/group
+Treat a horizontal action row or visually grouped set of buttons as one styling unit.
 
-Examples:
-- create team
-- save / submit
-- open tournament
-- historical result entry
-- start round / next round
-- close tournament
-- back
-- upload/select image
-- primary modal confirmation
+If **any** button in that row/group uses a `shadow-button-<color>` treatment, then **every button in the same row/group must also have a shadow treatment**.
 
-Primary/destructive/secondary variants may differ in color and emphasis, but standalone actions should still read clearly as buttons.
+Each button may use the shadow/color appropriate to its semantic variant (primary, secondary, destructive, etc.), but one button in a row must not look elevated while its siblings look flat.
+
+If none of the buttons in a row/group uses a shadow, the group may remain flat.
 
 ### Embedded / contextual controls
-Controls that already live **inside another visual component** should NOT receive the same prominent `shadow-button` treatment.
+Controls that are not part of such an action row and already live inside another visual component should remain visually lighter.
 
 Examples:
 - main/site navigation items
@@ -46,9 +39,9 @@ Examples:
 - icon-only actions inside an existing card/row
 - filter chips/tabs that already have their own selected/unselected surface
 
-These controls should remain visually lighter so the parent component keeps the hierarchy.
+These embedded controls should not receive shadow merely because shadow exists elsewhere on the page.
 
-In short: use strong elevation for standalone actions, not for every clickable element.
+In short: shadows are **all-or-none within the same action row/group**, not globally all-or-none across the page.
 
 ## Back navigation
 Every nested management page must provide an obvious way to return to the previous/parent context.
