@@ -3,8 +3,10 @@ import { Link, useSearchParams, useParams } from "react-router-dom";
 import { internalTournaments } from "../../services/internalTournaments";
 import { requestError } from "../../utils/requestError";
 import type { InternalTournamentSummary } from "../../types/internalTournament";
+import { useAppSelector } from "../../hooks/redux";
 import Button from "../../components/ui/Button";
 export default function InternalTournamentsPage() {
+  const admin = useAppSelector(state => state.auth.user?.role === "admin");
   const [params] = useSearchParams();
   const route = useParams();
   const teamId = route.teamId || params.get("teamId") || undefined;
@@ -35,7 +37,7 @@ export default function InternalTournamentsPage() {
           <Link to="/manage/teams">פתח טורניר מעמוד נבחרת</Link>
         </Button>
       </div>
-      {teamId && <div className="flex flex-wrap gap-3 mb-5"><Button asChild><Link to={`/manage/teams/${teamId}/historical`}>הזנת טורניר היסטורי</Link></Button></div>}
+      {admin && teamId && <div className="flex flex-wrap gap-3 mb-5"><Button asChild><Link to={`/manage/teams/${teamId}/historical`}>הזנת טורניר היסטורי</Link></Button></div>}
       {error && <p role="alert">{error}</p>}
       {tournaments === null ? (
         <p>טוען...</p>

@@ -5,7 +5,7 @@ const router = express.Router();
 router.use(protect, authorize('admin', 'judge'));
 router.get('/', getInternalTournaments);
 router.post('/', createInternalTournament);
-router.post('/historical', createHistoricalInternal);
+router.post('/historical', authorize('admin'), createHistoricalInternal);
 router.get('/:id', getInternalTournament);
 router.put('/:id/participants', changeInternalParticipants);
 router.post('/:id/rounds', pairRound);

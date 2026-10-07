@@ -13,6 +13,7 @@ import type {
 } from '../../types/internalTournament';
 import type { TeamRosterPlayer } from '../../types/team';
 import Button from '../../components/ui/Button';
+import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
@@ -54,6 +55,7 @@ function Standings({ rows }: { rows: Standing[] }) {
   );
 }
 export default function InternalTournamentPage() {
+  const judge = useAppSelector((state) => state.auth.user?.role === 'judge');
   const { id = '' } = useParams();
   const { showConfirm } = useConfirm();
   const [tournament, setTournament] = useState<InternalTournament | null>(null);
@@ -216,7 +218,9 @@ export default function InternalTournamentPage() {
         )}
       </div>
     );
-  const closed = tournament.phase === 'completed';
+  const closed =
+    tournament.phase === 'completed' || tournament.status === 'completed';
+  const readOnly = closed || (judge && tournament.source === 'historical');
   const round = tournament.rounds.find((r) => r.number === roundNumber);
   const name = (player: string | null) =>
     tournament.playerParticipants.find((p) => p.player === player)
@@ -374,7 +378,7 @@ export default function InternalTournamentPage() {
         כל תוצאה נשמרת מיד בשרת. לאחר רענון או כניסה ממכשיר אחר אפשר להמשיך
         מכאן. בעת עדכון מקביל המצב מתעדכן אוטומטית ויש להזין שוב.
       </p>
-      {tournament.phase === 'setup' && (
+      {!readOnly && tournament.phase === 'setup' && (
         <div className="border rounded-lg p-4 space-y-4">
           <h3 className="font-bold">נוכחות לפני סיבוב 1</h3>
           <p className="text-sm">
@@ -474,7 +478,7 @@ export default function InternalTournamentPage() {
           </Button>
         </div>
       )}
-      {(resultsView || closed) && (
+      {(resultsView || readOnly) && (
         <>
           <h3 className="font-bold text-xl">
             {closed ? 'דירוג סופי' : 'דירוג נוכחי'}
@@ -501,14 +505,14 @@ export default function InternalTournamentPage() {
                 );
                 setError('');
               }}
-              readOnly={closed}
+              readOnly={readOnly}
               disabled={busy}
               save={(result, revision) => saveResult(match, result, revision)}
             />
           ))}
         </div>
       )}
-      {!closed && tournament.phase === 'running' && (
+      {!readOnly && tournament.phase === 'running' && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <Button
             disabled={

@@ -6,7 +6,7 @@ const router = express.Router();
 router.post(
   '/images',
   protect,
-  authorize('admin', 'judge'),
+  authorize('admin'),
   express.raw({ type: () => true, limit: MAX_IMAGE_BYTES }),
   asyncHandler(async (req, res) => {
     res

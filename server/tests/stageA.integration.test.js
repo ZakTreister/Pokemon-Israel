@@ -113,11 +113,11 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     '/teams',
     'POST',
     { name: ' First Team ', logo: 'https://example.org/emblem.png' },
-    'judge',
+    'admin',
     201,
   );
   assert.equal(
-    (await request('/teams', 'POST', { name: ' first   team ' })).status,
+    (await request('/teams', 'POST', { name: ' first   team ' }, 'admin')).status,
     409,
   );
   assert.equal(
@@ -125,7 +125,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
       await request('/teams', 'POST', {
         name: 'bad logo',
         logo: 'javascript:alert(1)',
-      })
+      }, 'admin')
     ).status,
     400,
   );
@@ -133,7 +133,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     '/teams',
     'POST',
     { name: 'Second Team' },
-    'judge',
+    'admin',
     201,
   );
   const userCount = await User.countDocuments();
@@ -145,7 +145,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
         (firstName) => ({ firstName, lastName: 'Child', city: 'Town' }),
       ),
     },
-    'judge',
+    'admin',
     201,
   );
   assert.equal(await User.countDocuments(), userCount);
@@ -154,7 +154,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     '/players/team',
     'POST',
     { firstName: 'Unassigned', lastName: 'Child', city: 'City' },
-    'judge',
+    'admin',
     201,
   );
   assert.equal(unassigned.user, null);
@@ -185,15 +185,15 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   assert.equal(publicTeam.createdBy, undefined);
   assert.ok(publicTeam.players.every((p) => !('user' in p)));
   assert.equal(
-    (await request(`/teams/${team.id}`, 'PUT', { isActive: false })).status,
+    (await request(`/teams/${team.id}`, 'PUT', { isActive: false }, 'admin')).status,
     409,
   );
-  await ok(`/teams/${target.id}/players/${children[4].id}`, 'PUT', {});
+  await ok(`/teams/${target.id}/players/${children[4].id}`, 'PUT', {}, 'admin');
   assert.equal(String((await Player.findById(children[4].id)).team), target.id);
-  await ok(`/teams/${target.id}/players/${children[4].id}`, 'DELETE');
-  await ok(`/teams/${target.id}`, 'PUT', { isActive: false });
+  await ok(`/teams/${target.id}/players/${children[4].id}`, 'DELETE', undefined, 'admin');
+  await ok(`/teams/${target.id}`, 'PUT', { isActive: false }, 'admin');
   assert.equal(
-    (await request(`/teams/${target.id}/players/${children[4].id}`, 'PUT', {}))
+    (await request(`/teams/${target.id}/players/${children[4].id}`, 'PUT', {}, 'admin'))
       .status,
     400,
   );
@@ -215,7 +215,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   assert.equal((await User.findById(linkedUser._id)).name, 'Renamed Linked');
   assert.equal(String((await Player.findById(linked._id)).user), linkedUser.id);
   assert.equal(
-    (await request(`/teams/${team.id}/players`, 'POST', { players: [null] }))
+    (await request(`/teams/${team.id}/players`, 'POST', { players: [null] }, 'admin'))
       .status,
     400,
   );
@@ -358,7 +358,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
         expectedRevision: t.revision,
       })
     ).status,
-    409,
+    403,
   );
   const resumed = await ok(
     `/internal-tournaments/${t.id}`,
@@ -462,7 +462,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
         teamId: team.id,
         date: '2026-10-04',
         results: historicalResults.map((row) => ({ ...row, position: 1 })),
-      })
+      }, 'admin')
     ).status,
     400,
   );
@@ -470,7 +470,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     '/internal-tournaments/historical',
     'POST',
     { teamId: team.id, date: '2026-10-04', results: historicalResults },
-    'judge',
+    'admin',
     201,
   );
   assert.equal(historical.source, 'historical');
@@ -492,8 +492,8 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   const totals = await ok(`/teams/public/${team.id}`, 'GET', undefined, null);
   assert.equal(totals.completedInternalTournamentCount, 2);
   assert.equal(totals.officialStats, null);
-  await ok(`/teams/${target.id}`, 'PUT', { isActive: true });
-  await ok(`/teams/${target.id}/players/${children[0].id}`, 'PUT', {});
+  await ok(`/teams/${target.id}`, 'PUT', { isActive: true }, 'admin');
+  await ok(`/teams/${target.id}/players/${children[0].id}`, 'PUT', {}, 'admin');
   const teamRank = await ok(
     `/all-stars/rankings?teamId=${target.id}`,
     'GET',
@@ -513,7 +513,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   assert.equal(persisted.rounds.length, 2);
 });
 
-test('judges retry conflicting results and roster transitions never deactivate an occupied team', async () => {
+test('judges retry conflicting results and admin roster transitions never deactivate an occupied team', async () => {
   const team = await ok(
     '/teams',
     'POST',
@@ -530,7 +530,7 @@ test('judges retry conflicting results and roster transitions never deactivate a
         lastName: 'Child',
       })),
     },
-    'judge',
+    'admin',
     201,
   );
   let t = await ok(
@@ -602,18 +602,18 @@ test('judges retry conflicting results and roster transitions never deactivate a
     '/teams',
     'POST',
     { name: 'Concurrent roster' },
-    'judge',
+    'admin',
     201,
   );
   const child = await ok(
     '/players/team',
     'POST',
     { firstName: 'Roster', lastName: 'Race' },
-    'judge',
+    'admin',
     201,
   );
   const rosterWrites = await Promise.all([
-    request(`/teams/${emptyTeam.id}`, 'PUT', { isActive: false }),
+    request(`/teams/${emptyTeam.id}`, 'PUT', { isActive: false }, 'admin'),
     request(`/teams/${emptyTeam.id}/players/${child.id}`, 'PUT', {}, 'admin'),
   ]);
   assert.ok(rosterWrites.some((response) => response.status !== 200));
@@ -657,7 +657,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
         { firstName: 'Live', lastName: 'Two' },
       ],
     },
-    'judge',
+    'admin',
     201,
   );
   let t = await ok(
@@ -731,7 +731,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
           points: 9 - index * 3,
         })),
       },
-      'judge',
+      'admin',
       201,
     );
     assert.equal(
@@ -751,7 +751,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
           row.id === t.id &&
           row.lifecycle === 'completed' &&
           row.type === 'team_internal' &&
-          row.canManage,
+          !row.canManage,
       ),
     );
     changed = socketEvent(judge, 'tournament:updated');
@@ -877,7 +877,7 @@ test('national lifetime ranking excludes all team scoring and badge transitions 
   );
 });
 
-test('media endpoint enforces staff auth, type and body size before provider access', async () => {
+test('media endpoint enforces admin auth, type and body size before provider access', async () => {
   const image = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6n4kAAAAASUVORK5CYII=',
     'base64',
@@ -893,8 +893,9 @@ test('media endpoint enforces staff auth, type and body size before provider acc
     });
   assert.equal((await send(image, null)).status, 401);
   assert.equal((await send(image, 'player')).status, 403);
+  assert.equal((await send(image, 'judge')).status, 403);
   assert.equal(
-    (await send(Buffer.from('<svg/>'), 'judge', 'image/svg+xml')).status,
+    (await send(Buffer.from('<svg/>'), 'admin', 'image/svg+xml')).status,
     400,
   );
   assert.equal(
@@ -902,5 +903,75 @@ test('media endpoint enforces staff auth, type and body size before provider acc
     413,
   );
   if (!process.env.CLOUDINARY_API_SECRET)
-    assert.equal((await send(image, 'judge')).status, 503);
+    assert.equal((await send(image, 'admin')).status, 503);
+});
+
+test('judge is limited to live tournament operation and never changes permanent configuration', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Permissions Team' }, 'admin', 201);
+  const children = await ok(`/teams/${team.id}/players`, 'POST', {
+    players: ['Permission A', 'Permission B', 'Absent'].map(firstName => ({ firstName, lastName: 'Child' })),
+  }, 'admin', 201);
+  const beforeTeam = (await Team.findById(team.id)).toObject();
+  const beforePlayers = await Player.find({ team: team.id }).sort({ _id: 1 }).lean();
+  const denied = [
+    ['/teams', 'POST', { name: 'Judge Created' }],
+    [`/teams/${team.id}`, 'PUT', { name: 'Judge Edited', logo: 'https://example.org/judge.png', isActive: false }],
+    [`/teams/${team.id}/players`, 'POST', { players: [{ firstName: 'Extra', lastName: 'Child' }] }],
+    ['/players/team', 'POST', { firstName: 'Extra', lastName: 'Child' }],
+    ['/players/quarterly', 'POST', { firstName: 'Extra', lastName: 'Child', club: 'Club' }],
+    [`/players/${children[0].id}`, 'PUT', { firstName: 'Edited', isActive: false, team: null }],
+    [`/teams/${team.id}/players/${children[0].id}`, 'PUT', {}],
+    [`/teams/${team.id}/players/${children[0].id}`, 'DELETE'],
+    ['/internal-tournaments/historical', 'POST', {}],
+    ['/badges', 'POST', {}],
+    ['/badges', 'GET'],
+    [`/badges/${team.id}/players/${children[0].id}`, 'POST', {}],
+    ['/seasons', 'POST', {}],
+    [`/seasons/${team.id}/close`, 'POST', {}],
+    ['/updates', 'POST', {}],
+  ];
+  for (const [path, method, body] of denied)
+    assert.equal((await request(path, method, body, 'judge')).status, 403, `${method} ${path}`);
+  assert.equal((await ok(`/teams/${team.id}`)).players.length, 3);
+  assert.equal((await request(`/players/${children[0].id}`)).status, 200);
+  let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  assert.equal((await request(`/tournaments/${t.id}`, 'DELETE', undefined, 'judge')).status, 403);
+  assert.equal((await ok('/tournaments/management')).find(row => row.id === t.id).canManage, true);
+  t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', {
+    expectedRevision: t.revision, playerIds: children.slice(0, 2).map(child => child.id),
+  });
+  const { updatedAt: beforeLockTime, ...beforeTeamData } = beforeTeam;
+  const { updatedAt: afterLockTime, ...afterTeamData } = (await Team.findById(team.id)).toObject();
+  assert.ok(afterLockTime >= beforeLockTime); // Existing document lock updates timestamps only.
+  assert.deepEqual(afterTeamData, beforeTeamData);
+  assert.deepEqual(await Player.find({ team: team.id }).sort({ _id: 1 }).lean(), beforePlayers);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {
+    expectedRevision: t.revision, playerIds: children.map(child => child.id),
+  })).status, 409);
+  const resultPath = `/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`;
+  t = await ok(resultPath, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 2, score2: 0 } });
+  t = await ok(resultPath, 'PUT', { expectedRevision: t.revision, result: { winner: 'draw', score1: 1, score2: 1 } });
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  t = await ok(`/internal-tournaments/${t.id}/rounds/2/matches/${t.rounds[1].matches[0]._id}`, 'PUT', {
+    expectedRevision: t.revision, result: { winner: 'player2', score1: 0, score2: 1 },
+  });
+  t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', { expectedRevision: t.revision });
+  const historical = await ok('/internal-tournaments/historical', 'POST', {
+    teamId: team.id, date: '2026-10-04', results: children.slice(0, 2).map((child, index) => ({ player: child.id, position: index + 1, points: 3 - index })),
+  }, 'admin', 201);
+  for (const event of [t, historical]) {
+    const snapshot = await Tournament.findById(event.id).lean();
+    for (const [suffix, method, body] of [
+      ['/participants', 'PUT', { playerIds: children.map(child => child.id) }],
+      ['/rounds', 'POST', {}],
+      ['/rounds/1/matches/invalid', 'PUT', { result: { winner: 'draw', score1: 0, score2: 0 } }],
+      ['/close', 'POST', {}],
+    ]) assert.equal((await request(`/internal-tournaments/${event.id}${suffix}`, method, { expectedRevision: event.revision, ...body })).status, 403);
+    assert.equal((await request(`/tournaments/${event.id}`, 'DELETE')).status, 403);
+    assert.deepEqual(await Tournament.findById(event.id).lean(), snapshot);
+    assert.equal((await ok(`/internal-tournaments/${event.id}`)).phase, 'completed');
+    assert.equal((await ok('/tournaments/management')).find(row => row.id === event.id).canManage, false);
+    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === event.id).canManage, true);
+  }
 });

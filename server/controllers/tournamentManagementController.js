@@ -18,7 +18,12 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
               (t.phase !== 'setup' && t.date <= new Date())
             ? 'active'
             : 'upcoming',
-      canManage: req.user.role === 'admin' || t.engineVersion === 'swiss-v1',
+      canManage:
+        req.user.role === 'admin' ||
+        (t.engineVersion === 'swiss-v1' &&
+          t.source !== 'historical' &&
+          t.phase !== 'completed' &&
+          t.status !== 'completed'),
     })),
   );
 });
