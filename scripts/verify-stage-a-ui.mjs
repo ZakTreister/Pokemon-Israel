@@ -112,8 +112,8 @@ try {
   }
   assert.ok(!publicHeader.includes('href="/manage"'));
   assert.equal((publicHeader.match(/בהקמה/g) || []).length, 3);
-  assert.equal((publicHeader.match(/absolute top-0 left-0 rounded-full border border-blue-500/g) || []).length, 3);
-  assert.equal((publicHeader.match(/cs-nav-construction/g) || []).length, 3);
+  assert.equal((publicHeader.match(/absolute -top-1 left-0 whitespace-nowrap rounded-\[3px\] border border-blue-200/g) || []).length, 3);
+  assert.equal((publicHeader.match(/class="cs-nav-link"/g) || []).length, 7);
   assert.ok(!publicHeader.includes('shadow-button'), 'Header controls use contextual styling');
   assert.ok(render(Header, '/', 'judge').includes('href="/manage"'));
   const Manage = await load('pages/manage/ManageDashboardPage.tsx');
@@ -286,6 +286,20 @@ try {
   });
   assert.match(JSON.stringify(editor.toJSON()), /התוצאה נשמרה בשרת/);
   act(() => editor.unmount());
+  const ManageTeams = await load('pages/manage/ManageTeams.tsx');
+  const teamState = store.getState();
+  const teamRow = render(ManageTeams, '/', 'admin', {
+    teams: { ...teamState.teams, isLoading: false, teams: [{ id: 'fixture-team', name: 'נבחרת בדיקה', isActive: true, playerCount: 1 }], manageablePlayers: [{ id: 'fixture-player', firstName: 'ילד', lastName: 'בדיקה', team: { id: 'fixture-team', name: 'נבחרת בדיקה' }, type: 'team', isActive: true }] },
+  });
+  for (const label of ['סגל וטורנירים', 'שם וסמל', 'השבת', 'שייך שחקן']) {
+    const labelIndex = teamRow.indexOf(label);
+    assert.ok(labelIndex >= 0, `Team row action: ${label}`);
+    const actionStart = Math.max(teamRow.lastIndexOf('<button', labelIndex), teamRow.lastIndexOf('<a ', labelIndex));
+    assert.ok(teamRow.slice(actionStart, labelIndex).includes('shadow-button'), `Grouped action must have shadow: ${label}`);
+  }
+  const removeIndex = teamRow.indexOf('aria-label="הסר מהנבחרת"');
+  assert.ok(removeIndex >= 0);
+  assert.ok(!teamRow.slice(teamRow.lastIndexOf('<button', removeIndex), removeIndex).includes('shadow-button'), 'Inline removal outside the action group stays flat');
   const Home = await load('pages/HomePage.tsx');
   const future = new Date(Date.now() + 86400000).toISOString();
   const state = store.getState();

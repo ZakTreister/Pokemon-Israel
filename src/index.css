@@ -268,10 +268,7 @@
     background: var(--cs-navy);
   }
   .cs-nav-link {
-    @apply relative py-2 text-sm font-bold text-navy-700 transition-colors;
-  }
-  .cs-nav-construction {
-    @apply pt-4;
+    @apply relative inline-flex h-10 items-center py-2 text-sm font-bold text-navy-700 transition-colors;
   }
   .cs-nav-link::after {
     content: '';
