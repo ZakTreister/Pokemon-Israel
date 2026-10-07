@@ -17,23 +17,51 @@ Do not use:
 - a standalone “עונות” tab
 
 ## Buttons
-Important actions should look intentionally actionable and prominent.
+All actual buttons in management and tournament-operation UI must look like buttons.
 
-Use the existing CardSchool button system and the existing/available `shadow-button` visual treatment for primary/high-value actions such as:
-- create team
-- open internal tournament
-- save/submit
-- start next round
-- close tournament
+Use the CardSchool button system consistently and apply the visible `shadow-button` treatment to all normal action buttons, not only a small subset of “primary” actions.
+
+This includes, for example:
+- create
+- save / submit
+- edit
+- delete
+- open tournament
 - historical result entry
-- upload/select image where appropriate
+- start round / next round
+- close tournament
+- back
+- filter/apply actions
+- upload/select image
+- modal actions
 
-Do not apply oversized emphasis to tiny icon-only utility actions when it would harm hierarchy.
+Primary/destructive/secondary variants may differ in emphasis, but they must still have a clear button surface/elevation and must not look like plain text links.
+
+Tiny icon-only controls may remain compact, but should still use the project button component/surface rather than appearing as unstyled icons.
 
 ## Back navigation
 Every nested management page must provide an obvious way to return to the previous/parent context.
 
+There must be **one clear back control only** in the page chrome/content hierarchy.
+Do not render duplicate back buttons for the same navigation action.
+
 Do not rely only on the browser back button.
+
+## User-facing errors
+Technical/network errors must not be shown raw to users.
+
+Display short Hebrew messages that answer two things:
+1. what happened
+2. what the user should do now / whether they may continue safely
+
+Examples of intended behavior:
+- failed mutation/save: explain that the change was not saved, ask the user to check the connection and retry, and tell them not to perform dependent actions until save succeeds
+- live WebSocket disconnect while server data is otherwise available: explain briefly that live updates were disconnected and that automatic reconnection is being attempted; the user may continue viewing
+- failed page/data load: explain that loading failed and suggest retrying/reloading
+
+Do not expose Axios error objects, stack traces, HTTP jargon, or raw English network messages.
+
+Keep error copy concise.
 
 ## Section persistence
 When navigating within team-related history/settings/details, the sidebar/tab state remains on **נבחרות All-Stars**.

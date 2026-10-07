@@ -11,6 +11,23 @@ Existing legacy links may remain backward compatible.
 The approved main site menu and the homepage content defined in `docs/product/navigation-content.md` and `docs/product/homepage.md` are now part of Stage A.
 They are not deferred to a later polish phase.
 
+## 2026-10 — All buttons should look prominent
+In management and tournament operation screens, every real action button should use the CardSchool button component/surface with visible `shadow-button` styling.
+Do not reserve the prominent treatment only for a few primary buttons.
+Hierarchy may still differ by variant, but buttons must not look like plain links.
+
+## 2026-10 — Nested pages use one back action
+Provide one clear back control on nested management/team/tournament pages.
+Do not show duplicate back buttons for the same navigation action.
+
+## 2026-10 — Network errors are user-facing Hebrew states
+Raw technical network errors must never be the primary user message.
+Show a short Hebrew explanation plus the required next action and whether normal work may continue safely.
+
+## 2026-10 — Result submission has an explicit saving state
+After a tournament match result is submitted and before server confirmation, show **שומר את התוצאה…** (or equivalent) rather than “לא הוזנה תוצאה”.
+On failure, clearly state that the result was not saved and allow retry.
+
 ## 2026-10 — One management area
 The user-facing management concept is only **ניהול**.
 Remove/avoid **ניהול משותף** as a separate management area.

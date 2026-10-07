@@ -48,6 +48,39 @@ The intended tournament engine is server-backed Swiss.
 - Valid result shapes include 1-0 when applicable.
 - Results must support normal Bo3 outcomes and draws.
 
+### Result save state
+Submitting a match result is asynchronous and the UI must show that state explicitly.
+
+Immediately after submit:
+- do NOT temporarily show “לא הוזנה תוצאה למשחק זה”
+- show a concise saving state such as **שומר את התוצאה…**
+- prevent accidental duplicate submission while that save is in flight
+
+After confirmed server success:
+- show the canonical saved result
+
+If save fails:
+- restore an editable/retryable state
+- show a short Hebrew error explaining that the result was not saved
+- tell the judge what to do next
+- do not pretend the result is committed
+
+### Mobile tournament management layout
+Tournament operation on mobile must be intentionally designed, not merely the desktop layout stacked vertically.
+
+Requirements:
+- balanced, symmetrical spacing
+- player/winner controls should have equal visual weight
+- result/score controls must be easy to tap and not squeezed
+- use a consistent grid/stack appropriate to viewport width
+- avoid awkward uneven button widths
+- keep the primary action easy to reach
+- no horizontal overflow
+- preserve RTL reading order
+- statuses/errors/saving indicators should not cause disruptive layout jumps
+
+On very narrow screens, prefer clean full-width stacking over compressed multi-column controls.
+
 ### Standings
 Swiss standings use:
 - Points
@@ -95,6 +128,21 @@ Expected behavior:
 Remove the normal-user **refresh from server** button.
 A browser refresh or fresh navigation still works by loading state from the server.
 
+### Network and live-sync errors
+Do not show raw “Network Error” or similar technical messages.
+
+Use concise Hebrew messaging based on what actually failed.
+
+Examples:
+- save/result mutation failed:
+  - **לא הצלחנו לשמור את התוצאה. בדוק את החיבור ונסה שוב. אל תעבור לסבב הבא עד שהשמירה תצליח.**
+- live Socket.IO connection dropped but current state remains visible:
+  - **העדכון החי נותק. אפשר להמשיך לצפות; אנחנו מנסים להתחבר מחדש.**
+- initial tournament load failed:
+  - **לא הצלחנו לטעון את הטורניר. בדוק את החיבור ונסה שוב.**
+
+Equivalent shorter copy is acceptable if it preserves the same meaning.
+
 ### Concurrency
 Multiple judges may enter match results.
 Structural operations such as starting/creating a round must be protected against duplicate execution by server-side versioning/locking/atomic transition logic.
@@ -117,7 +165,7 @@ Do not create a separate “internal tournaments” tab merely to expose this hi
 
 When a user enters tournament history or another team-specific subpage, the management navigation should remain in the **נבחרות All-Stars** context, except when the user enters the actual tournament-management screen itself.
 
-Always provide a clear back-navigation action.
+Always provide a clear back-navigation action, and do not render duplicate back actions for the same page.
 
 ## Historical internal-team result entry
 Stage A requires manual historical entry for already-completed internal team tournaments.

@@ -23,10 +23,12 @@ Read:
 - `docs/decisions.md`
 
 ## Existing Stage A functionality
-The prior iteration implemented persisted All Stars internal tournament functionality.
+The prior iterations implemented persisted All Stars internal tournament functionality and much of the Stage A public/management shell.
 
-In particular, historical internal-tournament result entry is believed to already exist.
-Inspect the current code first.
+Inspect the current code before making changes.
+Reuse and correct existing functionality rather than creating parallel implementations.
+
+Historical internal-tournament result entry is believed to already exist.
 If present, preserve and integrate it in the team context rather than creating a duplicate screen or route.
 
 ## Required corrections / completion work
@@ -49,7 +51,8 @@ Remove:
 Nested team pages/history remain visibly under **נבחרות All-Stars**.
 Actual tournament management may use the **טורנירים** context.
 
-Always provide a clear back action on nested pages.
+Every nested page gets exactly one clear back action.
+Fix any current page that renders two back buttons for the same navigation action.
 
 ### 2. Remove old Season coupling
 Season is now a badge-domain concept only.
@@ -125,14 +128,52 @@ Use the existing Socket.IO infrastructure for active tournament synchronization:
 
 Preserve the existing concurrency/version protections around structural tournament operations.
 
-### 8. Team roster actions
+### 8. Tournament network-error UX
+Fix the current raw/technical network-error experience.
+
+For tournament management:
+- catch request/network failures
+- never show raw “Network Error”/Axios text as the primary message
+- show short Hebrew copy
+- tell the judge whether the attempted change was saved
+- tell the judge what to do next
+- tell them when they may safely continue
+
+Use the behavior/copy principles in `docs/product/tournaments.md` and `docs/product/management-ui.md`.
+
+Socket disconnect and failed mutation are different states and must not be presented as the same error.
+
+### 9. Match-result saving state
+After the judge submits a result:
+- immediately show **שומר את התוצאה…** or equivalent
+- do not show “לא הוזנה תוצאה למשחק זה” during the in-flight save
+- prevent duplicate submission
+- after server success, show canonical saved result
+- on failure, show concise Hebrew failure/retry state and keep the result editable
+
+### 10. Tournament mobile layout
+Improve the tournament-management layout specifically for mobile.
+
+Requirements:
+- balanced/symmetrical winner buttons
+- coherent score/result fields
+- consistent widths and spacing
+- large enough touch targets
+- no squeezed controls
+- no horizontal overflow
+- clean RTL order
+- stable saving/error/status areas that do not make controls jump around
+
+Prefer clean full-width stacking on very narrow devices over compressed multi-column layout.
+
+### 11. Team roster actions
 Staff must be able to remove/unassign a player from a team.
 
 Keep team-transfer behavior coherent and preserve the rule that a player belongs to at most one active team at a time.
 
 Do not allow deactivating a team while active players are still assigned.
 
-### 9. Mobile management UX
+### 12. Mobile management UX
 Make the management navigation closable on mobile:
 - visible close affordance
 - close after navigation
@@ -141,13 +182,20 @@ Make the management navigation closable on mobile:
 
 Fix the create-team form on mobile so it lays out cleanly without squeezed controls or horizontal overflow.
 
-### 10. Button styling
-Important management actions should use the CardSchool prominent button styling, including the `shadow-button` treatment where appropriate.
+### 13. Button styling — all buttons
+The previous “important actions” wording was too weak.
 
-Do this consistently without turning minor icon controls into oversized primary actions.
+In management and tournament-operation UI, **all actual buttons** must receive the CardSchool button surface and visible `shadow-button` treatment.
 
-### 11. Reusable Cloudinary image upload
-Implement the reusable Cloudinary-backed image-upload flow described in `docs/architecture/media-upload.md`.
+This includes normal, secondary and destructive action buttons.
+Variants may differ by semantic styling, but buttons must still look clickable and elevated.
+
+Fix existing flat/plain action buttons throughout the Stage A management/tournament surfaces.
+
+Tiny icon-only controls may stay compact, but still use the button component/surface.
+
+### 14. Reusable Cloudinary image upload
+Implement/preserve the reusable Cloudinary-backed image-upload flow described in `docs/architecture/media-upload.md`.
 
 Required Stage A integration:
 - team logo upload during team creation/editing
@@ -158,8 +206,8 @@ The repository/deployment owner will provide Cloudinary environment variables in
 
 Never expose the API secret to the frontend.
 
-### 12. Main public site navigation
-Implement the approved main menu exactly as defined in `docs/product/navigation-content.md`.
+### 15. Main public site navigation
+Implement/preserve the approved main menu exactly as defined in `docs/product/navigation-content.md`.
 
 Stage A menu:
 - **ניהול** — staff only
@@ -178,7 +226,7 @@ Requirements:
 - do not implement store commerce
 - do not invent CMS infrastructure for the static pages
 
-### 13. Events and News public entry points
+### 16. Events and News public entry points
 Reuse existing capabilities rather than creating duplicate systems.
 
 #### אירועים
@@ -197,7 +245,7 @@ Use existing Updates as the basis for:
 Manual publishing remains sufficient for Stage A.
 Do not implement WhatsApp ingestion.
 
-### 14. Homepage — All Stars
+### 17. Homepage — All Stars
 Remove the top-decks section.
 
 Show up to four active All Stars teams.
@@ -208,7 +256,7 @@ Because inter-team competition is not yet implemented:
 - show only real derivable data such as logo, name, player count and completed internal-tournament count
 - prepare the API/component for later real inter-team standings/win-rate data
 
-### 15. Homepage — national leaders
+### 18. Homepage — national leaders
 Show a table of the leading regular/club children from the national lifetime ranking.
 
 Requirements:
@@ -216,7 +264,7 @@ Requirements:
 - use canonical ranking data
 - link to the full **הליגה הישראלית** page
 
-### 16. Homepage — upcoming club tournament
+### 19. Homepage — upcoming club tournament
 Show the nearest upcoming regular/club tournament/event.
 
 Requirements:
@@ -225,7 +273,7 @@ Requirements:
 - show registration CTA/link when available
 - link to the event details
 
-### 17. Homepage — news and action cards
+### 20. Homepage — news and action cards
 Implement:
 - running/top news banner using Updates/News
 - **הרשמה לחוג הקרוב לביתכם** card linking to the configured Rav Messer destination
@@ -233,14 +281,14 @@ Implement:
 
 Keep external URLs configurable rather than burying them in business logic when practical.
 
-### 18. Homepage visual quality
+### 21. Homepage visual quality
 Keep the existing CardSchool visual system.
 
 Requirements:
 - responsive RTL layout
 - strong visual hierarchy
 - cards should feel intentional, not default/plain
-- important CTA buttons should use the site's prominent/`shadow-button` treatment where appropriate
+- buttons follow the Stage A button styling rules
 - remove obsolete top-deck homepage logic if it is no longer used
 
 ## Existing Stage A core behavior that must remain working
