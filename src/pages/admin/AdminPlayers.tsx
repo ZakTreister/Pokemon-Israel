@@ -246,7 +246,7 @@ export default function AdminPlayers() {
 
         <div className="flex flex-wrap gap-2">
           <span className="text-sm font-medium ml-2 leading-8">סוג:</span>
-          <Button
+          <Button contextual
             size="sm"
             variant={filterType === 'all' ? 'default' : 'outline'}
             onClick={() => setFilterType('all')}
@@ -254,7 +254,7 @@ export default function AdminPlayers() {
           >
             הכל
           </Button>
-          <Button
+          <Button contextual
             size="sm"
             variant={filterType === 'team' ? 'default' : 'outline'}
             onClick={() => setFilterType('team')}
@@ -262,7 +262,7 @@ export default function AdminPlayers() {
           >
             שחקני נבחרת
           </Button>
-          <Button
+          <Button contextual
             size="sm"
             variant={filterType === 'quarterly' ? 'default' : 'outline'}
             onClick={() => setFilterType('quarterly')}
@@ -337,7 +337,7 @@ export default function AdminPlayers() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Button
+                      <Button contextual
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditClick(player)}

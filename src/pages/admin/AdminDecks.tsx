@@ -223,7 +223,7 @@ export default function AdminDecks() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <Button 
+                          <Button contextual
                             variant="outline" 
                             size="sm"
                             onClick={() => handleEditClick(deck)}
@@ -231,7 +231,7 @@ export default function AdminDecks() {
                             <Pencil size={16} className="ml-1" />
                             <span>ערוך</span>
                           </Button>
-                          <Button 
+                          <Button contextual
                             variant="destructive" 
                             size="sm"
                             onClick={() => handleDelete(deck.id)}

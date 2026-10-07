@@ -246,7 +246,7 @@ export default function AdminUsers() {
         <div className="flex flex-wrap gap-2">
           <div>
             <span className="text-sm font-medium ml-2">תפקיד:</span>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterRole === 'all' ? 'default' : 'outline'}
               onClick={() => setFilterRole('all')}
@@ -254,7 +254,7 @@ export default function AdminUsers() {
             >
               הכל
             </Button>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterRole === 'player' ? 'default' : 'outline'}
               onClick={() => setFilterRole('player')}
@@ -262,7 +262,7 @@ export default function AdminUsers() {
             >
               שחקנים
             </Button>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterRole === 'judge' ? 'default' : 'outline'}
               onClick={() => setFilterRole('judge')}
@@ -270,7 +270,7 @@ export default function AdminUsers() {
             >
               שופטים
             </Button>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterRole === 'admin' ? 'default' : 'outline'}
               onClick={() => setFilterRole('admin')}
@@ -329,7 +329,7 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <Button 
+                        <Button contextual
                           variant="outline" 
                           size="sm"
                           onClick={() => handleEditClick(user)}
@@ -337,7 +337,7 @@ export default function AdminUsers() {
                           ערוך
                         </Button>
                         {user.role !== 'admin' && (
-                          <Button 
+                          <Button contextual
                             variant="destructive" 
                             size="sm"
                             onClick={() => handleDeleteUser(user.id)}

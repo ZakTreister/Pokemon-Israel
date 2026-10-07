@@ -270,6 +270,9 @@
   .cs-nav-link {
     @apply relative py-2 text-sm font-bold text-navy-700 transition-colors;
   }
+  .cs-nav-construction {
+    @apply pt-4;
+  }
   .cs-nav-link::after {
     content: '';
     position: absolute;

@@ -112,6 +112,9 @@ try {
   }
   assert.ok(!publicHeader.includes('href="/manage"'));
   assert.equal((publicHeader.match(/בהקמה/g) || []).length, 3);
+  assert.equal((publicHeader.match(/absolute top-0 left-0 rounded-full border border-blue-500/g) || []).length, 3);
+  assert.equal((publicHeader.match(/cs-nav-construction/g) || []).length, 3);
+  assert.ok(!publicHeader.includes('shadow-button'), 'Header controls use contextual styling');
   assert.ok(render(Header, '/', 'judge').includes('href="/manage"'));
   const Manage = await load('pages/manage/ManageDashboardPage.tsx');
   for (const role of ['admin', 'judge']) {
@@ -154,10 +157,14 @@ try {
     'live',
   ]) {
     assert.match(
-      render(Button, '/', null, {}, { variant, children: 'פעולה' }),
+      render(Button, '/', null, {}, { variant, contextual: false, children: 'פעולה' }),
       /shadow-button/,
     );
   }
+  for (const variant of ['default', 'outline', 'destructive', 'cta', 'live']) {
+    assert.ok(!render(Button, '/', null, {}, { variant, contextual: true, children: 'פעולה' }).includes('shadow-button'));
+  }
+  assert.ok(!render(Button, '/', null, {}, { size: 'icon', children: 'סגור' }).includes('shadow-button'));
   const { requestError } = await vite.ssrLoadModule(
     '/src/utils/requestError.ts',
   );

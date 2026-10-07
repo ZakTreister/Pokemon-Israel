@@ -77,7 +77,7 @@ export default function MatchEditor({
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {(['player1', 'draw', 'player2'] as const).map((value) => (
-              <Button
+              <Button contextual
                 key={value}
                 aria-pressed={winner === value}
                 className="min-h-12 h-auto whitespace-normal break-words py-3 w-full"
