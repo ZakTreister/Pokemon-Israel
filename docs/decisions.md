@@ -11,10 +11,19 @@ Existing legacy links may remain backward compatible.
 The user-facing management concept is only **ניהול**.
 Remove/avoid **ניהול משותף** as a separate management area.
 
-## 2026-10 — Seasons are mainly for badges
+## 2026-10 — Management labels
+Use:
+- **סקירה כללית** as the first management item
+- **נבחרות All-Stars** instead of “נבחרות וסגלים”
+- **טורנירים** instead of “טורנירים רגילים”
+
+Do not expose a separate “טורנירים פנימיים” management tab.
+
+## 2026-10 — Seasons are only a badge-domain concept
 There are roughly 3-4 Seasons per year.
 Season transitions are performed by super-admin from the Badges page.
 Season changes do not reset any rankings.
+Remove the standalone Seasons page and remove old Season coupling from teams, tournaments and rankings.
 
 ## 2026-10 — Team competition year is separate from Season
 All Stars/team competitive scoring accumulates through a competition year and resets around September 1 through an explicit super-admin action.
@@ -38,14 +47,33 @@ Team-player child profiles are linked only through the team page.
 No global child directory.
 Club players have no public individual profile.
 
-## 2026-10 — Historical Excel import deferred
-The future regular-tournament Excel file is expected to contain first name, last name, city and score, but its exact structure is unknown.
-Do not implement the regular Excel importer until the actual file is available.
-It applies only to regular tournaments, not team games.
+## 2026-10 — Tournament deletion is super-admin hard delete
+Super-admin may permanently delete any tournament, including completed tournaments, across all tournament types.
+Judges may not hard-delete tournaments.
+Because rankings are derived from tournament/result data, deleted tournaments must stop contributing to ranking calculations.
+Deletion must also clean up or avoid orphaned dependent tournament state.
 
-## 2026-10 — Internal tournament retro entry is separate
-Stage A must support entering historical results for internal team tournaments that occurred on Sunday 2026-10-04.
-This is not the future regular Excel import.
+## 2026-10 — One unified tournament-management list
+The management Tournaments page contains all tournament types:
+- internal team tournaments
+- inter-team encounters
+- regular/club tournaments
+
+It must support filtering by lifecycle/status and by tournament type.
+Users with management permission may open the relevant tournament-management page.
+
+## 2026-10 — Internal historical tournament entry stays under the team
+Historical internal-team result entry is a team-context action, not a separate management tab.
+If the capability already exists in the codebase, preserve and reuse it rather than reimplementing a duplicate flow.
+
+## 2026-10 — Regular historical Excel import deferred
+A future button/placeholder belongs on the unified Tournaments page for importing roughly the last five years of regular/club tournament results via Excel.
+The actual Excel importer is NOT part of Stage A and must not be implemented until the real file is available and inspected.
+
+## 2026-10 — Live tournament updates use WebSocket/Socket.IO
+Normal tournament operation should update live via the existing Socket.IO infrastructure.
+Remove the manual “refresh from server” button from normal UX.
+Initial page load/refresh still fetches canonical server state.
 
 ## 2026-10 — Homepage team stats must be real
 Do not calculate team win rate from internal tournaments.
@@ -54,6 +82,11 @@ Stage A may show active teams without pretending they are competitively ranked.
 
 ## 2026-10 — Badge administration is super-admin only
 The Badges page, badge definition management and Season transition UX are restricted to the super-admin unless changed later.
+
+## 2026-10 — Cloudinary is the reusable image-upload provider
+Stage A introduces a reusable image-upload capability backed by Cloudinary.
+The first required use is team logos, but the same abstraction should support future child photos, badge images, news images and other media.
+Cloudinary secrets must never be exposed to the browser.
 
 ## 2026-10 — News Phase 1 is manual
 Use the existing Updates capability as the basis for News.

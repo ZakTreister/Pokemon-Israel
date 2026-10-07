@@ -3,7 +3,40 @@
 ## Tournament types
 - `team_internal`: internal tournament for one All Stars team
 - `inter_team`: official encounter between teams
-- `quarterly`: regular/club tournament (legacy name currently used by the project)
+- `quarterly`: regular/club tournament (legacy internal name currently used by the project)
+
+## Unified management page
+The user-facing management page is **טורנירים** and contains all tournament types.
+
+Do not expose a separate **טורנירים פנימיים** management tab.
+
+The unified list must support:
+- all tournaments
+- filter by lifecycle/status: upcoming/future, active/in progress, completed
+- filter by tournament type
+- opening the relevant tournament-management page when the current user has permission
+- super-admin hard delete for any tournament, including completed tournaments
+
+If the underlying schema uses slightly different internal status names, the UI should still expose the product concepts above clearly.
+
+## Deletion
+Super-admin only may hard-delete tournaments.
+
+This applies to:
+- regular/club tournaments
+- internal team tournaments
+- inter-team tournaments
+- completed tournaments
+
+The previous rule that past/completed tournaments cannot be deleted is superseded.
+
+Deletion must:
+- permanently remove the tournament
+- remove/clean dependent tournament state or embedded rounds/results
+- ensure deleted results no longer contribute to derived rankings
+- avoid orphaned references
+
+Judges must not receive hard-delete permission.
 
 ## Shared tournament-engine requirements
 The intended tournament engine is server-backed Swiss.
@@ -49,6 +82,19 @@ Every material mutation must persist to the server:
 
 Refreshing, leaving the page, or opening the tournament from another device must reload the current server state.
 
+### Live synchronization
+Use the project's existing Socket.IO infrastructure for live tournament updates.
+
+Expected behavior:
+- initial page entry fetches canonical server state
+- the client subscribes to the tournament's live channel/room
+- after canonical server mutations, connected tournament clients receive an update event
+- clients reconcile to the server state
+- multiple judges can see new results/state without pressing a manual refresh button
+
+Remove the normal-user **refresh from server** button.
+A browser refresh or fresh navigation still works by loading state from the server.
+
 ### Concurrency
 Multiple judges may enter match results.
 Structural operations such as starting/creating a round must be protected against duplicate execution by server-side versioning/locking/atomic transition logic.
@@ -64,6 +110,33 @@ Internal team tournaments are the source for:
 - internal team-player ranking
 - overall All Stars player ranking, according to the ranking spec
 
+### Internal tournament history
+Internal tournament history belongs under the relevant team context.
+
+Do not create a separate “internal tournaments” tab merely to expose this history.
+
+When a user enters tournament history or another team-specific subpage, the management navigation should remain in the **נבחרות All-Stars** context, except when the user enters the actual tournament-management screen itself.
+
+Always provide a clear back-navigation action.
+
+## Historical internal-team result entry
+Stage A requires manual historical entry for already-completed internal team tournaments.
+
+This capability is expected to already exist or be substantially implemented after the prior Stage A iteration.
+Codex should inspect the current implementation first and:
+- preserve/reuse it if present
+- fix/integrate it if incomplete
+- do not create a duplicate standalone workflow
+
+The entry point belongs on the relevant team page/history area.
+
+It is:
+- manual
+- team-specific
+- not Excel-based
+- stored as a completed `team_internal` tournament
+- included in the same ranking source-of-truth model as normal internal tournaments
+
 ## Inter-team encounters
 When implemented:
 - pairings must not pair teammates against one another in the team-vs-team context
@@ -71,24 +144,20 @@ When implemented:
 - team league scoring follows the dedicated ranking rules
 
 ## Regular / club tournaments
-Regular tournaments remain separate from the team tournament world.
+Regular tournaments remain separate from the team tournament world for scoring purposes.
 They do not depend on badge Seasons.
 Their player ranking accumulates over the player's lifetime.
 
-## Historical data
-Two different historical-entry needs exist:
+## Future regular-tournament historical import
+The unified **טורנירים** page should reserve a visible future action/button for importing historical regular/club tournament results from approximately the last five years.
 
-### Stage A internal-team retro entry
-The system must support entering results for internal team tournaments that already occurred on Sunday 2026-10-04.
-This is not the Excel import described below.
+Stage A must NOT implement the Excel workflow itself.
 
-### Future regular-tournament Excel import
-A future Excel import will apply only to regular/club tournaments.
-Known columns are expected to include at least:
+Known future Excel fields are expected to include at least:
 - first name
 - last name
 - city
 - score/points
 
 It is not yet known whether the file will contain one lifetime aggregate row per player or tournament-by-tournament data.
-Do not design or implement that Excel importer until the actual file is available and inspected.
+Do not design the actual importer until the real file is available and inspected.

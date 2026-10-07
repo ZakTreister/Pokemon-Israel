@@ -1,194 +1,213 @@
 # Stage A — Internal All Stars Tournament MVP
 
 ## Goal
-Deliver the first operational version of Cardschool IL for All Stars internal team tournaments.
+Deliver the first operational version of Cardschool IL for All Stars internal team tournaments, and complete the Stage A corrections required after the first Codex implementation.
 
-A staff member must be able to create a team, load children into it, start an internal tournament from the team page, run the entire Swiss event with server persistence, close it, and later see the resulting player/team information without losing state.
-
-Read the product specs referenced below before coding.
+The current repository already contains a substantial Stage A implementation.
+Inspect and reuse what exists before changing it.
+Do not rebuild completed functionality from scratch.
 
 ## Required product specs
+Read:
 - `docs/product/overview.md`
 - `docs/product/teams.md`
 - `docs/product/players.md`
 - `docs/product/tournaments.md`
 - `docs/product/rankings.md`
+- `docs/product/badges-seasons.md`
 - `docs/product/homepage.md`
+- `docs/product/navigation-content.md`
+- `docs/product/management-ui.md`
+- `docs/architecture/media-upload.md`
 - `docs/decisions.md`
 
-## Scope
+## Existing Stage A functionality
+The prior iteration implemented persisted All Stars internal tournament functionality.
 
-### 1. Team foundation
-Make the existing team implementation suitable for Stage A.
+In particular, historical internal-tournament result entry is believed to already exist.
+Inspect the current code first.
+If present, preserve and integrate it in the team context rather than creating a duplicate screen or route.
 
-Required:
-- team creation including a logo/emblem field
-- active roster management
-- create/load team children as Player records without requiring child login/User accounts
-- assign/transfer/remove team players as needed
-- remove the current global “active Season blocks team changes” behavior
-- prevent invalid deactivation of a team that still has active assigned players
-- keep existing data backward compatible
+## Required corrections / completion work
 
-Do not implement national-ID storage in Stage A.
+### 1. Management navigation cleanup
+Use one management area.
 
-### 2. Unified management UX relevant to Stage A
-There must be one user-facing **ניהול** area for staff.
-Do not show a separate **ניהול משותף** concept.
-Judges/admins should see only the Stage A management options they are authorized to use.
+Required labels/order:
+1. **סקירה כללית**
+2. **נבחרות All-Stars**
+3. **טורנירים**
+4. remaining authorized items
 
-Do not spend this stage rebuilding unrelated admin pages.
+Remove:
+- standalone **טורנירים פנימיים**
+- standalone **עונות**
+- old **נבחרות וסגלים** wording
+- old **טורנירים רגילים** wording
 
-### 3. Team page
-Provide a team page that:
-- displays logo, name and active roster
-- exposes a staff-only action to **פתח טורניר פנימי**
-- links to team-player child profiles only if those profiles are implemented as part of the existing code path; a full rich profile is not required for the MVP unless needed by current UI
+Nested team pages/history remain visibly under **נבחרות All-Stars**.
+Actual tournament management may use the **טורנירים** context.
 
-No child login.
+Always provide a clear back action on nested pages.
 
-### 4. Create internal tournament from team
-Opening a tournament from the team page must:
-- create a canonical `team_internal` tournament linked to the team
-- preload all active players on that team as participants
-- use Player references for this new tournament flow
-- let the judge remove absent participants before round 1
-- prevent participant removal/addition after competitive rounds begin
+### 2. Remove old Season coupling
+Season is now a badge-domain concept only.
 
-Do not force the new internal-tournament flow through legacy `participants.user` semantics.
+Remove the standalone Seasons page and management link.
+Remove legacy Season restrictions/coupling from teams, rosters, tournaments and ranking logic.
 
-### 5. Server-backed Swiss engine
-Implement the previously specified Swiss behavior as a real persisted server workflow.
+Do not delete the Season concept if badge history/transitions need it.
 
-Required behavior:
-- best of 3 matches
-- choose player winner or Draw, then choose score
-- support 1-0 results where valid
-- standings: Points, OMP, GWP, OGP
-- server-canonical pairing and standings calculations
-- pair another round
-- show results between rounds
-- continue pairing after viewing results
-- return to/edit a previous round
-- handle downstream state consistently when an earlier result is corrected
+Season transition belongs under the super-admin Badges page.
 
-The backend is the source of truth.
+A Season transition must not reset ranking.
 
-### 6. Persistence and resume
-Persist every important tournament mutation immediately.
+### 3. Unified Tournaments management page
+The **טורנירים** management page must show every tournament type:
+- regular/club
+- internal team
+- inter-team
 
-A judge must be able to:
-- refresh the browser
-- leave the tournament page
-- log in from another browser/device
+Provide filters for:
+- lifecycle/status: future/upcoming, active/in progress, completed
+- tournament type
 
-and reload the current tournament state from the server.
+If the current user has tournament-management permission, they can enter the relevant management screen.
 
-Do not rely on localStorage for tournament state.
+Do not expose a separate internal-tournament management tab.
 
-### 7. Multiple judges / structural safety
-Multiple staff members may enter results.
+### 4. Super-admin hard delete
+Super-admin may hard-delete any tournament, including completed/past tournaments.
 
-Implement protection against duplicate structural operations:
-- starting the same round twice
-- generating duplicate pairings
-- conflicting round transitions
+Apply this to all tournament types.
 
-Use an appropriate server-side version/lock/atomic transition approach compatible with the project's current Mongo deployment.
-Do not require Mongo transactions/replica-set support if the repository is intentionally using standalone Mongo; use safe atomic updates/manual rollback patterns as needed.
+Remove the old backend restriction that prevents deleting past tournaments.
 
-### 8. Close tournament
-Staff can explicitly close/end the tournament.
+Judges must not have hard-delete permission.
 
-Closing must:
-- validate that the tournament can be completed
-- mark it completed
-- preserve participants, rounds, matches/results and final standings
-- make its results available to All Stars player ranking calculations
-- make the closed state survive refresh/restart
+Deletion must clean dependent state and ensure deleted results no longer affect derived rankings.
 
-### 9. All Stars player ranking needed by Stage A
-Internal team tournaments must provide enough canonical result data to calculate:
-- each player's ranking inside the team
-- overall All Stars player ranking
+### 5. Internal historical tournament entry
+This is mandatory Stage A functionality and is expected to already exist.
 
-For Stage A these rankings are based on completed internal team tournaments.
-Do not use badge Seasons to reset these scores.
+Do NOT create a separate historical-tournaments tab.
 
-The annual team competition-year reset around September 1 is a product requirement, but a complete annual-reset administration feature is not required unless needed by the current Stage A implementation. Do not couple score to Season.
+The action belongs on the relevant team page/team tournament history.
 
-### 10. Retrospective internal tournament entry
-Provide a focused manual way to enter the already-completed internal team tournaments from Sunday 2026-10-04.
+Inspect the current implementation:
+- preserve it if correct
+- move/integrate it if currently placed incorrectly
+- fix only gaps needed for the current product spec
+- do not duplicate the workflow
 
-This is for `team_internal` tournaments only.
+It remains manual, not Excel-based.
 
-Requirements:
-- staff chooses the team and historical date
-- select the participating team players
-- enter enough final tournament result data to reproduce the player ranking impact
-- save it as a completed historical internal tournament
-- clearly distinguish historical/manual entry in data if useful
-- use the same ranking source-of-truth model as normal completed internal tournaments
+### 6. Future regular historical Excel action
+On the unified **טורנירים** page, reserve a visible future action/button for importing approximately five years of historical regular/club tournament results.
 
-Do NOT implement the future regular-tournament Excel importer in this stage.
+Stage A:
+- show the future action/placeholder as appropriate
+- do NOT implement Excel parsing/import
+- do NOT guess the file structure
 
-If full round-by-round historical information is available in the UI/data, it may be entered, but do not block the MVP on reconstructing pairings that are not known.
+The actual importer will be designed after the real Excel file is received.
 
-### 11. Homepage All Stars section
-Replace/remove the existing top-decks homepage section.
+### 7. Live tournament updates
+Remove the normal-user **refresh from server** button.
 
-Add an All Stars team section showing up to four active teams.
+Use the existing Socket.IO infrastructure for active tournament synchronization:
+- canonical initial fetch on entry
+- subscribe to tournament-specific live updates
+- emit/update clients after canonical server mutations
+- keep server state authoritative
+- browser refresh continues to work normally
 
-Because Stage A does not yet implement official inter-team encounters:
-- do not fabricate a competitive team ranking
-- do not calculate win percentage from internal tournaments
-- show team logo/name and statistics actually available, such as player count and completed internal-tournament count
-- structure the component/API so it can later use true inter-team standings, games played and win rate
+Preserve the existing concurrency/version protections around structural tournament operations.
 
-### 12. Remove Stage A child-login assumptions
-The existing app currently has child/player dashboard assumptions.
+### 8. Team roster actions
+Staff must be able to remove/unassign a player from a team.
 
-For Stage A:
-- no navigation CTA should invite children to log in
-- new team-player creation must not create a login
-- do not build Deck/Pokémon self-edit flows
-- keep staff authentication intact
+Keep team-transfer behavior coherent and preserve the rule that a player belongs to at most one active team at a time.
 
-Avoid destructive removal of legacy auth data unless necessary; compatibility is preferable.
+Do not allow deactivating a team while active players are still assigned.
+
+### 9. Mobile management UX
+Make the management navigation closable on mobile:
+- visible close affordance
+- close after navigation
+- no content trapping/overlay issues
+- RTL-safe
+
+Fix the create-team form on mobile so it lays out cleanly without squeezed controls or horizontal overflow.
+
+### 10. Button styling
+Important management actions should use the CardSchool prominent button styling, including the `shadow-button` treatment where appropriate.
+
+Do this consistently without turning minor icon controls into oversized primary actions.
+
+### 11. Reusable Cloudinary image upload
+Implement the reusable Cloudinary-backed image-upload flow described in `docs/architecture/media-upload.md`.
+
+Required Stage A integration:
+- team logo upload during team creation/editing
+
+Build it as reusable infrastructure for future image consumers.
+
+The repository/deployment owner will provide Cloudinary environment variables in `.env`.
+
+Never expose the API secret to the frontend.
+
+### 12. Team/homepage behavior
+Preserve the Stage A homepage All Stars section.
+
+Do not fabricate true team win rate/ranking from internal tournaments.
+Until inter-team competition exists, show only statistics that are actually derivable.
+
+## Existing Stage A core behavior that must remain working
+Do not regress:
+- team creation
+- team roster loading
+- Player-based team participants
+- open internal tournament from team
+- preload team roster
+- remove absent participants before round 1
+- server-backed Swiss pairing/results
+- Bo3 result entry including valid 1-0 outcomes
+- Points / OMP / GWP / OGP standings
+- server persistence
+- resume after refresh
+- multi-judge-safe structural transitions
+- close tournament
+- internal tournament ranking contribution
+- manual historical internal-team result entry if already implemented
+- no child login
 
 ## Out of scope for Stage A
-Do NOT implement these merely because they exist in the product docs:
-- Deck/Pokémon team-player profile editing
-- child self-service/player dashboard
+Do NOT implement:
+- regular historical Excel import logic
+- Deck/Pokémon child self-editing
+- child login/self-service
 - national-ID storage/encryption
-- regular tournament Excel import
 - WhatsApp Channel ingestion
 - full News redesign
-- Events redesign beyond changes strictly needed by the tournament flow
 - Store
 - About the League static page
 - Birthday Booking static page
-- full badge/Season redesign
-- annual competition-year reset UI, unless a minimal piece is required to keep ranking semantics correct
-- inter-team encounter engine
-- true team league standings/win rate
-- quarterly/regular tournament overhaul
-
-## Compatibility
-Existing public regular tournaments, rankings, updates, decks, legacy users and historical tournament records should not be broken by Stage A.
-
-Where the legacy Tournament schema is User-based, extend/migrate carefully so the new team-internal flow can be Player-based without corrupting old data.
+- inter-team tournament engine beyond existing scaffolding
+- true team league win-rate/standings if inter-team encounters are not implemented
+- annual team competition-year reset UI unless separately requested
 
 ## Verification
-Perform code-level verification appropriate to the repository:
+Perform code-level verification:
 - build
 - lint if configured
-- verify server routes/models compile/start as far as the existing project tooling allows
+- server compile/start checks available in the repository
 
-Do not create a manual click-through test plan or screenshots as part of this task.
+Do not create a manual click-through checklist or screenshots as part of this task.
 
 ## Completion
-When the Stage A implementation is complete:
+When complete:
 - commit the changes
-- push to the working branch requested by the environment/workflow
-- report the final commit SHA and build/lint result
+- push to the requested working branch
+- report final commit SHA
+- report build/lint verification

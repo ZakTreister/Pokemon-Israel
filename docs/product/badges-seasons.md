@@ -25,18 +25,34 @@ A player should not receive the same badge twice within the rules currently enfo
 
 ## Seasons
 There are approximately 3-4 Seasons during a year.
-Seasons are primarily relevant to badges.
+Seasons are primarily a badge-domain concept.
 
 Important:
 - Seasons do NOT reset regular-player scoring.
 - Seasons do NOT reset team-player scoring.
 - Seasons do NOT reset team standings.
+- Seasons do NOT block team creation.
+- Seasons do NOT block roster changes.
+- Seasons do NOT determine tournament eligibility.
+- Seasons do NOT scope tournament scoring.
+
+## No standalone Seasons page
+Remove the standalone user-facing Seasons management page and its management navigation item.
+
+Remove old business logic that couples Season state to:
+- team creation
+- team updates
+- roster management
+- tournament creation
+- tournament scoring/rankings
+
+The Season model may remain if it is useful for badge award history and transitions.
 
 ## Season transition
 The super-admin performs Season transitions manually from the Badges page.
-There is no need for a separate user-facing Season administration page if Season management is fully contained in Badges.
 
 The current Season should be visible on the Badges page.
+Season transition controls belong there.
 
 ## Team competition year is separate
 The annual All Stars scoring cycle that resets around September 1 is a separate concept from Season.
