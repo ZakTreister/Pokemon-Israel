@@ -9,12 +9,13 @@ import {
 } from '../../features/players/playersSlice';
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import PlayerNameFields from '../../features/players/components/PlayerNameFields';
 import {
   Search,
   UserPlus,
   Users,
   AlertCircle,
-  X,
   Pencil,
   ShieldCheck,
   CircleDot,
@@ -363,38 +364,20 @@ export default function AdminPlayers() {
 
       {/* Add Team Player Modal */}
       {showTeamModal && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">הוסף שחקן נבחרת</h3>
-              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
-                <X size={20} />
-              </Button>
-            </div>
+        <Modal title="הוסף שחקן נבחרת" onClose={closeAllModals}>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
                 {formError}
               </div>
             )}
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">שם פרטי *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={teamForm.firstName}
-                  onChange={(e) => setTeamForm({ ...teamForm, firstName: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">שם משפחה *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={teamForm.lastName}
-                  onChange={(e) => setTeamForm({ ...teamForm, lastName: e.target.value })}
-                />
-              </div>
+              <PlayerNameFields
+                firstName={teamForm.firstName}
+                lastName={teamForm.lastName}
+                onChange={(field, value) =>
+                  setTeamForm({ ...teamForm, [field]: value })
+                }
+              />
               <div>
                 <label className="block text-sm font-medium mb-1">עיר (רשות)</label>
                 <input className="w-full px-3 py-2 border rounded-md" value={teamForm.city} onChange={e => setTeamForm({ ...teamForm, city: e.target.value })} />
@@ -409,44 +392,25 @@ export default function AdminPlayers() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Add Quarterly Player Modal */}
       {showQuarterlyModal && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">הוסף שחקן חוגים</h3>
-              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
-                <X size={20} />
-              </Button>
-            </div>
+        <Modal title="הוסף שחקן חוגים" onClose={closeAllModals}>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
                 {formError}
               </div>
             )}
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">שם פרטי *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={quarterlyForm.firstName}
-                  onChange={(e) => setQuarterlyForm({ ...quarterlyForm, firstName: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">שם משפחה *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={quarterlyForm.lastName}
-                  onChange={(e) => setQuarterlyForm({ ...quarterlyForm, lastName: e.target.value })}
-                />
-              </div>
+              <PlayerNameFields
+                firstName={quarterlyForm.firstName}
+                lastName={quarterlyForm.lastName}
+                onChange={(field, value) =>
+                  setQuarterlyForm({ ...quarterlyForm, [field]: value })
+                }
+              />
               <div>
                 <label className="block text-sm font-medium mb-1">חוג</label>
                 <input
@@ -465,44 +429,25 @@ export default function AdminPlayers() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Edit Player Modal */}
       {showEditModal && selectedPlayer && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">עריכת שחקן</h3>
-              <Button variant="outline" size="icon" onClick={closeAllModals} className="text-muted-foreground hover:text-foreground">
-                <X size={20} />
-              </Button>
-            </div>
+        <Modal title="עריכת שחקן" onClose={closeAllModals}>
             {formError && (
               <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
                 {formError}
               </div>
             )}
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">שם פרטי *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={editForm.firstName}
-                  onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">שם משפחה *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={editForm.lastName}
-                  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                />
-              </div>
+              <PlayerNameFields
+                firstName={editForm.firstName}
+                lastName={editForm.lastName}
+                onChange={(field, value) =>
+                  setEditForm({ ...editForm, [field]: value })
+                }
+              />
               <div>
                 <label className="block text-sm font-medium mb-1">חוג</label>
                 <input
@@ -531,8 +476,7 @@ export default function AdminPlayers() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

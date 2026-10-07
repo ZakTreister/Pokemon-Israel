@@ -9,51 +9,16 @@ import type {
   InternalTournament,
   InternalMatch,
   MatchResult,
-  Standing,
 } from '../../types/internalTournament';
 import type { TeamRosterPlayer } from '../../types/team';
 import Button from '../../components/ui/Button';
 import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
+import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
+import ParticipantList from '../../features/tournaments/components/ParticipantList';
+import { participantOptions } from '../../features/tournaments/utils/participantOptions';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
-function Standings({ rows }: { rows: Standing[] }) {
-  const percentage = (value: number | null) =>
-    value === null ? '—' : `${(value * 100).toFixed(2)}%`;
-  return (
-    <div className="overflow-x-auto border rounded-lg">
-      <table className="w-full text-right">
-        <thead className="bg-muted">
-          <tr>
-            {['מקום', 'שחקן', 'Points', 'OMP', 'GWP', 'OGP'].map((h) => (
-              <th key={h} className="p-3">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.player} className="border-t">
-              <td className="p-3">{row.position}</td>
-              <td className="p-3 font-bold">{row.playerName}</td>
-              <td className="p-3">{row.points}</td>
-              <td className="p-3" dir="ltr">
-                {percentage(row.omp)}
-              </td>
-              <td className="p-3" dir="ltr">
-                {percentage(row.gwp)}
-              </td>
-              <td className="p-3" dir="ltr">
-                {percentage(row.ogp)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 export default function InternalTournamentPage() {
   const judge = useAppSelector((state) => state.auth.user?.role === 'judge');
   const { id = '' } = useParams();
@@ -422,41 +387,12 @@ export default function InternalTournamentPage() {
           <p className="text-sm">
             הסירו ילדים חסרים. לאחר תחילת הסיבובים הסגל נעול.
           </p>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
-            {[
-              ...tournament.playerParticipants.map((p) => ({
-                id: p.player,
-                label: p.nameSnapshot,
-              })),
-              ...roster
-                .filter(
-                  (p) =>
-                    !tournament.playerParticipants.some(
-                      (row) => row.player === p.id,
-                    ),
-                )
-                .map((p) => ({
-                  id: p.id,
-                  label: `${p.firstName} ${p.lastName}`,
-                })),
-            ].map((p) => (
-              <label key={p.id} className="border rounded-md p-2">
-                <input
-                  type="checkbox"
-                  disabled={busy}
-                  checked={selected.includes(p.id)}
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked
-                        ? [...selected, p.id]
-                        : selected.filter((value) => value !== p.id),
-                    )
-                  }
-                />{' '}
-                {p.label}
-              </label>
-            ))}
-          </div>
+          <ParticipantList
+            options={participantOptions(tournament.playerParticipants, roster)}
+            selected={selected}
+            disabled={busy}
+            onChange={setSelected}
+          />
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
             <Button
               disabled={busy || selected.length < 2 || !participantsChanged}
@@ -492,7 +428,7 @@ export default function InternalTournamentPage() {
           <h3 className="font-bold text-xl">
             {closed ? 'דירוג סופי' : 'דירוג נוכחי'}
           </h3>
-          <Standings rows={tournament.standings} />
+          <TournamentStandings rows={tournament.standings} />
           <p className="text-xs text-muted-foreground">
             3 נקודות לניצחון, 1 לתיקו. שוברי שוויון: OMP, GWP, OGP. אחוזים שאינם
             ידועים בהזנה היסטורית מוצגים כ־—.
