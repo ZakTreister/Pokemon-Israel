@@ -514,21 +514,21 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
           </div>
           
           <div className="flex gap-2">
-            <Button
+            <Button contextual
               size="sm"
               variant={filterStatus === 'all' ? 'default' : 'outline'}
               onClick={() => setFilterStatus('all')}
             >
               הכל
             </Button>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterStatus === 'upcoming' ? 'default' : 'outline'}
               onClick={() => setFilterStatus('upcoming')}
             >
               קרובים
             </Button>
-            <Button
+            <Button contextual
               size="sm"
               variant={filterStatus === 'completed' ? 'default' : 'outline'}
               onClick={() => setFilterStatus('completed')}
@@ -547,7 +547,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
           {sortedTournaments.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-lg mb-4">לא נמצאו טורנירים התואמים את החיפוש שלך</p>
-              <Button onClick={() => {
+              <Button contextual onClick={() => {
                 setSearchQuery('');
                 setFilterStatus('all');
               }}>
@@ -605,7 +605,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                         </div>
                         
                         <div className="flex justify-end gap-2">
-                          <Button 
+                          <Button contextual
                             variant="outline" 
                             size="sm"
                             onClick={() => handleViewTournament(tournament.id)}
@@ -613,7 +613,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                             <Eye size={16} className="ml-1" />
                             <span>צפה</span>
                           </Button>
-                          <Button 
+                          <Button contextual
                             variant="outline" 
                             size="sm"
                             onClick={() => handleEditTournament(tournament)}
@@ -622,7 +622,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                             <span>ערוך</span>
                           </Button>
                           {tournament.status === 'completed' && (
-                            <Button 
+                            <Button contextual
                               variant="success" 
                               size="sm"
                               onClick={() => handleSubmitResults(tournament.id)}
@@ -634,7 +634,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                           {/* Super-admin may delete any tournament, including completed events. */}
                           {(
                             <>
-                              <Button 
+                              <Button contextual
                                 variant="destructive" 
                                 size="sm"
                                 onClick={() => handleDeleteSingleTournament(tournament)}
@@ -644,7 +644,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                               </Button>
                               
                               {tournament.seriesId && (
-                                <Button 
+                                <Button contextual
                                   variant="destructive" 
                                   size="sm"
                                   onClick={() => handleDeleteSeries(tournament)}
@@ -923,7 +923,7 @@ PlayerB 6
                                   <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-10 max-h-40 overflow-y-auto">
                                     {deckSuggestions[index]?.length > 0 ? (
                                       deckSuggestions[index].map(deck => (
-                                        <Button variant="outline" size="icon"
+                                        <Button contextual variant="outline" size="icon"
                                           key={deck.id}
                                           className="w-full px-3 py-2 text-right hover:bg-muted"
                                           onMouseDown={(e) => e.preventDefault()} // Prevent blur
@@ -933,7 +933,7 @@ PlayerB 6
                                         </Button>
                                       ))
                                     ) : deckInputs[index] && deckInputs[index].trim().length > 0 ? (
-                                      <Button variant="outline" size="icon"
+                                      <Button contextual variant="outline" size="icon"
                                         className="w-full px-3 py-2 text-right hover:bg-muted text-primary"
                                         onMouseDown={(e) => e.preventDefault()} // Prevent blur
                                         onClick={() => handleCreateDeck(index, deckInputs[index].trim())}

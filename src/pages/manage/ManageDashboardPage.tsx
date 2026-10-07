@@ -87,7 +87,7 @@ export default function ManageDashboardPage() {
       <div className="container py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-extrabold">ניהול</h1>
-          <Button
+          <Button contextual
             className="lg:hidden"
             variant="outline"
             size="icon"

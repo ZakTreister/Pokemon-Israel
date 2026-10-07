@@ -22,7 +22,9 @@ export default function Header() {
   const isStaff =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'judge');
   const links = [
-    ...(isStaff ? [{ to: '/manage', label: 'ניהול', construction: false }] : []),
+    ...(isStaff
+      ? [{ to: '/manage', label: 'ניהול', construction: false }]
+      : []),
     { to: '/rankings', label: 'הליגה הישראלית', construction: false },
     { to: '/all-stars', label: 'All Stars', construction: false },
     { to: '/tournaments', label: 'אירועים', construction: false },
@@ -34,6 +36,7 @@ export default function Header() {
   const actions = (
     <>
       <Button
+        contextual
         variant="ghost"
         size="icon"
         onClick={toggleTheme}
@@ -58,6 +61,7 @@ export default function Header() {
             </Badge>
           )}
           <Button
+            contextual
             variant="ghost"
             size="icon"
             onClick={handleLogout}
@@ -68,7 +72,7 @@ export default function Header() {
           </Button>
         </div>
       ) : (
-        <Button asChild size="sm">
+        <Button contextual asChild size="sm">
           <Link to="/login" onClick={() => setIsMenuOpen(false)}>
             כניסת צוות
           </Link>
@@ -86,7 +90,7 @@ export default function Header() {
             onClick={() => setIsMenuOpen(false)}
             aria-label="CardSchool — דף הבית"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold-gradient shadow-button-gold">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold-gradient">
               <Zap size={24} fill="currentColor" />
             </span>
             <span>
@@ -110,14 +114,20 @@ export default function Header() {
                 key={to}
                 to={to}
                 end={to === '/'}
-                className="cs-nav-link"
+                className={`cs-nav-link${construction ? ' cs-nav-construction' : ''}`}
               >
-                {label}{construction && <span className="block text-[9px] text-blue-500 leading-tight">בהקמה</span>}
+                {label}
+                {construction && (
+                  <span className="absolute top-0 left-0 rounded-full border border-blue-500 bg-white px-1.5 text-[9px] font-medium leading-3 text-blue-500">
+                    בהקמה
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
           <div className="hidden items-center gap-1 xl:flex">{actions}</div>
           <Button
+            contextual
             variant="ghost"
             size="icon"
             className="text-navy-700 xl:hidden"
@@ -143,10 +153,15 @@ export default function Header() {
                   key={to}
                   to={to}
                   end={to === '/'}
-                  className="cs-nav-link px-3"
+                  className={`cs-nav-link px-3${construction ? ' cs-nav-construction' : ''}`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {label}{construction && <span className="block text-[9px] text-blue-500 leading-tight">בהקמה</span>}
+                  {label}
+                  {construction && (
+                    <span className="absolute top-0 left-0 rounded-full border border-blue-500 bg-white px-1.5 text-[9px] font-medium leading-3 text-blue-500">
+                      בהקמה
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </nav>

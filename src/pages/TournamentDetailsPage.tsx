@@ -529,7 +529,7 @@ export default function TournamentDetailsPage() {
                               </span>
                             </div>
                             
-                            <Button
+                            <Button contextual
                               variant="destructive"
                               size="sm"
                               onClick={() => handleRemoveParticipant(participantId, participantName)}

@@ -168,7 +168,7 @@ export default function TeamPage() {
                       />
                     ),
                   )}
-                  <Button
+                  <Button contextual
                     type="button"
                     variant="outline"
                     disabled={children.length === 1 || busy}

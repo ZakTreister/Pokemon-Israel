@@ -325,7 +325,7 @@ export default function ManageTeams() {
                           סגל וטורנירים
                         </Link>
                       </Button>
-                      <Button
+                      <Button contextual
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -339,7 +339,7 @@ export default function ManageTeams() {
                         <Edit2 size={16} className="ml-1" />
                         <span>שם וסמל</span>
                       </Button>
-                      <Button
+                      <Button contextual
                         variant="outline"
                         size="sm"
                         onClick={() => handleToggleActive(team)}
@@ -348,7 +348,7 @@ export default function ManageTeams() {
                         <Power size={16} className="ml-1" />
                         <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
                       </Button>
-                      <Button
+                      <Button contextual
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -466,7 +466,7 @@ export default function ManageTeams() {
                             <span>
                               {player.firstName} {player.lastName}
                             </span>
-                            <Button size="icon" variant="outline"
+                            <Button contextual size="icon" variant="outline"
                               onClick={() => handleRemovePlayer(team, player)}
                               disabled={uploading || isSubmitting}
                               className="text-muted-foreground hover:text-destructive transition-colors"

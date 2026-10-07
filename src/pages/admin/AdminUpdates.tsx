@@ -81,14 +81,14 @@ export default function AdminUpdates() {
                         <p className="text-muted-foreground">{update.content}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button 
+                        <Button contextual
                           variant="outline" 
                           size="sm"
                           onClick={() => handleEditClick(update)}
                         >
                           <Pencil size={16} />
                         </Button>
-                        <Button 
+                        <Button contextual
                           variant="destructive" 
                           size="sm"
                         >

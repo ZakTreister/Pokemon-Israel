@@ -81,19 +81,19 @@ export default function TournamentsPage() {
               />
             </div>
             <div className="flex flex-wrap gap-2 pb-1">
-              <Button
+              <Button contextual
                 variant={filterStatus === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('all')}
               >
                 הכל
               </Button>
-              <Button
+              <Button contextual
                 variant={filterStatus === 'upcoming' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('upcoming')}
               >
                 קרובים
               </Button>
-              <Button
+              <Button contextual
                 variant={filterStatus === 'completed' ? 'default' : 'outline'}
                 onClick={() => setFilterStatus('completed')}
               >
@@ -112,7 +112,7 @@ export default function TournamentsPage() {
             {sortedTournaments.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
                 <p className="text-lg text-muted-foreground mb-4">לא נמצאו טורנירים התואמים את החיפוש שלך</p>
-                <Button variant="outline" onClick={() => { setSearchQuery(''); setFilterStatus('all'); }}>
+                <Button contextual variant="outline" onClick={() => { setSearchQuery(''); setFilterStatus('all'); }}>
                   נקה סינון
                 </Button>
               </div>
