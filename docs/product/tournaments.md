@@ -171,16 +171,31 @@ Every material mutation must persist to the server:
 Refreshing, leaving the page, or opening the tournament from another device must reload the current server state.
 
 ### Live synchronization
-Use the project's existing Socket.IO infrastructure for live tournament updates.
+Use the project's existing Socket.IO infrastructure **only inside the operational management screen of a live tournament**.
 
-Expected behavior:
+Expected behavior while an authorized user is actively operating a live tournament:
 - initial page entry fetches canonical server state
-- the client subscribes to the tournament's live channel/room
-- after canonical server mutations, connected tournament clients receive an update event
+- the client subscribes to that tournament's live channel/room
+- after canonical server mutations, connected tournament operators receive an update event
 - clients reconcile to the server state
 - multiple judges can see new results/state without pressing a manual refresh button
 
-Remove the normal-user **refresh from server** button.
+Do **not** keep a WebSocket/Socket.IO connection for:
+- the public site
+- homepage
+- rankings
+- events/news pages
+- management overview
+- tournament list/history pages
+- team/player administration
+- historical tournament entry
+- other non-live-management screens
+
+Those screens use normal HTTP/API loading and explicit refetch/state updates after mutations.
+
+The Socket.IO connection must be created when entering live tournament management and cleaned up when leaving it.
+
+Remove the normal-user **refresh from server** button from live tournament operation.
 A browser refresh or fresh navigation still works by loading state from the server.
 
 ### Network and live-sync errors
