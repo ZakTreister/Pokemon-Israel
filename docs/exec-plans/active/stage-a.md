@@ -122,14 +122,17 @@ Stage A:
 The actual importer will be designed after the real Excel file is received.
 
 ### 7. Live tournament updates
-Remove the normal-user **refresh from server** button.
+Remove the normal-user **refresh from server** button from live tournament operation.
 
-Use the existing Socket.IO infrastructure for active tournament synchronization:
+Use the existing Socket.IO infrastructure **only while the user is inside the operational management screen of a live tournament**:
 - canonical initial fetch on entry
-- subscribe to tournament-specific live updates
-- emit/update clients after canonical server mutations
+- subscribe to that tournament's live updates
+- emit/update connected tournament operators after canonical server mutations
 - keep server state authoritative
+- disconnect/unsubscribe when leaving the live tournament management screen
 - browser refresh continues to work normally
+
+Do not use or keep Socket.IO connections on the public site, management overview/list pages, team/player administration, historical-entry screens, rankings, news/events, or other non-live-tournament screens. Those use HTTP/API fetch/refetch flows.
 
 Preserve the existing concurrency/version protections around structural tournament operations.
 
