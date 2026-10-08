@@ -262,13 +262,14 @@ After paste:
    - OGP
 3. Do not reduce a richer pasted standings row to points only. When recognized standings fields are present, preserve them in the parsed preview and submit them through the historical-result model.
 4. Prefer header-aware parsing: when the pasted table contains column headers, use the header names/order to map values instead of assuming that the first numeric token after the name is the only meaningful value.
-5. Support normal pasted-table separators such as tabs and repeated whitespace, and tolerate percentage formats such as `62.5%` / `62,5%` when unambiguous.
-6. If an optional recognized value cannot be parsed safely, leave that field unresolved/empty and surface the issue in the preview rather than silently assigning it to the wrong column.
-7. try to match every parsed player name to an existing Player record relevant to the selected All Stars team
-8. show the parsed preview before saving
-9. for unresolved or ambiguous rows, require the admin to explicitly choose the correct existing player
-10. do not allow final save while any required player mapping is unresolved
-11. save the completed historical event through the canonical historical `team_internal` result model so it contributes to rankings exactly like other historical internal tournaments
+5. Support normal pasted-table separators such as tabs and repeated whitespace.
+6. For recognized percentage columns `OMP`, `GWP` and `OGP`, accept both explicit percentage formats such as `62.5%` / `62,5%` and bare numeric values between `0` and `100` when the column header makes the meaning unambiguous. Bare values are percentages, not fractions: for example `55.56` must be stored as `0.5556`, `75` as `0.75`, and `100` as `1`.
+7. If an optional recognized value cannot be parsed safely, leave that field unresolved/empty and surface the issue in the preview rather than silently assigning it to the wrong column.
+8. try to match every parsed player name to an existing Player record relevant to the selected All Stars team
+9. show the parsed preview before saving
+10. for unresolved or ambiguous rows, require the admin to explicitly choose the correct existing player
+11. do not allow final save while any required player mapping is unresolved
+12. save the completed historical event through the canonical historical `team_internal` result model so it contributes to rankings exactly like other historical internal tournaments
 
 ### Reuse the legacy implementation
 This exact interaction existed in repository history and should be used as implementation reference rather than reinvented.
