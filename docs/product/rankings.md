@@ -3,6 +3,24 @@
 ## Principle
 Rankings are derived from tournament/result records. Do not use opaque manually updated counters as the primary source of truth.
 
+## Ranking table ordering and sorting
+Ranking tables must be sortable by meaningful displayed columns.
+
+Default ordering on every child/player ranking page is by the canonical **place/rank ascending**:
+- place 1 first
+- then place 2
+- then place 3
+- and so on
+
+The default view must never appear in incidental API/insertion order.
+
+Users may change the sort by interacting with sortable column headers and may reverse ascending/descending order where meaningful.
+
+Sorting the view does not change the canonical ranking calculation or persisted tournament data.
+
+Team-player names in public All Stars ranking tables link to their public All Stars player pages.
+Club/regular ranking names remain non-profile links because club players do not have public individual pages.
+
 ## Regular / club national ranking
 - Applies to club/regular players.
 - Uses regular/club tournament results only.
