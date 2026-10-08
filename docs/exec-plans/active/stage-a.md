@@ -442,9 +442,9 @@ Required:
 - do not render it in management/admin, login/auth, or live tournament-operation pages
 - responsive/RTL-safe and must not cover important UI
 - centralize the destination configuration
-- the destination will later be a dedicated landing page
-- do not build that landing page in this iteration
-- do not substitute an unrelated URL while the final destination is not configured
+- approved destination: `https://lp.cardschool.co.il`
+- clicking the CTA must open that landing page
+- do not duplicate/hard-code different destinations across individual pages
 - implement the CTA as a shared component/layout concern, not duplicated markup in every page
 
 ## Existing Stage A core behavior that must remain working
