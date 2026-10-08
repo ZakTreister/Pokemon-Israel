@@ -177,4 +177,4 @@ There is still no global child directory, and club/regular players still do not 
 ## 2026-10 — Public pages show a floating trial-registration CTA
 Public pages show a reusable floating CardSchool-branded **הירשמו לשיעור ניסיון** CTA.
 
-It is not shown in management/admin, authentication, or live tournament-operation screens. Its destination is centrally configurable and will later point to a dedicated landing page; do not invent that landing page or an unrelated temporary destination.
+It is not shown in management/admin, authentication, or live tournament-operation screens. Its approved destination is `https://lp.cardschool.co.il`, configured centrally/shared rather than repeated page by page.
