@@ -22,59 +22,121 @@ export const normalizePlayerName = (name: string) =>
 export function parseHistoricalStandings(input: string): {
   rows: HistoricalRow[];
   errors: string[];
+  warnings: string[];
 } {
   const rows: HistoricalRow[] = [];
   const errors: string[] = [];
-  let metrics: ('omp' | 'gwp' | 'ogp')[] = [];
+  const warnings: string[] = [];
+  type Column = 'player' | 'points' | 'position' | 'omp' | 'gwp' | 'ogp';
+  const aliases: Record<string, Column | undefined> = {
+    player: 'player',
+    שחקן: 'player',
+    שם: 'player',
+    points: 'points',
+    pts: 'points',
+    נקודות: 'points',
+    rank: 'position',
+    position: 'position',
+    מיקום: 'position',
+    מקום: 'position',
+    omp: 'omp',
+    gwp: 'gwp',
+    ogp: 'ogp',
+  };
+  let columns: (Column | undefined)[] | undefined;
   for (const [index, raw] of input.split(/\r?\n/).entries()) {
     const line = raw.replace(/[\u200e\u200f]/g, '').trim();
     if (!line) continue;
+    const header = line
+      .split(/\s+/)
+      .map((token) => aliases[token.toLowerCase()]);
+    if (header.includes('player') && header.includes('points')) {
+      if (
+        header.some(
+          (column) =>
+            column && header.filter((value) => value === column).length > 1,
+        )
+      ) {
+        errors.push(`שורה ${index + 1}: כותרות העמודות חייבות להיות ייחודיות.`);
+      }
+      columns = header;
+      continue;
+    }
+    let pastedName: string;
+    let pointsText: string;
+    let positionText: string;
+    let cells: string[] = [];
+    if (columns) {
+      // Tabs preserve empty cells; repeated spaces preserve full player names.
+      cells = raw
+        .replace(/[\u200e\u200f]/g, '')
+        .split('\t')
+        .map((cell) => cell.trim());
+      if (!raw.includes('\t')) {
+        cells = line.split(/\s{2,}/);
+        if (cells.length !== columns.length) {
+          const tokens = line.split(/\s+/);
+          const nameIndex = columns.indexOf('player');
+          const nameLength = tokens.length - columns.length + 1;
+          cells =
+            nameLength > 0
+              ? [
+                  ...tokens.slice(0, nameIndex),
+                  tokens.slice(nameIndex, nameIndex + nameLength).join(' '),
+                  ...tokens.slice(nameIndex + nameLength),
+                ]
+              : [];
+        }
+      }
+      if (cells.length !== columns.length) {
+        errors.push(
+          `שורה ${index + 1}: מספר העמודות אינו תואם לכותרת. הדביקו שוב עם טאבים.`,
+        );
+        continue;
+      }
+      pastedName = cells[columns.indexOf('player')];
+      pointsText = cells[columns.indexOf('points')];
+      positionText = columns.includes('position')
+        ? cells[columns.indexOf('position')].replace(/[:.)-]$/, '')
+        : String(rows.length + 1);
+    } else {
+      const rank = line.match(/^(\d+)\s*[:.)-]?\s+/);
+      const tokens = (rank ? line.slice(rank[0].length) : line).split(/\s+/);
+      const pointsIndex = tokens.findIndex((token) =>
+        /^-?\d+(?:\.\d+)?$/.test(token),
+      );
+      pastedName =
+        pointsIndex > 0 ? tokens.slice(0, pointsIndex).join(' ') : '';
+      pointsText = tokens[pointsIndex];
+      positionText = rank ? rank[1] : String(rows.length + 1);
+    }
+    const points = Number(pointsText);
+    const position = Number(positionText);
     if (
-      /\b(standings|points|pts|player|rank|position)\b|נקודות|שחקן|מיקום/i.test(
-        line,
-      ) &&
-      !/\d/.test(line)
+      !pastedName ||
+      !/^\d+(?:\.\d+)?$/.test(pointsText) ||
+      !Number.isInteger(points) ||
+      points > 10000 ||
+      !/^\d+$/.test(positionText) ||
+      position < 1
     ) {
-      metrics = [...line.matchAll(/\b(OMP|GWP|OGP)\b/gi)].map(
-        (match) => match[1].toLowerCase() as 'omp' | 'gwp' | 'ogp',
+      errors.push(
+        `שורה ${index + 1}: יש להזין שם, מיקום וניקוד שלם שאינו שלילי.`,
       );
       continue;
     }
-    const rank = line.match(/^(\d+)\s*[:.)-]?\s+/);
-    const tokens = (rank ? line.slice(rank[0].length) : line).split(/\s+/);
-    const pointsIndex = tokens.findIndex((token) =>
-      /^-?\d+(?:\.\d+)?$/.test(token),
-    );
-    const pastedName = tokens.slice(0, pointsIndex).join(' ');
-    const points = Number(tokens[pointsIndex]);
-    const position = rank ? Number(rank[1]) : rows.length + 1;
-    if (
-      pointsIndex < 1 ||
-      !pastedName ||
-      !Number.isInteger(points) ||
-      points < 0 ||
-      points > 10000 ||
-      position < 1
-    ) {
-      errors.push(`שורה ${index + 1}: יש להזין שם וניקוד שלם שאינו שלילי.`);
-      continue;
-    }
     const row: HistoricalRow = { pastedName, player: '', position, points };
-    const trailing = tokens.slice(pointsIndex + 1);
-    if (
-      metrics.length &&
-      new Set(metrics).size === metrics.length &&
-      trailing.length === metrics.length
-    ) {
-      for (const [i, key] of metrics.entries()) {
-        // Only explicit percentages are unambiguous; unknown tie-breaks stay absent.
-        if (/^\d+(?:[.,]\d+)?%$/.test(trailing[i])) {
-          const percentage = Number(
-            trailing[i].replace('%', '').replace(',', '.'),
-          );
-          if (percentage <= 100) row[key] = percentage / 100;
-          else errors.push(`שורה ${index + 1}: אחוז חייב להיות בין 0 ל־100.`);
-        }
+    for (const key of ['omp', 'gwp', 'ogp'] as const) {
+      if (!columns?.includes(key)) continue;
+      const value = cells[columns.indexOf(key)];
+      // A recognized column makes bare numeric values unambiguously percentages.
+      const percentage = Number(value.replace('%', '').replace(',', '.'));
+      if (/^\d+(?:[.,]\d+)?%?$/.test(value) && percentage <= 100) {
+        row[key] = percentage / 100;
+      } else {
+        warnings.push(
+          `שורה ${index + 1}: ${key.toUpperCase()} לא זוהה כאחוז בין 0 ל־100 ונשאר ריק. בדקו את הערך לפני שמירה.`,
+        );
       }
     }
     rows.push(row);
@@ -90,7 +152,7 @@ export function parseHistoricalStandings(input: string): {
     )
   )
     errors.push('סדר המיקומים אינו תואם לניקוד.');
-  return { rows, errors };
+  return { rows, errors, warnings };
 }
 
 export function matchHistoricalPlayers(
@@ -106,15 +168,15 @@ export function matchHistoricalPlayers(
     );
     const candidates = exact.length
       ? exact
-      : teamPlayers.filter((p) => {
-          const full = normalizePlayerName(`${p.firstName} ${p.lastName}`);
-          // Short single-token names are not safe containment matches.
-          return (
-            name.split(' ').length >= 2 &&
-            (` ${full} `.includes(` ${name} `) ||
-              ` ${name} `.includes(` ${full} `))
-          );
-        });
+      : !name.includes(' ')
+        ? teamPlayers.filter((p) => normalizePlayerName(p.firstName) === name)
+        : teamPlayers.filter((p) => {
+            const full = normalizePlayerName(`${p.firstName} ${p.lastName}`);
+            return (
+              ` ${full} `.includes(` ${name} `) ||
+              ` ${name} `.includes(` ${full} `)
+            );
+          });
     return { ...row, player: candidates.length === 1 ? candidates[0].id : '' };
   });
   const counts = new Map<string, number>();

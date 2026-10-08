@@ -49,7 +49,7 @@ export default function HistoricalTournamentPage() {
   }, []);
   const parse = () => {
     const result = parseHistoricalStandings(input);
-    setError(result.errors.join(' '));
+    setError([...result.errors, ...result.warnings].join(' '));
     setRows(
       result.errors.length
         ? []
@@ -163,7 +163,8 @@ export default function HistoricalTournamentPage() {
       </label>
       <p className="text-sm text-muted-foreground">
         פורמטים: מקום, שם ונקודות; או שם ונקודות. אפשר להדביק טבלה עם רווחים או
-        טאבים. שוברי שוויון מזוהים מכותרות OMP / GWP / OGP ואחוזים מפורשים בלבד.
+        טאבים. בעמודות OMP / GWP / OGP אפשר להזין אחוזים עם או בלי סימן %, למשל
+        55.56.
       </p>
       <Button
         type="button"
