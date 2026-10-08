@@ -78,8 +78,75 @@ try {
     '1 Dan Cohen 3\n2 Dana Levy 9',
   ])
     assert.ok(parseHistoricalStandings(text).errors.length);
+  const hebrewPlayers = [
+    player('l', 'לביא', 'כהן'),
+    player('i', 'איתי', 'לוי'),
+    player('other', 'לביא', 'אחר', 'team2'),
+  ];
+  for (const separator of ['\t', ' ', '  ']) {
+    const sample = [
+      'Player Points OMP GWP OGP',
+      'לביא 10 55.56 75 51.11',
+      'איתי 7 58.33 60 58.75',
+    ]
+      .map((line) => line.replaceAll(' ', separator))
+      .join('\n');
+    const result = parseHistoricalStandings(sample);
+    assert.deepEqual(result.errors, []);
+    assert.deepEqual(result.warnings, []);
+    assert.ok(Math.abs(result.rows[0].omp - 0.5556) < 1e-12);
+    assert.equal(result.rows[0].gwp, 0.75);
+    assert.ok(Math.abs(result.rows[0].ogp - 0.5111) < 1e-12);
+    assert.deepEqual(
+      matchHistoricalPlayers(result.rows, hebrewPlayers, 'team1').map(
+        (row) => row.player,
+      ),
+      ['l', 'i'],
+    );
+    const ambiguous = [...hebrewPlayers, player('duplicate', 'לביא', 'לוי')];
+    assert.equal(
+      matchHistoricalPlayers(result.rows, ambiguous, 'team1')[0].player,
+      '',
+    );
+  }
+  const reordered = parseHistoricalStandings(
+    'GWP Points Player OGP OMP\n75 10 לביא כהן 51.11 55,56%\n100 7 איתי לוי 0 58.33',
+  );
+  assert.deepEqual(reordered.errors, []);
+  assert.equal(reordered.rows[0].pastedName, 'לביא כהן');
+  assert.equal(reordered.rows[1].gwp, 1);
+  assert.equal(reordered.rows[1].ogp, 0);
+  assert.ok(Math.abs(reordered.rows[0].omp - 0.5556) < 1e-12);
+  const smallPercentage = parseHistoricalStandings(
+    'Player Points OMP\nDana 9.0 0.5\nDan 6 100%',
+  );
+  assert.deepEqual(smallPercentage.errors, []);
+  assert.equal(smallPercentage.rows[0].omp, 0.005);
+  assert.equal(smallPercentage.rows[1].omp, 1);
+  assert.equal(
+    matchHistoricalPlayers(
+      parseHistoricalStandings('DANA, 9\nDan 6').rows,
+      players,
+      'team1',
+    )[0].player,
+    'c',
+  );
+  const missing = parseHistoricalStandings(
+    'Player\tPoints\tOMP\tGWP\tOGP\nלביא\t10\t\t75\t51.11\nאיתי\t7\tinvalid\t101\t58.75',
+  );
+  assert.deepEqual(missing.errors, []);
+  assert.equal(missing.warnings.length, 3);
+  assert.equal(missing.rows[0].omp, undefined);
+  assert.equal(missing.rows[0].gwp, 0.75);
+  assert.equal(missing.rows[1].ogp, 0.5875);
+  const repeatedName = parseHistoricalStandings('לביא 10\nלביא 7');
+  assert.ok(
+    matchHistoricalPlayers(repeatedName.rows, hebrewPlayers, 'team1').every(
+      (row) => !row.player,
+    ),
+  );
   const parsed = parseHistoricalStandings(
-    '1 Dan Cohen 9\n2 Dana Levy 6\n3 Maya Else 3',
+    'Player\tPoints\tOMP\tGWP\tOGP\nDan Cohen\t9\t55.56\t75\t51.11\nDana\t6\t58.33%\t60\t58.75\nMaya Else\t3\t0\t100\t50',
   );
   const matched = matchHistoricalPlayers(parsed.rows, players, 'team1');
   assert.deepEqual(
@@ -217,13 +284,16 @@ try {
     await flush();
   });
   await act(async () =>
-    renderer.root
-      .findByType('textarea')
-      .props.onChange({
-        target: { value: '1 Dan Cohen 9\n2 Dana Levy 6\n3 Maya Else 3' },
-      }),
+    renderer.root.findByType('textarea').props.onChange({
+      target: {
+        value:
+          'Player\tPoints\tOMP\tGWP\tOGP\nDan Cohen\t9\t55.56\t75\t51.11\nDana\t6\t58.33%\t60\t58.75\nMaya Else\t3\t0\t100\t50',
+      },
+    }),
   );
   await act(async () => button('עבד והתאם שחקנים').props.onClick());
+  assert.ok(text(renderer.root.findByType('table')).includes('55.56%'));
+  assert.ok(text(renderer.root.findByType('table')).includes('75.00%'));
   assert.equal(selector(1).props.value, '');
   assert.equal(selector(2).props.value, 'c');
   assert.equal(selector(3).props.value, '');
@@ -256,11 +326,12 @@ try {
   );
   assert.equal(button('שמור טורניר היסטורי שהסתיים').props.disabled, true);
   await act(async () =>
-    renderer.root
-      .findByType('textarea')
-      .props.onChange({
-        target: { value: '1 Dan Cohen 9\n2 Dana Levy 6\n3 Maya Else 3' },
-      }),
+    renderer.root.findByType('textarea').props.onChange({
+      target: {
+        value:
+          'Player\tPoints\tOMP\tGWP\tOGP\nDan Cohen\t9\t55.56\t75\t51.11\nDana\t6\t58.33%\t60\t58.75\nMaya Else\t3\t0\t100\t50',
+      },
+    }),
   );
   await act(async () => {
     renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
@@ -276,6 +347,9 @@ try {
       ['former', 3, 3],
     ],
   );
+  assert.ok(Math.abs(payload[2][0].omp - 0.5556) < 1e-12);
+  assert.equal(payload[2][0].gwp, 0.75);
+  assert.ok(Math.abs(payload[2][0].ogp - 0.5111) < 1e-12);
   assert.ok(payload[2].every((row) => !('pastedName' in row)));
   await act(async () => {
     finishSave({ id: 'saved' });
