@@ -33,7 +33,8 @@ A judge is **not** a team/player administrator.
 | Finish/close tournament | Yes | Yes |
 | Operate other live tournament controls required by the event | Yes | Yes |
 | Edit completed/historical tournament data | Yes | No |
-| Hard-delete tournament | Yes | No |
+| Soft-delete tournament | Yes | No |
+| Permanently hard-delete tournament | Yes | No |
 | Manual historical internal-team tournament entry | Yes | No |
 | Historical regular/club Excel import | Yes | No |
 | Manage badge definitions | Yes | No |
@@ -58,14 +59,14 @@ It must not:
 
 Once a tournament is closed/completed, the judge's mutation permissions end.
 
-Any later administrative correction, deletion or historical operation is admin-only.
+Any later administrative correction, soft/permanent deletion or historical operation is admin-only.
 
 ## UI behavior
 
 For judges:
 - hide or disable team/player configuration controls
 - do not show historical manual-entry or Excel-import actions
-- do not show destructive tournament deletion
+- do not show tournament deletion controls
 - do not show badges/Season administration
 - show only controls required to open and operate a tournament
 
