@@ -41,12 +41,12 @@ The unified list must support:
 - filter by lifecycle/status: upcoming/future, active/in progress, completed
 - filter by tournament type
 - opening the relevant tournament-management page when the current user has permission
-- super-admin hard delete for any tournament, including completed tournaments
+- super-admin tournament deletion for any tournament, including completed tournaments; soft delete is the default, with explicit optional permanent deletion
 
 If the underlying schema uses slightly different internal status names, the UI should still expose the product concepts above clearly.
 
 ## Deletion
-Super-admin only may hard-delete tournaments.
+Tournament deletion is super-admin only.
 
 This applies to:
 - regular/club tournaments
@@ -56,13 +56,34 @@ This applies to:
 
 The previous rule that past/completed tournaments cannot be deleted is superseded.
 
-Deletion must:
+### Default: soft delete
+The normal **מחק** action opens a confirmation dialog and performs a **soft delete** by default.
+
+The dialog contains an explicit **מחיקה לצמיתות** checkbox/toggle:
+- it is **unchecked by default**
+- if it remains unchecked, confirm performs soft delete
+- only when the super-admin explicitly checks it does confirm perform permanent hard delete
+- the destructive permanent state must be visually and textually clear
+
+A soft-deleted tournament:
+- remains stored in the database with deletion metadata such as `deletedAt` and `deletedBy`
+- is excluded from normal public pages, management tournament lists/history, event feeds and normal lookup flows
+- immediately stops contributing to rankings, statistics, counts and standings
+- is not considered an open/live tournament and must not block creation of a new internal tournament
+- cannot continue to receive normal tournament mutations
+- preserves its embedded rounds/results/history for future administrative recovery/audit
+
+No restore UI is required in this iteration unless one already exists, but the data model must preserve enough information to allow a future restore flow.
+
+### Permanent deletion
+When **מחיקה לצמיתות** is explicitly selected:
 - permanently remove the tournament
 - remove/clean dependent tournament state or embedded rounds/results
 - ensure deleted results no longer contribute to derived rankings
 - avoid orphaned references
+- preserve existing concurrency protections so a concurrent mutation cannot recreate the deleted tournament
 
-Judges must not receive hard-delete permission.
+Judges must not receive either soft-delete or hard-delete permission.
 
 ## Shared tournament-engine requirements
 The intended tournament engine is server-backed Swiss.
