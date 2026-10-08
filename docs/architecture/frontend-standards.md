@@ -861,8 +861,8 @@ Keep mutation/domain operations clearly separated from presentation.
 Preserve:
 - server as canonical tournament state
 - revision conflict protection
-- Socket.IO synchronization
-- fallback reload/polling while disconnected
+- Socket.IO synchronization only while the live tournament management screen is mounted
+- fallback reload/polling while that live-management connection is disconnected
 - later-round invalidation behavior
 - current permissions
 - save guarantees
@@ -880,12 +880,14 @@ useInternalTournamentLive(id)
 
 may own:
 - initial load
-- Socket.IO subscription
+- Socket.IO subscription for the currently operated live tournament only
 - connection state
 - accepting only newer revisions
 - deleted-tournament handling
 - fallback polling
-- cleanup
+- cleanup, including disconnect/unsubscribe on route/page exit
+
+Do not introduce a global/app-wide Socket.IO subscription. Public pages, management lists, team/player administration, historical entry and other non-live screens use normal HTTP/service state flows.
 
 ### Mutation hook
 
