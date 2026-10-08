@@ -110,12 +110,20 @@ badge Season no longer creates team roster snapshots. Old snapshot documents
 and optional legacy Tournament.season values remain readable, but new events
 ignore the Season field and no ranking query uses it.
 
-Admin-only `DELETE /api/tournaments/:id` atomically hard-deletes any canonical
-tournament, including completed internal, inter-team and legacy tournaments.
-Embedded matches/results/archives disappear with it and derived rankings/counts
-exclude it immediately. Judges cannot delete. A concurrent CAS mutation cannot
-recreate the deleted document. The existing future-series delete action remains
-supported. All-type management summaries expose lifecycle and permission data.
+Tournament deletion remains admin-only, but the normal delete flow is now soft
+delete by default. A soft-deleted tournament is retained with deletion metadata
+(for example `deletedAt` and `deletedBy`), excluded from normal management and
+public queries, excluded immediately from rankings/statistics/counts, and ignored
+by open/live tournament uniqueness checks. Normal tournament mutations reject
+soft-deleted records.
+
+The confirmation dialog also offers an explicit permanent-delete option, which is
+unchecked by default. When the admin explicitly opts into permanent deletion, the
+canonical tournament and its embedded matches/results/archives are physically
+removed. Judges cannot delete. Existing CAS/concurrency protection must prevent
+a stale mutation from reviving either a soft-deleted or permanently deleted
+tournament. No restore UI is required in the current iteration, but soft-deleted
+records retain enough data for future recovery/audit.
 
 The existing Socket.IO server authenticates staff with the existing JWT, but
 Socket.IO is scoped only to the operational management screen of a live
