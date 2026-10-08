@@ -132,3 +132,16 @@ Cloudinary secrets must never be exposed to the browser.
 ## 2026-10 — News Phase 1 is manual
 Use the existing Updates capability as the basis for News.
 Manual paste/admin publishing comes first; automated WhatsApp Channel ingestion is future work.
+
+
+## 2026-10 — Historical internal team results use pasted standings
+The primary historical All Stars tournament-entry flow is a large pasted-standings textarea, parser, automatic player matching and explicit manual mapping for unresolved/ambiguous names.
+
+Reuse the proven legacy behavior from commits `b894982f22386fdcebdd6724ae84b0540df6e171` and `e2c9cf3b983672793eaeffd538afd47e9d242fb8`, adapted to the current Player-based internal-tournament model.
+
+The current row-by-row manual entry is not the preferred primary UX.
+
+## 2026-10 — Live internal tournaments can cancel the latest round
+Authorized live-tournament operators can cancel only the latest/current active round.
+The cancelled round is archived for audit/history, removed from active standings, and may be re-paired.
+Previous rounds stay intact and the participant roster remains locked.

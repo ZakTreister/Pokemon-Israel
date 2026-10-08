@@ -331,6 +331,45 @@ In particular:
 
 This correction is primarily frontend layout/interaction work. Do not rebuild the tournament engine.
 
+### 24. Cancel latest round
+Add **בטל סיבוב** to live internal tournament operation according to `docs/product/tournaments.md` and `docs/product/internal-tournament-ui.md`.
+
+Required:
+- latest/current round only
+- confirmation
+- server-authoritative mutation with revision/concurrency protection
+- archive cancelled round for audit/history
+- remove its results from current standings
+- preserve previous rounds
+- roster remains locked even when round 1 is cancelled
+- live Socket.IO clients receive the canonical updated state
+
+### 25. Historical team results — paste, parse and match
+Replace the current manual row-by-row historical-entry UX as the primary flow with the approved pasted-standings workflow in `docs/product/tournaments.md`.
+
+Important implementation references already exist in Git history:
+- `b894982f22386fdcebdd6724ae84b0540df6e171`
+- `e2c9cf3b983672793eaeffd538afd47e9d242fb8`
+- historical file: `src/pages/admin/AdminTournaments.tsx`
+
+Reuse/adapt the useful parser and player-matching approach, but keep the current architecture:
+- Player-based All Stars players, not legacy User accounts
+- current historical `team_internal` endpoint/model
+- current permissions (admin only)
+- current CardSchool UI
+- no obsolete deck-autocomplete requirement
+- no legacy alert-based UX requirement
+
+The final flow must:
+- accept pasted standings in a large textarea
+- parse names/positions/points robustly
+- auto-match only safe unique matches
+- require explicit selection for ambiguous/unmatched names
+- prevent duplicate mapping of one Player to multiple rows
+- show a parsed/mapped preview
+- block save until mappings are resolved
+- save as a completed historical internal-team tournament and feed the same All Stars ranking source of truth
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation

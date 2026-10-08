@@ -50,6 +50,7 @@ For a tournament that already has rounds, use this visual order:
 4. Current-round match cards immediately
 5. Round progression actions:
    - **הגרל סיבוב נוסף**
+   - **בטל סיבוב** when a latest active round exists
    - **סיים טורניר**
    - any short blocking instruction that is actually relevant
 6. Secondary connection/synchronization explanation below the matches, preferably collapsed or visually de-emphasized
@@ -104,6 +105,18 @@ On mobile:
 - score selector and save button may share one row when usable
 - on very narrow widths, stack cleanly rather than squeezing unreadably
 - no horizontal overflow
+
+## Cancel round action
+During a live tournament with at least one active round, expose **בטל סיבוב** for the latest/current round.
+
+Placement:
+- group it with round-level progression controls, not inside an individual match card
+- style it as a reversal/destructive secondary action; it should be less prominent than **הגרל סיבוב נוסף**
+- require confirmation
+
+After success, immediately render the canonical server state with that round removed.
+The cancelled round must no longer affect standings.
+See `docs/product/tournaments.md` for the authoritative cancellation semantics.
 
 ## Saving and errors inside match cards
 
