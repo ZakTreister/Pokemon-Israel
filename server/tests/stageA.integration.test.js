@@ -967,6 +967,7 @@ test('judge is limited to live tournament operation and never changes permanent 
       ['/rounds', 'POST', {}],
       ['/rounds/1/matches/invalid', 'PUT', { result: { winner: 'draw', score1: 0, score2: 0 } }],
       ['/close', 'POST', {}],
+      ['/rounds/1', 'DELETE', {}],
     ]) assert.equal((await request(`/internal-tournaments/${event.id}${suffix}`, method, { expectedRevision: event.revision, ...body })).status, 403);
     assert.equal((await request(`/tournaments/${event.id}`, 'DELETE')).status, 403);
     assert.deepEqual(await Tournament.findById(event.id).lean(), snapshot);
@@ -998,6 +999,7 @@ test('judge operation requires an explicitly live source and an operational phas
       ['/rounds', 'POST', {}],
       ['/rounds/1/matches/invalid', 'PUT', { result: { winner: 'draw', score1: 0, score2: 0 } }],
       ['/close', 'POST', {}],
+      ['/rounds/1', 'DELETE', {}],
     ]) {
       const response = await request(`/internal-tournaments/${opened.id}${suffix}`, method, { expectedRevision: opened.revision, ...body });
       assert.equal(response.status, 403, `${JSON.stringify(state)} ${method} ${suffix}`);
@@ -1006,5 +1008,82 @@ test('judge operation requires an explicitly live source and an operational phas
     assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === opened.id).canManage, true);
     assert.equal((await request(`/internal-tournaments/${opened.id}`)).status, 200);
     assert.deepEqual(await Tournament.findById(opened.id).lean(), snapshot);
+    await ok(`/tournaments/${opened.id}`, 'DELETE', undefined, 'admin');
   }
+});
+
+test('one open event per team is database-enforced and stale creates identify the event', async () => {
+  const team = await ok('/teams', 'POST', { name: 'One open team' }, 'admin', 201);
+  const players = await ok(`/teams/${team.id}/players`, 'POST', { players: ['First', 'Second'].map(firstName => ({ firstName, lastName: 'Unique' })) }, 'admin', 201);
+  const creates = await Promise.all(['judge', 'admin'].map(role => request('/internal-tournaments', 'POST', { teamId: team.id }, role)));
+  assert.deepEqual(creates.map(response => response.status).sort(), [201, 409]);
+  const created = creates.find(response => response.status === 201).body;
+  const conflict = creates.find(response => response.status === 409).body;
+  assert.equal(conflict.code, 'OPEN_INTERNAL_TOURNAMENT');
+  assert.equal(conflict.existingTournamentId, created.id);
+  assert.equal(await Tournament.countDocuments({ team: team.id, source: 'live', phase: 'setup' }), 1);
+  assert.equal((await ok(`/teams/${team.id}`)).openInternalTournament.id, created.id);
+  assert.equal((await ok('/teams')).find(row => row.id === team.id).openInternalTournament.id, created.id);
+  assert.equal((await ok(`/teams/${team.id}`, 'PUT', { name: 'One open renamed' }, 'admin')).openInternalTournament.id, created.id);
+  const duplicate = (await Tournament.findById(created.id)).toObject();
+  delete duplicate._id;
+  await assert.rejects(Tournament.create(duplicate), error => error.code === 11000);
+  const historical = await ok('/internal-tournaments/historical', 'POST', { teamId: team.id, date: '2026-10-04', results: players.map((player, i) => ({ player: player.id, position: i + 1, points: 6 - i * 3 })) }, 'admin', 201);
+  assert.equal((await request('/internal-tournaments', 'POST', { teamId: team.id })).body.existingTournamentId, created.id);
+  let t = await ok(`/internal-tournaments/${created.id}/rounds`, 'POST', { expectedRevision: created.revision });
+  t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 2, score2: 0 } });
+  t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', { expectedRevision: t.revision });
+  assert.equal((await ok(`/teams/${team.id}`)).openInternalTournament, null);
+  const next = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  assert.notEqual(next.id, t.id);
+  assert.notEqual(next.id, historical.id);
+});
+
+test('latest round cancellation is atomic, archived, synchronized and never unlocks attendance', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Cancellation team' }, 'admin', 201);
+  await ok(`/teams/${team.id}/players`, 'POST', { players: ['First', 'Second'].map(firstName => ({ firstName, lastName: 'Cancellation' })) }, 'admin', 201);
+  let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision })).status, 409);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 2, score2: 1 } });
+  const round1 = structuredClone(t.rounds[0]);
+  const standings1 = structuredClone(t.standings);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  t = await ok(`/internal-tournaments/${t.id}/rounds/2/matches/${t.rounds[1].matches[0]._id}`, 'PUT', { expectedRevision: t.revision, result: { winner: 'draw', score1: 1, score2: 1 } });
+  const round2 = structuredClone(t.rounds[1]);
+  assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision })).status, 409);
+  assert.equal((await request(`/internal-tournaments/${t.id}/rounds/2`, 'DELETE', { expectedRevision: t.revision }, 'player')).status, 403);
+  const socket = connectSocket(origin, { auth: { token: tokens.judge }, autoConnect: false });
+  try {
+    const ready = socketEvent(socket, 'connect'); socket.connect(); await ready;
+    await subscribe(socket, t.id);
+    const update = socketEvent(socket, 'tournament:updated');
+    const outcomes = await Promise.all(['judge', 'admin'].map(role => request(`/internal-tournaments/${t.id}/rounds/2`, 'DELETE', { expectedRevision: t.revision }, role)));
+    assert.deepEqual(outcomes.map(response => response.status).sort(), [200, 409]);
+    t = outcomes.find(response => response.status === 200).body;
+    assert.equal((await update).revision, t.revision);
+    assert.deepEqual(t.rounds, [round1]);
+    assert.deepEqual(t.standings, standings1);
+    const audit = t.invalidatedRounds.at(-1);
+    assert.deepEqual(audit.rounds, [round2]);
+    assert.match(audit.reason, /Cancelled round 2/);
+    assert.ok(audit.invalidatedAt && audit.invalidatedBy);
+    assert.deepEqual((await ok(`/internal-tournaments/${t.id}`)).rounds, [round1]);
+    t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+    assert.equal(t.rounds[1].number, 2);
+    t = await ok(`/internal-tournaments/${t.id}/rounds/2`, 'DELETE', { expectedRevision: t.revision });
+    const roster = structuredClone(t.playerParticipants);
+    t = await ok(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision });
+    assert.equal(t.phase, 'running');
+    assert.deepEqual(t.rounds, []);
+    assert.deepEqual(t.playerParticipants, roster);
+    assert.ok(t.standings.every(row => row.points === 0));
+    assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision: t.revision, playerIds: roster.map(p => p.player) })).status, 409);
+    t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+    assert.equal(t.rounds[0].number, 1);
+    t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 1, score2: 0 } });
+    t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', { expectedRevision: t.revision });
+    assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision })).status, 403);
+    assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision }, 'admin')).status, 409);
+  } finally { socket.disconnect(); }
 });

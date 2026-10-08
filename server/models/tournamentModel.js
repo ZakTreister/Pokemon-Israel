@@ -136,6 +136,14 @@ const tournamentSchema = new mongoose.Schema({
 });
 
 tournamentSchema.index({ engineVersion: 1, team: 1, status: 1, competitionYear: 1 });
+tournamentSchema.index({ team: 1 }, {
+  name: 'one_open_internal_per_team',
+  unique: true,
+  partialFilterExpression: {
+    engineVersion: 'swiss-v1', type: 'team_internal', source: 'live',
+    status: 'upcoming', phase: { $in: ['setup', 'running', null] },
+  },
+});
 
 // Transform _id to id and remove __v when converting to JSON
 tournamentSchema.set('toJSON', {

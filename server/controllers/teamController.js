@@ -3,6 +3,7 @@ import Team, { normalizeTeamName } from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import Tournament from '../models/tournamentModel.js';
 import { withRosterLocks } from '../services/rosterLock.js';
+import { OPEN_INTERNAL_FILTER } from '../services/openInternalTournament.js';
 
 const fail = (statusCode, message) => { const error = new Error(message); error.statusCode = statusCode; throw error; };
 export function validateLogo(logo) {
@@ -24,6 +25,10 @@ async function counts(team) {
   return { playerCount, completedInternalTournamentCount };
 }
 const publicTeam = async team => ({ id: team.id, name: team.name, logo: team.logo || '', isActive: team.isActive, ...await counts(team), officialStats: null });
+async function openForTeam(team) {
+  const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
+  return open ? { id: open.id, phase: open.phase } : null;
+}
 
 export const getPublicTeams = asyncHandler(async (req, res) => {
   const teams = await Team.find({ isActive: true }).sort({ normalizedName: 1 });
@@ -37,7 +42,9 @@ export const getPublicTeam = asyncHandler(async (req, res) => {
 });
 export const getTeams = asyncHandler(async (req, res) => {
   const teams = await Team.find({}).populate('createdBy', 'username name').sort({ normalizedName: 1 });
-  res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team) }))));
+  const open = await Tournament.find(OPEN_INTERNAL_FILTER).select('team phase');
+  const byTeam = new Map(open.map(t => [String(t.team), { id: t.id, phase: t.phase }]));
+  res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team), openInternalTournament: byTeam.get(team.id) || null }))));
 });
 export const getManageablePlayers = asyncHandler(async (req, res) => {
   res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 }));
@@ -46,7 +53,8 @@ export const getTeam = asyncHandler(async (req, res) => {
   const team = await Team.findById(req.params.id).populate('createdBy', 'username name');
   if (!team) fail(404, 'נבחרת לא נמצאה');
   const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 });
-  res.json({ ...team.toJSON(), ...await counts(team), players });
+  const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
+  res.json({ ...team.toJSON(), ...await counts(team), players, openInternalTournament: open ? { id: open.id, phase: open.phase } : null });
 });
 export const createTeam = asyncHandler(async (req, res) => {
   const { name, logo = '', logoPublicId = '' } = req.body;
@@ -75,7 +83,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
       team.isActive = isActive;
     }
     try { await team.save(); } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
-    return { ...team.toJSON(), ...await counts(team) };
+    return { ...team.toJSON(), ...await counts(team), openInternalTournament: await openForTeam(team) };
   });
   res.json(output);
 });

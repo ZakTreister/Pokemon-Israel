@@ -43,6 +43,10 @@ export default function TeamPage() {
     load().catch((e) => setError(requestError(e)));
   }, [load]);
   const create = async () => {
+    if (team?.openInternalTournament) {
+      navigate(`/manage/tournaments/${team.openInternalTournament.id}`);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -105,10 +109,10 @@ export default function TeamPage() {
           {staff && (
             <div className="flex flex-wrap gap-3 mb-6">
               <Button
-                disabled={busy || !team.isActive || team.players.length < 2}
+                disabled={busy || (!team.openInternalTournament && (!team.isActive || team.players.length < 2))}
                 onClick={create}
               >
-                פתח טורניר פנימי
+                {team.openInternalTournament ? 'המשך טורניר' : 'התחל טורניר'}
               </Button>
               {admin && (
                 <>

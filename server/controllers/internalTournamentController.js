@@ -10,6 +10,7 @@ import {
   SWISS_POLICY,
 } from "../services/swiss.js";
 import { withRosterLocks } from "../services/rosterLock.js";
+import { OPEN_INTERNAL_FILTER } from '../services/openInternalTournament.js';
 
 export const ENGINE = "swiss-v1";
 // One explicit, ongoing competition cycle. It does not advance with the date or
@@ -116,19 +117,43 @@ function base(team, participants, req, source) {
 }
 export const createInternalTournament = asyncHandler(async (req, res) => {
   if (!validId(req.body.teamId)) fail(400, "יש לבחור נבחרת");
-  const created = await withRosterLocks([req.body.teamId], async () => {
-    const team = await Team.findById(req.body.teamId);
-    if (!team?.isActive) fail(400, "נבחרת פעילה נדרשת לפתיחת טורניר");
-    const players = await Player.find({
-      team: team._id,
-      playerType: "team",
-      isActive: true,
-    }).sort({ firstName: 1, lastName: 1, _id: 1 });
-    if (players.length < 2 || players.length > 128)
-      fail(400, "נדרשים בין 2 ל-128 ילדים פעילים בנבחרת");
-    return Tournament.create(base(team, players.map(snapshot), req, "live"));
+  // Never accept creates before the database's unique constraint is ready.
+  await Tournament.init();
+  const existing = () => Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: req.body.teamId });
+  const recover = (tournament) => res.status(409).json({
+    code: 'OPEN_INTERNAL_TOURNAMENT',
+    message: 'כבר קיים טורניר פתוח לנבחרת. אפשר להמשיך בו.',
+    existingTournamentId: tournament.id,
   });
-  res.status(201).json(serialize(created));
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const open = await existing();
+    if (open) return recover(open);
+    try {
+      const created = await withRosterLocks([req.body.teamId], async () => {
+        const open = await existing();
+        if (open) return { existing: open };
+        const team = await Team.findById(req.body.teamId);
+        if (!team?.isActive) fail(400, "נבחרת פעילה נדרשת לפתיחת טורניר");
+        const players = await Player.find({
+          team: team._id,
+          playerType: "team",
+          isActive: true,
+        }).sort({ firstName: 1, lastName: 1, _id: 1 });
+        if (players.length < 2 || players.length > 128)
+          fail(400, "נדרשים בין 2 ל-128 ילדים פעילים בנבחרת");
+        return { created: await Tournament.create(base(team, players.map(snapshot), req, "live")) };
+      });
+      if (created.existing) return recover(created.existing);
+      return res.status(201).json(serialize(created.created));
+    } catch (error) {
+      if (error.code !== 11000 && error.statusCode !== 409) throw error;
+      const open = await existing();
+      if (open) return recover(open);
+      if (attempt === 39) throw error;
+      // A concurrent roster/create lock may be acquired before its event exists.
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+  }
 });
 export const getInternalTournaments = asyncHandler(async (req, res) => {
   const query = { engineVersion: ENGINE };
@@ -201,6 +226,23 @@ export const pairRound = asyncHandler(async (req, res) => {
       rounds: [...tournament.rounds.map((r) => r.toObject()), round],
     }),
   );
+});
+export const cancelLatestRound = asyncHandler(async (req, res) => {
+  const tournament = await load(req);
+  revision(req, tournament);
+  if (tournament.source !== 'live' || tournament.phase !== 'running' || tournament.status === 'completed')
+    fail(409, 'ניתן לבטל סיבוב רק בטורניר חי');
+  const latest = tournament.rounds.at(-1);
+  if (!latest || latest.number !== Number(req.params.roundNumber))
+    fail(409, 'ניתן לבטל רק את הסיבוב האחרון');
+  res.json(await commit(req, {
+    phase: 'running',
+    rounds: tournament.rounds.slice(0, -1).map(round => round.toObject()),
+    invalidatedRounds: [
+      ...tournament.invalidatedRounds.map(entry => entry.toObject()),
+      { invalidatedAt: new Date(), invalidatedBy: req.user._id, reason: `Cancelled round ${latest.number}`, rounds: [latest.toObject()] },
+    ],
+  }));
 });
 export const enterMatchResult = asyncHandler(async (req, res) => {
   const tournament = await load(req);
