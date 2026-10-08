@@ -84,11 +84,16 @@ Team-player child profiles are linked only through the team page.
 No global child directory.
 Club players have no public individual profile.
 
-## 2026-10 — Tournament deletion is super-admin hard delete
-Super-admin may permanently delete any tournament, including completed tournaments, across all tournament types.
-Judges may not hard-delete tournaments.
-Because rankings are derived from tournament/result data, deleted tournaments must stop contributing to ranking calculations.
-Deletion must also clean up or avoid orphaned dependent tournament state.
+## 2026-10 — Tournament deletion is soft by default
+Tournament deletion is super-admin only across all tournament types, including completed tournaments.
+
+The normal delete flow performs a soft delete by default. The confirmation dialog includes an explicit **מחיקה לצמיתות** checkbox/toggle that is unchecked by default.
+
+Soft-deleted tournaments remain stored with deletion metadata but are excluded from normal lists/public views and immediately stop contributing to rankings, statistics, counts and open-tournament constraints.
+
+Permanent hard delete happens only when the super-admin explicitly opts into **מחיקה לצמיתות**. Judges cannot delete tournaments at all.
+
+No restore UI is required in the current iteration, but soft deletion must preserve enough data for future recovery/audit.
 
 ## 2026-10 — One unified tournament-management list
 The management Tournaments page contains all tournament types:
