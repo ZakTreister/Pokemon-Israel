@@ -131,6 +131,8 @@ Do not move critical save failure information into a hidden secondary-informatio
 
 ## Connectivity information
 
+This connection state exists only on the live tournament operation screen. Other site/management screens do not maintain Socket.IO connections.
+
 Connection state is secondary while everything is healthy.
 
 Healthy state:
@@ -188,7 +190,7 @@ This is a layout/UX change.
 
 Preserve:
 - server-authoritative state
-- Socket.IO live synchronization
+- Socket.IO live synchronization while this live tournament operation screen is mounted
 - concurrency/revision protection
 - match save behavior
 - result correction rules
