@@ -6,6 +6,8 @@ The Stage A homepage is part of the required deliverable, not a future-only conc
 See `docs/product/navigation-content.md`.
 The public site header/navigation must expose the approved Stage A menu and remain usable on desktop and mobile.
 
+The homepage also participates in the shared public floating **הירשמו לשיעור ניסיון** CTA defined in `docs/product/navigation-content.md`.
+
 ## Running news banner
 Show a prominent running/top news banner using the existing Updates/News data source.
 
