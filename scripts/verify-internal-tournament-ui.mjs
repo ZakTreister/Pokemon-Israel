@@ -307,13 +307,60 @@ try {
   });
   assert.equal(renderer.root.findAllByProps({ role: 'alert' }).length, 0);
   assert.equal(button('הגרל סיבוב נוסף').props.disabled, false);
+  let cancelCalls = 0;
+  service.cancelRound = async (requested, revision, roundNumber) => {
+    cancelCalls++;
+    assert.equal(requested, id);
+    assert.equal(revision, serverState.revision);
+    assert.equal(roundNumber, 1);
+    serverState = {
+      ...serverState,
+      revision: revision + 1,
+      rounds: [],
+      phase: 'running',
+    };
+    return structuredClone(serverState);
+  };
+  act(() => button('בטל סיבוב').props.onClick());
+  assert.ok(pageText().includes('הסגל יישאר נעול'));
+  await act(async () => {
+    button('ביטול').props.onClick();
+    await flush();
+  });
+  assert.equal(cancelCalls, 0);
+  act(() => button('בטל סיבוב').props.onClick());
+  await act(async () => {
+    renderer.root
+      .findAllByType('button')
+      .filter((b) => text(b) === 'בטל סיבוב')
+      .at(-1)
+      .props.onClick();
+    await flush();
+  });
+  assert.equal(cancelCalls, 1);
+  assert.ok(!pageText().includes('נוכחות לפני סיבוב 1'));
+  assert.ok(!button('שמור נוכחות'));
+  assert.equal(button('הגרל סיבוב 1').props.disabled, false);
+  assert.equal(button('סיים טורניר').props.disabled, true);
+  await act(async () => {
+    button('הגרל סיבוב 1').props.onClick();
+    await flush();
+  });
+  serverState = { ...serverState, revision: serverState.revision + 1, rounds: [
+    ...serverState.rounds,
+    { number: 2, matches: [{ ...serverState.rounds[0].matches[0], _id: 'match2' }] },
+  ] };
+  await act(async () => { globalThis.fixtureLive.changed(); await flush(); });
+  assert.ok(!button('בטל סיבוב'), 'An older selected round cannot be cancelled');
+  await act(async () => renderer.root.findByProps({ 'aria-label': 'סיבוב נוכחי' }).props.onChange({ target: { value: '2' } }));
+  assert.ok(button('בטל סיבוב'));
   act(() => globalThis.fixtureLive.connectionChanged(false));
   assert.ok(pageText().includes('עדכון חי מנותק'));
   act(() => globalThis.fixtureLive.connectionChanged(true));
   assert.ok(!pageText().includes('עדכון חי מנותק'));
   serverState = {
     ...serverState,
-    revision: 6,
+    revision: serverState.revision + 1,
     status: 'completed',
     phase: 'completed',
   };
@@ -344,10 +391,25 @@ try {
       await flush();
     });
     assert.ok(text(renderer.toJSON()).includes(serverState.title));
-    for (const action of ['שמור נוכחות', 'הגרל סיבוב 1', 'שמור תוצאה', 'הגרל סיבוב נוסף', 'סיים טורניר']) {
-      assert.ok(!button(action), `Judge must not operate ${JSON.stringify(state)}: ${action}`);
+    for (const action of [
+      'שמור נוכחות',
+      'הגרל סיבוב 1',
+      'שמור תוצאה',
+      'הגרל סיבוב נוסף',
+      'סיים טורניר',
+      'בטל סיבוב',
+    ]) {
+      assert.ok(
+        !button(action),
+        `Judge must not operate ${JSON.stringify(state)}: ${action}`,
+      );
     }
-    assert.equal(renderer.root.findAllByType('input').filter(input => input.props.type === 'checkbox').length, 0);
+    assert.equal(
+      renderer.root
+        .findAllByType('input')
+        .filter((input) => input.props.type === 'checkbox').length,
+      0,
+    );
     act(() => renderer.unmount());
     renderer = null;
   }

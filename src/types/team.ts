@@ -1,4 +1,5 @@
 export interface Team {
+  openInternalTournament?: { id: string; phase: 'setup' | 'running' | null } | null;
   id: string;
   name: string;
   isActive: boolean;

@@ -268,6 +268,16 @@ export default function InternalTournamentPage() {
         () => setResultsView(true),
       );
   };
+  const cancelRound = async () => {
+    if (!round || round.number !== tournament.rounds.length) return;
+    if (!(await showConfirm({
+      title: 'ביטול הסיבוב האחרון',
+      message: 'הסיבוב ותוצאותיו יוסרו מהדירוג ויישמרו בארכיון. הסגל יישאר נעול. לבטל?',
+      confirmText: 'בטל סיבוב',
+      variant: 'destructive',
+    }))) return;
+    await mutate(() => internalTournaments.cancelRound(id, tournament.revision, round.number), () => setResultsView(false));
+  };
   return (
     <div className="space-y-3 sm:space-y-5">
       <div className="flex flex-wrap gap-3 justify-between">
@@ -469,12 +479,12 @@ export default function InternalTournamentPage() {
               busy ||
               saveFailed ||
               failedMatches.length > 0 ||
-              !allComplete ||
+              (!allComplete && tournament.rounds.length > 0) ||
               tournament.rounds.length >= 16
             }
             onClick={() => void pair()}
           >
-            הגרל סיבוב נוסף
+            {tournament.rounds.length ? 'הגרל סיבוב נוסף' : 'הגרל סיבוב 1'}
           </Button>
           <Button
             variant="outline"
@@ -485,7 +495,12 @@ export default function InternalTournamentPage() {
           >
             סיים טורניר
           </Button>
-          {!allComplete && (
+          {round && round.number === tournament.rounds.length && (
+            <Button variant="destructive" disabled={busy || saveFailed || failedMatches.length > 0} onClick={() => void cancelRound()}>
+              בטל סיבוב
+            </Button>
+          )}
+          {!allComplete && tournament.rounds.length > 0 && (
             <p className="text-sm text-muted-foreground">
               יש לשמור את כל תוצאות הסיבוב לפני ההמשך או הסיום.
             </p>
@@ -501,7 +516,7 @@ export default function InternalTournamentPage() {
       </details>
       {!!tournament.invalidatedRounds.length && (
         <p className="text-sm text-muted-foreground">
-          {tournament.invalidatedRounds.length} תיקונים ביטלו סיבובים מאוחרים;
+          {tournament.invalidatedRounds.length} ביטולים או תיקונים תועדו;
           הסיבובים המקוריים נשמרו בארכיון בשרת.
         </p>
       )}

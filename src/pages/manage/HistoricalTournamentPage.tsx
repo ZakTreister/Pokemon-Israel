@@ -1,30 +1,35 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, useParams } from "react-router-dom";
-import teamsService from "../../features/teams/teamsService";
-import { internalTournaments } from "../../services/internalTournaments";
-import { requestError } from "../../utils/requestError";
-import type { ManageablePlayer, Team } from "../../types/team";
-import Button from "../../components/ui/Button";
-interface ResultRow {
-  player: string;
-  position: string;
-  points: string;
-  omp: string;
-  gwp: string;
-  ogp: string;
-}
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
+import teamsService from '../../features/teams/teamsService';
+import { internalTournaments } from '../../services/internalTournaments';
+import { requestError } from '../../utils/requestError';
+import type { ManageablePlayer, Team } from '../../types/team';
+import Button from '../../components/ui/Button';
+import {
+  parseHistoricalStandings,
+  matchHistoricalPlayers,
+  historicalMappingsResolved,
+  type HistoricalRow,
+} from '../../features/tournaments/utils/historicalStandings';
+
 export default function HistoricalTournamentPage() {
   const [params] = useSearchParams();
-  const navigate = useNavigate();
   const route = useParams();
+  const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<ManageablePlayer[]>([]);
-  const [teamId, setTeamId] = useState(route.teamId || params.get("teamId") || "");
-  const [date, setDate] = useState("2026-10-04");
-  const [rows, setRows] = useState<ResultRow[]>([]);
+  const [teamId, setTeamId] = useState(
+    route.teamId || params.get('teamId') || '',
+  );
+  const [date, setDate] = useState('2026-10-04');
+  const [input, setInput] = useState('');
+  const [rows, setRows] = useState<HistoricalRow[]>([]);
+  const [parsedInput, setParsedInput] = useState('');
   const [includeTransferred, setIncludeTransferred] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const busyRef = useRef(false);
+  const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
     Promise.all([teamsService.getTeams(), teamsService.getManageablePlayers()])
@@ -32,6 +37,7 @@ export default function HistoricalTournamentPage() {
         if (active) {
           setTeams(t);
           setPlayers(p);
+          setLoaded(true);
         }
       })
       .catch((e) => {
@@ -41,35 +47,34 @@ export default function HistoricalTournamentPage() {
       active = false;
     };
   }, []);
-  const select = (player: string, checked: boolean) =>
+  const parse = () => {
+    const result = parseHistoricalStandings(input);
+    setError(result.errors.join(' '));
     setRows(
-      checked
-        ? [
-            ...rows,
-            {
-              player,
-              position: String(rows.length + 1),
-              points: "",
-              omp: "",
-              gwp: "",
-              ogp: "",
-            },
-          ]
-        : rows.filter((row) => row.player !== player),
+      result.errors.length
+        ? []
+        : matchHistoricalPlayers(result.rows, players, teamId),
     );
+    setParsedInput(input);
+  };
+  const ready =
+    loaded &&
+    !!teamId &&
+    input === parsedInput &&
+    historicalMappingsResolved(rows);
   const save = async () => {
+    if (!ready || busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
-    setError("");
+    setError('');
     try {
       const results = rows.map((row) => ({
         player: row.player,
-        position: Number(row.position),
-        points: Number(row.points),
-        ...Object.fromEntries(
-          (["omp", "gwp", "ogp"] as const)
-            .filter((key) => row[key] !== "")
-            .map((key) => [key, Number(row[key]) / 100]),
-        ),
+        position: row.position,
+        points: row.points,
+        omp: row.omp,
+        gwp: row.gwp,
+        ogp: row.ogp,
       }));
       const tournament = await internalTournaments.historical(
         teamId,
@@ -80,9 +85,13 @@ export default function HistoricalTournamentPage() {
     } catch (e) {
       setError(requestError(e));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
+  const pool = players.filter(
+    (p) => includeTransferred || p.team?.id === teamId,
+  );
   return (
     <form
       onSubmit={(e) => {
@@ -93,9 +102,8 @@ export default function HistoricalTournamentPage() {
     >
       <h2 className="text-2xl font-bold">הזנת טורניר פנימי היסטורי</h2>
       <p className="text-muted-foreground">
-        הזנת תוצאות סופיות מהטורנירים שהתקיימו ב־04.10.2026. הניקוד יתווסף
-        לדירוג All Stars כמו טורניר שנוהל כאן. אין צורך לשחזר סיבובים שאינם
-        ידועים.
+        הדביקו תוצאות סופיות ממערכת הטורנירים. הניקוד המקורי יתווסף לדירוג All
+        Stars; אין צורך לשחזר סיבובים שאינם ידועים.
       </p>
       {error && (
         <p
@@ -105,16 +113,19 @@ export default function HistoricalTournamentPage() {
           {error}
         </p>
       )}
+      {!loaded && <p role="status">טוען שחקנים ונבחרות...</p>}
       <div className="grid sm:grid-cols-2 gap-4">
         <label>
           נבחרת
           <select
             required
+            disabled={busy}
             className="block w-full p-2 border rounded-md bg-background"
             value={teamId}
             onChange={(e) => {
               setTeamId(e.target.value);
               setRows([]);
+              setParsedInput('');
             }}
           >
             <option value="">בחר נבחרת</option>
@@ -129,6 +140,7 @@ export default function HistoricalTournamentPage() {
           תאריך היסטורי
           <input
             required
+            disabled={busy}
             type="date"
             max={new Date().toISOString().slice(0, 10)}
             className="block w-full p-2 border rounded-md bg-background"
@@ -137,111 +149,123 @@ export default function HistoricalTournamentPage() {
           />
         </label>
       </div>
-      {teamId && (
+      <label className="block">
+        טבלת תוצאות מודבקת
+        <textarea
+          aria-label="טבלת תוצאות מודבקת"
+          disabled={busy}
+          rows={10}
+          className="block w-full p-3 border rounded-md bg-background"
+          placeholder={'1: שם שחקן 9\n2: שם שחקן נוסף 6'}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+      </label>
+      <p className="text-sm text-muted-foreground">
+        פורמטים: מקום, שם ונקודות; או שם ונקודות. אפשר להדביק טבלה עם רווחים או
+        טאבים. שוברי שוויון מזוהים מכותרות OMP / GWP / OGP ואחוזים מפורשים בלבד.
+      </p>
+      <Button
+        type="button"
+        disabled={busy || !loaded || !teamId || !input.trim()}
+        onClick={parse}
+      >
+        עבד והתאם שחקנים
+      </Button>
+      {!!rows.length && (
         <>
-          <h3 className="font-bold">בחר משתתפים</h3>
+          <h3 className="font-bold">תצוגה מקדימה והתאמת שחקנים</h3>
           <label className="block text-sm">
             <input
               type="checkbox"
+              disabled={busy}
               checked={includeTransferred}
               onChange={(e) => setIncludeTransferred(e.target.checked)}
-            />{" "}
+            />{' '}
             כלול ילדים שעברו מאז לנבחרת אחרת או הוסרו
           </label>
-          <div className="flex flex-wrap gap-3">
-            {players
-              .filter((p) => includeTransferred || p.team?.id === teamId)
-              .map((p) => (
-                <label key={p.id} className="border rounded-md p-2">
-                  <input
-                    type="checkbox"
-                    checked={rows.some((row) => row.player === p.id)}
-                    onChange={(e) => select(p.id, e.target.checked)}
-                  />{" "}
-                  {p.firstName} {p.lastName}
-                  {includeTransferred && p.team ? ` (${p.team.name})` : ""}
-                </label>
-              ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead>
+                <tr>
+                  {[
+                    'מקום',
+                    'שם מודבק',
+                    'נקודות',
+                    'שחקן תואם',
+                    'OMP',
+                    'GWP',
+                    'OGP',
+                  ].map((h) => (
+                    <th key={h} className="p-2">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={index} className="border-t">
+                    <td className="p-2">{row.position}</td>
+                    <td className="p-2">{row.pastedName}</td>
+                    <td className="p-2">{row.points}</td>
+                    <td className="p-2">
+                      <select
+                        aria-label={`התאמת שחקן שורה ${index + 1}`}
+                        disabled={busy}
+                        className="min-w-40 w-full border rounded-md p-2 bg-background"
+                        value={row.player}
+                        onChange={(e) =>
+                          setRows((current) =>
+                            current.map((r, i) =>
+                              i === index
+                                ? { ...r, player: e.target.value }
+                                : r,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">בחרו שחקן — ההתאמה לא הוכרעה</option>
+                        {players
+                          .filter(
+                            (p) => pool.includes(p) || p.id === row.player,
+                          )
+                          .map((p) => (
+                            <option
+                              key={p.id}
+                              value={p.id}
+                              disabled={rows.some(
+                                (r, i) => i !== index && r.player === p.id,
+                              )}
+                            >
+                              {p.firstName} {p.lastName}
+                              {p.team ? ` (${p.team.name})` : ' (ללא נבחרת)'}
+                            </option>
+                          ))}
+                      </select>
+                    </td>
+                    {(['omp', 'gwp', 'ogp'] as const).map((key) => (
+                      <td key={key} dir="ltr" className="p-2">
+                        {row[key] === undefined
+                          ? '—'
+                          : `${(row[key]! * 100).toFixed(2)}%`}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          {!historicalMappingsResolved(rows) && (
+            <p role="status">יש לבחור שחקן ייחודי לכל שורה לפני שמירה.</p>
+          )}
+          {input !== parsedInput && (
+            <p role="status">הטקסט השתנה. עבדו והתאימו שוב לפני שמירה.</p>
+          )}
         </>
       )}
-      {!!rows.length && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr>
-                {[
-                  "שחקן",
-                  "מקום",
-                  "נקודות",
-                  "OMP % (רשות)",
-                  "GWP % (רשות)",
-                  "OGP % (רשות)",
-                ].map((h) => (
-                  <th key={h} className="p-2">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const player = players.find((p) => p.id === row.player);
-                return (
-                  <tr key={row.player}>
-                    <td className="p-2">
-                      {player?.firstName} {player?.lastName}
-                    </td>
-                    {(["position", "points", "omp", "gwp", "ogp"] as const).map(
-                      (field) => (
-                        <td key={field} className="p-2">
-                          <input
-                            aria-label={`${field} ${player?.firstName} ${player?.lastName}`}
-                            className="border p-2 rounded-md w-24 bg-background"
-                            type="number"
-                            min={field === "position" ? 1 : 0}
-                            max={
-                              field === "position"
-                                ? rows.length
-                                : field === "points"
-                                  ? 10000
-                                  : 100
-                            }
-                            step={
-                              field === "position" || field === "points"
-                                ? 1
-                                : "any"
-                            }
-                            required={
-                              field === "position" || field === "points"
-                            }
-                            value={row[field]}
-                            onChange={(e) =>
-                              setRows(
-                                rows.map((r) =>
-                                  r.player === row.player
-                                    ? { ...r, [field]: e.target.value }
-                                    : r,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                      ),
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <p className="text-sm text-muted-foreground">
-        הזינו נקודות משחק אמיתיות (3 לניצחון, 1 לתיקו, 0 להפסד), ולא מספר מיקום.
-        אחוזים לא ידועים נשארים ריקים.
-      </p>
-      <Button disabled={busy || !teamId || rows.length < 2}>
-        {busy ? "שומר..." : "שמור טורניר היסטורי שהסתיים"}
+      <Button type="submit" disabled={busy || !ready}>
+        {busy ? 'שומר...' : 'שמור טורניר היסטורי שהסתיים'}
       </Button>
     </form>
   );

@@ -69,6 +69,10 @@ export default function ManageTeams() {
   }, [dispatch]);
 
   const startTournament = async (team: Team) => {
+    if (team.openInternalTournament) {
+      navigate(`/manage/tournaments/${team.openInternalTournament.id}`);
+      return;
+    }
     if (startingRef.current || !team.isActive || team.playerCount < 2) return;
     startingRef.current = true;
     setStartingTeam(team.id);
@@ -348,14 +352,13 @@ export default function ManageTeams() {
                         size="sm"
                         disabled={
                           startingTeam !== null ||
-                          !team.isActive ||
-                          team.playerCount < 2
+                          (!team.openInternalTournament && (!team.isActive || team.playerCount < 2))
                         }
                         onClick={() => void startTournament(team)}
                       >
                         {startingTeam === team.id
                           ? 'פותח טורניר…'
-                          : 'התחל טורניר'}
+                          : team.openInternalTournament ? 'המשך טורניר' : 'התחל טורניר'}
                       </Button>
                     </div>
                     {admin && (
