@@ -35,20 +35,32 @@ The old quarterly dedupe rule using club is superseded by the intended identity 
 ## Public player pages
 There are no public player pages for club players.
 
-A team-player child page may exist, but:
-- it is linked only from the player's team page
+Every All Stars / team player has a public player page.
+
+Discovery rules:
+- team-player names shown in public All Stars contexts are links to that player's page
+- this includes team rosters and All Stars player-ranking tables where the player name is rendered
 - there is no global child directory/index
 - the site should not promote standalone discovery of child profiles
+- club/regular players still have no public individual profile
 
-Planned team-player profile fields:
+Preferred route shape:
+- `/all-stars/players/:playerId`
+
+The player page should use only appropriate public data already available in the product model and may show, when present:
 - child photo
 - name
 - city
+- current All Stars team
 - seniority / tenure
 - a short biography
 - score/ranking inside the team
+- overall All Stars ranking when available
 - image of current personal deck
 - earned badges
+
+Do not require child login for this page.
+Do not expose private/admin-only player data.
 
 ## Editing player profile data
 Because children do not log in in Stage A, child/team profile information is managed by admin, not by the child.
