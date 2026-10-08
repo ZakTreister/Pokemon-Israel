@@ -47,9 +47,9 @@ async function load(req) {
 function revision(req, tournament) {
   if (
     req.user.role === "judge" &&
-    (tournament.phase === "completed" ||
-      tournament.status === "completed" ||
-      tournament.source === "historical")
+    (tournament.source !== "live" ||
+      !["setup", "running"].includes(tournament.phase) ||
+      tournament.status === "completed")
   )
     fail(403, "שופטים רשאים להפעיל טורנירים חיים בלבד");
   if (

@@ -975,3 +975,36 @@ test('judge is limited to live tournament operation and never changes permanent 
     assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === event.id).canManage, true);
   }
 });
+
+test('judge operation requires an explicitly live source and an operational phase', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Live-only permissions' }, 'admin', 201);
+  const players = await ok(`/teams/${team.id}/players`, 'POST', {
+    players: ['One', 'Two'].map(firstName => ({ firstName, lastName: 'Live-only' })),
+  }, 'admin', 201);
+  for (const state of [
+    { source: null, phase: 'setup', status: 'upcoming' },
+    { source: 'live', phase: null, status: 'upcoming' },
+    { source: 'historical', phase: 'running', status: 'upcoming' },
+    { source: 'live', phase: 'running', status: 'completed' },
+    { source: 'live', phase: 'completed', status: 'upcoming' },
+  ]) {
+    const opened = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+    // Old/imported records can legitimately have null source/phase defaults.
+    // Neither inconsistent flags nor missing metadata grants live operation.
+    await Tournament.updateOne({ _id: opened.id }, { $set: state });
+    const snapshot = await Tournament.findById(opened.id).lean();
+    for (const [suffix, method, body] of [
+      ['/participants', 'PUT', { playerIds: players.map(player => player.id) }],
+      ['/rounds', 'POST', {}],
+      ['/rounds/1/matches/invalid', 'PUT', { result: { winner: 'draw', score1: 0, score2: 0 } }],
+      ['/close', 'POST', {}],
+    ]) {
+      const response = await request(`/internal-tournaments/${opened.id}${suffix}`, method, { expectedRevision: opened.revision, ...body });
+      assert.equal(response.status, 403, `${JSON.stringify(state)} ${method} ${suffix}`);
+    }
+    assert.equal((await ok('/tournaments/management')).find(row => row.id === opened.id).canManage, false);
+    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === opened.id).canManage, true);
+    assert.equal((await request(`/internal-tournaments/${opened.id}`)).status, 200);
+    assert.deepEqual(await Tournament.findById(opened.id).lean(), snapshot);
+  }
+});

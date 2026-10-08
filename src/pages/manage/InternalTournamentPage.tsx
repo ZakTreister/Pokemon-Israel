@@ -185,7 +185,11 @@ export default function InternalTournamentPage() {
     );
   const closed =
     tournament.phase === 'completed' || tournament.status === 'completed';
-  const readOnly = closed || (judge && tournament.source === 'historical');
+  const readOnly =
+    closed ||
+    (judge &&
+      (tournament.source !== 'live' ||
+        !['setup', 'running'].includes(tournament.phase)));
   const round = tournament.rounds.find((r) => r.number === roundNumber);
   const name = (player: string | null) =>
     tournament.playerParticipants.find((p) => p.player === player)
