@@ -253,16 +253,22 @@ The primary UX is a large textarea where the admin pastes standings/results copi
 
 After paste:
 1. parse the text into result rows
-2. extract, when present:
+2. extract all recognized standings columns that are present and can be parsed safely, including:
    - position
    - player name
    - points
-   - optional tie-break fields if the pasted format provides them and they can be parsed safely
-3. try to match every parsed player name to an existing Player record relevant to the selected All Stars team
-4. show the parsed preview before saving
-5. for unresolved or ambiguous rows, require the admin to explicitly choose the correct existing player
-6. do not allow final save while any required player mapping is unresolved
-7. save the completed historical event through the canonical historical `team_internal` result model so it contributes to rankings exactly like other historical internal tournaments
+   - OMP
+   - GWP
+   - OGP
+3. Do not reduce a richer pasted standings row to points only. When recognized standings fields are present, preserve them in the parsed preview and submit them through the historical-result model.
+4. Prefer header-aware parsing: when the pasted table contains column headers, use the header names/order to map values instead of assuming that the first numeric token after the name is the only meaningful value.
+5. Support normal pasted-table separators such as tabs and repeated whitespace, and tolerate percentage formats such as `62.5%` / `62,5%` when unambiguous.
+6. If an optional recognized value cannot be parsed safely, leave that field unresolved/empty and surface the issue in the preview rather than silently assigning it to the wrong column.
+7. try to match every parsed player name to an existing Player record relevant to the selected All Stars team
+8. show the parsed preview before saving
+9. for unresolved or ambiguous rows, require the admin to explicitly choose the correct existing player
+10. do not allow final save while any required player mapping is unresolved
+11. save the completed historical event through the canonical historical `team_internal` result model so it contributes to rankings exactly like other historical internal tournaments
 
 ### Reuse the legacy implementation
 This exact interaction existed in repository history and should be used as implementation reference rather than reinvented.
@@ -277,10 +283,12 @@ Do **not** blindly restore the old User-based tournament model, deck-autocomplet
 Extract/reuse the parsing and matching UX ideas and adapt them to the current Player-based All Stars historical endpoint/model.
 
 ### Matching rules for pasted names
-Matching must be conservative:
+Matching must be conservative, but a unique first name is sufficient:
 - normalize whitespace, punctuation/case and harmless formatting differences before comparison
-- prefer a unique exact normalized match
-- a unique containment/legacy-style match may be suggested when clearly safe
+- prefer a unique exact normalized full-name match
+- when the pasted value contains only one token / first name, auto-match it if exactly one relevant Player has that normalized first name
+- if two or more relevant Players share that first name, do not guess; leave the row unresolved for explicit user selection
+- a unique containment/legacy-style match may also be used when clearly safe
 - never auto-match when multiple plausible players remain
 - unresolved/ambiguous rows must display a selector
 - the selector may expose the broader All Stars player pool when necessary, with team context, so transferred/former players can still be mapped intentionally
