@@ -28,9 +28,12 @@ Do not use **נבחרות וסגלים** as the primary label.
 On the team-management list, replace the old combined **סגל וטורנירים** action with two actions:
 
 - **סגל** — navigates to the existing team roster/ranking/details page
-- **התחל טורניר** — starts/opens a new internal tournament for that team
+- **התחל טורניר** — starts/opens a new internal tournament for that team when no open internal tournament exists
+- If that team already has an open internal tournament, replace the create action with **המשך טורניר**, linking to the existing tournament
 
-The **התחל טורניר** action should be the more prominent operational action.
+A team must never be offered a second simultaneous live internal tournament.
+
+The **התחל טורניר** / **המשך טורניר** action should be the more prominent operational action.
 
 Do not merge these two meanings into one button.
 
@@ -54,7 +57,9 @@ Always provide a visible back-navigation action.
 
 ## Internal tournament launch
 Opening an internal tournament from the team page must:
-- create a `team_internal` tournament linked to that team
+- first resolve whether an open live internal tournament already exists for that team
+- if one exists, open that tournament instead of creating another
+- otherwise create a `team_internal` tournament linked to that team
 - preload all active players currently assigned to the team
 - allow the judge to remove absent/non-participating players before round 1
 - lock the participant set once competitive rounds begin

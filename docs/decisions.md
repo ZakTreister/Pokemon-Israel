@@ -145,3 +145,11 @@ The current row-by-row manual entry is not the preferred primary UX.
 Authorized live-tournament operators can cancel only the latest/current active round.
 The cancelled round is archived for audit/history, removed from active standings, and may be re-paired.
 Previous rounds stay intact and the participant roster remains locked.
+
+
+## 2026-10 — One open internal tournament per team
+Each All Stars team may have at most one open/live internal tournament at a time.
+
+The rule is backend-enforced and concurrency-safe.
+When an open tournament exists, the team UI shows **המשך טורניר** instead of allowing another **התחל טורניר** action.
+Completed and historical tournaments do not block creation of the next live tournament.

@@ -204,6 +204,27 @@ Structural operations such as starting/creating a round must be protected agains
 The server state is canonical.
 
 ## Internal team tournaments
+
+### One open internal tournament per team
+A team may have **at most one open/live internal tournament at a time**.
+
+An open internal tournament means a live `team_internal` tournament for that team that has not reached the completed/closed state.
+
+Requirements:
+- before creating a new live internal tournament, the server must check whether the team already has an open one
+- this must be enforced on the backend, not only by disabling/hiding a button
+- concurrent requests must not be able to create two open internal tournaments for the same team
+- use an atomic/database-enforced uniqueness strategy appropriate to the current standalone Mongo architecture
+- if creation is attempted while one already exists, return a clear conflict response that identifies the existing tournament when practical
+- historical completed tournament creation does not count as an open live tournament
+- completed/closed live tournaments no longer block a new one
+
+UI behavior:
+- if no open internal tournament exists, show **התחל טורניר**
+- if an open internal tournament already exists, do not offer another create action
+- instead show **המשך טורניר** and navigate directly to the existing open tournament
+- if a stale UI still sends a create request and the server reports an existing tournament, recover by directing the user to that existing tournament rather than creating a duplicate
+
 From a team page, staff can create a `team_internal` tournament.
 It starts with the active roster preloaded.
 Before round 1, staff can remove absent players.

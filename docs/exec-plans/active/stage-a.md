@@ -370,6 +370,20 @@ The final flow must:
 - block save until mappings are resolved
 - save as a completed historical internal-team tournament and feed the same All Stars ranking source of truth
 
+### 26. Prevent duplicate open internal tournaments
+Enforce the product invariant that each All Stars team may have at most one open/live internal tournament.
+
+Required:
+- backend enforcement is authoritative
+- concurrent create requests must not create duplicates
+- use an atomic/database-enforced uniqueness approach compatible with the current Mongo deployment
+- completed/closed tournaments do not block future tournament creation
+- historical completed tournaments do not block live tournament creation
+- team-management UI shows **התחל טורניר** only when none is open
+- when one is already open, show **המשך טורניר** and navigate to it
+- if a stale create attempt receives the backend conflict, recover gracefully by opening/linking the existing tournament
+- preserve current permissions and roster-preload behavior
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
