@@ -82,16 +82,34 @@ If the current user has tournament-management permission, they can enter the rel
 
 Do not expose a separate internal-tournament management tab.
 
-### 4. Super-admin hard delete
-Super-admin may hard-delete any tournament, including completed/past tournaments.
+### 4. Tournament deletion: soft by default, permanent by explicit opt-in
+Super-admin may delete any tournament, including completed/past tournaments, across all tournament types.
 
-Apply this to all tournament types.
+Default behavior:
+- the normal **מחק** action opens a confirmation dialog
+- default confirmation performs a **soft delete**
+- include a **מחיקה לצמיתות** checkbox/toggle in that dialog
+- **מחיקה לצמיתות** is unchecked by default
+- only when explicitly checked does the operation permanently hard-delete the tournament
+
+Soft delete requirements:
+- persist deletion metadata such as `deletedAt` and `deletedBy`
+- exclude the tournament from normal management/public lists and history
+- exclude it from rankings/statistics/counts
+- exclude it from open/live tournament uniqueness checks
+- block further normal tournament mutations
+- preserve rounds/results/history in storage for future recovery/audit
+
+Permanent deletion requirements:
+- physically remove the tournament and dependent embedded state
+- avoid orphaned references
+- preserve concurrency protections against recreation by stale mutations
 
 Remove the old backend restriction that prevents deleting past tournaments.
 
-Judges must not have hard-delete permission.
+Judges must not have any tournament deletion permission.
 
-Deletion must clean dependent state and ensure deleted results no longer affect derived rankings.
+No restore UI is required in this iteration unless one already exists.
 
 ### 5. Internal historical tournament entry
 This is mandatory Stage A functionality and is expected to already exist.
