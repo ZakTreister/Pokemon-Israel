@@ -17,12 +17,21 @@ For each active team, expose two separate actions:
 - This is navigation only; it must not create a tournament.
 - It is the entry point for viewing the team's roster and team-player ranking/details.
 
-### התחל טורניר
-- Label: **התחל טורניר**
-- Starts/opens the internal-tournament creation flow for that specific team.
-- It should be visually more prominent than **סגל**.
-- It is available to staff roles that are allowed to operate a live tournament.
-- Permanent team editing controls remain admin-only.
+### התחל טורניר / המשך טורניר
+This is one conditional operational action for the team:
+
+- If the team has **no** open/live internal tournament:
+  - Label: **התחל טורניר**
+  - Start the internal-tournament creation flow for that specific team.
+- If the team **already has** an open/live internal tournament:
+  - do **not** render **התחל טורניר**
+  - render **המשך טורניר** instead
+  - navigate directly to the existing active tournament
+  - never offer a second create action for that team
+
+This operational action should be visually more prominent than **סגל**.
+It is available to staff roles that are allowed to operate a live tournament.
+Permanent team editing controls remain admin-only.
 
 Keep the existing admin-only team configuration actions separate from these two primary team actions.
 
