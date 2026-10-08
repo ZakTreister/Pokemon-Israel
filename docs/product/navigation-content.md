@@ -79,6 +79,24 @@ They should NOT use the prominent page-level `shadow-button` treatment.
 Use the header's own active/hover/focus styling instead.
 The same principle applies on mobile navigation.
 
+## Floating trial-registration CTA
+Public site pages should show a persistent floating CardSchool-branded CTA/logo with the text:
+
+**הירשמו לשיעור ניסיון**
+
+Scope:
+- show it on public-facing pages such as homepage, league rankings, All Stars pages, team/player pages, events, news and public static pages
+- do not show it inside management/admin pages, login/auth screens, or live tournament-operation screens
+- keep it responsive and RTL-safe
+- position it so it does not cover important content, navigation, dialogs, or mobile controls
+- use a reusable shared component rather than duplicating page-specific markup
+
+Destination:
+- the CTA will eventually link to a dedicated landing page
+- keep the destination configurable in one place
+- do not invent or build that landing page in this iteration
+- until a real destination is configured, do not hard-code an unrelated URL
+
 ## Responsive public navigation
 The main site menu must work well on mobile:
 - no clipped items
