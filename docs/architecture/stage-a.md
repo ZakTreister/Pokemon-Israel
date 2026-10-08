@@ -117,14 +117,20 @@ exclude it immediately. Judges cannot delete. A concurrent CAS mutation cannot
 recreate the deleted document. The existing future-series delete action remains
 supported. All-type management summaries expose lifecycle and permission data.
 
-The existing Socket.IO server now authenticates staff with the existing JWT.
-Clients join one validated internal tournament room and receive notifications
-only after successful canonical writes. They fetch authoritative state on entry,
-notification and reconnect; revision checks prevent older responses replacing a
-newer snapshot. A ten-second automatic fallback fetch handles connection loss.
-No normal manual refresh button remains. Dirty match drafts keep their captured
-revision across other judges' updates; a stale save requires re-entry against the
-new canonical result. Structural CAS protections remain unchanged.
+The existing Socket.IO server authenticates staff with the existing JWT, but
+Socket.IO is scoped only to the operational management screen of a live
+tournament. While that screen is mounted, clients join one validated internal
+tournament room and receive notifications only after successful canonical
+writes. They fetch authoritative state on entry, notification and reconnect;
+revision checks prevent older responses replacing a newer snapshot. A ten-second
+automatic fallback fetch handles connection loss. Leaving live tournament
+management unsubscribes/disconnects that screen's live connection. Public pages,
+management lists, team/player administration, historical entry and other
+non-live-management screens use normal HTTP/API fetch/refetch flows and do not
+maintain Socket.IO connections. No normal manual refresh button remains in live
+tournament operation. Dirty match drafts keep their captured revision across
+other judges' updates; a stale save requires re-entry against the new canonical
+result. Structural CAS protections remain unchanged.
 
 ### Cloudinary configuration
 
