@@ -21,8 +21,8 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
       canManage:
         req.user.role === 'admin' ||
         (t.engineVersion === 'swiss-v1' &&
-          t.source !== 'historical' &&
-          t.phase !== 'completed' &&
+          t.source === 'live' &&
+          ['setup', 'running'].includes(t.phase) &&
           t.status !== 'completed'),
     })),
   );

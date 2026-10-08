@@ -327,6 +327,30 @@ try {
   assert.ok(!button('סיים טורניר'));
   act(() => renderer.unmount());
   renderer = null;
+  for (const state of [
+    { source: null, phase: 'setup', status: 'upcoming' },
+    { source: 'live', phase: null, status: 'upcoming' },
+    { source: 'historical', phase: 'running', status: 'upcoming' },
+    { source: 'live', phase: 'running', status: 'completed' },
+    { source: 'live', phase: 'completed', status: 'upcoming' },
+  ]) {
+    serverState = { ...serverState, ...state };
+    await act(async () => {
+      renderer = mount('judge');
+      await flush();
+    });
+    await act(async () => {
+      navigate(`/manage/tournaments/${id}`);
+      await flush();
+    });
+    assert.ok(text(renderer.toJSON()).includes(serverState.title));
+    for (const action of ['שמור נוכחות', 'הגרל סיבוב 1', 'שמור תוצאה', 'הגרל סיבוב נוסף', 'סיים טורניר']) {
+      assert.ok(!button(action), `Judge must not operate ${JSON.stringify(state)}: ${action}`);
+    }
+    assert.equal(renderer.root.findAllByType('input').filter(input => input.props.type === 'checkbox').length, 0);
+    act(() => renderer.unmount());
+    renderer = null;
+  }
   console.log(
     'Internal tournament UI checks passed: role-aware roster/start actions, single creation, direct match cards, operational order, retry protection and live reconciliation.',
   );
