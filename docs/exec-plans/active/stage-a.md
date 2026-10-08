@@ -387,6 +387,47 @@ Required:
 - if a stale create attempt receives the backend conflict, recover gracefully by opening/linking the existing tournament
 - preserve current permissions and roster-preload behavior
 
+### 27. Sortable tables and ranking order
+Add reusable sorting behavior to tables where the displayed columns have meaningful sort semantics.
+
+Required:
+- prefer extending/creating the shared DataTable/table abstraction rather than duplicating sort code per page
+- clicking/tapping a sortable header changes the sort column/direction
+- visibly indicate the active sort
+- preserve keyboard/accessibility behavior
+- numeric fields sort numerically
+- ranking pages for children/players default to canonical **place/rank ascending**
+- place 1 must appear first on initial load
+- user sorting is view-only and must not alter ranking calculations or persisted data
+- preserve responsive RTL behavior
+
+### 28. Public All Stars player pages
+Implement a public page for every team/All Stars player.
+
+Required:
+- preferred route: `/all-stars/players/:playerId`
+- clicking a team player's name in public All Stars contexts navigates to that page
+- link names from team rosters and All Stars player-ranking tables
+- show appropriate public player information available from the existing model, including team/ranking/profile fields when present
+- do not expose admin/private data
+- no child login is required
+- do not create a global child directory
+- do not create public profile pages for club/regular players
+- reuse player/profile components where practical instead of duplicating page-specific UI
+
+### 29. Floating public trial-registration CTA
+Add a reusable floating public-site CTA/logo labeled **הירשמו לשיעור ניסיון**.
+
+Required:
+- render it across public-facing pages
+- do not render it in management/admin, login/auth, or live tournament-operation pages
+- responsive/RTL-safe and must not cover important UI
+- centralize the destination configuration
+- the destination will later be a dedicated landing page
+- do not build that landing page in this iteration
+- do not substitute an unrelated URL while the final destination is not configured
+- implement the CTA as a shared component/layout concern, not duplicated markup in every page
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
