@@ -341,9 +341,10 @@ Judge is allowed to operate a live tournament only. Configuration and historical
 Apply the approved layout in `docs/product/internal-tournament-ui.md`.
 
 In particular:
-- replace the combined **סגל וטורנירים** team action with separate **סגל** and **התחל טורניר** actions
+- replace the combined **סגל וטורנירים** team action with **סגל** plus one conditional tournament action
 - **סגל** navigates to the team roster/ranking/details page
-- **התחל טורניר** starts the team's internal-tournament flow
+- if the team has no open/live internal tournament, show **התחל טורניר**
+- if the team already has an open/live internal tournament, do **not** show **התחל טורניר**; show **המשך טורניר** and navigate to the existing tournament
 - remove empty reserved mobile error space
 - render match cards directly in the page content, without a redundant outer match-list Card
 - on mobile, place the current-round matches immediately after the compact header/round controls and any error that actually exists
