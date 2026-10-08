@@ -437,6 +437,21 @@ Check:
 
 Prefer deliberate responsive variants for dense tables or management screens.
 
+### Sortable tables
+
+When a table has meaningful sortable columns, prefer a reusable sortable-table/DataTable capability instead of page-specific sort implementations.
+
+Requirements:
+- column configuration declares whether/how a column sorts
+- show the active sort column and direction
+- support keyboard interaction and appropriate `aria-sort` semantics
+- numeric values sort numerically, not lexicographically
+- text sorting should behave sensibly for Hebrew/locale-aware names
+- sorting is presentation state unless the dataset requires server-side sorting for scale
+- do not mutate canonical domain data merely to sort the view
+
+For ranking tables, default sort is always canonical rank/place ascending, even if the reusable table supports other initial sorts.
+
 ---
 
 ## 17. Styling and design-system rules
