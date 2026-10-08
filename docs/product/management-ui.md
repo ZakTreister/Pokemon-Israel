@@ -43,6 +43,20 @@ These embedded controls should not receive shadow merely because shadow exists e
 
 In short: shadows are **all-or-none within the same action row/group**, not globally all-or-none across the page.
 
+## Tournament deletion dialog
+Tournament deletion is admin-only and uses one confirmation dialog.
+
+Default behavior:
+- the normal **מחק** action means soft delete
+- include a **מחיקה לצמיתות** checkbox/toggle
+- the permanent-delete option is **unchecked by default**
+- when unchecked, the primary confirmation performs soft delete
+- when checked, clearly strengthen the destructive warning/copy before permanent deletion
+- do not preselect permanent deletion
+- judges must not see tournament deletion controls
+
+The dialog should make it obvious that soft deletion removes the tournament from normal use/rankings while preserving the underlying record, whereas permanent deletion cannot be recovered through the normal product flow.
+
 ## Back navigation
 Every nested management page must provide an obvious way to return to the previous/parent context.
 
