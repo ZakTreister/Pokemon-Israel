@@ -107,9 +107,13 @@ If the capability already exists in the codebase, preserve and reuse it rather t
 A future button/placeholder belongs on the unified Tournaments page for importing roughly the last five years of regular/club tournament results via Excel.
 The actual Excel importer is NOT part of Stage A and must not be implemented until the real file is available and inspected.
 
-## 2026-10 — Live tournament updates use WebSocket/Socket.IO
-Normal tournament operation should update live via the existing Socket.IO infrastructure.
-Remove the manual “refresh from server” button from normal UX.
+## 2026-10 — WebSocket/Socket.IO is only for live tournament management
+Socket.IO is used only while an authorized user is actively inside the operational management screen of a live tournament.
+
+Do not maintain WebSocket connections elsewhere in the application. Public pages, rankings, news/events, management overview/lists, team/player administration and historical-entry screens use normal HTTP/API fetch/refetch flows.
+
+Entering live tournament management creates/subscribes to the tournament-specific connection; leaving that screen cleans it up.
+Remove the manual “refresh from server” button from live tournament operation.
 Initial page load/refresh still fetches canonical server state.
 
 ## 2026-10 — Homepage team stats must be real
