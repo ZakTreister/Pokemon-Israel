@@ -157,3 +157,19 @@ Each All Stars team may have at most one open/live internal tournament at a time
 The rule is backend-enforced and concurrency-safe.
 When an open tournament exists, the team UI shows **המשך טורניר** instead of allowing another **התחל טורניר** action.
 Completed and historical tournaments do not block creation of the next live tournament.
+
+
+## 2026-10 — Tables support sorting; rankings default to place
+Tables with meaningful columns should support user sorting through reusable table behavior.
+
+Player/child ranking pages always open sorted by canonical place/rank ascending. User-selected sorting changes only the view, not the ranking calculation.
+
+## 2026-10 — Every All Stars player has a public profile page
+Every team player has a public All Stars player page. Public All Stars player names link to that page.
+
+There is still no global child directory, and club/regular players still do not have public individual profile pages.
+
+## 2026-10 — Public pages show a floating trial-registration CTA
+Public pages show a reusable floating CardSchool-branded **הירשמו לשיעור ניסיון** CTA.
+
+It is not shown in management/admin, authentication, or live tournament-operation screens. Its destination is centrally configurable and will later point to a dedicated landing page; do not invent that landing page or an unrelated temporary destination.
