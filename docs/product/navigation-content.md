@@ -92,10 +92,10 @@ Scope:
 - use a reusable shared component rather than duplicating page-specific markup
 
 Destination:
-- the CTA will eventually link to a dedicated landing page
-- keep the destination configurable in one place
-- do not invent or build that landing page in this iteration
-- until a real destination is configured, do not hard-code an unrelated URL
+- approved URL: `https://lp.cardschool.co.il`
+- keep the destination configured centrally/shared rather than duplicating the URL across pages
+- clicking the floating CTA opens this landing page
+- do not substitute a different destination without a later product decision
 
 ## Responsive public navigation
 The main site menu must work well on mobile:
