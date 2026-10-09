@@ -19,16 +19,37 @@ staff identities, User links, or lock data. There are no new child-login CTAs.
 ## Persisted Swiss workflow
 
 Create a tournament from the active team roster, adjust attendance while in
-`setup`, then create rounds. Every mutation carries `expectedRevision`. A single
-Mongo `findOneAndUpdate` compares the revision and increments it atomically.
-A conflict returns HTTP 409 / `STALE_REVISION`; clients automatically reconcile and require a retry.
-This covers results, attendance, pairings and closure, without transactions or a
-replica set. Two judges cannot start the same round from the same revision.
+`setup`, then create rounds.
+
+Concurrency is split by mutation scope.
+
+Structural tournament mutations carry `expectedRevision` and use the tournament
+revision as an atomic compare-and-swap guard. This includes attendance changes,
+round creation/cancellation, tournament closure, and corrections to earlier
+rounds that invalidate downstream rounds. Two judges cannot perform the same
+structural transition from one revision.
+
+Ordinary match-result saves use per-match optimistic concurrency instead. Each
+match carries a result/version counter (for example `resultRevision`), and a
+result save compares the expected version of that specific match. A successful
+save may still increment the tournament revision for canonical snapshots/live
+notifications, but that new tournament revision must not make untouched sibling
+match drafts stale. Different matches may therefore be saved concurrently while
+concurrent edits to the same match conflict cleanly.
+
+All writes remain atomic on standalone MongoDB without requiring transactions or
+a replica set.
 
 Results select a winner or draw before a Bo3 score. Wins support 2–0, 2–1 and
 1–0 (and reverse scores); draws support 0–0 and 1–1. Optional drawn-game counts
 allow accurate GWP/OGP when games themselves ended in draws; no more than three
 games can be recorded. Missing results block pairing and closure.
+
+Round 1 is randomized server-side rather than derived from roster/alphabetical
+seed order. The randomized pairings (and randomized round-1 bye when needed) are
+persisted as the created round and are not regenerated on refresh/reconnect.
+From round 2 onward, the normal Swiss standings/rematch/bye rules apply. The
+random source should be injectable/mockable for deterministic automated tests.
 
 Correcting an earlier result requires explicit `invalidateLaterRounds: true`.
 Later rounds are removed from current play and archived with actor/time/reason;
