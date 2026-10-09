@@ -136,6 +136,12 @@ Per-match states such as:
 
 may remain inside the relevant match card because they directly affect the judge's next action.
 
+Each match editor owns its own unsaved draft. A successful save or live update for another match must not clear, reset or invalidate this match's dirty draft merely because the tournament-wide revision changed.
+
+Judges must be able to fill several match cards and then save those results one after another.
+
+A same-match concurrency conflict may require the affected match to reconcile/retry, but unrelated match drafts should remain intact.
+
 Do not move critical save failure information into a hidden secondary-information area.
 
 ## Connectivity information
