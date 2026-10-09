@@ -195,3 +195,13 @@ Ordinary match result entry uses a per-match result/version guard rather than tr
 Different matches can be drafted and saved sequentially or concurrently without invalidating one another. Concurrent edits to the same match still conflict safely.
 
 Tournament-wide revision protection remains authoritative for structural changes such as attendance, round creation/cancellation, close, and earlier-round corrections that invalidate later rounds.
+
+
+## 2026-10 — Events is the public all-tournaments view
+The public **אירועים** page is the public-facing counterpart of management **טורנירים** and exposes all non-deleted canonical tournament types: regular/club, internal All Stars and inter-team.
+
+Users can filter by lifecycle/status and tournament type and use public search. Public tournament details/results must also support the canonical Swiss/internal engine rather than excluding it.
+
+Public responses use explicit safe fields and never expose management permissions, staff identities, revisions, audit/deletion metadata or controls. Public Events/detail pages use HTTP only, not Socket.IO.
+
+Public and management tournament lists should reuse shared filter/domain/presentation primitives where sensible, while management-only actions remain outside the shared public component.
