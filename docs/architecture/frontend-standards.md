@@ -452,6 +452,20 @@ Requirements:
 
 For ranking tables, default sort is always canonical rank/place ascending, even if the reusable table supports other initial sorts.
 
+### Clickable rows
+
+When an entire data row represents one navigable entity, prefer a reusable row-navigation capability rather than making only one text cell clickable.
+
+Requirements:
+- the full row/card click target navigates to the entity
+- preserve semantic keyboard navigation and visible focus treatment
+- do not make the implementation rely only on an `onClick` attached to a non-semantic element
+- nested buttons/links/actions inside the row must remain independently operable and must not trigger the parent row navigation
+- row navigation must work correctly in RTL and on touch devices
+- avoid duplicating row-navigation logic page by page when the shared DataTable can support it
+
+For All Stars / team-player rows, the row target is the public player profile.
+
 ---
 
 ## 17. Styling and design-system rules
