@@ -178,3 +178,18 @@ There is still no global child directory, and club/regular players still do not 
 Public pages show a reusable floating CardSchool-branded **הירשמו לשיעור ניסיון** CTA.
 
 It is not shown in management/admin, authentication, or live tournament-operation screens. Its approved destination is `https://lp.cardschool.co.il`, configured centrally/shared rather than repeated page by page.
+
+
+## 2026-10 — Round 1 pairings are randomized
+The first round of a live Swiss tournament is randomized on the server and must not follow alphabetical roster order, IDs, or frontend ordering.
+
+The created round is persisted immediately. Round 1 is not re-randomized on refresh/reconnect. From round 2 onward the normal Swiss pairing policy applies.
+
+Automated tests must control/inject the randomness rather than depend on probabilistic assertions.
+
+## 2026-10 — Match-result saves use match-level concurrency
+Ordinary match result entry uses a per-match result/version guard rather than treating every sibling match draft as stale whenever the tournament-wide revision changes.
+
+Different matches can be drafted and saved sequentially or concurrently without invalidating one another. Concurrent edits to the same match still conflict safely.
+
+Tournament-wide revision protection remains authoritative for structural changes such as attendance, round creation/cancellation, close, and earlier-round corrections that invalidate later rounds.
