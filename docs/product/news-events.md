@@ -31,9 +31,16 @@ The page should show enough public-safe summary information to understand each e
 - team name when relevant
 - participant count when appropriate
 
-A tournament entry links to a public detail/results view when that information exists.
+A tournament entry links to a public tournament page.
 
-Public details/results must work for all canonical tournament types, including `swiss-v1` internal-team tournaments. Do not route a public Swiss tournament into the management screen and do not return 404 merely because it uses the new engine.
+That page displays the **results of that tournament itself**:
+- completed event: final standings/results
+- active event: current recorded results/standings, clearly marked as in progress
+- upcoming event: event details and registration information; no fabricated/empty "final results"
+
+The tournament page must not substitute the overall league/All Stars ranking for the event's own results.
+
+Public tournament pages must work for all canonical tournament types, including `swiss-v1` internal-team tournaments. Do not route a public Swiss tournament into the management screen and do not return 404 merely because it uses the new engine.
 
 For active/completed internal-team tournaments, expose only appropriate public tournament information and public-safe standings/results. Never expose:
 - staff identities
