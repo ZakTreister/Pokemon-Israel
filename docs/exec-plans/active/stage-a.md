@@ -484,6 +484,44 @@ Tests must cover:
 - concurrent edits to the same match produce a conflict
 - structural operations remain protected by tournament revision
 
+### 32. Public Events — expose all tournaments
+Upgrade the public **אירועים** / `/tournaments` experience so it is the public counterpart of the unified management tournament list.
+
+Required:
+- show every non-deleted canonical tournament type: `quarterly`, `team_internal`, `inter_team`
+- do not filter out internal-team / `swiss-v1` tournaments
+- filters: lifecycle/status and tournament type, plus useful text search
+- filters may be combined
+- expose upcoming, active and completed tournaments
+- use public-safe summary data only
+- soft-deleted tournaments must not appear
+- public links/details must work for all supported tournament types, including `swiss-v1` internal tournaments
+- public detail/results for internal tournaments may show public-safe standings/results but never staff IDs, revisions, audit/deletion metadata or management controls
+- do not send public users to `/manage`
+- no Socket.IO on Events or public tournament details; use normal HTTP/API flows
+- registration CTA is type-aware and appears only for publicly registerable events
+
+Reuse/refactor:
+- compare `src/pages/TournamentsPage.tsx` and `src/pages/manage/ManageTournaments.tsx`
+- extract shared tournament filter/list/presentation primitives where that removes real duplication
+- centralize tournament type/lifecycle labels and semantics
+- keep management-only actions (operate/delete/create) outside the shared public presentation
+- avoid a single over-configured component full of permission branches
+
+Backend/API:
+- provide a public-safe canonical tournament summary/detail path that supports all engines/types
+- do not keep the current public behavior that excludes `engineVersion: swiss-v1`
+- prefer reusing canonical tournament/lifecycle query logic between public and management endpoints rather than duplicating it
+- use explicit public allowlists/DTOs for internal-team tournament data
+
+Add/update tests for:
+- all three tournament types appearing publicly
+- combined status/type filtering
+- soft-deleted tournament exclusion
+- public details for a `swiss-v1` internal tournament
+- no management/private fields in the public response
+- management list behavior remains intact
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
