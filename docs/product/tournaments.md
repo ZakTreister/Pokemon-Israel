@@ -44,7 +44,13 @@ Public list requirements:
 
 Public detail/result requirements:
 - a public tournament link must resolve for every supported canonical tournament type
-- adapt the display to the tournament type rather than sending public users to management
+- the public tournament page is primarily the **results page for that specific tournament**, not an aggregate league-ranking page
+- completed tournaments show the final standings/results of that tournament
+- active tournaments may show the current standings/results already recorded for that tournament, clearly labeled as current/in progress
+- upcoming tournaments do not invent results; show event details/registration state until results exist
+- results must be derived only from that tournament's canonical stored participants/rounds/final standings/results
+- adapt the result presentation to the tournament type rather than sending public users to management
+- for All Stars/team-player result rows, link/navigate to the public player profile where applicable
 - expose only public-safe fields/standings/results
 - never expose staff/audit/revision/deletion/permission metadata
 - use HTTP/API loading only; no public tournament WebSocket subscription
