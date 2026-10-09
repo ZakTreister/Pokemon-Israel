@@ -31,6 +31,31 @@ Admin retains those administrative permissions as specified elsewhere.
 
 See `docs/architecture/permissions.md`.
 
+## Public tournament/event exposure
+The public **אירועים** experience exposes all non-deleted canonical tournament types through one public list and public-safe detail/result views.
+
+Public list requirements:
+- include `quarterly`, `team_internal`, and `inter_team`
+- support lifecycle/status filtering
+- support tournament-type filtering
+- support useful text search
+- allow filters to be combined
+- do not exclude `swiss-v1` / internal-team tournaments merely because they use a newer engine
+
+Public detail/result requirements:
+- a public tournament link must resolve for every supported canonical tournament type
+- adapt the display to the tournament type rather than sending public users to management
+- expose only public-safe fields/standings/results
+- never expose staff/audit/revision/deletion/permission metadata
+- use HTTP/API loading only; no public tournament WebSocket subscription
+- exclude soft-deleted tournaments
+
+Registration actions are type-aware: show registration only where public registration is supported.
+
+The public and management tournament lists should share presentation/filter primitives and canonical lifecycle/type semantics where practical instead of reimplementing two disconnected tournament-list systems.
+
+See `docs/product/news-events.md`.
+
 ## Unified management page
 The user-facing management page is **טורנירים** and contains all tournament types.
 
