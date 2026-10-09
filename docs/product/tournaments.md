@@ -101,7 +101,7 @@ Submitting a match result is asynchronous and the UI must show that state explic
 Immediately after submit:
 - do NOT temporarily show “לא הוזנה תוצאה למשחק זה”
 - show a concise saving state such as **שומר את התוצאה…**
-- prevent accidental duplicate submission while that save is in flight
+- prevent accidental duplicate submission for that same match while its save is in flight
 
 After confirmed server success:
 - show the canonical saved result
@@ -111,6 +111,20 @@ If save fails:
 - show a short Hebrew error explaining that the result was not saved
 - tell the judge what to do next
 - do not pretend the result is committed
+
+### Independent match drafts and saves
+Judges must be able to enter several match results before saving them and then save those matches one after another without the first successful save invalidating the unsaved drafts of sibling matches.
+
+Requirements:
+- an ordinary result save for one match must not make a different match's draft stale merely because the tournament-wide revision changed
+- each match carries its own result/version counter (for example `resultRevision`)
+- ordinary current-round result saves use an expected match/result revision for optimistic concurrency
+- saving match A may update the canonical tournament snapshot/revision for synchronization, but match B can still save if match B itself has not changed since its draft was created
+- a live canonical update must not erase or reset dirty local drafts for other matches
+- two judges may save results for two different matches concurrently
+- two judges editing the **same** match concurrently must still receive a clear conflict rather than silently overwriting one another
+
+When a result correction has structural consequences — for example changing an earlier round while later rounds exist — it is no longer an ordinary independent match save. It must use the tournament-wide structural revision/concurrency path and the existing explicit downstream-round invalidation rules.
 
 ### Approved internal-tournament operation layout
 For the current approved screen hierarchy, match-card placement, mobile density, error-space behavior, and connection-info placement, follow:
@@ -150,6 +164,19 @@ Pairing/standings logic must be canonical on the server, including equivalents o
 The frontend must not be the authoritative implementation.
 
 ### Round flow
+#### Round 1 randomization
+The first round of a live Swiss tournament must be genuinely randomized on the server.
+
+Requirements:
+- do not derive round-1 pairings from roster order, alphabetical name order, Player ID order or UI order
+- shuffle/randomize the eligible participants on the server before creating round-1 pairings
+- if there is an odd participant count, the round-1 bye is determined from the same randomized process rather than alphabetical/seed order
+- persist the generated round immediately; refresh/reconnect must show the same already-created pairings rather than re-randomizing them
+- the frontend must not be the source of randomness
+- use a randomization implementation that can be deterministically controlled/injected in tests so tests do not rely on chance
+
+From round 2 onward, use the normal server-authoritative Swiss rules: standings, point proximity, rematch avoidance, bye distribution and the existing tie-break/pair-cost policy.
+
 After a round:
 - allow “Pair another round”
 - allow “Show results”
@@ -236,7 +263,15 @@ Equivalent shorter copy is acceptable if it preserves the same meaning.
 
 ### Concurrency
 Multiple judges may enter match results.
-Structural operations such as starting/creating a round must be protected against duplicate execution by server-side versioning/locking/atomic transition logic.
+
+Use two concurrency scopes:
+- **match-level optimistic concurrency** for ordinary result entry/correction that affects only one current match
+- **tournament-level structural concurrency** for participant changes, round creation/cancellation, tournament close, and any earlier-result correction that invalidates later rounds
+
+Ordinary saves to different matches must not conflict merely because they occur against different tournament-wide revisions.
+Concurrent edits to the same match must not silently overwrite one another.
+
+Structural operations must remain protected against duplicate execution by tournament-level revision/versioning/locking/atomic transition logic.
 The server state is canonical.
 
 ## Internal team tournaments
