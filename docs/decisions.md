@@ -170,7 +170,9 @@ Tables with meaningful columns should support user sorting through reusable tabl
 Player/child ranking pages always open sorted by canonical place/rank ascending. User-selected sorting changes only the view, not the ranking calculation.
 
 ## 2026-10 — Every All Stars player has a public profile page
-Every team player has a public All Stars player page. Public All Stars player names link to that page.
+Every team player has a public All Stars player page.
+
+In team-player lists/tables, the entire player row/card is the navigation target to that profile; the name is not the only clickable area. Nested action controls remain independent and must not trigger row navigation.
 
 There is still no global child directory, and club/regular players still do not have public individual profile pages.
 
