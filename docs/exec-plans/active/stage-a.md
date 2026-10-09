@@ -425,14 +425,16 @@ Implement a public page for every team/All Stars player.
 
 Required:
 - preferred route: `/all-stars/players/:playerId`
-- clicking a team player's name in public All Stars contexts navigates to that page
-- link names from team rosters and All Stars player-ranking tables
+- in team-player lists/tables, the **entire player row/card** navigates to that page, not only the player's name
+- apply this to public team rosters, All Stars ranking tables, and team-player rows in management contexts where row navigation is appropriate
+- nested management actions such as edit/remove must remain independently clickable and must not trigger navigation
+- preserve keyboard accessibility/focus behavior for the full-row target
 - show appropriate public player information available from the existing model, including team/ranking/profile fields when present
 - do not expose admin/private data
 - no child login is required
 - do not create a global child directory
 - do not create public profile pages for club/regular players
-- reuse player/profile components where practical instead of duplicating page-specific UI
+- reuse/extend shared table/player-row behavior rather than duplicating page-specific click handlers
 
 ### 29. Floating public trial-registration CTA
 Add a reusable floating public-site CTA/logo labeled **הירשמו לשיעור ניסיון**.
