@@ -447,6 +447,41 @@ Required:
 - do not duplicate/hard-code different destinations across individual pages
 - implement the CTA as a shared component/layout concern, not duplicated markup in every page
 
+### 30. Randomize the first Swiss round
+Fix the current behavior where round 1 follows roster/alphabetical order.
+
+Required:
+- round 1 is randomized on the server
+- do not derive first-round pairings from first name, last name, Player ID, roster seed or frontend order
+- randomize the round-1 bye as part of the same process when participant count is odd
+- persist the generated round immediately; refresh/reconnect must not re-randomize it
+- from round 2 onward preserve the existing Swiss pairing policy, including standings, rematch avoidance and bye distribution
+- keep pairing authoritative on the server
+- make the randomness injectable/mockable for automated tests
+- replace/update tests that currently require deterministic first-round pairings
+- tests must not rely on chance to prove that alphabetical pairing is gone
+
+### 31. Independent match-result saves
+Fix the current tournament-wide revision coupling that causes saving one match to invalidate unsaved drafts for other matches.
+
+Required:
+- add per-match result/version concurrency, for example `resultRevision`
+- an ordinary current-round result save sends/checks the expected version of that match
+- saving match A must not invalidate a dirty draft for match B
+- multiple matches may be filled first and then saved one after another
+- two judges may save different matches concurrently
+- two judges changing the same match must still receive a safe conflict and never silently overwrite
+- canonical Socket.IO updates from another match must not clear dirty sibling drafts
+- tournament-wide `expectedRevision` remains the concurrency guard for structural operations: attendance changes, round create/cancel, close, and earlier-round corrections that invalidate later rounds
+- if a result edit has downstream structural consequences, revalidate against canonical tournament state and use the structural revision/invalidation flow
+- a successful ordinary match save may still advance the tournament revision for canonical synchronization, but sibling result saves must not be rejected solely because that global revision changed
+
+Tests must cover:
+- fill several match drafts, save them sequentially, and preserve all unsaved sibling drafts
+- concurrent saves to two different matches both succeed
+- concurrent edits to the same match produce a conflict
+- structural operations remain protected by tournament revision
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
