@@ -466,6 +466,24 @@ Requirements:
 
 For All Stars / team-player rows, the row target is the public player profile.
 
+### Shared public/management tournament listing
+
+The public Events list and management Tournaments list represent the same tournament domain with different capabilities.
+
+Prefer shared primitives for the overlapping concerns, for example:
+- tournament lifecycle/type labels
+- filter state/options
+- filter predicate/query serialization
+- tournament summary/card/row presentation
+- empty/loading states where the visual context matches
+- responsive tournament-list layout
+
+A management wrapper may add management-only actions such as operate/delete/create, while the public wrapper adds public detail/registration behavior.
+
+Do not force one giant component with permission branches everywhere. Extract the genuinely shared domain/presentation pieces and keep public vs management actions at the appropriate page/container boundary.
+
+Likewise, do not maintain separate lifecycle calculations or type-label mappings on public and management pages if one shared utility/API representation can be authoritative.
+
 ---
 
 ## 17. Styling and design-system rules
