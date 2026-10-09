@@ -7,11 +7,47 @@ User-facing concept: **אירועים**
 
 Stage A should expose the page from the main navigation.
 
-It should include:
-- upcoming tournaments/events
-- a clear registration link/CTA for the next relevant tournament
-- previous tournaments archive
-- links to previous tournament details/results
+The public Events page is the public-facing counterpart of the unified management **טורנירים** page.
+
+It must expose **all non-deleted canonical tournaments**, across all tournament types:
+- regular/club (`quarterly`)
+- All Stars internal-team (`team_internal`)
+- inter-team (`inter_team`)
+
+It must support public filtering comparable to the management list:
+- lifecycle/status: all, upcoming/future, active/in progress, completed
+- tournament type: all + each supported tournament type
+- free-text search where useful (for example title/location/team)
+- filters may be combined
+
+Default view should not hide internal-team tournaments. The product promise is one public tournament/event history, not separate archives by engine/type.
+
+The page should show enough public-safe summary information to understand each event, such as:
+- title
+- date
+- type
+- lifecycle/status
+- location when relevant
+- team name when relevant
+- participant count when appropriate
+
+A tournament entry links to a public detail/results view when that information exists.
+
+Public details/results must work for all canonical tournament types, including `swiss-v1` internal-team tournaments. Do not route a public Swiss tournament into the management screen and do not return 404 merely because it uses the new engine.
+
+For active/completed internal-team tournaments, expose only appropriate public tournament information and public-safe standings/results. Never expose:
+- staff identities
+- internal revision/version fields
+- audit metadata
+- deletion metadata
+- management permissions/actions
+- other admin-only fields
+
+Public Events/detail pages use normal HTTP loading/refetch behavior. They do not open Socket.IO connections.
+
+Soft-deleted tournaments are excluded.
+
+Keep the existing registration CTA where registration is actually meaningful for that tournament type. Do not show a misleading registration action for internal-team/inter-team events that are not publicly registerable.
 
 The existing `/tournaments` route may remain internally to preserve links.
 
