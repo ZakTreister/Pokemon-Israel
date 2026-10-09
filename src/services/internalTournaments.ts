@@ -71,11 +71,12 @@ export const internalTournaments = {
     match: string,
     result: MatchResult,
     invalidateLaterRounds: boolean,
+    expectedResultRevision?: number,
   ) =>
     (
       await api.put<InternalTournament>(
         `/api/internal-tournaments/${id}/rounds/${round}/matches/${match}`,
-        { expectedRevision, result, invalidateLaterRounds },
+        { expectedRevision, expectedResultRevision, result, invalidateLaterRounds },
       )
     ).data,
   close: async (id: string, expectedRevision: number) =>

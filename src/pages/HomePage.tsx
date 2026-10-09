@@ -1,3 +1,4 @@
+import DataTable from '../components/ui/DataTable';
 import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -192,31 +193,27 @@ export default function HomePage() {
               הדירוג יופיע לאחר פרסום תוצאות טורנירי החוגים.
             </p>
           ) : (
-            <div className="border rounded-lg bg-card shadow-panel overflow-x-auto">
-              <table className="w-full text-right">
-                <thead className="bg-navy-700 text-white">
-                  <tr>
-                    {['מקום', 'שחקן', 'נקודות', 'טורנירים'].map((h) => (
-                      <th className="p-4" key={h}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rankings.slice(0, 8).map((row) => (
-                    <tr className="border-t" key={row.playerId}>
-                      <td className="p-4 font-bold">{row.position}</td>
-                      <td className="p-4 font-bold">{row.playerName}</td>
-                      <td className="p-4 text-blue-500 font-extrabold">
-                        {row.points}
-                      </td>
-                      <td className="p-4">{row.tournaments}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              headerClassName="bg-navy-700 text-white"
+              rows={[...rankings]
+                .sort((a, b) => a.position - b.position)
+                .slice(0, 8)}
+              rowKey={(row) => row.playerId}
+              columns={[
+                {
+                  key: 'position',
+                  label: 'מקום',
+                  value: (row) => row.position,
+                },
+                { key: 'name', label: 'שחקן', value: (row) => row.playerName },
+                { key: 'points', label: 'נקודות', value: (row) => row.points },
+                {
+                  key: 'tournaments',
+                  label: 'טורנירים',
+                  value: (row) => row.tournaments,
+                },
+              ]}
+            />
           )}
           <Button asChild variant="outline" className="mt-6">
             <Link to="/rankings">לטבלת הליגה הישראלית המלאה ←</Link>

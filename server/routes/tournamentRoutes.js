@@ -14,7 +14,7 @@ import {
   getTournamentsBySeries,
 } from '../controllers/tournamentController.js';
 
-import { getManagedTournaments, hardDeleteTournament } from '../controllers/tournamentManagementController.js';
+import { getManagedTournaments, deleteTournament } from '../controllers/tournamentManagementController.js';
 const router = express.Router();
 router.get('/management', protect, authorize('admin', 'judge'), getManagedTournaments);
 
@@ -25,7 +25,7 @@ router.route('/')
 router.route('/:id')
   .get(getTournamentById)
   .put(protect, admin, updateTournament)
-  .delete(protect, admin, hardDeleteTournament);
+  .delete(protect, admin, deleteTournament);
 
 router.get('/series/:seriesId', getTournamentsBySeries);
 

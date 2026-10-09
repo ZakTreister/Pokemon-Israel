@@ -78,8 +78,8 @@ test("pairings are deterministic, complete, avoid rematches and distribute byes"
   const byes = new Set();
   const meetings = new Set();
   for (let round = 0; round < 4; round++) {
-    const matches = generatePairings(roster, rounds);
-    assert.deepEqual(generatePairings(roster, rounds), matches);
+    const matches = generatePairings(roster, rounds, () => 0.25);
+    assert.deepEqual(generatePairings(roster, rounds, () => 0.25), matches);
     assert.equal(
       new Set(
         matches.flatMap((m) =>
@@ -109,4 +109,13 @@ test("refuses another round while a result is missing and handles a large roster
     128,
   );
   assert.throws(() => generatePairings(roster, [{ matches }]));
+});
+
+test('first round uses injected shuffle for pairings and bye without changing roster', () => {
+  const roster = participants(5);
+  const snapshot = structuredClone(roster);
+  const matches = generatePairings(roster, [], () => 0);
+  assert.deepEqual(matches.map(m => [m.player1, m.player2]), [['1', '2'], ['3', '4'], ['0', null]]);
+  assert.deepEqual(roster, snapshot);
+  assert.deepEqual(generatePairings(roster, [], () => 0), matches);
 });

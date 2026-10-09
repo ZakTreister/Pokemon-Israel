@@ -4,7 +4,7 @@ export interface InternalParticipant {
   citySnapshot?: string;
 }
 export interface MatchResult {
-  winner: "player1" | "player2" | "draw" | "bye";
+  winner: 'player1' | 'player2' | 'draw' | 'bye';
   score1: number;
   score2: number;
   drawnGames: number;
@@ -13,6 +13,7 @@ export interface MatchResult {
 export interface InternalMatch {
   _id: string;
   table: number;
+  resultRevision?: number;
   player1: string;
   player2: string | null;
   result: MatchResult | null;
@@ -42,9 +43,9 @@ export interface InternalTournamentSummary {
   date: string;
   team: string;
   teamNameSnapshot: string;
-  phase: "setup" | "running" | "completed";
-  status: "upcoming" | "completed";
-  source: "live" | "historical";
+  phase: 'setup' | 'running' | 'completed';
+  status: 'upcoming' | 'completed';
+  source: 'live' | 'historical';
   revision: number;
   currentParticipants: number;
   competitionYear: string;

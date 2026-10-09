@@ -11,6 +11,7 @@ const standingSchema = new mongoose.Schema({
 }, { _id: false });
 const matchSchema = new mongoose.Schema({
   table: Number,
+  resultRevision: { type: Number, default: 0 },
   player1: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
   player2: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', default: null },
   result: {
@@ -25,6 +26,8 @@ const matchSchema = new mongoose.Schema({
 const roundSchema = new mongoose.Schema({ number: Number, createdAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, matches: [matchSchema] });
 
 const tournamentSchema = new mongoose.Schema({
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   title: {
     type: String,
     required: true,
@@ -133,16 +136,26 @@ const tournamentSchema = new mongoose.Schema({
   }],
 }, {
   timestamps: true,
+  optimisticConcurrency: true,
 });
 
 tournamentSchema.index({ engineVersion: 1, team: 1, status: 1, competitionYear: 1 });
 tournamentSchema.index({ team: 1 }, {
-  name: 'one_open_internal_per_team',
+  name: 'one_open_internal_per_team_active',
   unique: true,
   partialFilterExpression: {
     engineVersion: 'swiss-v1', type: 'team_internal', source: 'live',
-    status: 'upcoming', phase: { $in: ['setup', 'running', null] },
+    deletedAt: null, status: 'upcoming', phase: { $in: ['setup', 'running', null] },
   },
+});
+
+// Central scope also covers legacy queries/counts and populated tournament reads.
+// Audit tools may explicitly opt into deleted records; normal routes never do.
+tournamentSchema.pre(/^(find|count|update|delete|distinct)/, function () {
+  if (!this.getOptions().includeDeleted) this.where({ deletedAt: null });
+});
+tournamentSchema.pre('aggregate', function () {
+  this.pipeline().unshift({ $match: { deletedAt: null } });
 });
 
 // Transform _id to id and remove __v when converting to JSON

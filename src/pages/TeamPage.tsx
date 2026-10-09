@@ -1,3 +1,4 @@
+import DataTable from '../components/ui/DataTable';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../hooks/redux';
@@ -109,7 +110,11 @@ export default function TeamPage() {
           {staff && (
             <div className="flex flex-wrap gap-3 mb-6">
               <Button
-                disabled={busy || (!team.openInternalTournament && (!team.isActive || team.players.length < 2))}
+                disabled={
+                  busy ||
+                  (!team.openInternalTournament &&
+                    (!team.isActive || team.players.length < 2))
+                }
                 onClick={create}
               >
                 {team.openInternalTournament ? 'המשך טורניר' : 'התחל טורניר'}
@@ -211,37 +216,44 @@ export default function TeamPage() {
           {!team.players.length ? (
             <p>עדיין אין ילדים פעילים בסגל.</p>
           ) : (
-            <div className="overflow-x-auto border rounded-lg bg-card">
-              <table className="w-full text-right">
-                <thead className="bg-muted">
-                  <tr>
-                    {['שחקן', 'עיר', 'מקום', 'נקודות', 'טורנירים'].map((h) => (
-                      <th key={h} className="p-3">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {team.players.map((player) => {
-                    const rank = rankings.find(
-                      (row) => row.playerId === player.id,
-                    );
-                    return (
-                      <tr key={player.id} className="border-t">
-                        <td className="p-3 font-bold">
-                          {player.firstName} {player.lastName}
-                        </td>
-                        <td className="p-3">{player.city || '—'}</td>
-                        <td className="p-3">{rank?.position ?? '—'}</td>
-                        <td className="p-3">{rank?.points ?? 0}</td>
-                        <td className="p-3">{rank?.tournaments ?? 0}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              rows={team.players.map((player) => ({
+                ...player,
+                rank: rankings.find((row) => row.playerId === player.id),
+              }))}
+              rowKey={(row) => row.id}
+              columns={[
+                {
+                  key: 'name',
+                  label: 'שחקן',
+                  value: (row) => `${row.firstName} ${row.lastName}`,
+                  render: (row) => (
+                    <Link
+                      className="font-bold text-blue-500"
+                      to={`/all-stars/players/${row.id}`}
+                    >
+                      {row.firstName} {row.lastName}
+                    </Link>
+                  ),
+                },
+                { key: 'city', label: 'עיר', value: (row) => row.city },
+                {
+                  key: 'position',
+                  label: 'מקום',
+                  value: (row) => row.rank?.position,
+                },
+                {
+                  key: 'points',
+                  label: 'נקודות',
+                  value: (row) => row.rank?.points ?? 0,
+                },
+                {
+                  key: 'tournaments',
+                  label: 'טורנירים',
+                  value: (row) => row.rank?.tournaments ?? 0,
+                },
+              ]}
+            />
           )}
         </>
       )}

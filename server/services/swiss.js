@@ -119,10 +119,22 @@ export function pairCost(a, b, meetings) {
   );
 }
 
-export function generatePairings(participants, rounds) {
+export function generatePairings(participants, rounds, random = Math.random) {
   if (participants.length < 2) throw new Error("נדרשים לפחות שני משתתפים");
   if (rounds.some((r) => r.matches.some((m) => !m.result)))
     throw new Error("יש להזין את כל תוצאות הסיבוב לפני יצירת סיבוב נוסף");
+  if (!rounds.length) {
+    const pool = participants.map(p => id(p.player));
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const matches = [];
+    while (pool.length > 1) matches.push({ player1: pool.shift(), player2: pool.shift() });
+    if (pool.length) matches.push({ player1: pool[0], player2: null,
+      result: { winner: 'bye', score1: 0, score2: 0, drawnGames: 0 } });
+    return matches.map((match, index) => ({ ...match, table: index + 1 }));
+  }
   const standings = calculateStandings(participants, rounds);
   const meetings = new Set(
     rounds.flatMap((r) =>

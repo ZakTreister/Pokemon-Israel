@@ -36,11 +36,15 @@ export default function ManageTournaments() {
     load().catch((e) => setError(requestError(e)));
   }, [load]);
   const remove = async (entry: Entry) => {
+    let permanent = false;
     if (
       !(await showConfirm({
-        title: 'מחיקה לצמיתות',
-        message: `למחוק את "${entry.title}"? כל הסיבובים והתוצאות יימחקו והניקוד יוסר מהדירוגים. פעולה זו אינה ניתנת לביטול.`,
-        confirmText: 'מחק לצמיתות',
+        title: 'מחיקת טורניר',
+        message: `למחוק את "${entry.title}"? הטורניר יוסתר והניקוד יוסר מהדירוגים. מחיקה לצמיתות מסירה גם את כל המידע ולא ניתנת לביטול.`,
+        confirmText: 'מחק',
+        permanentDelete: (checked) => {
+          permanent = checked;
+        },
         variant: 'destructive',
       }))
     )
@@ -48,7 +52,9 @@ export default function ManageTournaments() {
     setBusy(true);
     setError('');
     try {
-      await api.delete(`/api/tournaments/${entry.id}`);
+      await api.delete(`/api/tournaments/${entry.id}`, {
+        params: { permanent },
+      });
       await load();
     } catch (e) {
       setError(requestError(e));

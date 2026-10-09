@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { publicTeams } from "../services/publicTeams";
-import { internalTournaments } from "../services/internalTournaments";
-import { requestError } from "../utils/requestError";
-import type { Team } from "../types/team";
-import type { AllStarsRanking } from "../types/internalTournament";
-import TeamCard from "../components/teams/TeamCard";
+import DataTable from '../components/ui/DataTable';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { publicTeams } from '../services/publicTeams';
+import { internalTournaments } from '../services/internalTournaments';
+import { requestError } from '../utils/requestError';
+import type { Team } from '../types/team';
+import type { AllStarsRanking } from '../types/internalTournament';
+import TeamCard from '../components/teams/TeamCard';
 export default function AllStarsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [rankings, setRankings] = useState<AllStarsRanking[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
@@ -50,43 +51,52 @@ export default function AllStarsPage() {
           {!rankings.length ? (
             <p>הדירוג יופיע לאחר סיום טורנירים פנימיים.</p>
           ) : (
-            <div className="overflow-x-auto bg-card border rounded-lg">
-              <table className="w-full text-right">
-                <thead className="bg-muted">
-                  <tr>
-                    {["מקום", "שחקן", "נבחרת", "נקודות", "טורנירים"].map(
-                      (h) => (
-                        <th key={h} className="p-3">
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rankings.map((row) => (
-                    <tr className="border-t" key={row.playerId}>
-                      <td className="p-3">{row.position}</td>
-                      <td className="p-3 font-bold">{row.playerName}</td>
-                      <td className="p-3">
-                        {row.team ? (
-                          <Link
-                            to={`/teams/${row.team.id}`}
-                            className="text-blue-500"
-                          >
-                            {row.team.name}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="p-3">{row.points}</td>
-                      <td className="p-3">{row.tournaments}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              rows={rankings}
+              rowKey={(row) => row.playerId}
+              columns={[
+                {
+                  key: 'position',
+                  label: 'מקום',
+                  value: (row) => row.position,
+                },
+                {
+                  key: 'playerName',
+                  label: 'שחקן',
+                  value: (row) => row.playerName,
+                  render: (row) => (
+                    <Link
+                      className="text-blue-500 font-bold"
+                      to={`/all-stars/players/${row.playerId}`}
+                    >
+                      {row.playerName}
+                    </Link>
+                  ),
+                },
+                {
+                  key: 'team',
+                  label: 'נבחרת',
+                  value: (row) => row.team?.name,
+                  render: (row) =>
+                    row.team ? (
+                      <Link
+                        className="text-blue-500"
+                        to={`/teams/${row.team.id}`}
+                      >
+                        {row.team.name}
+                      </Link>
+                    ) : (
+                      '—'
+                    ),
+                },
+                { key: 'points', label: 'נקודות', value: (row) => row.points },
+                {
+                  key: 'tournaments',
+                  label: 'טורנירים',
+                  value: (row) => row.tournaments,
+                },
+              ]}
+            />
           )}
         </>
       )}

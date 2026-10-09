@@ -184,7 +184,9 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   };
 
   const handleDeleteSingleTournament = async (tournament: Tournament) => {
+    let permanent = false;
     const confirmed = await showConfirm({
+      permanentDelete: checked => { permanent = checked; },
       title: 'מחיקת טורניר',
       message: 'האם אתה בטוח שברצונך למחוק את הטורניר הזה בלבד?',
       confirmText: 'מחק',
@@ -195,7 +197,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
 
     try {
       // Now using id consistently
-      await api.delete(`/api/tournaments/${tournament.id}`);
+      await api.delete(`/api/tournaments/${tournament.id}`, { params: { permanent } });
       dispatch(fetchTournaments());
       showToast('הטורניר נמחק בהצלחה', 'success');
     } catch (caughtError) {
@@ -206,7 +208,9 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   };
 
   const handleDeleteSeries = async (tournament: Tournament) => {
+    let permanent = false;
     const confirmed = await showConfirm({
+      permanentDelete: checked => { permanent = checked; },
       title: 'מחיקת סדרת טורנירים',
       message: 'האם אתה בטוח שברצונך למחוק את כל הטורנירים העתידיים בסדרה?',
       confirmText: 'מחק סדרה',
@@ -217,7 +221,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
 
     try {
       // Now using id consistently
-      await api.delete(`/api/tournaments/${tournament.id}?deleteSeries=true`);
+      await api.delete(`/api/tournaments/${tournament.id}`, { params: { permanent, deleteSeries: true } });
       dispatch(fetchTournaments());
       showToast('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה', 'success');
     } catch (caughtError) {

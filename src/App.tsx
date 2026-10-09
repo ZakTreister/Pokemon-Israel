@@ -1,3 +1,4 @@
+import AllStarsPlayerPage from './pages/AllStarsPlayerPage';
 import NewsPage from './pages/NewsPage';
 import NewsPostPage from './pages/NewsPostPage';
 import ConstructionPage from './pages/ConstructionPage';
@@ -44,6 +45,7 @@ function App() {
           <Route path="/rankings" element={<RankingsPage />} />
           <Route path="/deck-stats" element={<DeckStatsPage />} />
           <Route path="/teams/:id" element={<TeamPage />} />
+          <Route path="/all-stars/players/:playerId" element={<AllStarsPlayerPage />} />
           <Route path="/all-stars" element={<AllStarsPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/news/:id" element={<NewsPostPage />} />
