@@ -24,7 +24,7 @@ export function configureTournamentLive(io) {
       try {
         if (
           !validId(id) ||
-          !(await Tournament.exists({ _id: id, engineVersion: 'swiss-v1' }))
+          !(await Tournament.exists({ _id: id, engineVersion: 'swiss-v1', source: 'live', phase: { $in: ['setup', 'running'] }, status: 'upcoming' }))
         )
           throw new Error();
         for (const joined of socket.rooms)

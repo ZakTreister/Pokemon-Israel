@@ -8,7 +8,9 @@ import {
   updatePlayer,
 } from '../controllers/playerController.js';
 
+import { getPublicTeamPlayer } from '../controllers/publicPlayerController.js';
 const router = express.Router();
+router.get('/public/:id', getPublicTeamPlayer);
 
 router.get('/', protect, authorize('admin', 'judge'), getPlayers);
 router.get('/:id', protect, authorize('admin', 'judge'), getPlayer);

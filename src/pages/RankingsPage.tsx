@@ -1,3 +1,4 @@
+import DataTable from '../components/ui/DataTable';
 import { useEffect, useState } from 'react';
 import {
   getNationalRankings,
@@ -47,39 +48,30 @@ export default function RankingsPage() {
         {rows === null ? (
           <p>טוען דירוג...</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border bg-card shadow-panel">
-            <table className="w-full text-right">
-              <thead className="bg-navy-700 text-white">
-                <tr>
-                  {['מקום', 'שחקן', 'נקודות', 'טורנירים', 'מיקום שיא'].map(
-                    (h) => (
-                      <th key={h} className="p-4">
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows
-                  .filter((row) => row.playerName.includes(search.trim()))
-                  .map((row) => (
-                    <tr key={row.playerId} className="border-t">
-                      <td className="p-4 font-bold">{row.position}</td>
-                      <td className="p-4 font-bold">{row.playerName}</td>
-                      <td className="p-4 text-blue-500 font-extrabold">
-                        {row.points}
-                      </td>
-                      <td className="p-4">{row.tournaments}</td>
-                      <td className="p-4">{row.bestRank ?? '—'}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-            {!rows.some((row) => row.playerName.includes(search.trim())) && (
-              <p className="p-6 text-muted-foreground">אין תוצאות להצגה.</p>
-            )}
-          </div>
+          <DataTable
+            headerClassName="bg-navy-700 text-white"
+            rows={rows.filter((row) => row.playerName.includes(search.trim()))}
+            rowKey={(row) => row.playerId}
+            columns={[
+              { key: 'position', label: 'מקום', value: (row) => row.position },
+              {
+                key: 'playerName',
+                label: 'שחקן',
+                value: (row) => row.playerName,
+              },
+              { key: 'points', label: 'נקודות', value: (row) => row.points },
+              {
+                key: 'tournaments',
+                label: 'טורנירים',
+                value: (row) => row.tournaments,
+              },
+              {
+                key: 'bestRank',
+                label: 'מיקום שיא',
+                value: (row) => row.bestRank,
+              },
+            ]}
+          />
         )}
       </div>
     </div>

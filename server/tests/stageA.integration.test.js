@@ -58,6 +58,12 @@ before(async () => {
     Tournament.init(),
     Season.init(),
   ]);
+  // Simulate the deployed pre-soft-delete constraint. The first create must
+  // install/retain the new constraint before removing this older one.
+  await Tournament.collection.createIndex({ team: 1 }, {
+    name: 'one_open_internal_per_team', unique: true,
+    partialFilterExpression: { engineVersion: 'swiss-v1', type: 'team_internal', source: 'live', status: 'upcoming', phase: { $in: ['setup', 'running', null] } },
+  });
   for (const role of ['admin', 'judge', 'player']) {
     const user = await User.create({
       name: `Test ${role}`,
@@ -68,6 +74,7 @@ before(async () => {
     tokens[role] = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
   }
   const app = express();
+  app.set('tournamentRandom', () => 0.25);
   app.use(express.json());
   app.use('/api/teams', teamRoutes);
   app.use('/api/players', playerRoutes);
@@ -1086,4 +1093,80 @@ test('latest round cancellation is atomic, archived, synchronized and never unlo
     assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision })).status, 403);
     assert.equal((await request(`/internal-tournaments/${t.id}/rounds/1`, 'DELETE', { expectedRevision: t.revision }, 'admin')).status, 409);
   } finally { socket.disconnect(); }
+});
+
+test('match result versions isolate concurrent matches and reject same-match/stale structural writes', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Match version team' }, 'admin', 201);
+  await ok(`/teams/${team.id}/players`, 'POST', { players: ['A','B','C','D'].map(firstName => ({ firstName, lastName: 'Version' })) }, 'admin', 201);
+  let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  assert.deepEqual((await ok(`/internal-tournaments/${t.id}`)).rounds, t.rounds, 'pairings persist');
+  const [a,b] = t.rounds[0].matches;
+  // A persisted pre-versioning match has no counter; its first version is zero.
+  await Tournament.collection.updateOne({ _id: new mongoose.Types.ObjectId(t.id) }, { $unset: { 'rounds.0.matches.1.resultRevision': '' } });
+  const path = match => `/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`;
+  const score = { winner: 'player1', score1: 1, score2: 0 };
+  const draft = { expectedRevision: t.revision, expectedResultRevision: 0, result: score };
+  const concurrent = await Promise.all([request(path(a),'PUT', draft), request(path(b),'PUT', draft)]);
+  assert.deepEqual(concurrent.map(r => r.status), [200,200]);
+  t = await ok(`/internal-tournaments/${t.id}`);
+  assert.ok(t.rounds[0].matches.every(m => m.resultRevision === 1));
+  const same = await Promise.all([request(path(a),'PUT', { expectedResultRevision: 1, result: { winner: 'draw', score1: 1, score2: 1 } }), request(path(a),'PUT', { expectedResultRevision: 1, result: score })]);
+  assert.deepEqual(same.map(r => r.status).sort(), [200,409]);
+  assert.equal(same.find(r => r.status === 409).body.code, 'STALE_RESULT');
+  assert.equal((await request(`/internal-tournaments/${t.id}/close`, 'POST', { expectedRevision: t.revision })).status, 409);
+  t = await ok(`/internal-tournaments/${t.id}`);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  assert.equal((await request(path(b), 'PUT', { expectedRevision: t.revision, expectedResultRevision: 0, invalidateLaterRounds: true, result: score })).status, 409);
+  const oldMatch = t.rounds[0].matches.find(m => m._id === b._id);
+  t = await ok(path(b), 'PUT', { expectedRevision: t.revision, expectedResultRevision: oldMatch.resultRevision, invalidateLaterRounds: true, result: { winner: 'player2', score1: 0, score2: 1 } });
+  assert.equal(t.rounds.length, 1);
+  assert.equal(t.invalidatedRounds.length, 1);
+});
+
+test('soft deletion retains audit data, frees open team slot and hides all normal reads; permanent is explicit', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Soft delete team' }, 'admin', 201);
+  const players = await ok(`/teams/${team.id}/players`, 'POST', { players: [{ firstName: 'Soft', lastName: 'One' }, { firstName: 'Soft', lastName: 'Two' }] }, 'admin', 201);
+  let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  assert.equal((await request(`/tournaments/${t.id}?permanent=true`, 'DELETE')).status, 403);
+  await ok(`/tournaments/${t.id}`, 'DELETE', undefined, 'admin');
+  const stored = await Tournament.collection.findOne({ _id: new mongoose.Types.ObjectId(t.id) });
+  assert.ok(stored.deletedAt && stored.deletedBy);
+  assert.deepEqual(stored.rounds.map(r => String(r._id)), t.rounds.map(r => r._id));
+  assert.equal((await request(`/internal-tournaments/${t.id}`)).status, 404);
+  assert.equal((await request(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision })).status, 404);
+  assert.ok(!(await ok('/tournaments/management')).some(row => row.id === t.id));
+  assert.ok(!(await ok(`/internal-tournaments?teamId=${team.id}`)).some(row => row.id === t.id));
+  const replacement = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  assert.notEqual(replacement.id, t.id);
+  const indexes = await Tournament.collection.indexes();
+  assert.ok(indexes.some(index => index.name === 'one_open_internal_per_team_active'));
+  assert.ok(!indexes.some(index => index.name === 'one_open_internal_per_team'));
+  assert.equal((await ok(`/teams/${team.id}`)).openInternalTournament.id, replacement.id);
+  const historical = await ok('/internal-tournaments/historical', 'POST', { teamId: team.id, date: '2026-10-04', results: players.map((p,i) => ({ player:p.id, position:i+1, points:6-i*3 })) }, 'admin', 201);
+  assert.ok((await ok('/all-stars/rankings', 'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
+  await ok(`/tournaments/${historical.id}`, 'DELETE', undefined, 'admin');
+  assert.ok(!(await ok('/all-stars/rankings', 'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
+  assert.equal((await ok(`/teams/public/${team.id}`, 'GET', undefined, null)).completedInternalTournamentCount, 0);
+  assert.ok(await Tournament.collection.findOne({ _id: new mongoose.Types.ObjectId(historical.id) }));
+  await ok(`/tournaments/${t.id}?permanent=true`, 'DELETE', undefined, 'admin');
+  assert.equal(await Tournament.collection.findOne({ _id: new mongoose.Types.ObjectId(t.id) }), null);
+  // A pre-delete legacy document cannot save over deletion metadata.
+  const legacy = await Tournament.create({ title:'Legacy deletion',description:'Test',date:new Date(),location:'Test',maxParticipants:2,registrationDeadline:new Date(),image:'test.png' });
+  await ok(`/tournaments/${legacy.id}`, 'DELETE', undefined, 'admin');
+  legacy.title = 'Stale overwrite';
+  await assert.rejects(legacy.save(), error => error.name === 'VersionError');
+});
+
+test('public team-player endpoint is an allowlist, excludes club profiles and has no directory', async () => {
+  const player = await Player.create({ firstName:'Public',lastName:'Team',city:'Haifa',playerType:'team',user:null });
+  const publicData = await ok(`/players/public/${player.id}`, 'GET', undefined, null);
+  assert.deepEqual(Object.keys(publicData).sort(), ['id','firstName','lastName','city','team','overallRanking','teamRanking','badges'].sort());
+  assert.equal(publicData.firstName, player.firstName);
+  assert.equal(publicData.overallRanking, null);
+  const club = await Player.create({ firstName:'Private',lastName:'Club',club:'Test',playerType:'quarterly' });
+  assert.equal((await request(`/players/public/${club.id}`, 'GET', undefined, null)).status,404);
+  assert.equal((await request('/players/public/not-an-id', 'GET', undefined, null)).status,404);
+  assert.equal((await request('/players', 'GET', undefined, null)).status,401);
 });

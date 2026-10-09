@@ -293,7 +293,7 @@ try {
     );
   });
   assert.deepEqual(
-    standings.root.findAllByType('td').map((cell) => cell.children.join('')),
+    standings.root.findAllByType('td').map((cell) => cell.findAllByType('span').length ? cell.findByType('span').children.join('') : cell.children.join('')),
     ['1', 'שחקן', '3', '—', '33.33%', '0.00%'],
   );
   assert.ok(standings.root.findAllByProps({ dir: 'ltr' }).length === 3);

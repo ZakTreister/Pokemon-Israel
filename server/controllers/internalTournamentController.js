@@ -10,7 +10,7 @@ import {
   SWISS_POLICY,
 } from "../services/swiss.js";
 import { withRosterLocks } from "../services/rosterLock.js";
-import { OPEN_INTERNAL_FILTER } from '../services/openInternalTournament.js';
+import { OPEN_INTERNAL_FILTER, ensureOpenTournamentIndex } from '../services/openInternalTournament.js';
 
 export const ENGINE = "swiss-v1";
 // One explicit, ongoing competition cycle. It does not advance with the date or
@@ -45,7 +45,7 @@ async function load(req) {
   if (!tournament) fail(404, "טורניר לא נמצא");
   return tournament;
 }
-function revision(req, tournament) {
+function operational(req, tournament) {
   if (
     req.user.role === "judge" &&
     (tournament.source !== "live" ||
@@ -53,6 +53,10 @@ function revision(req, tournament) {
       tournament.status === "completed")
   )
     fail(403, "שופטים רשאים להפעיל טורנירים חיים בלבד");
+  if (tournament.phase === "completed") fail(409, "טורניר שהסתיים אינו ניתן לעריכה");
+}
+function revision(req, tournament) {
+  operational(req, tournament);
   if (
     !Number.isInteger(req.body.expectedRevision) ||
     req.body.expectedRevision < 0
@@ -118,7 +122,7 @@ function base(team, participants, req, source) {
 export const createInternalTournament = asyncHandler(async (req, res) => {
   if (!validId(req.body.teamId)) fail(400, "יש לבחור נבחרת");
   // Never accept creates before the database's unique constraint is ready.
-  await Tournament.init();
+  await ensureOpenTournamentIndex(Tournament);
   const existing = () => Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: req.body.teamId });
   const recover = (tournament) => res.status(409).json({
     code: 'OPEN_INTERNAL_TOURNAMENT',
@@ -210,6 +214,7 @@ export const pairRound = asyncHandler(async (req, res) => {
     matches = generatePairings(
       tournament.playerParticipants,
       tournament.rounds,
+      req.app.get('tournamentRandom'),
     );
   } catch (error) {
     fail(400, error.message);
@@ -246,13 +251,15 @@ export const cancelLatestRound = asyncHandler(async (req, res) => {
 });
 export const enterMatchResult = asyncHandler(async (req, res) => {
   const tournament = await load(req);
-  revision(req, tournament);
+  operational(req, tournament);
   const roundIndex = tournament.rounds.findIndex(
     (r) => r.number === Number(req.params.roundNumber),
   );
   const round = tournament.rounds[roundIndex];
   const match = round?.matches.id(req.params.matchId);
   if (!match) fail(404, "משחק לא נמצא");
+  if (req.body.expectedResultRevision !== undefined && req.body.expectedResultRevision !== (match.resultRevision || 0))
+    fail(409, "התוצאה עודכנה במקביל. בדקו את התוצאה האחרונה לפני ניסיון נוסף", "STALE_RESULT");
   if (!match.player2) fail(400, "תוצאת Bye נקבעת אוטומטית");
   let score;
   try {
@@ -272,12 +279,34 @@ export const enterMatchResult = asyncHandler(async (req, res) => {
       "תיקון תוצאה זו יבטל את הסיבובים המאוחרים. יש לאשר במפורש",
       "DOWNSTREAM_ROUNDS",
     );
+  // Old clients retain tournament CAS. Current clients compare only this match.
+  if (!later.length && req.body.expectedResultRevision !== undefined) {
+    const expected = req.body.expectedResultRevision;
+    if (!Number.isInteger(expected) || expected < 0) fail(400, "יש לשלוח את גרסת התוצאה");
+    const resultPath = `rounds.${roundIndex}.matches.${round.matches.indexOf(match)}`;
+    const updated = await Tournament.findOneAndUpdate({
+      _id: tournament._id, engineVersion: ENGINE, phase: 'running', status: 'upcoming',
+      [`rounds.${roundIndex}._id`]: round._id,
+      [`rounds.${roundIndex + 1}`]: { $exists: false },
+      [`${resultPath}._id`]: match._id,
+      $or: [{ [`${resultPath}.resultRevision`]: expected },
+        ...(expected === 0 ? [{ [`${resultPath}.resultRevision`]: { $exists: false } }] : [])],
+    }, {
+      $set: { [`${resultPath}.result`]: { ...score, enteredAt: new Date(), enteredBy: req.user._id } },
+      $inc: { [`${resultPath}.resultRevision`]: 1, revision: 1 },
+    }, { new: true, runValidators: true });
+    if (!updated) fail(409, "התוצאה או מבנה הסיבובים עודכנו. בדקו את המצב החדש לפני ניסיון נוסף", "STALE_RESULT");
+    notifyTournament(req, updated);
+    return res.json(serialize(updated));
+  }
+  revision(req, tournament);
   const rounds = tournament.rounds
     .slice(0, changed ? roundIndex + 1 : undefined)
     .map((r) => r.toObject());
   rounds[roundIndex].matches.find(
     (m) => String(m._id) === req.params.matchId,
   ).result = { ...score, enteredAt: new Date(), enteredBy: req.user._id };
+  rounds[roundIndex].matches.find(m => String(m._id) === req.params.matchId).resultRevision = (match.resultRevision || 0) + 1;
   const invalidatedRounds = tournament.invalidatedRounds.map((entry) =>
     entry.toObject(),
   );
@@ -389,7 +418,7 @@ export const createHistoricalInternal = asyncHandler(async (req, res) => {
   });
   res.status(201).json(serialize(created));
 });
-export const getAllStarsRankings = asyncHandler(async (req, res) => {
+export async function allStarsRankingData(teamId) {
   const tournaments = await Tournament.find({
     engineVersion: ENGINE,
     type: "team_internal",
@@ -432,15 +461,18 @@ export const getAllStarsRankings = asyncHandler(async (req, res) => {
           : null,
       };
     })
-    .filter((row) => !req.query.teamId || row.team?.id === req.query.teamId)
+    .filter((row) => !teamId || row.team?.id === teamId)
     .sort(
       (a, b) =>
         b.points - a.points ||
         a.playerName.localeCompare(b.playerName, "he") ||
         a.playerId.localeCompare(b.playerId),
     );
-  res.json({
+  return {
     competitionYear: COMPETITION_YEAR,
     rankings: rows.map((row, index) => ({ ...row, position: index + 1 })),
-  });
+  };
+}
+export const getAllStarsRankings = asyncHandler(async (req, res) => {
+  res.json(await allStarsRankingData(req.query.teamId));
 });

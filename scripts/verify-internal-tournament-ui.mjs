@@ -368,6 +368,7 @@ try {
     globalThis.fixtureLive.changed();
     await flush();
   });
+  assert.equal(globalThis.fixtureLive, null, 'Closure disconnects the live transport');
   assert.ok(pageText().includes('דירוג סופי'));
   assert.ok(!button('שמור תוצאה'));
   assert.ok(!button('הגרל סיבוב נוסף'));
@@ -390,6 +391,7 @@ try {
       navigate(`/manage/tournaments/${id}`);
       await flush();
     });
+    assert.equal(globalThis.fixtureLive, null, 'Non-live management never connects');
     assert.ok(text(renderer.toJSON()).includes(serverState.title));
     for (const action of [
       'שמור נוכחות',
@@ -413,6 +415,57 @@ try {
     act(() => renderer.unmount());
     renderer = null;
   }
+
+  // Draft two matches before saving: sibling notifications cannot stale a draft.
+  serverState = { ...serverState, source: 'live', phase: 'running', status: 'upcoming', revision: 30,
+    rounds: [{ number: 1, matches: [
+      { _id: 'multi-a', table: 1, player1:'p1', player2:'p2', result:null, resultRevision:0 },
+      { _id: 'multi-b', table: 2, player1:'p3', player2:'p4', result:null, resultRevision:0 },
+    ] }] };
+  await act(async () => { renderer = mount('judge'); await flush(); navigate(`/manage/tournaments/${id}`); await flush(); });
+  const articles = () => renderer.root.findAllByProps({ role: 'article' });
+  const draft = article => {
+    article.findAllByType('button')[0].props.onClick();
+    article.findByType('select').props.onChange({ target: { value: '1-0' } });
+  };
+  act(() => articles().forEach(draft));
+  const saveButton = article => article.findAllByType('button').find(b => text(b) === 'שמור תוצאה');
+  const versions = [];
+  service.result = async (requested, revision, round, matchId, result, invalidate, expectedResultRevision) => {
+    versions.push(expectedResultRevision);
+    const target = serverState.rounds[0].matches.find(m => m._id === matchId);
+    assert.equal(expectedResultRevision, target.resultRevision);
+    target.result = result;
+    target.resultRevision++;
+    serverState.revision++;
+    return structuredClone(serverState);
+  };
+  await act(async () => { await saveButton(articles()[0]).props.onClick(); globalThis.fixtureLive.changed(); await flush(); });
+  assert.equal(articles()[1].findByType('select').props.value, '1-0');
+  assert.ok(text(articles()[1]).includes('יש שינויים שטרם נשמרו'));
+  await act(async () => { await saveButton(articles()[1]).props.onClick(); });
+  assert.deepEqual(versions, [0,0]);
+  // Both independent saves may be in flight at once; structural controls wait.
+  act(() => articles().forEach(draft));
+  const pending = [];
+  service.result = (...args) => new Promise(resolve => pending.push({ args, resolve }));
+  let saves;
+  act(() => { saves = articles().map(article => saveButton(article).props.onClick()); });
+  assert.equal(pending.length, 2);
+  assert.equal(button('סיים טורניר').props.disabled, true);
+  assert.ok(pending.every(item => item.args[6] === 1));
+  await act(async () => {
+    for (const item of pending) {
+      const target = serverState.rounds[0].matches.find(m => m._id === item.args[3]);
+      target.result = item.args[4]; target.resultRevision++; serverState.revision++;
+      item.resolve(structuredClone(serverState));
+    }
+    await Promise.all(saves);
+  });
+  assert.equal(button('סיים טורניר').props.disabled, false);
+  await act(async () => { navigate('/manage/teams'); await flush(); });
+  assert.equal(globalThis.fixtureLive, null, 'Leaving the operational route disconnects');
+  act(() => renderer.unmount()); renderer = null;
   console.log(
     'Internal tournament UI checks passed: role-aware roster/start actions, single creation, direct match cards, operational order, retry protection and live reconciliation.',
   );

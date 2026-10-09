@@ -27,14 +27,24 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
     })),
   );
 });
-export const hardDeleteTournament = asyncHandler(async (req, res) => {
+export const deleteTournament = asyncHandler(async (req, res) => {
   if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
     res.status(404);
     throw new Error('Tournament not found');
   }
-  // Rounds, final results and invalidated-round archives are embedded. Deleting
-  // the canonical document atomically removes their ranking contribution too.
-  const tournament = await Tournament.findByIdAndDelete(req.params.id);
+  const permanent = req.query.permanent === 'true';
+  const tournament = permanent
+    ? await Tournament.findByIdAndDelete(req.params.id).setOptions({
+        includeDeleted: true,
+      })
+    : await Tournament.findOneAndUpdate(
+        { _id: req.params.id },
+        {
+          $set: { deletedAt: new Date(), deletedBy: req.user._id },
+          $inc: { revision: 1, __v: 1 },
+        },
+        { new: true },
+      );
   if (!tournament) {
     res.status(404);
     throw new Error('Tournament not found');
@@ -44,12 +54,19 @@ export const hardDeleteTournament = asyncHandler(async (req, res) => {
       seriesId: tournament.seriesId,
       date: { $gte: new Date() },
     }).select('_id revision');
-    // Preserve the existing future-series action while allowing the selected past event itself to be deleted.
-    await Tournament.deleteMany({
-      _id: { $in: siblings.map((row) => row._id) },
-    });
+    const filter = { _id: { $in: siblings.map((row) => row._id) } };
+    if (permanent) await Tournament.deleteMany(filter);
+    else
+      await Tournament.updateMany(filter, {
+        $set: { deletedAt: new Date(), deletedBy: req.user._id },
+        $inc: { revision: 1, __v: 1 },
+      });
     for (const sibling of siblings) notifyTournament(req, sibling, true);
   }
   notifyTournament(req, tournament, true);
-  res.json({ message: 'Tournament permanently deleted' });
+  res.json({
+    message: permanent
+      ? 'Tournament permanently deleted'
+      : 'Tournament deleted',
+  });
 });

@@ -29,8 +29,7 @@ export default function MatchEditor({
     match.result ? `${match.result.score1}-${match.result.score2}` : '',
   );
   const [drawnGames, setDrawnGames] = useState(match.result?.drawnGames ?? 0);
-  // The revision captured when this editor was loaded protects an unsaved draft
-  // from silently replacing another judge's more recent result.
+  // Capture this match's result version; sibling saves never stale this draft.
   const [draftRevision, setDraftRevision] = useState(revision);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);

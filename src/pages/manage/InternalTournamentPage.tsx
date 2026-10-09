@@ -20,7 +20,8 @@ import { participantOptions } from '../../features/tournaments/utils/participant
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 export default function InternalTournamentPage() {
-  const judge = useAppSelector((state) => state.auth.user?.role === 'judge');
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const judge = role === 'judge';
   const { id = '' } = useParams();
   const { showConfirm } = useConfirm();
   const [tournament, setTournament] = useState<InternalTournament | null>(null);
@@ -34,6 +35,8 @@ export default function InternalTournamentPage() {
   const [saveFailed, setSaveFailed] = useState(false);
   const [failedMatches, setFailedMatches] = useState<string[]>([]);
   const busyRef = useRef(false);
+  const [pendingResults, setPendingResults] = useState(0);
+  const pendingResultsRef = useRef(0);
   const connectedRef = useRef(false);
   const [connected, setConnected] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -77,8 +80,20 @@ export default function InternalTournamentPage() {
       active = false;
     };
   }, [id, accept]);
+  const live =
+    !!tournament &&
+    ['admin', 'judge'].includes(role || '') &&
+    tournament.source === 'live' &&
+    ['setup', 'running'].includes(tournament.phase) &&
+    tournament.status !== 'completed' &&
+    !deleted;
   useEffect(() => {
     let active = true;
+    if (!live) {
+      connectedRef.current = false;
+      setConnected(false);
+      return;
+    }
     const sync = async (removed?: boolean) => {
       if (removed) {
         setDeleted(true);
@@ -120,7 +135,7 @@ export default function InternalTournamentPage() {
       unsubscribe();
       window.clearInterval(fallback);
     };
-  }, [id, accept]);
+  }, [id, accept, live]);
   if (deleted)
     return (
       <div>
@@ -132,9 +147,18 @@ export default function InternalTournamentPage() {
     after?: (data: InternalTournament) => void,
     resultMutation = false,
   ): Promise<'saved' | 'failed'> => {
-    if (busyRef.current) return 'failed';
-    busyRef.current = true;
-    setBusy(true);
+    if (
+      (!resultMutation && (busyRef.current || pendingResultsRef.current > 0)) ||
+      (resultMutation && busyRef.current)
+    )
+      return 'failed';
+    if (resultMutation) {
+      pendingResultsRef.current++;
+      setPendingResults(pendingResultsRef.current);
+    } else {
+      busyRef.current = true;
+      setBusy(true);
+    }
     setError('');
     try {
       const data = await operation();
@@ -154,8 +178,13 @@ export default function InternalTournamentPage() {
       }
       return 'failed';
     } finally {
-      busyRef.current = false;
-      setBusy(false);
+      if (resultMutation) {
+        pendingResultsRef.current--;
+        setPendingResults(pendingResultsRef.current);
+      } else {
+        busyRef.current = false;
+        setBusy(false);
+      }
     }
   };
   if (!tournament)
@@ -230,14 +259,15 @@ export default function InternalTournamentPage() {
       () =>
         internalTournaments.result(
           id,
-          revision,
+          tournament.revision,
           round.number,
           match._id,
           result,
           invalidate,
+          revision,
         ),
       undefined,
-      true,
+      !invalidate,
     );
     setFailedMatches((current) =>
       outcome === 'saved'
@@ -270,13 +300,21 @@ export default function InternalTournamentPage() {
   };
   const cancelRound = async () => {
     if (!round || round.number !== tournament.rounds.length) return;
-    if (!(await showConfirm({
-      title: 'ביטול הסיבוב האחרון',
-      message: 'הסיבוב ותוצאותיו יוסרו מהדירוג ויישמרו בארכיון. הסגל יישאר נעול. לבטל?',
-      confirmText: 'בטל סיבוב',
-      variant: 'destructive',
-    }))) return;
-    await mutate(() => internalTournaments.cancelRound(id, tournament.revision, round.number), () => setResultsView(false));
+    if (
+      !(await showConfirm({
+        title: 'ביטול הסיבוב האחרון',
+        message:
+          'הסיבוב ותוצאותיו יוסרו מהדירוג ויישמרו בארכיון. הסגל יישאר נעול. לבטל?',
+        confirmText: 'בטל סיבוב',
+        variant: 'destructive',
+      }))
+    )
+      return;
+    await mutate(
+      () =>
+        internalTournaments.cancelRound(id, tournament.revision, round.number),
+      () => setResultsView(false),
+    );
   };
   return (
     <div className="space-y-3 sm:space-y-5">
@@ -313,7 +351,12 @@ export default function InternalTournamentPage() {
             <select
               aria-label="סיבוב נוכחי"
               className="min-w-0 h-10 p-2 border border-navy-400 rounded-md bg-navy-600 text-white"
-              disabled={busy || saveFailed || failedMatches.length > 0}
+              disabled={
+                busy ||
+                pendingResults > 0 ||
+                saveFailed ||
+                failedMatches.length > 0
+              }
               value={roundNumber}
               onChange={(e) => {
                 setRoundNumber(Number(e.target.value));
@@ -331,7 +374,12 @@ export default function InternalTournamentPage() {
             contextual
             className="h-auto min-h-10 whitespace-normal px-3 py-2"
             variant="outline"
-            disabled={busy || saveFailed || failedMatches.length > 0}
+            disabled={
+              busy ||
+              pendingResults > 0 ||
+              saveFailed ||
+              failedMatches.length > 0
+            }
             onClick={() => setResultsView(!resultsView)}
           >
             {resultsView ? 'חזור למשחקים' : 'דירוג ותוצאות'}
@@ -370,7 +418,7 @@ export default function InternalTournamentPage() {
           )}
         </div>
       )}
-      {!connected && (
+      {live && !connected && (
         <p
           role="status"
           className="rounded-md bg-amber-50 p-2 text-xs text-amber-900"
@@ -426,6 +474,7 @@ export default function InternalTournamentPage() {
               variant="outline"
               disabled={
                 busy ||
+                pendingResults > 0 ||
                 saveFailed ||
                 failedMatches.length > 0 ||
                 participantsChanged
@@ -456,7 +505,7 @@ export default function InternalTournamentPage() {
               key={match._id}
               match={match}
               name={name}
-              revision={tournament.revision}
+              revision={match.resultRevision ?? 0}
               discard={async () => {
                 await reload();
                 setFailedMatches((current) =>
@@ -477,6 +526,7 @@ export default function InternalTournamentPage() {
             variant="cta"
             disabled={
               busy ||
+              pendingResults > 0 ||
               saveFailed ||
               failedMatches.length > 0 ||
               (!allComplete && tournament.rounds.length > 0) ||
@@ -489,14 +539,27 @@ export default function InternalTournamentPage() {
           <Button
             variant="outline"
             disabled={
-              busy || saveFailed || failedMatches.length > 0 || !allComplete
+              busy ||
+              pendingResults > 0 ||
+              saveFailed ||
+              failedMatches.length > 0 ||
+              !allComplete
             }
             onClick={() => void close()}
           >
             סיים טורניר
           </Button>
           {round && round.number === tournament.rounds.length && (
-            <Button variant="destructive" disabled={busy || saveFailed || failedMatches.length > 0} onClick={() => void cancelRound()}>
+            <Button
+              variant="destructive"
+              disabled={
+                busy ||
+                pendingResults > 0 ||
+                saveFailed ||
+                failedMatches.length > 0
+              }
+              onClick={() => void cancelRound()}
+            >
               בטל סיבוב
             </Button>
           )}
@@ -511,7 +574,8 @@ export default function InternalTournamentPage() {
         <summary className="cursor-pointer py-2">מידע על שמירה וסנכרון</summary>
         <p className="pt-2">
           התוצאות שנשמרו נמצאות בשרת. לאחר רענון או כניסה ממכשיר אחר אפשר להמשיך
-          מכאן. בעת עדכון מקביל המצב מתעדכן אוטומטית ויש להזין שוב.
+          מכאן. עדכונים במשחקים אחרים נשמרים בלי למחוק את הבחירות שלכם; שינוי
+          מקביל באותו משחק דורש בדיקה.
         </p>
       </details>
       {!!tournament.invalidatedRounds.length && (

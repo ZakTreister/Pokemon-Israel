@@ -15,6 +15,7 @@ export interface ConfirmOptions {
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'destructive';
+  permanentDelete?: (checked: boolean) => void;
 }
 
 interface ConfirmContextValue {
@@ -25,32 +26,37 @@ const ConfirmContext = createContext<ConfirmContextValue | null>(null);
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
+  const [permanent, setPermanent] = useState(false);
   const resolverRef = useRef<((value: boolean) => void) | null>(null);
 
   const showConfirm = useCallback((opts: ConfirmOptions) => {
+    setPermanent(false);
+    opts.permanentDelete?.(false);
     setOptions(opts);
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
     });
   }, []);
 
-  const handleResolve = useCallback(
-    (result: boolean) => {
-      if (resolverRef.current) {
-        resolverRef.current(result);
-        resolverRef.current = null;
-      }
-      setOptions(null);
-    },
-    []
-  );
+  const handleResolve = useCallback((result: boolean) => {
+    if (resolverRef.current) {
+      resolverRef.current(result);
+      resolverRef.current = null;
+    }
+    setOptions(null);
+  }, []);
 
   return (
     <ConfirmContext.Provider value={{ showConfirm }}>
       {children}
       {options && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-card rounded-lg w-full max-w-md shadow-xl animate-slide-in">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirmation-title"
+            className="bg-card rounded-lg w-full max-w-md shadow-xl animate-slide-in"
+          >
             <div className="p-6">
               <div className="flex items-start gap-4 mb-4">
                 <div
@@ -63,21 +69,40 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                   <AlertTriangle size={20} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1">{options.title}</h3>
+                  <h3
+                    id="confirmation-title"
+                    className="text-lg font-bold mb-1"
+                  >
+                    {options.title}
+                  </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {options.message}
                   </p>
                 </div>
               </div>
+              {options.permanentDelete && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={permanent}
+                    onChange={(e) => {
+                      setPermanent(e.target.checked);
+                      options.permanentDelete?.(e.target.checked);
+                    }}
+                  />
+                  מחיקה לצמיתות
+                </label>
+              )}
               <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => handleResolve(false)}
-                >
+                <Button variant="outline" onClick={() => handleResolve(false)}>
                   {options.cancelText || 'ביטול'}
                 </Button>
                 <Button
-                  variant={options.variant === 'destructive' ? 'destructive' : 'default'}
+                  variant={
+                    options.variant === 'destructive'
+                      ? 'destructive'
+                      : 'default'
+                  }
                   onClick={() => handleResolve(true)}
                 >
                   {options.confirmText || 'אישור'}
