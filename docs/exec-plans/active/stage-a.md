@@ -496,7 +496,12 @@ Required:
 - use public-safe summary data only
 - soft-deleted tournaments must not appear
 - public links/details must work for all supported tournament types, including `swiss-v1` internal tournaments
+- the public tournament page shows the results/standings of **that tournament**, never an aggregate ranking substituted in their place
+- completed tournaments show their final canonical results
+- active tournaments show current canonical results/standings as in-progress
+- upcoming tournaments show details/registration and do not invent results
 - public detail/results for internal tournaments may show public-safe standings/results but never staff IDs, revisions, audit/deletion metadata or management controls
+- team-player rows in internal tournament results link/navigate to their public player pages where applicable
 - do not send public users to `/manage`
 - no Socket.IO on Events or public tournament details; use normal HTTP/API flows
 - registration CTA is type-aware and appears only for publicly registerable events
