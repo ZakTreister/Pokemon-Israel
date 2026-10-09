@@ -202,6 +202,8 @@ The public **אירועים** page is the public-facing counterpart of managemen
 
 Users can filter by lifecycle/status and tournament type and use public search. Public tournament details/results must also support the canonical Swiss/internal engine rather than excluding it.
 
+A public tournament page shows the results of that specific tournament: final results when completed, current results while active, and no invented results before it starts. It must not replace tournament results with the aggregate league/All Stars ranking.
+
 Public responses use explicit safe fields and never expose management permissions, staff identities, revisions, audit/deletion metadata or controls. Public Events/detail pages use HTTP only, not Socket.IO.
 
 Public and management tournament lists should reuse shared filter/domain/presentation primitives where sensible, while management-only actions remain outside the shared public component.
