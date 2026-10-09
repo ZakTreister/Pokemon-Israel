@@ -875,12 +875,14 @@ Keep mutation/domain operations clearly separated from presentation.
 
 Preserve:
 - server as canonical tournament state
-- revision conflict protection
+- tournament-level revision conflict protection for structural mutations
+- match-level result-version conflict protection for ordinary match saves
 - Socket.IO synchronization only while the live tournament management screen is mounted
 - fallback reload/polling while that live-management connection is disconnected
 - later-round invalidation behavior
 - current permissions
 - save guarantees
+- multiple dirty sibling match drafts across canonical updates
 - multi-judge safety
 
 Never weaken concurrency protection while refactoring.
@@ -913,10 +915,11 @@ useInternalTournamentMutations(...)
 ```
 
 may own:
-- busy state
+- structural busy state
 - canonical response handling
 - request error normalization
-- revision-conflict handling
+- tournament-revision conflict handling
+- per-match result-version conflict handling
 - uncertain-save recovery
 - mutation outcome
 
@@ -1006,6 +1009,8 @@ These rules should not remain buried in JSX ternaries.
 Likewise, maximum drawn-games calculation should be a named pure function.
 
 If draft/save/retry/revision behavior forms a genuinely reusable concept, a focused hook such as `useMatchResultDraft(...)` is acceptable.
+
+A dirty match draft must be scoped to that match. Receiving a newer canonical tournament snapshot because another match was saved must not erase the dirty draft or force it onto the new tournament-wide revision. The draft should retain the expected result version of its own match until saved, discarded, or a same-match conflict is detected.
 
 Do not hide simple local UI state behind abstraction only for style.
 
