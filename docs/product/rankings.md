@@ -18,8 +18,9 @@ Users may change the sort by interacting with sortable column headers and may re
 
 Sorting the view does not change the canonical ranking calculation or persisted tournament data.
 
-Team-player names in public All Stars ranking tables link to their public All Stars player pages.
-Club/regular ranking names remain non-profile links because club players do not have public individual pages.
+In public All Stars ranking tables, the **entire team-player row is clickable** and opens that player's public All Stars profile page. The name may also render as a semantic link, but it must not be the only clickable target.
+
+Club/regular ranking rows remain non-profile links because club players do not have public individual pages.
 
 ## Regular / club national ranking
 - Applies to club/regular players.
