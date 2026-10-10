@@ -39,7 +39,7 @@ Every All Stars / team player has a public player page.
 
 Discovery rules:
 - in lists/tables that represent All Stars / team players, the **entire player row/card is clickable** and opens that player's public page
-- this includes team rosters and All Stars player-ranking tables
+- this includes team rosters and team-specific player-ranking tables
 - the player name should still have clear link styling/semantics where appropriate, but it is not the only clickable target
 - if a row contains independent interactive controls such as edit/remove/action buttons, those controls must remain independently operable and must not trigger row navigation
 - there is no global child directory/index
@@ -57,7 +57,6 @@ The player page should use only appropriate public data already available in the
 - seniority / tenure
 - a short biography
 - score/ranking inside the team
-- overall All Stars ranking when available
 - image of current personal deck
 - earned badges
 
