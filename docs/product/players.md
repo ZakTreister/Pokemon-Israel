@@ -100,6 +100,18 @@ The player page should use only appropriate public data already available in the
 Do not require child login for this page.
 Do not expose private/admin-only player data.
 
+## Creating team players from Players management
+When admin creates a **שחקן נבחרת** from the global **ניהול → שחקנים** page, the form must include a required **נבחרת** selector.
+
+The create payload assigns the new player to that selected team immediately.
+
+Requirements:
+- list active All Stars teams
+- selecting a team is required for this global team-player creation flow
+- do not create a new team player from this flow in an unassigned state
+- keep the existing team-context creation/import flow compatible
+- include the other required team-player fields such as name and **מספר שחקן**
+
 ## Editing player profile data
 Because children do not log in in Stage A, child/team profile information is managed by admin, not by the child.
 
