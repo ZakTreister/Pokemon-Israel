@@ -124,6 +124,8 @@ try {
   const { default: api } = await load('services/api.ts');
   const { default: PublicPlayer } = await load('pages/AllStarsPlayerPage.tsx');
   const { default: AllStars } = await load('pages/AllStarsPage.tsx');
+  const { publicTournaments } = await load('services/publicTournaments.ts');
+  publicTournaments.list = async () => [];
   const { default: Teams } = await load('pages/TeamPage.tsx');
   const { publicTeams } = await load('services/publicTeams.ts');
   const { internalTournaments } = await load('services/internalTournaments.ts');
@@ -264,17 +266,17 @@ try {
       .findAllByType('button')
       .filter((node) => text(node) === label);
   act(() => button('מחק')[0].props.onClick());
-  assert.equal(renderer.root.findByType('input').props.checked, false);
+  assert.equal(renderer.root.findByProps({ type: 'checkbox' }).props.checked, false);
   await act(async () => {
     button('מחק').at(-1).props.onClick();
     await flush();
   });
   assert.equal(deletions[0].permanent, false);
   act(() => button('מחק')[0].props.onClick());
-  assert.equal(renderer.root.findByType('input').props.checked, false);
+  assert.equal(renderer.root.findByProps({ type: 'checkbox' }).props.checked, false);
   act(() =>
     renderer.root
-      .findByType('input')
+      .findByProps({ type: 'checkbox' })
       .props.onChange({ target: { checked: true } }),
   );
   await act(async () => {

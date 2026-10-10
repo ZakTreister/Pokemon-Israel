@@ -52,6 +52,7 @@ export default function AllStarsPage() {
             <p>הדירוג יופיע לאחר סיום טורנירים פנימיים.</p>
           ) : (
             <DataTable
+              rowLink={(row) => `/all-stars/players/${row.playerId}`}
               rows={rankings}
               rowKey={(row) => row.playerId}
               columns={[

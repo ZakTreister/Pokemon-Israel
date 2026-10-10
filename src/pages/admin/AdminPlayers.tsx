@@ -1,3 +1,4 @@
+import NavigableRow from '../../components/ui/NavigableRow';
 import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
@@ -301,7 +302,11 @@ export default function AdminPlayers() {
               </thead>
               <tbody>
                 {players.map((player) => (
-                  <tr key={player.id} className="border-b border-border">
+                  <NavigableRow
+                    key={player.id}
+                    to={player.playerType === 'team' ? `/all-stars/players/${player.id}` : ''}
+                    className="border-b border-border"
+                  >
                     <td className="px-4 py-3 font-medium">{player.firstName}</td>
                     <td className="px-4 py-3 font-medium">{player.lastName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{player.club || '—'}</td>
@@ -347,7 +352,7 @@ export default function AdminPlayers() {
                         ערוך
                       </Button>
                     </td>
-                  </tr>
+                  </NavigableRow>
                 ))}
               </tbody>
             </table>

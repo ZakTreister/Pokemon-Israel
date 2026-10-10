@@ -1,3 +1,4 @@
+import NavigableRow from './NavigableRow';
 import { sortTableRows } from './tableSorting';
 import { useState, type ReactNode } from 'react';
 
@@ -14,12 +15,14 @@ export default function DataTable<Row>({
   rowKey,
   defaultSort = 'position',
   headerClassName = 'bg-muted',
+  rowLink,
 }: {
   rows: Row[];
   columns: TableColumn<Row>[];
   rowKey: (row: Row) => string;
   defaultSort?: string;
   headerClassName?: string;
+  rowLink?: (row: Row) => string | undefined;
 }) {
   const [sort, setSort] = useState({ key: defaultSort, descending: false });
   const column = columns.find((c) => c.key === sort.key) || columns[0];
@@ -60,15 +63,23 @@ export default function DataTable<Row>({
           </tr>
         </thead>
         <tbody>
-          {displayed.map((row) => (
-            <tr key={rowKey(row)} className="border-t">
-              {columns.map((c) => (
-                <td key={c.key} className="p-3">
-                  {c.render ? c.render(row) : (c.value(row) ?? '—')}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {displayed.map((row) => {
+            const cells = columns.map((c) => (
+              <td key={c.key} className="p-3">
+                {c.render ? c.render(row) : (c.value(row) ?? '—')}
+              </td>
+            ));
+            const to = rowLink?.(row);
+            return to ? (
+              <NavigableRow key={rowKey(row)} to={to} className="border-t">
+                {cells}
+              </NavigableRow>
+            ) : (
+              <tr key={rowKey(row)} className="border-t">
+                {cells}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {!rows.length && (

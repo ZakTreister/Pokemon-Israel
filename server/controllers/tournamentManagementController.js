@@ -1,3 +1,4 @@
+import { tournamentLifecycle } from '../../shared/tournamentDomain.js';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import { notifyTournament } from '../services/tournamentLive.js';
@@ -11,13 +12,7 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
     records.map((t) => ({
       ...t.toJSON(),
       type: t.type || 'quarterly',
-      lifecycle:
-        t.status === 'completed'
-          ? 'completed'
-          : t.phase === 'running' ||
-              (t.phase !== 'setup' && t.date <= new Date())
-            ? 'active'
-            : 'upcoming',
+      lifecycle: tournamentLifecycle(t),
       canManage:
         req.user.role === 'admin' ||
         (t.engineVersion === 'swiss-v1' &&

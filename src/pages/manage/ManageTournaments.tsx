@@ -1,3 +1,9 @@
+import {
+  tournamentTypes as types,
+  tournamentStatuses as statuses,
+  filterTournaments,
+} from '../../../shared/tournamentDomain';
+import TournamentFilters from '../../features/tournaments/components/TournamentFilters';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -8,6 +14,7 @@ import Button from '../../components/ui/Button';
 interface Entry {
   id: string;
   title: string;
+  location?: string;
   date: string;
   type: 'quarterly' | 'team_internal' | 'inter_team';
   lifecycle: 'upcoming' | 'active' | 'completed';
@@ -15,18 +22,11 @@ interface Entry {
   teamNameSnapshot?: string;
   canManage: boolean;
 }
-const types = {
-  quarterly: 'חוגים / ליגה ישראלית',
-  team_internal: 'פנימי בנבחרת',
-  inter_team: 'בין נבחרות',
-};
-const statuses = { upcoming: 'עתידי', active: 'בתהליך', completed: 'הסתיים' };
 export default function ManageTournaments() {
   const { user } = useAppSelector((state) => state.auth);
   const { showConfirm } = useConfirm();
   const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [status, setStatus] = useState('');
-  const [type, setType] = useState('');
+  const [filters, setFilters] = useState({ status: '', type: '', search: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => {
@@ -75,49 +75,21 @@ export default function ManageTournaments() {
           <Link to="/manage/teams">פתח טורניר מעמוד נבחרת</Link>
         </Button>
         {user?.role === 'admin' && (
-          <Button disabled variant="outline">
-            ייבוא היסטוריית חוגים מ־Excel · בקרוב
-          </Button>
+          <details>
+            <summary className="cursor-pointer font-bold p-2">
+              עוד פעולות
+            </summary>
+            <Button contextual disabled variant="outline">
+              ייבוא היסטוריית חוגים מ־Excel · בקרוב
+            </Button>
+            <p className="text-sm text-muted-foreground p-2">
+              ייבוא כחמש שנות תוצאות חוגים ייפתח לאחר קבלת הקובץ. טורניר פנימי
+              היסטורי מזינים מעמוד הנבחרת.
+            </p>
+          </details>
         )}
       </div>
-      {user?.role === 'admin' && (
-        <p className="text-sm text-muted-foreground">
-          ייבוא כחמש שנות תוצאות חוגים ייפתח לאחר קבלת הקובץ. טורניר פנימי
-          היסטורי מזינים מעמוד הנבחרת.
-        </p>
-      )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label>
-          מצב
-          <select
-            className="block w-full p-2 border rounded-md bg-background"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="">כל המצבים</option>
-            {Object.entries(statuses).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          סוג טורניר
-          <select
-            className="block w-full p-2 border rounded-md bg-background"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="">כל הסוגים</option>
-            {Object.entries(types).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <TournamentFilters value={filters} onChange={setFilters} />
       {error && (
         <p role="alert" className="text-destructive">
           {error}
@@ -127,38 +99,38 @@ export default function ManageTournaments() {
         <p>טוען טורנירים...</p>
       ) : (
         <div className="space-y-3">
-          {entries
-            .filter(
-              (t) =>
-                (!status || t.lifecycle === status) &&
-                (!type || t.type === type),
-            )
-            .map((t) => (
-              <div
-                key={t.id}
-                className="border rounded-lg p-4 flex flex-wrap gap-3 items-center justify-between"
-              >
-                <div>
-                  <h3 className="font-bold">{t.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {types[t.type]} · {statuses[t.lifecycle]} ·{' '}
-                    {new Date(t.date).toLocaleDateString('he-IL')}
-                    {t.teamNameSnapshot ? ` · ${t.teamNameSnapshot}` : ''}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link
-                      to={
-                        t.engineVersion === 'swiss-v1'
+          {filterTournaments(entries, filters).map((t) => (
+            <div
+              key={t.id}
+              className="border rounded-lg p-4 flex flex-wrap gap-3 items-center justify-between"
+            >
+              <div>
+                <h3 className="font-bold">{t.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {types[t.type]} · {statuses[t.lifecycle]} ·{' '}
+                  {new Date(t.date).toLocaleDateString('he-IL')}
+                  {t.teamNameSnapshot ? ` · ${t.teamNameSnapshot}` : ''}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link
+                    to={
+                      t.canManage
+                        ? t.engineVersion === 'swiss-v1'
                           ? `/manage/tournaments/${t.id}`
-                          : `/tournaments/${t.id}`
-                      }
-                    >
-                      {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}
-                    </Link>
-                  </Button>
-                  {user?.role === 'admin' && (
+                          : `/manage/tournaments/regular/${t.id}`
+                        : `/tournaments/${t.id}`
+                    }
+                  >
+                    {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}
+                  </Link>
+                </Button>
+                {user?.role === 'admin' && (
+                  <details>
+                    <summary className="cursor-pointer font-bold p-2">
+                      עוד פעולות
+                    </summary>
                     <Button
                       size="sm"
                       variant="destructive"
@@ -167,14 +139,14 @@ export default function ManageTournaments() {
                     >
                       מחק
                     </Button>
-                  )}
-                </div>
+                  </details>
+                )}
               </div>
-            ))}
-          {!entries.some(
-            (t) =>
-              (!status || t.lifecycle === status) && (!type || t.type === type),
-          ) && <p>אין טורנירים בסינון זה.</p>}
+            </div>
+          ))}
+          {!filterTournaments(entries, filters).length && (
+            <p>אין טורנירים בסינון זה.</p>
+          )}
         </div>
       )}
     </div>

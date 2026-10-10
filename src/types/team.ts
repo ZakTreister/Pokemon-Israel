@@ -1,12 +1,25 @@
+export interface StaffTeacher {
+  id: string;
+  name: string;
+  role: 'admin' | 'judge';
+}
 export interface Team {
-  openInternalTournament?: { id: string; phase: 'setup' | 'running' | null } | null;
+  teacher?: StaffTeacher | null;
+  openInternalTournament?: {
+    id: string;
+    phase: 'setup' | 'running' | null;
+  } | null;
   id: string;
   name: string;
   isActive: boolean;
   logo?: string;
   logoPublicId?: string;
   completedInternalTournamentCount?: number;
-  officialStats?: { position: number; gamesPlayed: number; winRate: number } | null;
+  officialStats?: {
+    position: number;
+    gamesPlayed: number;
+    winRate: number;
+  } | null;
   createdBy?: {
     id: string;
     username: string;
@@ -42,12 +55,14 @@ export interface ManageablePlayer extends TeamRosterPlayer {
 }
 
 export interface CreateTeamInput {
+  teacher: string;
   logo?: string;
   logoPublicId?: string;
   name: string;
 }
 
 export interface UpdateTeamInput {
+  teacher?: string;
   logo?: string;
   logoPublicId?: string;
   name?: string;

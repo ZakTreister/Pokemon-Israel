@@ -1,6 +1,7 @@
 import api from '../../services/api';
 import type {
   Team,
+  StaffTeacher,
   TeamWithRoster,
   ManageablePlayer,
   CreateTeamInput,
@@ -27,22 +28,34 @@ const createTeam = async (input: CreateTeamInput): Promise<Team> => {
   return data;
 };
 
-const updateTeam = async (id: string, input: UpdateTeamInput): Promise<Team> => {
+const updateTeam = async (
+  id: string,
+  input: UpdateTeamInput,
+): Promise<Team> => {
   const { data } = await api.put(`/api/teams/${id}`, input);
   return data;
 };
 
-const assignPlayer = async (teamId: string, playerId: string): Promise<ManageablePlayer> => {
+const assignPlayer = async (
+  teamId: string,
+  playerId: string,
+): Promise<ManageablePlayer> => {
   const { data } = await api.put(`/api/teams/${teamId}/players/${playerId}`);
   return data;
 };
 
-const removePlayer = async (teamId: string, playerId: string): Promise<ManageablePlayer> => {
+const removePlayer = async (
+  teamId: string,
+  playerId: string,
+): Promise<ManageablePlayer> => {
   const { data } = await api.delete(`/api/teams/${teamId}/players/${playerId}`);
   return data;
 };
 
 const teamsService = {
+  getTeachers: async () =>
+    (await api.get<StaffTeacher[]>('/api/teams/teachers')).data,
+  getMyTeams: async () => (await api.get<Team[]>('/api/teams/mine')).data,
   getTeams,
   getManageablePlayers,
   getTeam,

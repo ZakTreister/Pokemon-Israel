@@ -8,6 +8,7 @@ const teamSchema = new mongoose.Schema({
     minlength: [1, 'Team name must be at least 1 character long'],
     maxlength: [100, 'Team name cannot exceed 100 characters'],
   },
+  teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   logo: { type: String, trim: true, maxlength: 2000, default: '' },
   logoPublicId: { type: String, maxlength: 255, default: '' },
   rosterLock: { token: String, expiresAt: Date },
