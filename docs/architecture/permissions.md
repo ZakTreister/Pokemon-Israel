@@ -14,6 +14,8 @@ Owns league configuration, teams, players, historical data, destructive actions,
 Operational role for running tournaments.
 A judge is **not** a team/player administrator.
 
+A judge may be assigned as the teacher of one or more teams. This relationship does not change the judge's authorization role or grant any admin-only mutations.
+
 ## Permission matrix
 
 | Action | Admin | Judge |
@@ -21,6 +23,7 @@ A judge is **not** a team/player administrator.
 | View teams and rosters | Yes | Yes, read-only |
 | Create/edit/delete/deactivate team | Yes | No |
 | Upload/change team logo | Yes | No |
+| Assign/change team teacher | Yes | No |
 | Create/edit/delete/deactivate player | Yes | No |
 | Assign/unassign/transfer player | Yes | No |
 | Change permanent roster | Yes | No |
