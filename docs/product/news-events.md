@@ -9,6 +9,20 @@ Stage A should expose the page from the main navigation.
 
 The public Events page is the public-facing counterpart of the unified management **טורנירים** page.
 
+Its list presentation should be intentionally similar to the management tournaments list rather than using a separate oversized card-gallery concept.
+
+Prefer the same compact information hierarchy:
+- tournament title
+- type
+- lifecycle/status
+- date
+- relevant team/location metadata
+- one clear public action such as **פרטים**, **פרטים והרשמה**, or **תוצאות הטורניר**
+
+The public page may keep public-site chrome such as its page hero, but the tournament list itself should reuse the management list's compact layout/presentation primitives where sensible.
+
+Do not copy management-only controls into the public page: no create, operate, delete, import, permissions or **עוד פעולות** administration.
+
 It should intentionally look and behave similarly to the management tournament list where the underlying information is the same:
 - same general list/card/row structure
 - same tournament type labels
