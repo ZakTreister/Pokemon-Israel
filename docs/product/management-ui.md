@@ -25,6 +25,8 @@ For each assigned team show a compact operational card with:
 - current/open tournament state
 - a prominent quick tournament action
 
+Keep this card operationally minimal. Do not add edit/settings/history/member-management buttons to the overview card. The card/name itself may navigate to the team page for everything beyond the quick tournament action.
+
 Quick action:
 - no open/live internal tournament -> **התחל טורניר**
 - open/live internal tournament exists -> **המשך טורניר**
@@ -46,6 +48,26 @@ If member rows remain available inline for quick management:
 - keep nested actions such as remove/unassign independently clickable
 
 Use **חברי נבחרת** rather than **סגל** for user-facing team-management labels.
+
+## Action hierarchy
+Management screens should not present every available capability as an equally prominent button.
+
+Default hierarchy:
+- one clear primary action for the screen/card
+- at most one or two visible secondary actions when they are genuinely common
+- navigation that can be represented by a clickable card/row, tab or section should not automatically become another large button
+- low-frequency configuration belongs in the relevant detail/settings page
+- rare or destructive operations may be grouped under a compact **עוד פעולות** (`⋮`) menu when discoverability remains reasonable
+
+Examples:
+- team card: **התחל/המשך טורניר** is primary; **חברי נבחרת** is secondary
+- team configuration such as teacher, name/logo and active state belongs in **הגדרות נבחרת**
+- tournament history is a section/tab of the team context rather than another large primary action
+- the teacher's overview card shows only the operational tournament shortcut plus normal card navigation
+
+Do not remove capabilities merely to reduce visual noise. Reduce prominence and move them to the context where they are actually used.
+
+This action-density rule does **not** change the management navigation/menu structure.
 
 ## Buttons
 Use the CardSchool button system consistently.
