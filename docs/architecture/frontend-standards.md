@@ -675,6 +675,8 @@ As relevant areas are touched, prefer extracting/reusing these first:
 - PlayerStats
 - PlayerSelector
 - team-player forms should reuse one `playerNumber` field/validation path rather than duplicating it across create/edit surfaces
+- global team-player creation should reuse the canonical active-team selector/assignment path rather than creating an unassigned team player and requiring a second management step
+- team-member row edit/remove actions should reuse existing player edit and team-unassign mutations instead of duplicating business logic in the team page
 
 Do not create all of these in advance.
 Create them when a real task requires them or when existing duplication makes the boundary clear.
