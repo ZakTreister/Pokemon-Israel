@@ -674,6 +674,7 @@ As relevant areas are touched, prefer extracting/reusing these first:
 - PlayerCard
 - PlayerStats
 - PlayerSelector
+- team-player forms should reuse one `playerNumber` field/validation path rather than duplicating it across create/edit surfaces
 
 Do not create all of these in advance.
 Create them when a real task requires them or when existing duplication makes the boundary clear.
