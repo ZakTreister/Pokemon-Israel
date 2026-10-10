@@ -577,6 +577,42 @@ Add tests for:
 - overview returns/renders only teams assigned to the current teacher
 - quick action switches from start to continue when an open tournament exists
 
+### 35. Reduce management action clutter
+Apply the approved progressive-disclosure cleanup **without changing the management navigation/menu**.
+
+#### `/manage/teams`
+Each team card should keep only the common operational actions visible:
+- primary: **התחל טורניר** or **המשך טורניר**
+- secondary: **חברי נבחרת**
+- team card/name may navigate to the team page
+
+Do not keep name/logo edit, teacher change, activation/deactivation, historical entry or similar low-frequency actions as peer buttons beside the primary tournament action.
+
+Move those capabilities to the team page:
+- **חברי נבחרת**, ranking/statistics and **היסטוריית טורנירים** are organized as sections/tabs
+- admin configuration lives under **הגדרות נבחרת**
+- very rare/destructive actions may use an accessible **עוד פעולות** menu
+- preserve all existing role permissions and confirmations
+
+#### Teacher overview cards
+On **סקירה כללית**, an assigned-team card remains minimal:
+- team summary/status
+- **התחל טורניר** or **המשך טורניר**
+- ordinary card/name navigation to the team page
+
+Do not add team editing, history, member-management or settings buttons there.
+
+#### General rule for touched management screens
+- prefer one primary action
+- keep only genuinely frequent secondary actions visible
+- use tabs/sections for navigation among sibling content
+- move low-frequency configuration to detail/settings context
+- place rare actions in secondary/advanced context when sensible
+- do not remove existing capabilities
+- do not change the management navigation/menu as part of this iteration
+
+Refactor existing components when shared action/menu/section primitives are genuinely useful; avoid one-off duplication.
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
