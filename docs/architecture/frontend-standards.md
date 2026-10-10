@@ -395,6 +395,31 @@ Development logging may include more detail where appropriate.
 
 ---
 
+## 14A. Action density and progressive disclosure
+
+Management UI should reflect action frequency and importance instead of rendering every capability as a peer button.
+
+Prefer:
+- one dominant primary action per card/screen
+- only a small number of genuinely common secondary actions
+- clickable rows/cards for ordinary navigation
+- tabs/sections for sibling views such as members, ranking and history
+- settings/detail surfaces for low-frequency configuration
+- an accessible overflow/action menu for rare actions when appropriate
+
+Do not hide essential/common actions in overflow menus merely to make a screen visually sparse.
+
+Overflow/nested actions must:
+- be keyboard accessible
+- have an explicit accessible label
+- preserve confirmation for destructive actions
+- respect role/permission visibility
+- not trigger parent row/card navigation
+
+Apply progressive disclosure before adding more page-level buttons.
+
+This rule concerns page/card action density only. It does **not** change the management navigation/menu structure.
+
 ## 15. Accessibility
 
 Accessibility is part of Definition of Done.
