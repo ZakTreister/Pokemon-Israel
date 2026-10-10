@@ -245,3 +245,9 @@ No capability is removed by this cleanup, and the management navigation/menu str
 All Stars players are ranked inside their own team from that team's internal tournament results.
 
 There is no overall individual All Stars ranking that compares players across different teams. Do not calculate, expose or display an `overall All Stars ranking` on player profiles or public All Stars pages.
+
+
+## 2026-10 — Route navigation starts at the top
+Every navigation to a different application page/route opens the destination at the top.
+
+This is implemented centrally at the React Router/layout boundary so links, programmatic navigation, clickable rows/cards and browser back/forward follow the same behavior. Same-page state changes do not reset scroll. Explicit anchor/hash navigation may target its requested section.
