@@ -41,8 +41,8 @@ Permissions:
 - a judge teacher may use the same live-tournament operational actions already allowed to judges, but still may not edit the permanent team configuration or members
 
 Management UI:
-- show the assigned teacher in the management team card/details
-- admin can change the teacher from team management
+- show the assigned teacher in management team summary/details
+- admin changes the teacher from the team **הגדרות נבחרת** area rather than as a prominent list-card action
 - teacher picker lists eligible staff users (admin/judge) only
 
 ## Management label
@@ -50,17 +50,28 @@ The management navigation label is **נבחרות All-Stars**.
 Do not use **נבחרות וסגלים** as the primary label.
 
 ## Team-list primary actions
-On the team-management list, replace the old combined **סגל וטורנירים** action with two actions:
+The main team-management list should optimize for the common operational task and avoid presenting all team administration as equally important.
 
-- **חברי נבחרת** — navigates to the existing team roster/ranking/details page
-- **התחל טורניר** — starts/opens a new internal tournament for that team when no open internal tournament exists
-- If that team already has an open internal tournament, replace the create action with **המשך טורניר**, linking to the existing tournament
+Each team card should expose at most these common actions directly:
+- **התחל טורניר** — the primary action when no open internal tournament exists
+- **המשך טורניר** — replaces **התחל טורניר** when an open tournament exists
+- **חברי נבחרת** — secondary navigation to the team page/details
+
+The team name/card itself may also navigate to the team page so navigation does not require another large button.
 
 A team must never be offered a second simultaneous live internal tournament.
 
-The **התחל טורניר** / **המשך טורניר** action should be the more prominent operational action.
+The **התחל טורניר** / **המשך טורניר** action is the single visually dominant action.
 
-Do not merge these two meanings into one button.
+Do not put low-frequency administration beside it as equal-size primary buttons.
+
+Move low-frequency admin actions such as:
+- edit name/logo
+- change teacher
+- activate/deactivate team
+- historical data entry/maintenance
+
+into the team page's **הגדרות נבחרת** / secondary actions area. Very rare/destructive operations may live under a compact **עוד פעולות** menu.
 
 Permanent configuration controls remain admin-only. Judges may use the tournament-start action according to live-tournament permissions.
 
@@ -81,14 +92,21 @@ For each team card:
 User-facing team-management copy should use **חברי נבחרת** instead of **סגל**. The technical/domain term `roster` may remain in code and architecture where appropriate.
 
 ## Team page
-A team page should show:
-- team logo
-- team name
-- roster
+The team page is the home for team information and less-frequent team administration.
+
+It should organize content into clear sections/tabs rather than a long row of action buttons, including:
+- **חברי נבחרת**
 - team-related ranking/statistics when available
-- internal tournament history
-- access to the existing/manual historical internal-tournament result-entry flow
-- staff-only action to open a new internal tournament
+- **היסטוריית טורנירים**
+- **הגדרות נבחרת** for admin-only configuration
+
+The page header shows team logo/name and the relevant primary tournament action.
+
+Admin-only **הגדרות נבחרת** contains configuration such as name/logo, assigned teacher and active state.
+
+Historical internal-tournament entry belongs with the tournament-history/secondary administration context rather than as a prominent everyday button.
+
+Avoid creating separate large buttons merely to navigate between sections that can be represented as tabs/sections within the team page.
 
 Team-specific subpages/history should preserve the **נבחרות All-Stars** navigation context.
 Entering the actual tournament-management screen may switch to the Tournament context.
