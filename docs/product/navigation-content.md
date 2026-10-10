@@ -7,7 +7,7 @@ The header/menu should contain:
 
 - **ניהול** — visible only to authenticated judges/admins; contents filtered by permission
 - **הליגה הישראלית** — links to the national lifetime ranking of regular/club players
-- **All Stars** — links to the All Stars/team ranking/standings area
+- **All Stars** — links to the All Stars team area: teams, team standings when available, and team pages
 - **אירועים** — links to the events/tournaments page
 - **חדשות** — links to the news feed
 - **חנות** — show **בהקמה** in Stage A
@@ -50,7 +50,9 @@ Use the existing national rankings capability/page, adapted to the current produ
 
 ### All Stars
 Use the All Stars/team public area.
-It should be the public entry point to team standings/ranking and team pages.
+It should be the public entry point to teams, official team standings when available, and team pages.
+
+Do not show an overall individual ranking comparing All Stars players across different teams. Individual All Stars ranking is team-specific only.
 
 ### אירועים
 Reuse/upgrade the existing tournaments page as the user-facing Events page.
