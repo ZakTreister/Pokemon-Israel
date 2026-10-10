@@ -16,6 +16,19 @@ Do not use:
 - a separate “טורנירים פנימיים” tab
 - a standalone “עונות” tab
 
+## Team-list member disclosure
+On `/manage/teams`, team cards must remain compact.
+
+Do not show every team's full child/member list expanded by default.
+
+If member rows remain available inline for quick management:
+- label the disclosure **חברי נבחרת (N)**
+- keep it collapsed by default
+- preserve independent expansion per team
+- keep nested actions such as remove/unassign independently clickable
+
+Use **חברי נבחרת** rather than **סגל** for user-facing team-management labels.
+
 ## Buttons
 Use the CardSchool button system consistently.
 
