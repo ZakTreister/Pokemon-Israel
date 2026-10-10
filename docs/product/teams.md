@@ -27,7 +27,7 @@ Do not use **נבחרות וסגלים** as the primary label.
 ## Team-list primary actions
 On the team-management list, replace the old combined **סגל וטורנירים** action with two actions:
 
-- **סגל** — navigates to the existing team roster/ranking/details page
+- **חברי נבחרת** — navigates to the existing team roster/ranking/details page
 - **התחל טורניר** — starts/opens a new internal tournament for that team when no open internal tournament exists
 - If that team already has an open internal tournament, replace the create action with **המשך טורניר**, linking to the existing tournament
 
@@ -40,6 +40,20 @@ Do not merge these two meanings into one button.
 Permanent configuration controls remain admin-only. Judges may use the tournament-start action according to live-tournament permissions.
 
 See `docs/product/internal-tournament-ui.md`.
+
+## Team-management list density
+The main `/manage/teams` page is a team overview, not a permanently expanded child directory.
+
+For each team card:
+- show the team summary and player count without automatically rendering every child
+- if the inline member list is retained for quick admin actions, place it under a disclosure labeled **חברי נבחרת (N)**
+- that disclosure is **collapsed by default** on every page load
+- expanding one team must not require expanding all teams
+- the collapsed state must remain compact on mobile
+- existing inline member actions such as remove/unassign may remain inside the expanded area
+- do not eagerly create a long page containing every child from every team
+
+User-facing team-management copy should use **חברי נבחרת** instead of **סגל**. The technical/domain term `roster` may remain in code and architecture where appropriate.
 
 ## Team page
 A team page should show:
