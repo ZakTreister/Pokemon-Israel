@@ -23,6 +23,17 @@ Cardschool IL manages the Israeli Pokémon league, All Stars teams, tournaments,
 - `judge`: live-tournament operator only.
 - Children do not log in during Stage A.
 
+### Team teacher assignment
+A team has one assigned **teacher**. This is not a third authorization role.
+
+The teacher must reference an existing staff user whose role is either:
+- `admin`
+- `judge`
+
+Being assigned as a team's teacher does not elevate that user's global permissions. A judge who teaches a team remains a judge and may not perform admin-only team/player configuration.
+
+Teacher assignment is an operational ownership/context relationship used to surface the teacher's teams and quick tournament actions.
+
 Judge permissions are intentionally narrow. A judge may open and operate a live tournament, including participant check-in/removal before round 1, result entry/correction while active, round transitions and tournament completion. A judge may not create/edit/delete teams or players, change rosters, manage badges/Seasons, delete tournaments, or enter/import historical tournament data.
 
 See `docs/architecture/permissions.md` for the authoritative permission matrix.
