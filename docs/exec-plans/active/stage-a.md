@@ -509,9 +509,14 @@ Required:
 
 Reuse/refactor:
 - compare `src/pages/TournamentsPage.tsx` and `src/pages/manage/ManageTournaments.tsx`
+- make public **אירועים** visually similar to management **טורנירים**
+- reuse the same tournament summary/card/row presentation where practical
+- reuse the same filter bar/layout/options where relevant
+- reuse the same type/status badges, labels and summary-field ordering
 - extract shared tournament filter/list/presentation primitives where that removes real duplication
 - centralize tournament type/lifecycle labels and semantics
 - keep management-only actions (operate/delete/create) outside the shared public presentation
+- public list items navigate to public detail/results
 - avoid a single over-configured component full of permission branches
 
 Backend/API:
