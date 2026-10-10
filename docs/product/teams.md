@@ -106,6 +106,14 @@ Show the active team members in a clear table/list with:
 
 The entire player row/card remains navigable to the public team-player profile where applicable.
 
+For admin, row-level member management belongs here:
+- **עריכת שחקן**
+- **הסרה מהנבחרת**
+
+Keep these as compact contextual actions (for example a small action control or accessible `עוד פעולות` menu) rather than large peer buttons.
+
+Editing from this team context edits the Player record (including team-player fields such as name, city and player number). Removing unassigns the player from the team; it does not delete the Player record. Preserve confirmation for removal.
+
 For admin, each member row also provides compact contextual actions for:
 - **עריכת שחקן** — edit team-player fields such as name, city and player number
 - **הסרה מהנבחרת** — unassign from this team without deleting the Player
