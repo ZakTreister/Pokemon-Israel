@@ -754,6 +754,20 @@ Preserve:
 - route params
 - mounted global providers/layout during route transitions
 
+### Scroll position on navigation
+
+Every navigation that changes the displayed application page/route must start at the **top of the destination page**.
+
+Implement this once at the application/router/layout boundary rather than adding ad-hoc `window.scrollTo` calls to individual links/pages.
+
+Requirements:
+- normal `Link` / `NavLink` / `useNavigate` route changes scroll to the top
+- browser back/forward to a different route also opens that route at the top
+- clickable rows/cards that navigate to another page follow the same rule automatically
+- data refreshes, mutations and local UI state changes that do not navigate to another page must not reset scroll
+- explicit in-page anchor/hash navigation is the exception: when a link intentionally targets a section, honor that target instead of forcing the top
+- preserve SPA navigation; do not reload the document to achieve this
+
 ### Route loading
 
 Large route pages may be loaded with `React.lazy` + `Suspense` when this safely reduces the initial bundle.
