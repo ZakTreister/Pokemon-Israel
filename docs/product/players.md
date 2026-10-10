@@ -45,6 +45,29 @@ Requirements:
 - no uniqueness rule or numeric range is defined yet; do not invent one until product requirements specify it
 - club/regular players do not require this field
 
+## Creating a team player
+When an admin creates a **שחקן נבחרת** from the general Players management page, the form must include a required **נבחרת** selector.
+
+Creation rules:
+- a new team player created from the general Players page must be assigned to a team as part of the same submit
+- do not create an unassigned team player and require a separate follow-up assignment
+- the team selector lists eligible active All Stars teams
+- when creation is initiated from within a specific team context, the team is already known and should be preselected/implicit rather than asking the admin to choose it again
+- club/regular player creation remains unchanged
+
+## Editing and removing a team player
+For a team player, the primary contextual management surface is the team's **חברי נבחרת** tab.
+
+From that tab, admin must be able to:
+- edit the player's editable team-player fields, including name, city and player number
+- remove/unassign the player from that team
+
+These actions should be compact row actions or an accessible row **עוד פעולות** menu, not large page-level buttons.
+
+Removal changes team membership only; it does not delete the Player record.
+
+The general Players management page may continue to provide broad player editing as an additional administration surface.
+
 ## Public player pages
 There are no public player pages for club players.
 
