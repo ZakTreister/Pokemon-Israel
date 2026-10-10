@@ -634,6 +634,9 @@ Player data/forms:
 - add canonical `playerNumber` to team-player data/API/types/model
 - include **מספר שחקן** in team-player create and edit forms
 - require it for newly created team players
+- on the general Players management page, creating a team player also requires selecting the target All Stars team in the same form/submit
+- do not create a new team player from the general Players page in an unassigned state
+- when creation starts from a specific team page/context, use that team implicitly/preselected instead of asking for it again
 - keep legacy team players without a number readable/editable so admin can backfill it
 - do not require it for club/regular players
 - do not use it for identity matching/deduplication
@@ -648,6 +651,10 @@ Team page:
 - עיר
 - מספר שחקן
 - whole player row remains navigable to the player's public profile
+- admin can edit the team player directly from the row/context, including name, city and player number
+- admin can remove/unassign the player from the team directly from the row/context
+- removal must not delete the Player record
+- nested edit/remove controls must not trigger row navigation
 
 **דירוג וסטטיסטיקה**
 - מיקום
@@ -664,9 +671,13 @@ Prefer shared player/table components and existing DataTable behavior where prac
 
 Add/update tests for:
 - team-player create/edit with playerNumber
+- general Players-page team-player creation requires/assigns a team atomically
+- team-context creation uses the known team
 - regular player unaffected
 - legacy missing-number compatibility
 - team member tab columns
+- team-member edit/remove row actions
+- removal unassigns without deleting the player
 - team ranking tab columns/order
 
 ## Existing Stage A core behavior that must remain working
