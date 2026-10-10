@@ -627,6 +627,48 @@ Required:
 
 Also remove any remaining public **overall All Stars individual ranking** UI/data dependency. All Stars individual ranking is team-specific only.
 
+### 37. Team-player number and team-page tabs
+Add **מספר שחקן** to All Stars/team players.
+
+Player data/forms:
+- add canonical `playerNumber` to team-player data/API/types/model
+- include **מספר שחקן** in team-player create and edit forms
+- require it for newly created team players
+- keep legacy team players without a number readable/editable so admin can backfill it
+- do not require it for club/regular players
+- do not use it for identity matching/deduplication
+- do not invent a uniqueness or range rule
+- expose it through public-safe team-player data where needed for the approved team/profile UI
+
+Team page:
+- implement clear primary tabs/sections
+
+**חברי נבחרת**
+- שם מלא
+- עיר
+- מספר שחקן
+- whole player row remains navigable to the player's public profile
+
+**דירוג וסטטיסטיקה**
+- מיקום
+- שם
+- נקודות
+- טורנירים
+- in RTL, מיקום is immediately to the right of שם
+- default sort is canonical team rank ascending
+- use team-specific ranking only; no cross-team overall All Stars ranking
+
+Preserve the already-defined **היסטוריית טורנירים** and admin **הגדרות נבחרת** areas without turning them into another large row of buttons.
+
+Prefer shared player/table components and existing DataTable behavior where practical.
+
+Add/update tests for:
+- team-player create/edit with playerNumber
+- regular player unaffected
+- legacy missing-number compatibility
+- team member tab columns
+- team ranking tab columns/order
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
