@@ -49,6 +49,8 @@ If member rows remain available inline for quick management:
 
 Use **חברי נבחרת** rather than **סגל** for user-facing team-management labels.
 
+Inside the team page's **חברי נבחרת** tab, admin player edit and remove/unassign controls are contextual row actions. They should not appear as large page-level buttons. Removal requires confirmation and removes only the team assignment, not the player record.
+
 ## Action hierarchy
 Management screens should not present every available capability as an equally prominent button.
 
