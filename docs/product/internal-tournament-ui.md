@@ -11,8 +11,8 @@ On the **ניהול נבחרות / נבחרות All-Stars** list, do not use one
 
 For each active team, expose two separate actions:
 
-### סגל
-- Label: **סגל**
+### חברי נבחרת
+- Label: **חברי נבחרת**
 - Navigates to the existing team roster/ranking/details page.
 - This is navigation only; it must not create a tournament.
 - It is the entry point for viewing the team's roster and team-player ranking/details.
@@ -29,7 +29,7 @@ This is one conditional operational action for the team:
   - navigate directly to the existing active tournament
   - never offer a second create action for that team
 
-This operational action should be visually more prominent than **סגל**.
+This operational action should be visually more prominent than **חברי נבחרת**.
 It is available to staff roles that are allowed to operate a live tournament.
 Permanent team editing controls remain admin-only.
 
