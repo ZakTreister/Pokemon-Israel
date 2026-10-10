@@ -94,9 +94,30 @@ User-facing team-management copy should use **חברי נבחרת** instead of *
 ## Team page
 The team page is the home for team information and less-frequent team administration.
 
-It should organize content into clear sections/tabs rather than a long row of action buttons, including:
-- **חברי נבחרת**
-- team-related ranking/statistics when available
+It should organize content into clear tabs/sections rather than a long row of action buttons.
+
+Primary team tabs:
+
+### חברי נבחרת
+Show the active team members in a clear table/list with:
+- **שם מלא**
+- **עיר**
+- **מספר שחקן**
+
+The entire player row/card remains navigable to the public team-player profile where applicable.
+
+### דירוג וסטטיסטיקה
+Show the team-specific player ranking only.
+
+Columns, in RTL visual order:
+- **מיקום** — immediately to the right of the player name
+- **שם**
+- **נקודות**
+- **טורנירים**
+
+Default ordering is canonical team rank ascending (place 1 first). This is the ranking inside this team only; there is no cross-team overall All Stars player ranking.
+
+Additional team areas:
 - **היסטוריית טורנירים**
 - **הגדרות נבחרת** for admin-only configuration
 
