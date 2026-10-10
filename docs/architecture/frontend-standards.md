@@ -495,6 +495,8 @@ For All Stars / team-player rows, the row target is the public player profile.
 
 The public Events list and management Tournaments list represent the same tournament domain with different capabilities.
 
+They should also share the same visual presentation language. Prefer one shared tournament-summary presentation and shared filter primitives, with thin public/management wrappers for the differences.
+
 Prefer shared primitives for the overlapping concerns, for example:
 - tournament lifecycle/type labels
 - filter state/options
