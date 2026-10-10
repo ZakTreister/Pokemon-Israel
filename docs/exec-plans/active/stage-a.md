@@ -544,6 +544,39 @@ Required:
 
 The technical/domain term `roster` does not need a broad code rename; this is primarily user-facing terminology and team-list density.
 
+### 34. Team teachers and overview quick actions
+Add one assigned teacher to each All Stars team.
+
+Required:
+- team teacher references an existing staff User with role `admin` or `judge`
+- one teacher per team; one staff user may teach multiple teams
+- new team creation requires teacher selection
+- existing legacy teams without teacher remain readable and can be assigned by admin
+- only admin may assign/change the teacher
+- teacher assignment never elevates authorization; judge teachers remain judges
+- do not expose teacher identity on public team APIs/pages in this iteration
+- management team cards/details show the assigned teacher
+- teacher picker contains only eligible admin/judge users
+
+Management overview:
+- on **סקירה כללית**, show every team whose `teacher` equals the signed-in user
+- show each as a compact operational card
+- include quick tournament action
+- no open tournament -> **התחל טורניר**
+- existing open tournament -> **המשך טורניר**
+- reuse the existing open-tournament invariant and navigation; never create duplicates
+- if the user teaches multiple teams, show all of them
+- use normal HTTP/API data loading on the overview; do not add Socket.IO there
+
+Preserve all existing role permissions and tournament-start behavior.
+
+Add tests for:
+- eligible teacher validation
+- admin-only teacher assignment
+- judge teacher receives no admin configuration permission
+- overview returns/renders only teams assigned to the current teacher
+- quick action switches from start to continue when an open tournament exists
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
