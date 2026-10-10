@@ -215,3 +215,13 @@ The main `/manage/teams` page is a compact team overview. It must not show all c
 If inline team-member rows are kept for quick administration, they appear under an independent **חברי נבחרת (N)** disclosure that is collapsed by default.
 
 User-facing team-management terminology uses **חברי נבחרת** instead of **סגל**. The internal technical term `roster` may remain unchanged.
+
+
+## 2026-10 — Every team has an assigned teacher
+Each All Stars team has one assigned teacher, referencing an existing staff user whose role is `admin` or `judge`. One staff user may teach multiple teams.
+
+Teacher is a team relationship, not a new authorization role. A judge teacher remains a judge and does not receive admin team/player configuration permissions. Assigning/changing a teacher is admin-only.
+
+The management **סקירה כללית** page shows the signed-in user's assigned teams with a quick **התחל טורניר** action, or **המשך טורניר** when that team already has an open live tournament.
+
+Teacher identity remains internal management data for now and is not exposed on public team pages.
