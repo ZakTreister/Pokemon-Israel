@@ -332,9 +332,9 @@ It starts with the active roster preloaded.
 Before round 1, staff can remove absent players.
 No check-in workflow is required for team tournaments.
 
-Internal team tournaments are the source for:
-- internal team-player ranking
-- overall All Stars player ranking, according to the ranking spec
+Internal team tournaments are the source for the player ranking **inside the relevant All Stars team**.
+
+Do not derive or expose an overall cross-team All Stars player ranking.
 
 ### Internal tournament history
 Internal tournament history belongs under the relevant team context.
