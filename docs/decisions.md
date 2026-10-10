@@ -262,3 +262,14 @@ New team-player create/edit flows include the field and new team players require
 The team page has a **חברי נבחרת** view with full name, city and player number, and a **דירוג וסטטיסטיקה** view with position, name, points and tournaments.
 
 In RTL ranking presentation, position appears immediately to the right of the player name. Ranking is team-specific only.
+
+
+## 2026-10 — Team-player creation includes team assignment
+Creating a **שחקן נבחרת** from the general Players management page requires choosing the All Stars team in the same form and submit. Do not create a new unassigned team player and require a second assignment step.
+
+When creation is initiated from a specific team context, that team is already known and should be used implicitly/preselected.
+
+## 2026-10 — Team-member edit/remove lives with חברי נבחרת
+Admin can edit a team player's team-facing fields and remove/unassign that player directly from the team's **חברי נבחרת** tab using compact row-level actions.
+
+Removing a player from a team changes membership only and does not delete the Player record. The general Players page remains available as a broader administration surface.
