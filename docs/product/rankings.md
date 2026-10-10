@@ -18,7 +18,7 @@ Users may change the sort by interacting with sortable column headers and may re
 
 Sorting the view does not change the canonical ranking calculation or persisted tournament data.
 
-In public All Stars ranking tables, the **entire team-player row is clickable** and opens that player's public All Stars profile page. The name may also render as a semantic link, but it must not be the only clickable target.
+In team-specific All Stars player ranking tables, the **entire team-player row is clickable** and opens that player's public All Stars profile page. The name may also render as a semantic link, but it must not be the only clickable target.
 
 Club/regular ranking rows remain non-profile links because club players do not have public individual pages.
 
@@ -30,14 +30,14 @@ Club/regular ranking rows remain non-profile links because club players do not h
 - Does not reset each September.
 - Historical regular-tournament Excel import, when eventually implemented, must feed this same ranking model.
 
-## All Stars player ranking
+## All Stars team-player ranking
 Team-related scoring is separate from regular club scoring.
 
-Internal team tournaments contribute to:
-- ranking inside the player's team
-- overall ranking of All Stars players
+Internal team tournaments contribute to the **ranking inside that player's team**.
 
-Inter-team encounters do not alter the internal player ranking unless a later product decision explicitly changes this.
+There is no product-level **overall All Stars player ranking across different teams**. Do not calculate, display or expose a cross-team individual All Stars ranking.
+
+Inter-team encounters do not alter the internal team-player ranking unless a later product decision explicitly changes this.
 
 ## Team standings
 Official team standings are based on inter-team competition, not internal tournaments.
