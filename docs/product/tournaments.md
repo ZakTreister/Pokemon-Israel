@@ -58,7 +58,16 @@ Public detail/result requirements:
 
 Registration actions are type-aware: show registration only where public registration is supported.
 
-The public and management tournament lists should share presentation/filter primitives and canonical lifecycle/type semantics where practical instead of reimplementing two disconnected tournament-list systems.
+The public and management tournament lists should share presentation/filter primitives and canonical lifecycle/type semantics instead of reimplementing two disconnected tournament-list systems.
+
+Visually, **אירועים** should be recognizably the public version of management **טורנירים**:
+- reuse the same tournament summary/card/row component or a thin shared presentation component
+- reuse the same filter bar/options where relevant
+- keep the same status/type badges and summary-field ordering
+- public rows/cards navigate to public tournament details/results
+- management rows/cards add only management-specific actions/permissions
+
+Do not duplicate nearly identical tournament-list markup merely because one page is public and one is authenticated.
 
 See `docs/product/news-events.md`.
 
