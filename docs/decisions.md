@@ -273,3 +273,9 @@ When creation is initiated from a specific team context, that team is already kn
 Admin can edit a team player's team-facing fields and remove/unassign that player directly from the team's **חברי נבחרת** tab using compact row-level actions.
 
 Removing a player from a team changes membership only and does not delete the Player record. The general Players page remains available as a broader administration surface.
+
+
+## 2026-10 — Events visually mirrors tournament management
+The public **אירועים** list should look and behave like the public-safe version of management **טורנירים** rather than a separately designed tournament browser.
+
+Both views reuse the same summary/card/row presentation, filter patterns, tournament type/status labels and responsive information hierarchy where practical. The public wrapper navigates to public details/results; the management wrapper adds management-only actions and permissions.
