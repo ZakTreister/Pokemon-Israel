@@ -204,7 +204,7 @@ The public **אירועים** page is the public-facing counterpart of managemen
 
 Users can filter by lifecycle/status and tournament type and use public search. Public tournament details/results must also support the canonical Swiss/internal engine rather than excluding it.
 
-A public tournament page shows the results of that specific tournament: final results when completed, current results while active, and no invented results before it starts. It must not replace tournament results with the aggregate league/All Stars ranking.
+A public tournament page shows the results of that specific tournament: final results when completed, current results while active, and no invented results before it starts. It must not replace tournament results with another ranking view.
 
 Public responses use explicit safe fields and never expose management permissions, staff identities, revisions, audit/deletion metadata or controls. Public Events/detail pages use HTTP only, not Socket.IO.
 
@@ -239,3 +239,9 @@ The team page organizes members, ranking/statistics and tournament history as se
 Teacher cards on **סקירה כללית** remain minimal and show the tournament quick action plus ordinary navigation to the team page.
 
 No capability is removed by this cleanup, and the management navigation/menu structure is explicitly unchanged.
+
+
+## 2026-10 — All Stars individual ranking is team-specific only
+All Stars players are ranked inside their own team from that team's internal tournament results.
+
+There is no overall individual All Stars ranking that compares players across different teams. Do not calculate, expose or display an `overall All Stars ranking` on player profiles or public All Stars pages.
