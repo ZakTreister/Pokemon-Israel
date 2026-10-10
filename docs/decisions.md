@@ -109,7 +109,9 @@ Historical internal-team result entry is a team-context action, not a separate m
 If the capability already exists in the codebase, preserve and reuse it rather than reimplementing a duplicate flow.
 
 ## 2026-10 — Regular historical Excel import deferred
-A future button/placeholder belongs on the unified Tournaments page for importing roughly the last five years of regular/club tournament results via Excel.
+A future admin entry point belongs on the unified Tournaments page for importing roughly the last five years of regular/club tournament results via Excel.
+
+Because this is a rare/future operation, it should live in a secondary/advanced or **עוד פעולות** context rather than as a prominent peer of normal tournament operations.
 The actual Excel importer is NOT part of Stage A and must not be implemented until the real file is available and inspected.
 
 ## 2026-10 — WebSocket/Socket.IO is only for live tournament management
@@ -225,3 +227,15 @@ Teacher is a team relationship, not a new authorization role. A judge teacher re
 The management **סקירה כללית** page shows the signed-in user's assigned teams with a quick **התחל טורניר** action, or **המשך טורניר** when that team already has an open live tournament.
 
 Teacher identity remains internal management data for now and is not exposed on public team pages.
+
+
+## 2026-10 — Management actions use progressive disclosure
+Management screens emphasize the current task rather than displaying every capability as an equal button.
+
+For team cards, **התחל טורניר / המשך טורניר** is the primary visible action and **חברי נבחרת** is the secondary action. Team configuration, history and other low-frequency administration move into the team detail context, with rare actions optionally under an accessible **עוד פעולות** menu.
+
+The team page organizes members, ranking/statistics and tournament history as sections/tabs, while admin configuration belongs under **הגדרות נבחרת**.
+
+Teacher cards on **סקירה כללית** remain minimal and show the tournament quick action plus ordinary navigation to the team page.
+
+No capability is removed by this cleanup, and the management navigation/menu structure is explicitly unchanged.
