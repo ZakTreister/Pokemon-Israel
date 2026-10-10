@@ -9,6 +9,15 @@ Stage A should expose the page from the main navigation.
 
 The public Events page is the public-facing counterpart of the unified management **טורנירים** page.
 
+It should intentionally look and behave similarly to the management tournament list where the underlying information is the same:
+- same general list/card/row structure
+- same tournament type labels
+- same lifecycle/status labels
+- same filtering model and filter layout where appropriate
+- same responsive behavior and information hierarchy
+
+The public version removes management-only capabilities rather than inventing a separate visual language.
+
 It must expose **all non-deleted canonical tournaments**, across all tournament types:
 - regular/club (`quarterly`)
 - All Stars internal-team (`team_internal`)
