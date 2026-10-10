@@ -614,6 +614,19 @@ Do not add team editing, history, member-management or settings buttons there.
 
 Refactor existing components when shared action/menu/section primitives are genuinely useful; avoid one-off duplication.
 
+### 36. Route navigation starts at the top
+Add one shared SPA scroll-restoration behavior at the router/layout level.
+
+Required:
+- every navigation to a different page/route starts at the top of the destination
+- applies to header/sidebar links, buttons using `useNavigate`, clickable cards/rows and browser back/forward route changes
+- do not add page-specific scroll handlers to every link
+- do not reset scroll for refetches, saves, filters, dialogs or other local state changes that stay on the same page
+- explicit hash/anchor navigation may scroll to its requested section instead of the top
+- preserve React Router SPA behavior; no document reloads
+
+Also remove any remaining public **overall All Stars individual ranking** UI/data dependency. All Stars individual ranking is team-specific only.
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
