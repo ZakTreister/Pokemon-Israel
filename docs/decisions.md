@@ -251,3 +251,14 @@ There is no overall individual All Stars ranking that compares players across di
 Every navigation to a different application page/route opens the destination at the top.
 
 This is implemented centrally at the React Router/layout boundary so links, programmatic navigation, clickable rows/cards and browser back/forward follow the same behavior. Same-page state changes do not reset scroll. Explicit anchor/hash navigation may target its requested section.
+
+
+## 2026-10 — Team players have a player number
+Every All Stars/team player has a **מספר שחקן** stored as a reusable player display/profile field, including for future shirt/kit presentation.
+
+New team-player create/edit flows include the field and new team players require it. Legacy team players without a number remain readable/editable for backfill. The number is not an identity key, and no uniqueness/range rule is defined yet.
+
+## 2026-10 — Team page primary player tabs
+The team page has a **חברי נבחרת** view with full name, city and player number, and a **דירוג וסטטיסטיקה** view with position, name, points and tournaments.
+
+In RTL ranking presentation, position appears immediately to the right of the player name. Ranking is team-specific only.
