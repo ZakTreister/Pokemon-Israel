@@ -106,6 +106,12 @@ Show the active team members in a clear table/list with:
 
 The entire player row/card remains navigable to the public team-player profile where applicable.
 
+For admin, each member row also provides compact contextual actions for:
+- **עריכת שחקן** — edit team-player fields such as name, city and player number
+- **הסרה מהנבחרת** — unassign from this team without deleting the Player
+
+These actions must remain independently clickable and must not trigger the row's profile navigation. Prefer compact row actions / **עוד פעולות** rather than adding more large buttons to the page.
+
 ### דירוג וסטטיסטיקה
 Show the team-specific player ranking only.
 
