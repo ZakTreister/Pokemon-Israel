@@ -5,6 +5,7 @@ An All Stars team has at least:
 - name
 - logo / emblem
 - active state
+- one assigned teacher
 - roster of team players
 
 Team names must remain uniquely normalized as in the existing model.
@@ -14,11 +15,35 @@ Team names must remain uniquely normalized as in the existing model.
 - Judges may view team information as needed to open/manage tournaments, but may not change team settings.
 - Only admin may create, edit, activate/deactivate or delete a team.
 - Only admin may upload/change a team logo.
+- Only admin may assign or change the team's teacher.
 - Only admin may add, edit, transfer, assign, remove or unassign players from a team roster.
 - Team creation is NOT blocked by an active Season.
 - General team/roster administration is not globally locked because a Season is active.
 - A player may belong to only one active team at a time.
 - Do not deactivate a team while active players are still assigned to it. Require transfer/unassignment first.
+
+## Team teacher
+Every active All Stars team should have one assigned **מורה**.
+
+Data/validation:
+- store the teacher as a reference to the staff User record
+- the referenced user must currently have role `admin` or `judge`
+- this is a one-teacher-per-team relationship; one teacher may teach multiple teams
+- teacher assignment/change is admin-only
+- do not expose the teacher/staff identity in public team DTOs unless a later product decision explicitly makes teachers public
+- existing legacy teams without a teacher must remain readable, but management should make the missing assignment visible and allow admin to assign one
+- new team creation should require selecting a teacher
+
+Permissions:
+- teacher assignment does not grant new global permissions
+- an admin teacher keeps admin permissions
+- a judge teacher keeps judge permissions
+- a judge teacher may use the same live-tournament operational actions already allowed to judges, but still may not edit the permanent team configuration or members
+
+Management UI:
+- show the assigned teacher in the management team card/details
+- admin can change the teacher from team management
+- teacher picker lists eligible staff users (admin/judge) only
 
 ## Management label
 The management navigation label is **נבחרות All-Stars**.
