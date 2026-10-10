@@ -16,6 +16,24 @@ Do not use:
 - a separate “טורנירים פנימיים” tab
 - a standalone “עונות” tab
 
+## Overview — my teams
+The management **סקירה כללית** page should surface teams for which the signed-in staff user is the assigned teacher.
+
+For each assigned team show a compact operational card with:
+- team name/logo
+- member count when available
+- current/open tournament state
+- a prominent quick tournament action
+
+Quick action:
+- no open/live internal tournament -> **התחל טורניר**
+- open/live internal tournament exists -> **המשך טורניר**
+- never offer creation of a second simultaneous tournament
+
+The quick action follows the current user's existing role permissions; teacher assignment itself does not elevate permissions.
+
+If the user teaches multiple teams, show all of their assigned teams.
+
 ## Team-list member disclosure
 On `/manage/teams`, team cards must remain compact.
 
