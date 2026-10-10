@@ -2,6 +2,12 @@
 
 ## Domain and compatibility
 
+Teams gain an optional legacy-compatible staff `teacher` reference that should be
+populated for active teams through management. New team creation requires an
+eligible teacher whose User role is `admin` or `judge`; teacher changes are
+admin-only. The relation does not change authorization roles. Existing teams
+without a teacher remain readable until assigned.
+
 New internal tournaments use `type: team_internal`, `engineVersion: swiss-v1`,
 `team`, and `playerParticipants[].player`. Legacy `participants.user` and
 `results.player` (User references) are preserved. The legacy tournament routes
