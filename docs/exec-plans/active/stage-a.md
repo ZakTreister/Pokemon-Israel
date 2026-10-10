@@ -390,7 +390,7 @@ The final flow must:
 - prevent duplicate mapping of one Player to multiple rows
 - show a parsed/mapped preview
 - block save until mappings are resolved
-- save as a completed historical internal-team tournament and feed the same All Stars ranking source of truth
+- save as a completed historical internal-team tournament and feed the same **team-specific** All Stars ranking source of truth
 
 ### 26. Prevent duplicate open internal tournaments
 Enforce the product invariant that each All Stars team may have at most one open/live internal tournament.
@@ -426,10 +426,11 @@ Implement a public page for every team/All Stars player.
 Required:
 - preferred route: `/all-stars/players/:playerId`
 - in team-player lists/tables, the **entire player row/card** navigates to that page, not only the player's name
-- apply this to public team rosters, All Stars ranking tables, and team-player rows in management contexts where row navigation is appropriate
+- apply this to public team rosters, team-specific All Stars ranking tables, and team-player rows in management contexts where row navigation is appropriate
 - nested management actions such as edit/remove must remain independently clickable and must not trigger navigation
 - preserve keyboard accessibility/focus behavior for the full-row target
-- show appropriate public player information available from the existing model, including team/ranking/profile fields when present
+- show appropriate public player information available from the existing model, including the player's **team-specific** ranking/profile fields when present
+- do not display or request an overall cross-team All Stars player ranking
 - do not expose admin/private data
 - no child login is required
 - do not create a global child directory
