@@ -1,3 +1,4 @@
+import { publicTournament } from '../services/publicTournament.js';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import User from '../models/userModel.js';
@@ -6,31 +7,25 @@ import { v4 as uuidv4 } from 'uuid';
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
 // @access  Public
+const deckFields = 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image';
 export const getTournaments = asyncHandler(async (req, res) => {
-  const tournaments = await Tournament.find({ engineVersion: { $ne: 'swiss-v1' } })
-    .populate('participants.user', 'username')
-    .sort({ date: 1 });
-  res.json(tournaments);
+  const tournaments = await Tournament.find({}).populate('results.deck', deckFields).sort({ date: -1 });
+  res.json(tournaments.map(t => publicTournament(t)));
 });
-
-// @desc    Get single tournament
-// @route   GET /api/tournaments/:id
-// @access  Public
 export const getTournamentById = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } })
-    .populate('participants.user', 'username')
-    .populate('results.player', 'username')
-    .populate({
-      path: 'results.deck',
-      select: 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image'
-    });
-
-  if (tournament) {
-    res.json(tournament);
-  } else {
-    res.status(404);
-    throw new Error('Tournament not found');
-  }
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('Tournament not found'); }
+  const tournament = await Tournament.findById(req.params.id).populate('results.deck', deckFields);
+  if (!tournament) { res.status(404); throw new Error('Tournament not found'); }
+  res.json(publicTournament(tournament, true));
+});
+// The existing legacy staff editor retains its full authenticated DTO.
+export const getLegacyManagedTournaments = asyncHandler(async (req, res) => {
+  res.json(await Tournament.find({ engineVersion: { $ne: 'swiss-v1' } }).populate('participants.user','username').populate('results.deck',deckFields).sort({ date:1 }));
+});
+export const getLegacyManagedTournament = asyncHandler(async (req, res) => {
+  const t = await Tournament.findOne({ _id:req.params.id, engineVersion:{ $ne:'swiss-v1' } }).populate('participants.user','username').populate('results.player','username').populate('results.deck',deckFields);
+  if (!t) { res.status(404); throw new Error('Tournament not found'); }
+  res.json(t);
 });
 
 // @desc    Create a tournament (single or recurring)
@@ -160,10 +155,9 @@ export const updateTournament = asyncHandler(async (req, res) => {
 // @access  Public
 export const getTournamentsBySeries = asyncHandler(async (req, res) => {
   const tournaments = await Tournament.find({ seriesId: req.params.seriesId, engineVersion: { $ne: 'swiss-v1' } })
-    .populate('participants.user', 'username')
+    .populate('results.deck', 'archetype image iconImage1 iconImage2 attackerImage1 attackerImage2')
     .sort({ date: 1 });
-  
-  res.json(tournaments);
+  res.json(tournaments.map(t => publicTournament(t)));
 });
 
 // @desc    Register for tournament
@@ -425,18 +419,15 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
 // @route   GET /api/tournaments/:id/results
 // @access  Public
 export const getTournamentResults = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } })
-    .populate('results.player', 'username')
-    .populate({
-      path: 'results.deck',
-      select: 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image'
-    })
-    .select('results');
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('Tournament not found'); }
+  const t = await Tournament.findById(req.params.id).populate('results.deck', deckFields);
+  if (!t) { res.status(404); throw new Error('Tournament not found'); }
+  res.json(publicTournament(t,true).standings);
+});
 
-  if (!tournament) {
-    res.status(404);
-    throw new Error('Tournament not found');
-  }
-
-  res.json(tournament.results);
+export const getOwnRegistration = asyncHandler(async (req, res) => {
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('טורניר לא נמצא'); }
+  const tournament = await Tournament.findById(req.params.id).select('participants');
+  if (!tournament) { res.status(404); throw new Error('טורניר לא נמצא'); }
+  res.json({ registered: tournament.participants.some(p => String(p.user) === String(req.user._id)) });
 });

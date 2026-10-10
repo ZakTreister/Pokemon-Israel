@@ -19,9 +19,9 @@ const initialState: TournamentsState = {
 
 export const fetchTournaments = createAsyncThunk(
   'tournaments/fetchAll',
-  async (_, thunkAPI) => {
+  async (scope: 'management' | undefined, thunkAPI) => {
     try {
-      return await tournamentsService.getTournaments();
+      return await tournamentsService.getTournaments(scope);
     } catch (caughtError) {
       const error = caughtError as RequestError;
       const message = error.response?.data?.message || error.message || 'שגיאה בטעינת הטורנירים';

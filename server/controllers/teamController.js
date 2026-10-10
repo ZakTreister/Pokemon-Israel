@@ -1,3 +1,4 @@
+import User from '../models/userModel.js';
 import asyncHandler from 'express-async-handler';
 import Team, { normalizeTeamName } from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
@@ -17,6 +18,18 @@ function validatePublicId(value = '') {
   if (typeof value !== 'string' || value.length > 255 || (value && !/^[a-z\d_/-]+$/i.test(value))) fail(400, 'מזהה תמונה לא חוקי');
   return value;
 }
+async function validateTeacher(value) {
+  if (typeof value !== 'string' || !/^[a-f\d]{24}$/i.test(value) || !await User.exists({ _id: value, role: { $in: ['admin', 'judge'] } }))
+    fail(400, 'יש לבחור מורה קיים מתוך צוות המנהלים והשופטים');
+  return value;
+}
+export const getTeachers = asyncHandler(async (req, res) => {
+  res.json(await User.find({ role: { $in: ['admin', 'judge'] } }).select('name role').sort({ name: 1 }));
+});
+export const getMyTeams = asyncHandler(async (req, res) => {
+  const teams = await Team.find({ teacher: req.user._id }).populate('teacher', 'name role').sort({ normalizedName: 1 });
+  res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team), openInternalTournament: await openForTeam(team) }))));
+});
 async function counts(team) {
   const [playerCount, completedInternalTournamentCount] = await Promise.all([
     Player.countDocuments({ team: team._id, isActive: true, playerType: 'team' }),
@@ -41,7 +54,7 @@ export const getPublicTeam = asyncHandler(async (req, res) => {
   res.json({ ...await publicTeam(team), players });
 });
 export const getTeams = asyncHandler(async (req, res) => {
-  const teams = await Team.find({}).populate('createdBy', 'username name').sort({ normalizedName: 1 });
+  const teams = await Team.find({}).populate('createdBy', 'username name').populate('teacher', 'name role').sort({ normalizedName: 1 });
   const open = await Tournament.find(OPEN_INTERNAL_FILTER).select('team phase');
   const byTeam = new Map(open.map(t => [String(t.team), { id: t.id, phase: t.phase }]));
   res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team), openInternalTournament: byTeam.get(team.id) || null }))));
@@ -50,18 +63,19 @@ export const getManageablePlayers = asyncHandler(async (req, res) => {
   res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 }));
 });
 export const getTeam = asyncHandler(async (req, res) => {
-  const team = await Team.findById(req.params.id).populate('createdBy', 'username name');
+  const team = await Team.findById(req.params.id).populate('createdBy', 'username name').populate('teacher', 'name role');
   if (!team) fail(404, 'נבחרת לא נמצאה');
   const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 });
   const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
   res.json({ ...team.toJSON(), ...await counts(team), players, openInternalTournament: open ? { id: open.id, phase: open.phase } : null });
 });
 export const createTeam = asyncHandler(async (req, res) => {
-  const { name, logo = '', logoPublicId = '' } = req.body;
+  const { name, logo = '', logoPublicId = '', teacher } = req.body;
   if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
+  const teacherId = await validateTeacher(teacher);
   try {
-    const team = await Team.create({ name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), logoPublicId: validatePublicId(logoPublicId), createdBy: req.user._id });
-    await team.populate('createdBy', 'username name');
+    const team = await Team.create({ teacher: teacherId, name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), logoPublicId: validatePublicId(logoPublicId), createdBy: req.user._id });
+    await team.populate([{ path: 'createdBy', select: 'username name' }, { path: 'teacher', select: 'name role' }]);
     res.status(201).json({ ...team.toJSON(), playerCount: 0, completedInternalTournamentCount: 0 });
   } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
 });
@@ -69,7 +83,8 @@ export const updateTeam = asyncHandler(async (req, res) => {
   const output = await withRosterLocks([req.params.id], async () => {
     const team = await Team.findById(req.params.id);
     if (!team) fail(404, 'נבחרת לא נמצאה');
-    const { name, logo, logoPublicId, isActive } = req.body;
+    const { name, logo, logoPublicId, isActive, teacher } = req.body;
+    if (teacher !== undefined) team.teacher = await validateTeacher(teacher);
     if (name !== undefined) {
       if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
       team.name = name.trim();
@@ -83,6 +98,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
       team.isActive = isActive;
     }
     try { await team.save(); } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
+    await team.populate('teacher', 'name role');
     return { ...team.toJSON(), ...await counts(team), openInternalTournament: await openForTeam(team) };
   });
   res.json(output);

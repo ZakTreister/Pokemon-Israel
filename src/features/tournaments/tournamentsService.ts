@@ -1,23 +1,38 @@
 import api from '../../services/api';
 import { Tournament } from '../../types/tournament';
 
-const getTournaments = async () => {
-  const { data } = await api.get<Tournament[]>('/api/tournaments');
+const getTournaments = async (scope?: 'management') => {
+  const { data } = await api.get<Tournament[]>(
+    scope === 'management'
+      ? '/api/tournaments/management/legacy'
+      : '/api/tournaments',
+  );
   return data;
 };
 
 const getTournamentById = async (id: string) => {
-  const { data } = await api.get<Tournament>(`/api/tournaments/${id}`);
+  const { data } = await api.get<Tournament>(
+    `/api/tournaments/management/legacy/${id}`,
+  );
   return data;
 };
 
 const createTournament = async (tournamentData: Partial<Tournament>) => {
-  const { data } = await api.post<Tournament>('/api/tournaments', tournamentData);
+  const { data } = await api.post<Tournament>(
+    '/api/tournaments',
+    tournamentData,
+  );
   return data;
 };
 
-const updateTournament = async (id: string, tournamentData: Partial<Tournament>) => {
-  const { data } = await api.put<Tournament>(`/api/tournaments/${id}`, tournamentData);
+const updateTournament = async (
+  id: string,
+  tournamentData: Partial<Tournament>,
+) => {
+  const { data } = await api.put<Tournament>(
+    `/api/tournaments/${id}`,
+    tournamentData,
+  );
   return data;
 };
 
@@ -26,17 +41,24 @@ const deleteTournament = async (id: string) => {
 };
 
 const registerForTournament = async (id: string) => {
-  const { data } = await api.post<Tournament>(`/api/tournaments/${id}/register`);
+  const { data } = await api.post<Tournament>(
+    `/api/tournaments/${id}/register`,
+  );
   return data;
 };
 
 const unregisterFromTournament = async (id: string) => {
-  const { data } = await api.delete<Tournament>(`/api/tournaments/${id}/register`);
+  const { data } = await api.delete<Tournament>(
+    `/api/tournaments/${id}/register`,
+  );
   return data;
 };
 
 const submitTournamentResults = async (id: string, results: unknown) => {
-  const { data } = await api.post<Tournament>(`/api/tournaments/${id}/results`, { results });
+  const { data } = await api.post<Tournament>(
+    `/api/tournaments/${id}/results`,
+    { results },
+  );
   return data;
 };
 

@@ -73,7 +73,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   const [selectedDecks, setSelectedDecks] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    dispatch(fetchTournaments());
+    dispatch(fetchTournaments('management'));
     dispatch(fetchDecks());
   }, [dispatch]);
 
@@ -167,7 +167,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       }
       
       // Refresh tournaments list
-      dispatch(fetchTournaments());
+      dispatch(fetchTournaments('management'));
       
       // Reset form and close modal
       resetForm();
@@ -198,7 +198,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     try {
       // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}`, { params: { permanent } });
-      dispatch(fetchTournaments());
+      dispatch(fetchTournaments('management'));
       showToast('הטורניר נמחק בהצלחה', 'success');
     } catch (caughtError) {
       const error = caughtError as RequestError;
@@ -222,7 +222,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     try {
       // Now using id consistently
       await api.delete(`/api/tournaments/${tournament.id}`, { params: { permanent, deleteSeries: true } });
-      dispatch(fetchTournaments());
+      dispatch(fetchTournaments('management'));
       showToast('כל הטורנירים העתידיים בסדרה נמחקו בהצלחה', 'success');
     } catch (caughtError) {
       const error = caughtError as RequestError;
@@ -239,7 +239,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   };
 
   const handleViewTournament = (tournamentId: string) => {
-    navigate(`/tournaments/${tournamentId}`);
+    navigate(`/manage/tournaments/regular/${tournamentId}`);
   };
 
   // Get tournament participants for player matching
@@ -454,7 +454,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       showToast('התוצאות נשמרו בהצלחה!', 'success');
       
       // Refresh tournament data
-      dispatch(fetchTournaments());
+      dispatch(fetchTournaments('management'));
       
       // Close modal and reset
       setShowResultsModal(false);

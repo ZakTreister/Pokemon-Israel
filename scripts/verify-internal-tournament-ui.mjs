@@ -50,7 +50,10 @@ try {
   const { internalTournaments: service } = await load(
     'services/internalTournaments.ts',
   );
+  const { publicTournaments } = await load('services/publicTournaments.ts');
+  publicTournaments.list = async () => [];
   const { default: teams } = await load('features/teams/teamsService.ts');
+  teams.getTeachers = async () => [];
   const id = '012345678901234567890123';
   const teamId = '012345678901234567890124';
   const players = [
@@ -199,7 +202,7 @@ try {
     assert.equal(!!button('נבחרת חדשה'), role === 'admin');
     const rosterLink = renderer.root
       .findAllByType('a')
-      .find((node) => text(node) === 'סגל');
+      .find((node) => text(node) === 'חברי נבחרת');
     assert.equal(rosterLink.props.href, `/manage/teams/${teamId}`);
     await act(async () => {
       rosterLink.props.onClick({
@@ -214,7 +217,7 @@ try {
       await flush();
     });
     assert.equal(startCalls, 0, 'Roster navigation never creates a tournament');
-    assert.ok(text(renderer.toJSON()).includes('סגל פעיל ודירוג בנבחרת'));
+    assert.ok(text(renderer.toJSON()).includes('חברי נבחרת'));
     act(() => renderer.unmount());
   }
   await act(async () => {

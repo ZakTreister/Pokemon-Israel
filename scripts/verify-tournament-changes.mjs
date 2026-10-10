@@ -422,6 +422,8 @@ try {
   );
   act(() => renderer.unmount());
   renderer = null;
+  const { publicTournaments } = await load('services/publicTournaments.ts');
+  publicTournaments.list = async () => [];
   const { default: TeamPage } = await load('pages/TeamPage.tsx');
   teamsService.getTeam = async () => ({ ...continued, players: [] });
   service.rankings = async () => ({ rankings: [] });
@@ -440,7 +442,7 @@ try {
           el(
             Routes,
             {},
-            el(Route, { path: '/manage/teams/:id', element: el(TeamPage) }),
+            el(Route, { path: '/manage/teams/:id', element: el(ToastProvider, {}, el(TeamPage)) }),
             el(Route, {
               path: '/manage/tournaments/:id',
               element: el('p', {}, 'Existing tournament'),

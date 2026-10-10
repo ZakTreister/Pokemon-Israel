@@ -1,3 +1,5 @@
+import TeacherTeams from './TeacherTeams';
+import LegacyTournamentManagementPage from '../LegacyTournamentManagementPage';
 import { useState } from 'react';
 import {
   Routes,
@@ -183,17 +185,10 @@ export default function ManageDashboardPage() {
               <Route
                 index
                 element={
-                  admin ? (
-                    <AdminOverview />
-                  ) : (
-                    <div>
-                      <h2 className="font-bold text-2xl mb-4">סקירה כללית</h2>
-                      <p>
-                        בחרו נבחרת לצפייה בסגל ולפתיחת טורניר, או המשיכו לטורניר
-                        פעיל.
-                      </p>
-                    </div>
-                  )
+                  <>
+                    <TeacherTeams />
+                    {admin && <AdminOverview />}
+                  </>
                 }
               />
               <Route path="teams" element={<ManageTeams />} />
@@ -232,6 +227,10 @@ export default function ManageDashboardPage() {
               />
               {admin && (
                 <>
+                  <Route
+                    path="tournaments/regular/:id"
+                    element={<LegacyTournamentManagementPage />}
+                  />
                   <Route
                     path="tournaments/regular/*"
                     element={<AdminTournaments embeddedCreate />}

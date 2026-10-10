@@ -299,22 +299,20 @@ try {
   const teamRow = render(ManageTeams, '/', 'admin', teamFixture);
   const judgeTeamRow = render(ManageTeams, '/', 'judge', teamFixture);
   assert.ok(judgeTeamRow.includes('התחל טורניר'));
-  assert.ok(judgeTeamRow.includes('ילד'));
+  assert.ok(!judgeTeamRow.includes('ילד'), 'Team cards do not expand members');
   assert.ok(judgeTeamRow.includes('href="/manage/teams/fixture-team"'));
   assert.ok(!teamRow.includes('סגל וטורנירים'));
   for (const forbidden of ['נבחרת חדשה', 'שם וסמל', 'שייך שחקן', 'השבת', 'הסר מהנבחרת']) assert.ok(!judgeTeamRow.includes(forbidden));
   const TournamentList = await load('pages/manage/ManageTournaments.tsx');
   assert.ok(!render(TournamentList, '/', 'judge').includes('Excel'));
   assert.ok(render(TournamentList, '/', 'admin').includes('Excel'));
-  for (const label of ['סגל', 'התחל טורניר']) {
-    const labelIndex = teamRow.indexOf(label);
+  for (const label of ['חברי נבחרת', 'התחל טורניר']) {
+    const labelIndex = teamRow.lastIndexOf(label);
     assert.ok(labelIndex >= 0, `Team row action: ${label}`);
     const actionStart = Math.max(teamRow.lastIndexOf('<button', labelIndex), teamRow.lastIndexOf('<a ', labelIndex));
     assert.ok(teamRow.slice(actionStart, labelIndex).includes('shadow-button'), `Grouped action must have shadow: ${label}`);
   }
-  const removeIndex = teamRow.indexOf('aria-label="הסר מהנבחרת"');
-  assert.ok(removeIndex >= 0);
-  assert.ok(!teamRow.slice(teamRow.lastIndexOf('<button', removeIndex), removeIndex).includes('shadow-button'), 'Inline removal outside the action group stays flat');
+  assert.ok(!teamRow.includes('aria-label="הסר מהנבחרת"'), 'Removal lives on the team detail');
   const Home = await load('pages/HomePage.tsx');
   const future = new Date(Date.now() + 86400000).toISOString();
   const state = store.getState();
