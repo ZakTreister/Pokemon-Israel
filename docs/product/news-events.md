@@ -38,7 +38,7 @@ That page displays the **results of that tournament itself**:
 - active event: current recorded results/standings, clearly marked as in progress
 - upcoming event: event details and registration information; no fabricated/empty "final results"
 
-The tournament page must not substitute the overall league/All Stars ranking for the event's own results.
+The tournament page must not substitute another ranking view for the event's own results.
 
 Public tournament pages must work for all canonical tournament types, including `swiss-v1` internal-team tournaments. Do not route a public Swiss tournament into the management screen and do not return 404 merely because it uses the new engine.
 
