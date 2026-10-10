@@ -32,6 +32,19 @@ When matching a player during imports/integrations:
 
 The old quarterly dedupe rule using club is superseded by the intended identity rule above once that migration is implemented.
 
+## Team-player number
+Every All Stars / team player has a **מספר שחקן**.
+
+Requirements:
+- this field belongs to `playerType: team`
+- new team-player create/edit forms include **מספר שחקן**
+- new team players require a value
+- existing legacy team players without a number must remain readable and editable so admin can fill it in
+- the number is a player display/profile attribute intended for reuse in team UI and future shirt/kit presentation
+- do not use the number as the player's identity/deduplication key
+- no uniqueness rule or numeric range is defined yet; do not invent one until product requirements specify it
+- club/regular players do not require this field
+
 ## Public player pages
 There are no public player pages for club players.
 
@@ -54,6 +67,7 @@ The player page should use only appropriate public data already available in the
 - name
 - city
 - current All Stars team
+- player number
 - seniority / tenure
 - a short biography
 - score/ranking inside the team
