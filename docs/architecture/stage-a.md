@@ -8,6 +8,12 @@ eligible teacher whose User role is `admin` or `judge`; teacher changes are
 admin-only. The relation does not change authorization roles. Existing teams
 without a teacher remain readable until assigned.
 
+Team-player `Player` records gain a `playerNumber` display field. New
+`playerType: team` records require it through management forms; legacy team
+players without it remain readable/editable for backfill. The number is not an
+identity/deduplication key and no uniqueness/range invariant is defined yet.
+Regular/club players do not require it.
+
 New internal tournaments use `type: team_internal`, `engineVersion: swiss-v1`,
 `team`, and `playerParticipants[].player`. Legacy `participants.user` and
 `results.player` (User references) are preserved. The legacy tournament routes
