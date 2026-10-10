@@ -207,3 +207,11 @@ A public tournament page shows the results of that specific tournament: final re
 Public responses use explicit safe fields and never expose management permissions, staff identities, revisions, audit/deletion metadata or controls. Public Events/detail pages use HTTP only, not Socket.IO.
 
 Public and management tournament lists should reuse shared filter/domain/presentation primitives where sensible, while management-only actions remain outside the shared public component.
+
+
+## 2026-10 — Team management uses compact member lists
+The main `/manage/teams` page is a compact team overview. It must not show all children under all teams expanded by default.
+
+If inline team-member rows are kept for quick administration, they appear under an independent **חברי נבחרת (N)** disclosure that is collapsed by default.
+
+User-facing team-management terminology uses **חברי נבחרת** instead of **סגל**. The internal technical term `roster` may remain unchanged.
