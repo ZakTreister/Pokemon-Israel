@@ -85,11 +85,13 @@ records the explicit policy `swiss-3-1-0-opponent-floor-1/3-v1` on tournaments:
   large searches may return the best solution found within the search budget.
   Byes go to players with the fewest previous byes, then the lowest standing.
 
-All Stars rankings sum final match points over completed new internal records.
-Historical entries supply final positions and points; unknown percentages remain
-null. Positions must be unique/contiguous and consistent with descending points.
-Per-team rankings filter by current membership; tournament roster/name snapshots
-preserve event history after transfers or renames. Regular results are separate.
+All Stars team-player rankings are **per team** and sum final match points over
+completed internal records for that team. Historical entries supply final
+positions and points; unknown percentages remain null. Positions must be
+unique/contiguous and consistent with descending points. Tournament
+roster/name snapshots preserve event history after transfers or renames.
+Do not calculate or expose an overall cross-team individual All Stars ranking.
+Regular results are separate.
 
 ## Competition cycle and statistics
 
