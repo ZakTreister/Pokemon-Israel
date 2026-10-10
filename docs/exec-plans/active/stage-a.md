@@ -341,8 +341,8 @@ Judge is allowed to operate a live tournament only. Configuration and historical
 Apply the approved layout in `docs/product/internal-tournament-ui.md`.
 
 In particular:
-- replace the combined **סגל וטורנירים** team action with **סגל** plus one conditional tournament action
-- **סגל** navigates to the team roster/ranking/details page
+- replace the combined **סגל וטורנירים** team action with **חברי נבחרת** plus one conditional tournament action
+- **חברי נבחרת** navigates to the team roster/ranking/details page
 - if the team has no open/live internal tournament, show **התחל טורניר**
 - if the team already has an open/live internal tournament, do **not** show **התחל טורניר**; show **המשך טורניר** and navigate to the existing tournament
 - remove empty reserved mobile error space
@@ -526,6 +526,23 @@ Add/update tests for:
 - public details for a `swiss-v1` internal tournament
 - no management/private fields in the public response
 - management list behavior remains intact
+
+### 33. Compact team-management cards
+Update `/manage/teams` so it does not render every child under every team by default.
+
+Required:
+- keep each team card compact
+- continue showing the player/member count in the summary
+- rename the user-facing **סגל** label/action to **חברי נבחרת**
+- if the current inline member list is retained for quick admin actions, wrap it in a per-team **חברי נבחרת (N)** disclosure
+- the disclosure is collapsed by default
+- each team expands/collapses independently
+- nested actions such as remove/unassign remain independently clickable
+- preserve existing permissions and assignment/removal behavior
+- keep the implementation responsive/RTL-safe
+- avoid fetching/rendering extra per-child detail solely for a collapsed section when the existing data flow can avoid it
+
+The technical/domain term `roster` does not need a broad code rename; this is primarily user-facing terminology and team-list density.
 
 ## Existing Stage A core behavior that must remain working
 Do not regress:
