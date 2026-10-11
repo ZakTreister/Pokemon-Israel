@@ -18,9 +18,11 @@ Rules:
 ## Current version
 
 **Version:** `2026.10.1`  
-**Status:** `READY_FOR_DEVELOPMENT`  
+**Status:** `DEVELOPED`  
 **Previous developed baseline:** repository implementation before version tracking began  
-**Implementation PR:** _pending_
+**Implementation PR:** [Create/review work → main](https://github.com/ZakTreister/Pokemon-Israel/compare/main...work?expand=1) — create-PR fallback; actual PR URL pending.
+**Implementation commit:** `840af32aad4579814fc7e10ac206d589d2bb451c`  
+**Developed on:** `2026-10-11`
 
 ### Scope
 
@@ -87,6 +89,19 @@ Artwork:
 
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
+
+### Implementation verification
+
+- `npm run test:stage-a`: **PASS** — 25 server tests, no failures or skips. Includes player-number validation/atomic team assignment, legacy backfill, historical participant retention, next-round eligibility, late joins/re-adds, structural conflicts, live synchronization and independent match versions.
+- `npm run test:stage-a:ui`: **PASS** — all 8 verification scripts. Includes participant draft preservation/conflict recovery/out-of-order responses, compact public Events, contextual member edit/unassignment, team-only ranking, SPA navigation/anchors/back-forward, required creation fields and hero drag/snap/artwork/reduced-motion behavior.
+- `npm run lint`: **PASS** — 0 errors, 4 existing warnings.
+- `npm run build`: **PASS** — production Vite build; existing Browserslist, mixed import and bundle-size warnings remain.
+- `git diff --check`: **PASS**.
+- Supplemental `npx tsc -p tsconfig.app.json --noEmit`: 17 pre-existing legacy type errors, unchanged from baseline; no new errors. This is not the configured build command.
+
+**Known gaps:** No known gaps in the approved `2026.10.1` implementation. PR creation remains pending: GitHub GraphQL and REST requests returned `Forbidden`, including the escalated API attempt. The final GitHub PR creation click is still required. Reuse an existing open `work` → `main` PR if present; otherwise create one using the link above, then replace the fallback with its actual PR URL. The legacy TypeScript errors above remain outside this version's scope.
+
+The implementation SHA identifies the final code/test commit; the following documentation-only commit records this verification and SHA in the same `work` → `main` change set.
 
 ### Completion contract for Codex
 In the implementation PR for `2026.10.1`, Codex must update this section to include:
