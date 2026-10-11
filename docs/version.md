@@ -18,10 +18,10 @@ Rules:
 ## Current version
 
 **Version:** `2026.10.1`  
-**Status:** `DEVELOPED`  
+**Status:** `DEVELOPED`\
 **Previous developed baseline:** repository implementation before version tracking began  
-**Implementation PR:** [Create/review work → main](https://github.com/ZakTreister/Pokemon-Israel/compare/main...work?expand=1) — create-PR fallback; actual PR URL pending.
-**Implementation commit:** `840af32aad4579814fc7e10ac206d589d2bb451c`  
+**Implementation PR:** [Create/review work → main](https://github.com/ZakTreister/Pokemon-Israel/compare/main...work?expand=1) — create-PR fallback; actual PR URL pending.\
+**Implementation commit:** `840af32aad4579814fc7e10ac206d589d2bb451c`\
 **Developed on:** `2026-10-11`
 
 ### Scope
