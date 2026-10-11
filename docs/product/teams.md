@@ -153,8 +153,9 @@ Opening an internal tournament from the team page must:
 - if one exists, open that tournament instead of creating another
 - otherwise create a `team_internal` tournament linked to that team
 - preload all active players currently assigned to the team
-- allow the judge to remove absent/non-participating players before round 1
-- lock the participant set once competitive rounds begin
+- allow the judge to manage which eligible team players participate in the next uncreated tournament round
+- before round 1 this defines round-1 attendance; after play starts it may still be changed while the current round runs
+- participant changes never alter an already-created round and never alter the permanent team roster
 
 ## Team creation on mobile
 The create-team form must be intentionally responsive:
