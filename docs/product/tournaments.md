@@ -11,7 +11,7 @@ A judge is a **live-tournament operator**, not a league/team administrator.
 Judge may:
 - open/start a tournament
 - enter the active tournament management screen
-- remove absent participants from that tournament before round 1 (this changes tournament participation only, not the team roster)
+- manage the tournament participant set for the next uncreated round, including before round 1 and while later rounds are active (this changes tournament participation only, not the team roster)
 - enter and correct match results while the tournament is active
 - complete/end a round and generate/proceed to the next round
 - view standings/results needed to operate the event
@@ -203,6 +203,24 @@ Pairing/standings logic must be canonical on the server, including equivalents o
 
 The frontend must not be the authoritative implementation.
 
+### Participant lifecycle during a live tournament
+
+Do not treat `playerParticipants` as a mutable "current roster" once play begins. It is the historical union/snapshot of players who have been introduced into the tournament and must retain players needed for past rounds/results.
+
+Maintain a separate canonical saved set for the **next uncreated round** (for example `nextRoundParticipantIds`).
+
+Rules:
+- initial creation preloads the active team roster into the historical participant snapshots and next-round selection
+- saving the Participants view may append newly selected eligible team players to the historical participant snapshots
+- saving never removes prior participant snapshots required by existing rounds/results
+- pairing uses only the saved next-round participant IDs as eligible players
+- once a round is created, its matches are immutable with respect to later participant-list edits
+- the saved participant set remains the baseline for the following round until staff changes it
+- standings continue to calculate from canonical tournament history; a late joiner has no prior matches and therefore 0 points for missed rounds
+- a dropped player remains in historical standings/results but is excluded from future pairing while unchecked
+
+Participant-plan saves are tournament-structural mutations and use tournament revision/CAS protection. Ordinary current-match result saves remain match-version scoped and must not become stale solely because another judge changed the future participant plan.
+
 ### Round flow
 #### Round 1 randomization
 The first round of a live Swiss tournament must be genuinely randomized on the server.
@@ -242,7 +260,7 @@ Behavior:
 - results from the cancelled round must immediately stop contributing to standings/rankings
 - previous rounds remain untouched
 - the next generated round reuses the correct next round number based on the remaining active rounds
-- cancelling round 1 does **not** reopen attendance/participant editing; the tournament roster remains locked once competitive play has started
+- participant planning remains editable independently of round cancellation; cancelling the latest round does not erase the saved participant selection for the next round to be generated
 - broadcast the canonical updated tournament state through the existing live synchronization path
 
 Do not implement arbitrary deletion of an older/middle round from the active round selector. Corrections to earlier rounds continue to use the existing downstream-invalidation behavior.
@@ -250,7 +268,7 @@ Do not implement arbitrary deletion of an older/middle round from the active rou
 ### Persistence
 Every material mutation must persist to the server:
 - tournament creation
-- participant removal before start
+- next-round participant planning
 - round creation
 - match result entry
 - result correction
@@ -337,9 +355,18 @@ UI behavior:
 - if a stale UI still sends a create request and the server reports an existing tournament, recover by directing the user to that existing tournament rather than creating a duplicate
 
 From a team page, staff can create a `team_internal` tournament.
-It starts with the active roster preloaded.
-Before round 1, staff can remove absent players.
-No check-in workflow is required for team tournaments.
+It starts with the active roster preloaded as the saved participant set for round 1.
+
+Staff may change the saved participant set at any time while the live tournament is open:
+- before round 1, the selection controls round-1 eligibility
+- after a round has been created, edits apply only to the next uncreated round
+- already-created pairings/results never change because of participant selection
+- late joiners have 0 match points for rounds they missed
+- players removed from future rounds retain all historical matches/results and their effect on standings/tie-break calculations
+- re-adding an eligible player is allowed and affects only future pairing
+- these changes never alter permanent team membership
+
+No separate check-in workflow is required for team tournaments.
 
 Internal team tournaments are the source for the player ranking **inside the relevant All Stars team**.
 
