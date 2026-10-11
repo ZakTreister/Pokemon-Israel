@@ -3,8 +3,19 @@
 This repository is the Cardschool IL Pokémon league and tournament system.
 
 ## Source of truth
-Before implementing a feature, read the relevant files under `docs/product/`, `docs/architecture/`, and `docs/decisions.md`.
+Before implementing a feature, read `docs/version.md` first, then the relevant files under `docs/product/`, `docs/architecture/`, and `docs/decisions.md`.
 For substantial work, also read the active execution plan under `docs/exec-plans/active/`.
+
+### Version workflow
+`docs/version.md` is the canonical implementation-batch tracker.
+
+When asked to implement a numbered version:
+- implement only that version's approved scope plus dependencies required to make it work
+- detailed product/architecture docs remain authoritative for behavior
+- in the same implementation PR, mark the version `DEVELOPED`
+- record the implementation PR URL, final implementation SHA, verification results and known gaps in `docs/version.md`
+- return the GitHub PR URL to the user
+- if PR creation is unavailable, return the direct compare/create-PR URL and state that the final PR creation click is still required
 
 For any frontend work, UI work, React refactor, component work, or page implementation, you MUST also read:
 
