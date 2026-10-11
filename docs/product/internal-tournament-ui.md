@@ -54,7 +54,7 @@ For a tournament that already has rounds, use this visual order:
    - optional compact live-connection indicator
 2. Compact round toolbar:
    - current round selector
-   - **דירוג ותוצאות** toggle/action
+   - **טבלה** toggle/action
 3. A real error block only when an actionable error actually exists
 4. Current-round match cards immediately
 5. Round progression actions:
@@ -64,7 +64,9 @@ For a tournament that already has rounds, use this visual order:
    - any short blocking instruction that is actually relevant
 6. Secondary connection/synchronization explanation below the matches, preferably collapsed or visually de-emphasized
 
-The pre-round setup/attendance screen is an exception: before round 1 exists, attendance controls naturally appear before matches because there are no matches yet.
+Before round 1 exists, **משתתפים** defines the round-1 participant set. After competitive play starts, the same view remains available and defines the participant set for the **next uncreated round**.
+
+Participant changes are allowed while the current round is being played. They never rewrite the current round's pairings or results.
 
 ## No reserved mobile error space
 
@@ -161,6 +163,30 @@ Disconnected/degraded state:
 
 Longer explanatory copy such as “all results are saved to the server and can be resumed on another device” belongs below the matches or in a collapsible details area.
 
+## Participants view
+
+Add **משתתפים** beside **טבלה** in the live tournament controls.
+
+Reuse the existing team-member/participant checkbox component where practical.
+
+Behavior:
+- before round 1: checked players are the saved participants for round 1
+- once rounds exist: checked players are the saved participants for the **next uncreated round**
+- the view is editable even while the latest round is in progress
+- changing the checkboxes does not add/remove anyone from a round that has already been created
+- the participant plan always refers to the next round after the latest created round, regardless of which historical round the round selector is currently displaying
+- newly checked active team members join from the next round; rounds they missed contribute 0 match points
+- unchecked players keep every previous match/result/standing contribution but are excluded from future pairings
+- a previously removed player may be checked again for a future round if still eligible
+- changes affect tournament participation only and never change permanent team membership
+- completed tournaments are read-only
+
+Show clear helper copy such as:
+- before round 1: **הבחירה תקבע את משתתפי סבב 1**
+- while a round exists: **השינויים יחולו מסבב הבא. הסבב הנוכחי לא ישתנה**
+
+Keep an explicit save action when the checkbox selection differs from the saved next-round participant set.
+
 ## Round toolbar
 
 The current-round controls should be compact and easy to find.
@@ -169,7 +195,7 @@ On mobile it may remain near the top/sticky while scrolling if this does not cov
 
 It should include:
 - round selector
-- **דירוג ותוצאות**
+- **טבלה**
 
 Do not turn the toolbar into another tall information card.
 
@@ -210,7 +236,7 @@ Preserve:
 - match save behavior
 - result correction rules
 - Swiss calculations
-- participant locking
+- editable next-round participant planning without mutating already-created rounds
 - standings and round progression behavior
 
 Do not rebuild the tournament engine for this UI task.
