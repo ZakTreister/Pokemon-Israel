@@ -738,6 +738,20 @@ Tests:
 
 Do not implement manual pairing-edit/override functionality in this iteration.
 
+### 39. Version 2026.10.1 homepage hero card interaction
+Implement the exact homepage hero-card behavior defined in `docs/version.md` and `docs/product/homepage.md`.
+
+Required:
+- keep all three existing card dimensions unchanged
+- touch/finger horizontal drag/swipe
+- snap/settle after release
+- center/main artwork uses the existing Pikachu image asset
+- side artworks are Poké Ball and trophy
+- no automatic floating animation as a substitute
+- preserve responsive hero layout
+- avoid a heavy carousel dependency unless the existing stack already provides one naturally
+- respect reduced-motion preferences
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
