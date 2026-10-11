@@ -16,7 +16,11 @@ import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
 import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
 import ParticipantList from '../../features/tournaments/components/ParticipantList';
-import { participantOptions } from '../../features/tournaments/utils/participantOptions';
+import {
+  participantPlan,
+  participantPlanOptions,
+  sameSelection,
+} from '../../features/tournaments/utils/participantPlan';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
 export default function InternalTournamentPage() {
@@ -28,6 +32,11 @@ export default function InternalTournamentPage() {
   const [roster, setRoster] = useState<TeamRosterPlayer[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [roundNumber, setRoundNumber] = useState(0);
+  const [participantsView, setParticipantsView] = useState(false);
+  const planDirtyRef = useRef(false);
+  const planRevisionRef = useRef(-1);
+  const planSelectionRef = useRef<string[]>([]);
+  const canonicalRef = useRef<InternalTournament | null>(null);
   const [resultsView, setResultsView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -44,8 +53,17 @@ export default function InternalTournamentPage() {
   const accept = useCallback((data: InternalTournament) => {
     if (data.revision <= revisionRef.current) return;
     revisionRef.current = data.revision;
+    canonicalRef.current = data;
     setTournament(data);
-    setSelected(data.playerParticipants.map((p) => p.player));
+    if (
+      !planDirtyRef.current ||
+      sameSelection(planSelectionRef.current, participantPlan(data))
+    ) {
+      planDirtyRef.current = false;
+      planSelectionRef.current = participantPlan(data);
+      setSelected(planSelectionRef.current);
+      planRevisionRef.current = data.revision;
+    }
     setRoundNumber((current) =>
       current && current <= data.rounds.length ? current : data.rounds.length,
     );
@@ -58,6 +76,11 @@ export default function InternalTournamentPage() {
   useEffect(() => {
     let active = true;
     revisionRef.current = -1;
+    planDirtyRef.current = false;
+    planRevisionRef.current = -1;
+    planSelectionRef.current = [];
+    canonicalRef.current = null;
+    setParticipantsView(false);
     setDeleted(false);
     setSaveFailed(false);
     setFailedMatches([]);
@@ -136,6 +159,22 @@ export default function InternalTournamentPage() {
       window.clearInterval(fallback);
     };
   }, [id, accept, live]);
+  const participantTeam = tournament?.team;
+  useEffect(() => {
+    if (!participantsView || !participantTeam) return;
+    let active = true;
+    teamsService
+      .getTeam(participantTeam)
+      .then((team) => {
+        if (active) setRoster(team.players);
+      })
+      .catch((e) => {
+        if (active) setError(requestError(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, [participantsView, participantTeam]);
   if (deleted)
     return (
       <div>
@@ -226,12 +265,26 @@ export default function InternalTournamentPage() {
   const allComplete =
     !!tournament.rounds.length &&
     tournament.rounds.every((r) => r.matches.every((m) => m.result));
-  const participantsChanged =
-    selected.length !== tournament.playerParticipants.length ||
-    selected.some(
-      (player) =>
-        !tournament.playerParticipants.some((p) => p.player === player),
-    );
+  const participantsChanged = !sameSelection(
+    selected,
+    participantPlan(tournament),
+  );
+  const changeSelection = (value: string[]) => {
+    if (!planDirtyRef.current) planRevisionRef.current = tournament.revision;
+    planDirtyRef.current = !sameSelection(value, participantPlan(tournament));
+    planSelectionRef.current = value;
+    setSelected(value);
+  };
+  const resetSelection = (data = tournament) => {
+    const current =
+      canonicalRef.current && canonicalRef.current.revision > data.revision
+        ? canonicalRef.current
+        : data;
+    planDirtyRef.current = false;
+    planRevisionRef.current = current.revision;
+    planSelectionRef.current = participantPlan(current);
+    setSelected(planSelectionRef.current);
+  };
   const saveResult = async (
     match: InternalMatch,
     result: MatchResult,
@@ -282,6 +335,7 @@ export default function InternalTournamentPage() {
       (data) => {
         setRoundNumber(data.rounds.length);
         setResultsView(false);
+        setParticipantsView(false);
       },
     );
   const close = async () => {
@@ -304,7 +358,7 @@ export default function InternalTournamentPage() {
       !(await showConfirm({
         title: 'ביטול הסיבוב האחרון',
         message:
-          'הסיבוב ותוצאותיו יוסרו מהדירוג ויישמרו בארכיון. הסגל יישאר נעול. לבטל?',
+          'הסיבוב ותוצאותיו יוסרו מהדירוג ויישמרו בארכיון. בחירת המשתתפים לסיבוב הבא תישמר. לבטל?',
         confirmText: 'בטל סיבוב',
         variant: 'destructive',
       }))
@@ -344,46 +398,60 @@ export default function InternalTournamentPage() {
           </span>
         )}
       </div>
-      {tournament.rounds.length > 0 && (
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-navy-700 p-3 text-white">
-          <label className="flex min-w-0 items-center gap-2 text-sm font-bold">
-            סיבוב{' '}
-            <select
-              aria-label="סיבוב נוכחי"
-              className="min-w-0 h-10 p-2 border border-navy-400 rounded-md bg-navy-600 text-white"
+      {(tournament.rounds.length > 0 || live) && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-navy-700 p-3 text-white">
+          {tournament.rounds.length > 0 && (
+            <label className="flex flex-1 min-w-0 items-center gap-2 text-sm font-bold">
+              סיבוב{' '}
+              <select
+                aria-label="סיבוב נוכחי"
+                className="min-w-0 h-10 p-2 border border-navy-400 rounded-md bg-navy-600 text-white"
+                disabled={
+                  busy ||
+                  pendingResults > 0 ||
+                  saveFailed ||
+                  failedMatches.length > 0
+                }
+                value={roundNumber}
+                onChange={(e) => {
+                  setRoundNumber(Number(e.target.value));
+                  setResultsView(false);
+                }}
+              >
+                {tournament.rounds.map((r) => (
+                  <option key={r.number} value={r.number}>
+                    סיבוב {r.number}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {tournament.rounds.length > 0 && (
+            <Button
+              contextual
+              className="h-auto min-h-10 whitespace-normal px-3 py-2"
+              variant="outline"
               disabled={
                 busy ||
                 pendingResults > 0 ||
                 saveFailed ||
                 failedMatches.length > 0
               }
-              value={roundNumber}
-              onChange={(e) => {
-                setRoundNumber(Number(e.target.value));
-                setResultsView(false);
-              }}
+              onClick={() => setResultsView(!resultsView)}
             >
-              {tournament.rounds.map((r) => (
-                <option key={r.number} value={r.number}>
-                  סיבוב {r.number}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button
-            contextual
-            className="h-auto min-h-10 whitespace-normal px-3 py-2"
-            variant="outline"
-            disabled={
-              busy ||
-              pendingResults > 0 ||
-              saveFailed ||
-              failedMatches.length > 0
-            }
-            onClick={() => setResultsView(!resultsView)}
-          >
-            {resultsView ? 'חזור למשחקים' : 'דירוג ותוצאות'}
-          </Button>
+              {resultsView ? 'חזור למשחקים' : 'טבלה'}
+            </Button>
+          )}
+          {!readOnly && (
+            <Button
+              contextual
+              variant="outline"
+              aria-expanded={participantsView || tournament.phase === 'setup'}
+              onClick={() => setParticipantsView(!participantsView)}
+            >
+              משתתפים
+            </Button>
+          )}
         </div>
       )}
       {(error || saveFailed) && (
@@ -443,46 +511,62 @@ export default function InternalTournamentPage() {
           </Button>
         </div>
       )}
-      {!readOnly && tournament.phase === 'setup' && (
+      {!readOnly && (tournament.phase === 'setup' || participantsView) && (
         <div className="border rounded-lg p-4 space-y-4">
-          <h3 className="font-bold">נוכחות לפני סיבוב 1</h3>
+          <h3 className="font-bold">
+            משתתפים לסיבוב {tournament.rounds.length + 1}
+          </h3>
           <p className="text-sm">
-            הסירו ילדים חסרים. לאחר תחילת הסיבובים הסגל נעול.
+            הבחירה קובעת מי ישחק בסיבוב הבא שטרם נוצר. המשחקים והתוצאות של
+            הסיבוב הקיים אינם משתנים.
           </p>
           <ParticipantList
-            options={participantOptions(tournament.playerParticipants, roster)}
+            options={participantPlanOptions(tournament, roster)}
             selected={selected}
             disabled={busy}
-            onChange={setSelected}
+            onChange={changeSelection}
           />
           <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
             <Button
               disabled={busy || selected.length < 2 || !participantsChanged}
               onClick={() =>
-                void mutate(() =>
-                  internalTournaments.participants(
-                    id,
-                    tournament.revision,
-                    selected,
-                  ),
+                void mutate(
+                  () =>
+                    internalTournaments.participants(
+                      id,
+                      planRevisionRef.current,
+                      selected,
+                    ),
+                  resetSelection,
                 )
               }
             >
-              {busy ? 'שומר…' : 'שמור נוכחות'}
+              {busy ? 'שומר…' : 'שמור משתתפים'}
             </Button>
-            <Button
-              variant="outline"
-              disabled={
-                busy ||
-                pendingResults > 0 ||
-                saveFailed ||
-                failedMatches.length > 0 ||
-                participantsChanged
-              }
-              onClick={() => void pair()}
-            >
-              הגרל סיבוב 1
-            </Button>
+            {participantsChanged && (
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => resetSelection()}
+              >
+                בטל שינויים במשתתפים
+              </Button>
+            )}
+            {tournament.phase === 'setup' && (
+              <Button
+                variant="outline"
+                disabled={
+                  busy ||
+                  pendingResults > 0 ||
+                  saveFailed ||
+                  failedMatches.length > 0 ||
+                  participantsChanged
+                }
+                onClick={() => void pair()}
+              >
+                הגרל סיבוב 1
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -530,7 +614,8 @@ export default function InternalTournamentPage() {
               saveFailed ||
               failedMatches.length > 0 ||
               (!allComplete && tournament.rounds.length > 0) ||
-              tournament.rounds.length >= 16
+              tournament.rounds.length >= 16 ||
+              participantsChanged
             }
             onClick={() => void pair()}
           >

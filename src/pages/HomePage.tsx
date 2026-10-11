@@ -1,3 +1,4 @@
+import HeroArtwork from '../features/home/components/HeroArtwork';
 import DataTable from '../components/ui/DataTable';
 import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
 import { useEffect, useState } from 'react';
@@ -11,15 +12,7 @@ import {
 } from '../services/rankings';
 import { requestError } from '../utils/requestError';
 import { ravMesserUrl } from '../config/publicSite';
-import {
-  Calendar,
-  User,
-  Trophy,
-  Zap,
-  Layers,
-  ArrowUpLeft,
-  Newspaper,
-} from 'lucide-react';
+import { Calendar, Trophy, ArrowUpLeft, Newspaper } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { SectionHeading } from '../components/ui/SectionHeading';
 export default function HomePage() {
@@ -347,65 +340,6 @@ export default function HomePage() {
           </article>
         </div>
       </section>
-    </div>
-  );
-}
-
-function HeroArtwork() {
-  return (
-    <div className="cs-hero-art" aria-hidden="true">
-      <div className="cs-orbit" />
-      <div className="cs-hero-lightning absolute start-[8%] top-[6%] h-32 w-14 rotate-12 bg-gold" />
-      <div className="cs-hero-lightning absolute end-[7%] bottom-[8%] h-24 w-10 rotate-12 bg-gold" />
-      <div className="cs-trading-card cs-trading-card-back">
-        <div className="flex justify-between text-[10px] font-black">
-          <span>STRATEGY</span>
-          <Zap size={14} className="text-gold" />
-        </div>
-        <div className="cs-card-art">
-          <Layers className="relative h-20 w-20 text-blue-cyan" />
-        </div>
-        <div className="text-center text-sm font-black text-white">
-          כל קלף קובע.
-        </div>
-        <div className="mx-auto mt-3 h-1 w-20 bg-gold" />
-      </div>
-      <div className="cs-trading-card cs-trading-card-front">
-        <div className="flex justify-between text-[10px] font-black">
-          <span>COMMUNITY</span>
-          <User size={14} className="text-gold" />
-        </div>
-        <div className="cs-card-art">
-          <Trophy className="relative h-20 w-20 text-gold" />
-        </div>
-        <div className="text-center text-sm font-black text-white">
-          משחקים ביחד.
-        </div>
-        <div className="mx-auto mt-3 h-1 w-20 bg-gold" />
-      </div>
-      <div className="cs-trading-card cs-trading-card-main">
-        <div className="flex items-center justify-between text-[10px] font-black">
-          <span dir="ltr">CARDSCHOOL IL</span>
-          <Zap size={14} className="text-gold" fill="currentColor" />
-        </div>
-        <div className="cs-card-art">
-          <div className="cs-pokeball" />
-        </div>
-        <p className="text-center text-base font-black text-white">
-          נפגשים בליגה.
-        </p>
-        <p
-          dir="ltr"
-          className="mt-2 text-center text-[9px] font-bold tracking-[.16em] text-blue-200"
-        >
-          POKÉMON TRADING CARD GAME
-        </p>
-      </div>
-      <img
-        src="/pokemon_kids_logo.png"
-        alt=""
-        className="absolute bottom-1 left-1/2 h-9 max-w-40 -translate-x-1/2 rounded bg-white/95 px-2 object-contain sm:h-10"
-      />
     </div>
   );
 }

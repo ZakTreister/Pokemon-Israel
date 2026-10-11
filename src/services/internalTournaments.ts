@@ -104,7 +104,7 @@ export const internalTournaments = {
         { teamId, date, results },
       )
     ).data,
-  rankings: async (teamId?: string) =>
+  rankings: async (teamId: string) =>
     (
       await api.get<AllStarsRankings>('/api/all-stars/rankings', {
         params: { teamId },

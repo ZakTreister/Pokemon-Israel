@@ -462,26 +462,12 @@
     );
   }
 }
-@keyframes cs-float {
-  0%,
-  100% {
-    margin-top: 0;
-  }
-  50% {
-    margin-top: -8px;
-  }
-}
 @keyframes cs-ticker {
   from {
     transform: translateX(-8%);
   }
   to {
     transform: translateX(8%);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .cs-trading-card-main {
-    animation: cs-float 6s ease-in-out infinite;
   }
 }
 @media (max-width: 639px) {

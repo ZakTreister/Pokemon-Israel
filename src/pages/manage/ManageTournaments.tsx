@@ -1,8 +1,5 @@
-import {
-  tournamentTypes as types,
-  tournamentStatuses as statuses,
-  filterTournaments,
-} from '../../../shared/tournamentDomain';
+import { filterTournaments } from '../../../shared/tournamentDomain';
+import TournamentSummaryRow from '../../features/tournaments/components/TournamentSummaryRow';
 import TournamentFilters from '../../features/tournaments/components/TournamentFilters';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -100,49 +97,42 @@ export default function ManageTournaments() {
       ) : (
         <div className="space-y-3">
           {filterTournaments(entries, filters).map((t) => (
-            <div
+            <TournamentSummaryRow
               key={t.id}
-              className="border rounded-lg p-4 flex flex-wrap gap-3 items-center justify-between"
-            >
-              <div>
-                <h3 className="font-bold">{t.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {types[t.type]} · {statuses[t.lifecycle]} ·{' '}
-                  {new Date(t.date).toLocaleDateString('he-IL')}
-                  {t.teamNameSnapshot ? ` · ${t.teamNameSnapshot}` : ''}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button asChild size="sm" variant="outline">
-                  <Link
-                    to={
-                      t.canManage
-                        ? t.engineVersion === 'swiss-v1'
-                          ? `/manage/tournaments/${t.id}`
-                          : `/manage/tournaments/regular/${t.id}`
-                        : `/tournaments/${t.id}`
-                    }
-                  >
-                    {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}
-                  </Link>
-                </Button>
-                {user?.role === 'admin' && (
-                  <details>
-                    <summary className="cursor-pointer font-bold p-2">
-                      עוד פעולות
-                    </summary>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={busy}
-                      onClick={() => void remove(t)}
+              tournament={t}
+              actions={
+                <>
+                  <Button asChild size="sm" variant="outline">
+                    <Link
+                      to={
+                        t.canManage
+                          ? t.engineVersion === 'swiss-v1'
+                            ? `/manage/tournaments/${t.id}`
+                            : `/manage/tournaments/regular/${t.id}`
+                          : `/tournaments/${t.id}`
+                      }
                     >
-                      מחק
-                    </Button>
-                  </details>
-                )}
-              </div>
-            </div>
+                      {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}
+                    </Link>
+                  </Button>
+                  {user?.role === 'admin' && (
+                    <details>
+                      <summary className="cursor-pointer font-bold p-2">
+                        עוד פעולות
+                      </summary>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={busy}
+                        onClick={() => void remove(t)}
+                      >
+                        מחק
+                      </Button>
+                    </details>
+                  )}
+                </>
+              }
+            />
           ))}
           {!filterTournaments(entries, filters).length && (
             <p>אין טורנירים בסינון זה.</p>

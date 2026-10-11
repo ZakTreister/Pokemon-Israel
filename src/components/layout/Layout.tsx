@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import RouteScroll from './RouteScroll';
 import Header from './Header';
 import Footer from './Footer';
 import FloatingTrialCTA from './FloatingTrialCTA';
@@ -13,6 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   const publicPage = isPublicPage(useLocation().pathname);
   return (
     <div className="flex min-h-screen flex-col">
+      <RouteScroll />
       <Header />
       <a
         href="#main-content"

@@ -119,3 +119,25 @@ test('first round uses injected shuffle for pairings and bye without changing ro
   assert.deepEqual(roster, snapshot);
   assert.deepEqual(generatePairings(roster, [], () => 0), matches);
 });
+
+test('future eligibility preserves historical standings, late-join zero points and rematch history', () => {
+  const roster = participants(5);
+  const rounds = [{ matches: [
+    { player1: '0', player2: '1', result: result('player1', 2, 0) },
+    { player1: '2', player2: '3', result: result('player1', 2, 1) },
+  ] }];
+  const eligible = ['0', '2', '3', '4']; // 1 leaves; 4 joins without missed-round points.
+  const previous = structuredClone(rounds);
+  const next = generatePairings(roster, rounds, () => 0, eligible);
+  assert.deepEqual(new Set(next.flatMap(m => [m.player1, m.player2])), new Set(eligible));
+  assert.ok(!next.some(m => [m.player1, m.player2].sort().join(':') === '2:3'));
+  assert.deepEqual(rounds, previous);
+  const standings = calculateStandings(roster, rounds);
+  assert.equal(standings.find(row => row.player === '0').points, 3);
+  assert.equal(standings.find(row => row.player === '1').matchesPlayed, 1);
+  assert.equal(standings.find(row => row.player === '4').points, 0);
+  assert.equal(standings.find(row => row.player === '4').matchesPlayed, 0);
+  const first = generatePairings(roster, [], () => 0, ['0', '2', '4']);
+  assert.deepEqual(new Set(first.flatMap(m => m.player2 ? [m.player1, m.player2] : [m.player1])), new Set(['0','2','4']));
+  assert.throws(() => generatePairings(roster, [], () => 0, ['0','unknown']));
+});

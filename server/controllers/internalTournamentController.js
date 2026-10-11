@@ -31,6 +31,7 @@ const snapshot = (player) => ({
 });
 const serialize = (tournament) => ({
   ...tournament.toJSON(),
+  nextRoundParticipantIds: (tournament.nextRoundParticipantIds ?? tournament.playerParticipants.map(p => p.player)).map(String),
   standings:
     tournament.phase === "completed"
       ? tournament.finalStandings
@@ -116,6 +117,7 @@ function base(team, participants, req, source) {
     phase: "setup",
     status: "upcoming",
     playerParticipants: participants,
+    nextRoundParticipantIds: participants.map(p => p.player),
     createdBy: req.user._id,
   };
 }
@@ -178,8 +180,8 @@ export const getInternalTournament = asyncHandler(async (req, res) =>
 export const changeInternalParticipants = asyncHandler(async (req, res) => {
   const tournament = await load(req);
   revision(req, tournament);
-  if (tournament.phase !== "setup" || tournament.rounds.length)
-    fail(409, "לא ניתן לשנות משתתפים לאחר תחילת הסיבובים");
+  if (tournament.source !== "live" || !["setup", "running"].includes(tournament.phase))
+    fail(409, "ניתן לשנות משתתפים בטורניר חי בלבד");
   const { playerIds } = req.body;
   if (
     !Array.isArray(playerIds) ||
@@ -199,7 +201,11 @@ export const changeInternalParticipants = asyncHandler(async (req, res) => {
     if (players.length !== playerIds.length)
       fail(400, "ניתן לבחור רק ילדים פעילים מהנבחרת");
     return commit(req, {
-      playerParticipants: players.map(snapshot),
+      playerParticipants: [
+        ...tournament.playerParticipants.map(p => p.toObject()),
+        ...players.filter(p => !tournament.playerParticipants.some(row => String(row.player) === p.id)).map(snapshot),
+      ],
+      nextRoundParticipantIds: players.map(p => p._id),
       currentParticipants: players.length,
     });
   });
@@ -215,6 +221,7 @@ export const pairRound = asyncHandler(async (req, res) => {
       tournament.playerParticipants,
       tournament.rounds,
       req.app.get('tournamentRandom'),
+      tournament.nextRoundParticipantIds ?? tournament.playerParticipants.map(p => p.player),
     );
   } catch (error) {
     fail(400, error.message);
@@ -419,6 +426,7 @@ export const createHistoricalInternal = asyncHandler(async (req, res) => {
   res.status(201).json(serialize(created));
 });
 export async function allStarsRankingData(teamId) {
+  if (!validId(teamId)) return { competitionYear: COMPETITION_YEAR, rankings: [] };
   const tournaments = await Tournament.find({
     engineVersion: ENGINE,
     type: "team_internal",
@@ -461,7 +469,7 @@ export async function allStarsRankingData(teamId) {
           : null,
       };
     })
-    .filter((row) => !teamId || row.team?.id === teamId)
+    .filter((row) => row.team?.id === teamId)
     .sort(
       (a, b) =>
         b.points - a.points ||
@@ -474,5 +482,6 @@ export async function allStarsRankingData(teamId) {
   };
 }
 export const getAllStarsRankings = asyncHandler(async (req, res) => {
+  if (!validId(req.query.teamId)) fail(400, "יש לבחור נבחרת לצפייה בדירוג");
   res.json(await allStarsRankingData(req.query.teamId));
 });

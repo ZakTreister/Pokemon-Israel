@@ -45,31 +45,24 @@ export default function AllStarsPlayerPage() {
               {player.firstName} {player.lastName}
             </h1>
             {player.city && <p>{player.city}</p>}
+            {player.playerNumber && <p>מספר שחקן: {player.playerNumber}</p>}
             {player.team && (
               <Link className="text-blue-500" to={`/teams/${player.team.id}`}>
                 {player.team.name}
               </Link>
             )}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(['teamRanking', 'overallRanking'] as const).map((key) => (
-              <section key={key} className="cs-public-card p-6">
-                <h2 className="text-xl font-bold">
-                  {key === 'teamRanking'
-                    ? 'דירוג בנבחרת'
-                    : 'דירוג All Stars כללי'}
-                </h2>
-                {player[key] ? (
-                  <p>
-                    מקום {player[key].position} · {player[key].points} נקודות ·{' '}
-                    {player[key].tournaments} טורנירים
-                  </p>
-                ) : (
-                  <p>עדיין אין תוצאות דירוג.</p>
-                )}
-              </section>
-            ))}
-          </div>
+          <section className="cs-public-card p-6">
+            <h2 className="text-xl font-bold">דירוג בנבחרת</h2>
+            {player.teamRanking ? (
+              <p>
+                מקום {player.teamRanking.position} · {player.teamRanking.points}{' '}
+                נקודות · {player.teamRanking.tournaments} טורנירים
+              </p>
+            ) : (
+              <p>עדיין אין תוצאות דירוג.</p>
+            )}
+          </section>
           {!!player.badges.length && (
             <section>
               <h2 className="text-xl font-bold">תגים שנצברו</h2>

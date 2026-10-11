@@ -10,7 +10,7 @@ export interface PublicTeamPlayer {
   lastName: string;
   city: string;
   team: { id: string; name: string; logo?: string } | null;
-  overallRanking: PublicRanking | null;
+  playerNumber?: string;
   teamRanking: PublicRanking | null;
   badges: {
     name: string;

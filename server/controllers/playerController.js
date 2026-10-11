@@ -1,3 +1,4 @@
+import { playerNumber as normalizePlayerNumber } from '../services/playerNumber.js';
 import asyncHandler from 'express-async-handler';
 import Player from '../models/playerModel.js';
 import Team from '../models/teamModel.js';
@@ -112,13 +113,15 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
 
 // Team children have no login. Existing User-linked records remain supported.
 export const createTeamPlayer = asyncHandler(async (req, res) => {
-  const { firstName, lastName, city = '', teamId = req.body.team || null } = req.body;
+  const { firstName, lastName, city = '', playerNumber, teamId = req.body.team || null } = req.body;
   if (typeof firstName !== 'string' || !firstName.trim() || typeof lastName !== 'string' || !lastName.trim() || typeof city !== 'string') {
     res.status(400); throw new Error('First name and last name are required; city must be text');
   }
+  const number = normalizePlayerNumber(playerNumber, true);
+  if (typeof teamId !== 'string' || !/^[a-f\d]{24}$/i.test(teamId)) { res.status(400); throw new Error('יש לבחור נבחרת פעילה'); }
   const player = await withRosterLocks([teamId], async () => {
     if (teamId && !(await Team.findById(teamId))?.isActive) { res.status(400); throw new Error('Team must be active'); }
-    return Player.create({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), playerType: 'team', team: teamId, user: null });
+    return Player.create({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), playerNumber: number, playerType: 'team', team: teamId, user: null });
   });
   res.status(201).json(player);
 });
@@ -127,7 +130,7 @@ export const createTeamPlayer = asyncHandler(async (req, res) => {
 // @route   PUT /api/players/:id
 // @access  Private/Admin
 export const updatePlayer = asyncHandler(async (req, res) => {
-  const { firstName, lastName, club, city, isActive } = req.body;
+  const { firstName, lastName, club, city, isActive, playerNumber } = req.body;
 
   const player = await Player.findById(req.params.id);
   if (player && req.user.role === 'judge' && player.playerType !== 'team') {
@@ -144,6 +147,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   const originalLastName = player.lastName;
   const originalClub = player.club;
   const originalCity = player.city;
+  const originalNumber = player.playerNumber;
   const originalIsActive = player.isActive;
   const originalNormFirst = player.normalizedFirstName;
   const originalNormLast = player.normalizedLastName;
@@ -156,6 +160,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     if (typeof city !== 'string') { res.status(400); throw new Error('City must be text'); }
     player.city = city.trim();
   }
+  if (player.playerType === 'team' && playerNumber !== undefined) player.playerNumber = normalizePlayerNumber(playerNumber);
   if (isActive !== undefined) player.isActive = isActive;
 
   // Quarterly players must always have a non-empty club
@@ -229,6 +234,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         player.lastName = originalLastName;
         player.club = originalClub;
         player.city = originalCity;
+        player.playerNumber = originalNumber;
         player.isActive = originalIsActive;
         player.normalizedFirstName = originalNormFirst;
         player.normalizedLastName = originalNormLast;

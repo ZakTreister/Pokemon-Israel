@@ -42,6 +42,10 @@ async function request(path, method = 'GET', body, role = 'judge') {
   return { status: response.status, body: await response.json() };
 }
 async function ok(path, method = 'GET', body, role = 'judge', status = 200) {
+  // Existing success fixtures represent valid new players; negative validation
+  // cases use request() directly so omitted numbers reach the real API.
+  if (/^\/teams\/[^/]+\/players$/.test(path) && method === 'POST' && body?.players)
+    body = { ...body, players: body.players.map((player, index) => ({ playerNumber: `fixture-${index}`, ...player })) };
   const response = await request(path, method, body, role);
   assert.equal(response.status, status, JSON.stringify(response.body));
   return response.body;
@@ -163,11 +167,13 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   const unassigned = await ok(
     '/players/team',
     'POST',
-    { firstName: 'Unassigned', lastName: 'Child', city: 'City' },
+    { firstName: 'Unassigned', lastName: 'Child', city: 'City', playerNumber: '0007', teamId: target.id },
     'admin',
     201,
   );
   assert.equal(unassigned.user, null);
+  assert.equal(unassigned.team, target.id);
+  await ok(`/teams/${target.id}/players/${unassigned.id}`, 'DELETE', undefined, 'admin');
   const club = await ok(
     '/players/quarterly',
     'POST',
@@ -271,15 +277,10 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   t = await ok(`/internal-tournaments/${t.id}`);
   assert.equal(t.rounds.length, 1);
   assert.equal(t.currentParticipants, 3);
-  assert.equal(
-    (
-      await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {
-        expectedRevision: t.revision,
-        playerIds: children.slice(0, 4).map((p) => p.id),
-      })
-    ).status,
-    409,
-  );
+  t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', {
+    expectedRevision: t.revision,
+    playerIds: t.nextRoundParticipantIds,
+  }); // Selection is editable while a round runs; this keeps the same next roster.
   assert.equal(
     (
       await request(`/internal-tournaments/${t.id}/close`, 'POST', {
@@ -361,7 +362,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     expectedRevision: t.revision,
   });
   assert.equal(t.status, 'completed');
-  assert.equal(t.finalStandings.length, 3);
+  assert.equal(t.finalStandings.length, 4);
   assert.equal(
     (
       await request(`/internal-tournaments/${t.id}/rounds`, 'POST', {
@@ -460,8 +461,8 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   assert.equal(regularResults[0].points, 4);
   assert.equal(regularResults[0].player, 'legacy-0');
   assert.equal(regularResults[0].playerName, 'Renamed Linked');
-  let ranks = await ok('/all-stars/rankings', 'GET', undefined, null);
-  assert.equal(ranks.rankings.length, 3);
+  let ranks = await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null);
+  assert.equal(ranks.rankings.length, 4);
   assert.equal(
     ranks.rankings.reduce((sum, row) => sum + row.points, 0),
     t.finalStandings.reduce((sum, row) => sum + row.points, 0),
@@ -490,7 +491,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   assert.equal(historical.phase, 'completed');
   assert.equal(historical.rounds.length, 0);
   assert.equal(historical.finalStandings[0].omp, null);
-  ranks = await ok('/all-stars/rankings', 'GET', undefined, null);
+  ranks = await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null);
   assert.equal(ranks.rankings.length, 4);
   assert.equal(
     ranks.rankings.reduce((sum, row) => sum + row.points, 0),
@@ -499,7 +500,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   await Season.updateMany({}, { status: 'closed' });
   await Season.create({ name: 'Next badge season', createdBy: admin._id });
   assert.deepEqual(
-    (await ok('/all-stars/rankings', 'GET', undefined, null)).rankings,
+    (await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null)).rankings,
     ranks.rankings,
   );
   const totals = await ok(`/teams/public/${team.id}`, 'GET', undefined, null);
@@ -621,7 +622,7 @@ test('judges retry conflicting results and admin roster transitions never deacti
   const child = await ok(
     '/players/team',
     'POST',
-    { firstName: 'Roster', lastName: 'Race' },
+    { firstName: 'Roster', lastName: 'Race', playerNumber: 'R-001', teamId: team.id },
     'admin',
     201,
   );
@@ -751,7 +752,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       (await request(`/tournaments/${historical.id}`, 'DELETE')).status,
       403,
     );
-    const before = await ok('/all-stars/rankings', 'GET', undefined, null);
+    const before = await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null);
     assert.ok(
       before.rankings.some(
         (row) => row.playerId === players[0].id && row.points >= 9,
@@ -773,7 +774,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
     assert.equal((await request(`/internal-tournaments/${t.id}`)).status, 404);
     await ok(`/tournaments/${historical.id}`, 'DELETE', undefined, 'admin');
     assert.ok(
-      !(await ok('/all-stars/rankings', 'GET', undefined, null)).rankings.some(
+      !(await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null)).rankings.some(
         (row) => players.some((player) => player.id === row.playerId),
       ),
     );
@@ -959,9 +960,9 @@ test('judge is limited to live tournament operation and never changes permanent 
   assert.deepEqual(afterTeamData, beforeTeamData);
   assert.deepEqual(await Player.find({ team: team.id }).sort({ _id: 1 }).lean(), beforePlayers);
   t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
-  assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {
-    expectedRevision: t.revision, playerIds: children.map(child => child.id),
-  })).status, 409);
+  t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', {
+    expectedRevision: t.revision, playerIds: children.slice(0, 2).map(child => child.id),
+  });
   const resultPath = `/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`;
   t = await ok(resultPath, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 2, score2: 0 } });
   t = await ok(resultPath, 'PUT', { expectedRevision: t.revision, result: { winner: 'draw', score1: 1, score2: 1 } });
@@ -1091,7 +1092,7 @@ test('latest round cancellation is atomic, archived, synchronized and never unlo
     assert.deepEqual(t.rounds, []);
     assert.deepEqual(t.playerParticipants, roster);
     assert.ok(t.standings.every(row => row.points === 0));
-    assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision: t.revision, playerIds: roster.map(p => p.player) })).status, 409);
+    t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision: t.revision, playerIds: roster.map(p => p.player) });
     t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
     assert.equal(t.rounds[0].number, 1);
     t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`, 'PUT', { expectedRevision: t.revision, result: { winner: 'player1', score1: 1, score2: 0 } });
@@ -1151,9 +1152,9 @@ test('soft deletion retains audit data, frees open team slot and hides all norma
   assert.ok(!indexes.some(index => index.name === 'one_open_internal_per_team'));
   assert.equal((await ok(`/teams/${team.id}`)).openInternalTournament.id, replacement.id);
   const historical = await ok('/internal-tournaments/historical', 'POST', { teamId: team.id, date: '2026-10-04', results: players.map((p,i) => ({ player:p.id, position:i+1, points:6-i*3 })) }, 'admin', 201);
-  assert.ok((await ok('/all-stars/rankings', 'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
+  assert.ok((await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
   await ok(`/tournaments/${historical.id}`, 'DELETE', undefined, 'admin');
-  assert.ok(!(await ok('/all-stars/rankings', 'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
+  assert.ok(!(await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null)).rankings.some(row => row.playerId === players[0].id));
   assert.equal((await ok(`/teams/public/${team.id}`, 'GET', undefined, null)).completedInternalTournamentCount, 0);
   assert.ok(await Tournament.collection.findOne({ _id: new mongoose.Types.ObjectId(historical.id) }));
   await ok(`/tournaments/${t.id}?permanent=true`, 'DELETE', undefined, 'admin');
@@ -1168,9 +1169,10 @@ test('soft deletion retains audit data, frees open team slot and hides all norma
 test('public team-player endpoint is an allowlist, excludes club profiles and has no directory', async () => {
   const player = await Player.create({ firstName:'Public',lastName:'Team',city:'Haifa',playerType:'team',user:null });
   const publicData = await ok(`/players/public/${player.id}`, 'GET', undefined, null);
-  assert.deepEqual(Object.keys(publicData).sort(), ['id','firstName','lastName','city','team','overallRanking','teamRanking','badges'].sort());
+  assert.deepEqual(Object.keys(publicData).sort(), ['id','firstName','lastName','city','playerNumber','team','teamRanking','badges'].sort());
   assert.equal(publicData.firstName, player.firstName);
-  assert.equal(publicData.overallRanking, null);
+  assert.equal(publicData.playerNumber, '');
+  assert.ok(!('overallRanking' in publicData));
   const club = await Player.create({ firstName:'Private',lastName:'Club',club:'Test',playerType:'quarterly' });
   assert.equal((await request(`/players/public/${club.id}`, 'GET', undefined, null)).status,404);
   assert.equal((await request('/players/public/not-an-id', 'GET', undefined, null)).status,404);
@@ -1237,4 +1239,117 @@ test('public Events and details expose all types and only each tournament standi
   await ok(`/tournaments/${t.id}`, 'DELETE', undefined, 'admin');
   assert.equal((await request(`/tournaments/${t.id}`, 'GET', undefined, null)).status, 404);
   assert.ok(!(await ok('/tournaments', 'GET', undefined, null)).some(e => e.id === t.id));
+});
+
+test('2026.10.1 player numbers are text, new creation assigns an active team and legacy backfill/unassignment is compatible', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Number team' }, 'admin', 201);
+  const inactive = await ok('/teams', 'POST', { name: 'Inactive number team', isActive: false }, 'admin', 201);
+  // Team creation is active by default; explicitly deactivate an empty team.
+  await ok(`/teams/${inactive.id}`, 'PUT', { isActive: false }, 'admin');
+  const input = { firstName: 'Number', lastName: 'Child', city: 'Haifa', teamId: team.id, playerNumber: '  0007  ' };
+  const originalCount = await Player.countDocuments();
+  for (const invalid of [
+    { ...input, playerNumber: undefined }, { ...input, playerNumber: '' },
+    { ...input, playerNumber: 7 }, { ...input, teamId: undefined },
+    { ...input, teamId: inactive.id },
+  ]) assert.equal((await request('/players/team', 'POST', invalid, 'admin')).status, 400);
+  assert.equal(await Player.countDocuments(), originalCount, 'invalid assignments never create orphan players');
+  const userCount = await User.countDocuments();
+  const player = await ok('/players/team', 'POST', input, 'admin', 201);
+  assert.equal(player.playerNumber, '0007');
+  assert.equal(player.team, team.id);
+  assert.equal(player.user, null);
+  assert.equal(await User.countDocuments(), userCount);
+  const duplicate = await ok('/players/team', 'POST', { ...input, firstName: 'Another' }, 'admin', 201);
+  assert.equal(duplicate.playerNumber, '0007', 'no undocumented unique-number constraint');
+  const beforeBulk = await Player.countDocuments();
+  assert.equal((await request(`/teams/${team.id}/players`, 'POST', { players: [
+    { firstName:'Valid',lastName:'Bulk',playerNumber:'AB-17' }, { firstName:'Missing',lastName:'Bulk' },
+  ] }, 'admin')).status, 400);
+  assert.equal(await Player.countDocuments(), beforeBulk, 'bulk validation is atomic');
+  const [bulk] = await ok(`/teams/${team.id}/players`, 'POST', { players: [{ firstName:'Valid',lastName:'Bulk',playerNumber:'AB-17' }] }, 'admin', 201);
+  assert.equal(bulk.playerNumber, 'AB-17');
+  const legacy = await Player.create({ firstName:'Legacy',lastName:'Number',playerType:'team',team:team.id });
+  assert.equal((await ok(`/players/${legacy.id}`)).playerNumber, '');
+  await ok(`/players/${legacy.id}`, 'PUT', { playerNumber:' legacy-09 ',city:'Jerusalem' }, 'admin');
+  const publicTeam = await ok(`/teams/public/${team.id}`, 'GET', undefined, null);
+  assert.equal(publicTeam.players.find(row => row.id === legacy.id).playerNumber, 'legacy-09');
+  const profile = await ok(`/players/public/${legacy.id}`, 'GET', undefined, null);
+  assert.equal(profile.playerNumber, 'legacy-09');
+  assert.ok(!('overallRanking' in profile));
+  assert.equal((await request('/all-stars/rankings', 'GET', undefined, null)).status, 400);
+  assert.equal((await request(`/players/${legacy.id}`, 'PUT', { playerNumber:'judge-edit' }, 'judge')).status, 403);
+  await ok(`/teams/${team.id}/players/${legacy.id}`, 'DELETE', undefined, 'admin');
+  const saved = await Player.findById(legacy.id);
+  assert.equal(saved.team, null);
+  assert.equal(saved.playerNumber, 'legacy-09');
+  assert.equal(saved.isActive, true);
+});
+
+test('2026.10.1 next-round participant plan retains history, synchronizes and keeps per-match concurrency independent', async () => {
+  const team = await ok('/teams', 'POST', { name:'Future participants' }, 'admin', 201);
+  const players = await ok(`/teams/${team.id}/players`, 'POST', { players:['A','B','C','D'].map(firstName => ({firstName,lastName:'Future'})) }, 'admin', 201);
+  let t = await ok('/internal-tournaments', 'POST', { teamId:team.id }, 'judge', 201);
+  const ids = players.map(p => p.id);
+  // Legacy documents with no plan use their saved historical participant set.
+  await Tournament.collection.updateOne({ _id:new mongoose.Types.ObjectId(t.id) }, { $unset:{nextRoundParticipantIds:''} });
+  t = await ok(`/internal-tournaments/${t.id}`);
+  assert.deepEqual(new Set(t.nextRoundParticipantIds), new Set(ids));
+  t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:t.revision, playerIds:ids.slice(0,3) });
+  assert.equal(t.playerParticipants.length, 4);
+  assert.equal(t.currentParticipants, 3);
+  t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:t.revision, playerIds:ids });
+  t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision:t.revision });
+  const round1 = structuredClone(t.rounds[0]);
+  const [matchA,matchB] = round1.matches;
+  const late = await ok('/players/team', 'POST', { firstName:'Late',lastName:'Future',playerNumber:'LATE',teamId:team.id }, 'admin', 201);
+  const outsider = await Player.create({ firstName:'Other',lastName:'Team',playerType:'team' });
+  assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:t.revision, playerIds:[ids[0],outsider.id] })).status,400);
+  const dropped = matchA.player1;
+  const nextIds = [...ids.filter(id => id !== dropped),late.id];
+  const socket = connectSocket(origin, { auth:{token:tokens.judge}, transports:['websocket'],forceNew:true,autoConnect:false });
+  try {
+    const ready = socketEvent(socket, 'connect'); socket.connect(); await ready;
+    assert.equal((await subscribe(socket,t.id)).ok,true);
+    const change = socketEvent(socket,'tournament:updated');
+    const baseRevision = t.revision;
+    const writes = await Promise.all([
+      request(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:baseRevision,playerIds:nextIds }),
+      request(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:baseRevision,playerIds:ids },'admin'),
+    ]);
+    assert.deepEqual(writes.map(r => r.status).sort(), [200,409]);
+    t = writes.find(r => r.status === 200).body;
+    assert.equal((await change).revision,t.revision);
+    if (!t.nextRoundParticipantIds.includes(late.id)) t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', { expectedRevision:t.revision,playerIds:nextIds });
+    assert.deepEqual(t.rounds[0],round1);
+    assert.equal(t.playerParticipants.length,5);
+    assert.equal(t.standings.find(row => row.player === late.id).points,0);
+    assert.equal(t.standings.find(row => row.player === late.id).matchesPlayed,0);
+    assert.equal(await Player.countDocuments({team:team.id}),5,'permanent roster is untouched');
+    // Match drafts obtained before the structural participant edit are still valid.
+    for (const match of [matchA,matchB]) t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`, 'PUT', {
+      expectedResultRevision:match.resultRevision,result:{winner:'player1',score1:2,score2:0},
+    });
+    assert.equal(t.standings.find(row => row.player === dropped).points,3);
+    t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', {expectedRevision:t.revision});
+    assert.deepEqual(new Set(t.rounds[1].matches.flatMap(m => [m.player1,m.player2])),new Set(nextIds));
+    const futurePlan = [...nextIds.filter(id => id !== matchA.player2),dropped];
+    t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', {expectedRevision:t.revision,playerIds:futurePlan});
+    const round2 = structuredClone(t.rounds[1]);
+    assert.equal(t.rounds[1].matches.length,2);
+    t = await ok(`/internal-tournaments/${t.id}/rounds/2`, 'DELETE', {expectedRevision:t.revision});
+    assert.deepEqual(new Set(t.nextRoundParticipantIds),new Set(futurePlan));
+    assert.deepEqual(t.invalidatedRounds.at(-1).rounds,[round2]);
+    assert.equal(t.standings.find(row => row.player === dropped).points,3);
+    t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', {expectedRevision:t.revision});
+    assert.deepEqual(new Set(t.rounds[1].matches.flatMap(m => [m.player1,m.player2])),new Set(futurePlan));
+    for (const match of t.rounds[1].matches) t = await ok(`/internal-tournaments/${t.id}/rounds/2/matches/${match._id}`, 'PUT', {
+      expectedResultRevision:match.resultRevision,result:{winner:'draw',score1:1,score2:1},
+    });
+    t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {expectedRevision:t.revision});
+    assert.equal(t.finalStandings.length,5);
+    assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {expectedRevision:t.revision,playerIds:ids})).status,403);
+    assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {expectedRevision:t.revision,playerIds:ids},'admin')).status,409);
+    assert.deepEqual((await ok(`/teams/${team.id}`)).players.map(p=>p.id).sort(),[...ids,late.id].sort());
+  } finally {socket.disconnect();}
 });

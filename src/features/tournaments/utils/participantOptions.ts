@@ -4,6 +4,7 @@ import type { TeamRosterPlayer } from '../../../types/team';
 export interface ParticipantOption {
   id: string;
   label: string;
+  disabled?: boolean;
 }
 
 export function participantOptions(
