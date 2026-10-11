@@ -87,3 +87,22 @@ Remove the **הדקים המובילים / top decks** homepage area completely.
 Preserve the CardSchool visual system.
 Use strong card hierarchy and prominent CTA/button styling consistent with the site's `shadow-button` treatment where appropriate.
 Keep the page responsive and RTL-safe.
+
+
+## Hero trading-card interaction
+The three decorative trading cards in the homepage hero remain the same sizes and keep their current overall layout.
+
+They are directly manipulable:
+- on touch/mobile, users can drag/swipe the card group horizontally with a finger
+- use natural snap behavior so cards settle into clear positions after release
+- desktop mouse/trackpad drag may use the same interaction where practical
+- do not replace direct manipulation with automatic floating animation
+- do not resize/enlarge the center card as part of this change
+- preserve accessibility and respect `prefers-reduced-motion` for transition animation
+
+Approved card artwork:
+- center/main card: use the site's existing Pikachu image asset
+- one side card: Poké Ball
+- other side card: trophy
+
+Only the artwork/content inside the cards changes for this requirement; card dimensions remain unchanged.
