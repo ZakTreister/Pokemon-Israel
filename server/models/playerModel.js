@@ -15,6 +15,7 @@ const playerSchema = new mongoose.Schema({
     minlength: [1, 'Last name must be at least 1 character long'],
     maxlength: [50, 'Last name cannot exceed 50 characters'],
   },
+  playerNumber: { type: String, trim: true, default: '' },
   city: { type: String, trim: true, maxlength: 100, default: '' },
   club: {
     type: String,

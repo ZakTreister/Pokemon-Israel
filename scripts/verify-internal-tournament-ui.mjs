@@ -239,14 +239,14 @@ try {
     text(renderer.root.findByProps({ id: 'location' })),
     `/manage/tournaments/${id}`,
   );
-  assert.ok(text(renderer.toJSON()).includes('נוכחות לפני סיבוב 1'));
+  assert.ok(text(renderer.toJSON()).includes('משתתפים לסיבוב 1'));
   await act(async () => {
     button('הגרל סיבוב 1').props.onClick();
     await flush();
   });
   const pageText = () => text(renderer.toJSON());
   assert.ok(
-    pageText().indexOf('דירוג ותוצאות') < pageText().indexOf('שולחן 1'),
+    pageText().indexOf('טבלה') < pageText().indexOf('שולחן 1'),
   );
   assert.ok(
     pageText().indexOf('שולחן 1') < pageText().indexOf('הגרל סיבוב נוסף'),
@@ -325,7 +325,7 @@ try {
     return structuredClone(serverState);
   };
   act(() => button('בטל סיבוב').props.onClick());
-  assert.ok(pageText().includes('הסגל יישאר נעול'));
+  assert.ok(pageText().includes('בחירת המשתתפים לסיבוב הבא תישמר'));
   await act(async () => {
     button('ביטול').props.onClick();
     await flush();
@@ -341,8 +341,8 @@ try {
     await flush();
   });
   assert.equal(cancelCalls, 1);
-  assert.ok(!pageText().includes('נוכחות לפני סיבוב 1'));
-  assert.ok(!button('שמור נוכחות'));
+  assert.ok(!pageText().includes('משתתפים לסיבוב 1'));
+  assert.ok(!button('שמור משתתפים'));
   assert.equal(button('הגרל סיבוב 1').props.disabled, false);
   assert.equal(button('סיים טורניר').props.disabled, true);
   await act(async () => {
@@ -397,7 +397,8 @@ try {
     assert.equal(globalThis.fixtureLive, null, 'Non-live management never connects');
     assert.ok(text(renderer.toJSON()).includes(serverState.title));
     for (const action of [
-      'שמור נוכחות',
+      'משתתפים',
+      'שמור משתתפים',
       'הגרל סיבוב 1',
       'שמור תוצאה',
       'הגרל סיבוב נוסף',
@@ -420,7 +421,10 @@ try {
   }
 
   // Draft two matches before saving: sibling notifications cannot stale a draft.
+  team.players = [...players, {id:'p3',firstName:'שלישי',lastName:'ילד'}, {id:'p4',firstName:'רביעי',lastName:'ילד'}, {id:'p5',firstName:'מצטרף',lastName:'מאוחר'}];
   serverState = { ...serverState, source: 'live', phase: 'running', status: 'upcoming', revision: 30,
+    nextRoundParticipantIds: ['p1','p2','p3','p4'],
+    playerParticipants: team.players.slice(0,4).map(p=>({player:p.id,nameSnapshot:`${p.firstName} ${p.lastName}`})),
     rounds: [{ number: 1, matches: [
       { _id: 'multi-a', table: 1, player1:'p1', player2:'p2', result:null, resultRevision:0 },
       { _id: 'multi-b', table: 2, player1:'p3', player2:'p4', result:null, resultRevision:0 },
@@ -432,6 +436,61 @@ try {
     article.findByType('select').props.onChange({ target: { value: '1-0' } });
   };
   act(() => articles().forEach(draft));
+  await act(async()=>{button('משתתפים').props.onClick();await flush();});
+  const checkbox = name => renderer.root.findAllByType('label').find(label=>text(label).trim() === name)?.findByType('input');
+  assert.ok(pageText().includes('משתתפים לסיבוב 2'));
+  act(()=>checkbox('מצטרף מאוחר').props.onChange({target:{checked:true}}));
+  act(()=>checkbox('ילד אחד').props.onChange({target:{checked:false}}));
+  assert.equal(button('הגרל סיבוב נוסף').props.disabled,true);
+  let planCalls=0;
+  service.participants = async (requested,revision,selection) => {
+    planCalls++;
+    assert.equal(requested,id);
+    assert.equal(revision,30);
+    assert.deepEqual(selection,['p2','p3','p4','p5']);
+    serverState={...serverState,revision:31,nextRoundParticipantIds:selection,playerParticipants:team.players.map(p=>({player:p.id,nameSnapshot:`${p.firstName} ${p.lastName}`}))};
+    return structuredClone(serverState);
+  };
+  const unchangedMatches=structuredClone(serverState.rounds);
+  await act(async()=>{await button('שמור משתתפים').props.onClick();await flush();});
+  assert.equal(planCalls,1);
+  assert.deepEqual(serverState.rounds,unchangedMatches);
+  assert.ok(articles().every(article=>article.findByType('select').props.value==='1-0'),'participant save keeps all dirty match drafts');
+  assert.equal(checkbox('ילד אחד').props.checked,false);
+  assert.equal(checkbox('מצטרף מאוחר').props.checked,true);
+  // A concurrent structural plan must not silently overwrite a local selection.
+  act(()=>checkbox('ילד אחד').props.onChange({target:{checked:true}}));
+  serverState={...serverState,revision:32,nextRoundParticipantIds:['p1','p2','p3','p4']};
+  await act(async()=>{globalThis.fixtureLive.changed();await flush();});
+  assert.equal(checkbox('מצטרף מאוחר').props.checked,true,'Socket updates preserve unsaved participant intent');
+  let conflictVersion;
+  service.participants=async(requested,revision)=>{conflictVersion=revision;throw {response:{status:409,data:{message:'הטורניר עודכן במקביל'}}};};
+  await act(async()=>{await button('שמור משתתפים').props.onClick();await flush();});
+  assert.equal(conflictVersion,31,'participant draft retains its original structural revision');
+  assert.ok(pageText().includes('הטורניר עודכן במקביל'));
+  assert.ok(articles().every(article=>article.findByType('select').props.value==='1-0'));
+  act(()=>button('בטל שינויים במשתתפים').props.onClick());
+  assert.equal(checkbox('מצטרף מאוחר').props.checked,false);
+  await act(async()=>{await button('בדוק את המצב האחרון מהשרת לפני המשך').props.onClick();await flush();});
+  // Matching canonical intent acknowledges the saved selection and resets its base.
+  act(()=>checkbox('מצטרף מאוחר').props.onChange({target:{checked:true}}));
+  serverState={...serverState,revision:33,nextRoundParticipantIds:['p1','p2','p3','p4','p5']};
+  await act(async()=>{globalThis.fixtureLive.changed();await flush();});
+  assert.equal(button('שמור משתתפים').props.disabled,true);
+  act(()=>checkbox('ילד אחד').props.onChange({target:{checked:false}}));
+  let resolvePlan,ownResponse;
+  service.participants=(requested,revision,selection)=>{
+    assert.equal(revision,33,'acknowledged selection starts a fresh draft');
+    ownResponse={...serverState,revision:34,nextRoundParticipantIds:selection};
+    return new Promise(resolve=>{resolvePlan=resolve;});
+  };
+  act(()=>button('שמור משתתפים').props.onClick());
+  serverState={...ownResponse,revision:35,nextRoundParticipantIds:['p1','p2','p3','p5']};
+  await act(async()=>{globalThis.fixtureLive.changed();await flush();resolvePlan(structuredClone(ownResponse));await flush();});
+  assert.equal(checkbox('ילד אחד').props.checked,true,'an older HTTP save response cannot overwrite newer canonical participants');
+  assert.equal(checkbox('רביעי ילד').props.checked,false);
+  assert.ok(articles().every(article=>article.findByType('select').props.value==='1-0'));
+  act(()=>button('משתתפים').props.onClick());
   const saveButton = article => article.findAllByType('button').find(b => text(b) === 'שמור תוצאה');
   const versions = [];
   service.result = async (requested, revision, round, matchId, result, invalidate, expectedResultRevision) => {
@@ -470,7 +529,7 @@ try {
   assert.equal(globalThis.fixtureLive, null, 'Leaving the operational route disconnects');
   act(() => renderer.unmount()); renderer = null;
   console.log(
-    'Internal tournament UI checks passed: role-aware roster/start actions, single creation, direct match cards, operational order, retry protection and live reconciliation.',
+    'Internal tournament UI checks passed: role-aware roster/start actions, single creation, direct match cards, operational order, retry protection, future participant editing/conflicts, retained match drafts and live reconciliation.',
   );
 } finally {
   if (renderer) act(() => renderer.unmount());

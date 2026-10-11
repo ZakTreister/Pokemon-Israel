@@ -97,6 +97,7 @@ const tournamentSchema = new mongoose.Schema({
   revision: { type: Number, default: 0 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, closedAt: Date,
+  nextRoundParticipantIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }], default: undefined },
   playerParticipants: [{
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
     nameSnapshot: { type: String, required: true }, citySnapshot: String,

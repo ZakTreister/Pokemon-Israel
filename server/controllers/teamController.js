@@ -1,3 +1,4 @@
+import { playerNumber as normalizePlayerNumber } from '../services/playerNumber.js';
 import User from '../models/userModel.js';
 import asyncHandler from 'express-async-handler';
 import Team, { normalizeTeamName } from '../models/teamModel.js';
@@ -50,7 +51,7 @@ export const getPublicTeams = asyncHandler(async (req, res) => {
 export const getPublicTeam = asyncHandler(async (req, res) => {
   const team = await Team.findOne({ _id: req.params.id, isActive: true });
   if (!team) fail(404, 'נבחרת לא נמצאה');
-  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city').sort({ firstName: 1, lastName: 1 });
+  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city playerNumber').sort({ firstName: 1, lastName: 1 });
   res.json({ ...await publicTeam(team), players });
 });
 export const getTeams = asyncHandler(async (req, res) => {
@@ -60,12 +61,12 @@ export const getTeams = asyncHandler(async (req, res) => {
   res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team), openInternalTournament: byTeam.get(team.id) || null }))));
 });
 export const getManageablePlayers = asyncHandler(async (req, res) => {
-  res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 }));
+  res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select('firstName lastName city playerNumber isActive team').sort({ firstName: 1, lastName: 1 }));
 });
 export const getTeam = asyncHandler(async (req, res) => {
   const team = await Team.findById(req.params.id).populate('createdBy', 'username name').populate('teacher', 'name role');
   if (!team) fail(404, 'נבחרת לא נמצאה');
-  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city isActive team').sort({ firstName: 1, lastName: 1 });
+  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city playerNumber isActive team').sort({ firstName: 1, lastName: 1 });
   const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
   res.json({ ...team.toJSON(), ...await counts(team), players, openInternalTournament: open ? { id: open.id, phase: open.phase } : null });
 });
@@ -129,7 +130,7 @@ export const loadTeamPlayers = asyncHandler(async (req, res) => {
   if (!Array.isArray(rows) || !rows.length || rows.length > 128) fail(400, 'יש להזין בין 1 ל-128 שחקנים');
   const documents = rows.map(row => {
     if (!row || typeof row.firstName !== 'string' || !row.firstName.trim() || typeof row.lastName !== 'string' || !row.lastName.trim() || (row.city !== undefined && typeof row.city !== 'string')) fail(400, 'שם פרטי ושם משפחה הם שדות חובה; עיר היא טקסט');
-    return new Player({ firstName: row.firstName.trim(), lastName: row.lastName.trim(), city: row.city?.trim() || '', playerType: 'team', team: req.params.teamId, user: null });
+    return new Player({ firstName: row.firstName.trim(), lastName: row.lastName.trim(), city: row.city?.trim() || '', playerNumber: normalizePlayerNumber(row.playerNumber, true), playerType: 'team', team: req.params.teamId, user: null });
   });
   const output = await withRosterLocks([req.params.teamId], async () => {
     const team = await Team.findById(req.params.teamId);

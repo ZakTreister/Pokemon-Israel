@@ -139,7 +139,9 @@ try {
     subscribe: () => () => {},
     dispatch: (action) => action,
   };
-  const provider = (element) => el(Provider, { store: fixtureStore }, element);
+  const { ConfirmProvider } = await load('components/ui/ConfirmProvider.tsx');
+  const { ToastProvider } = await load('components/ui/ToastProvider.tsx');
+  const provider = (element) => el(Provider, { store: fixtureStore }, el(ToastProvider, {}, el(ConfirmProvider, {}, element)));
   const profile = {
     id: 'player',
     firstName: 'לביא',
@@ -147,7 +149,7 @@ try {
     city: 'חיפה',
     team: { id: 'team', name: 'נבחרת' },
     teamRanking: { position: 1, points: 10, tournaments: 2 },
-    overallRanking: { position: 3, points: 10, tournaments: 2 },
+    playerNumber: '0007',
     badges: [
       { name: 'תג', description: 'הצלחה', icon: '★', awardedAt: '2026-10-01' },
     ],
@@ -175,7 +177,7 @@ try {
   });
   assert.equal(loaded, '/api/players/public/player');
   assert.ok(text(renderer.toJSON()).includes('לביא כהן'));
-  assert.ok(text(renderer.toJSON()).includes('מקום 3'));
+  assert.ok(text(renderer.toJSON()).includes('מקום 1'));
   assert.ok(text(renderer.toJSON()).includes('הצלחה'));
   assert.ok(
     renderer.root
@@ -196,7 +198,7 @@ try {
       },
     ],
   });
-  publicTeams.list = async () => [];
+  publicTeams.list = async () => [{ id: 'team', name: 'נבחרת', playerCount: 1 }];
   publicTeams.get = async () => ({
     id: 'team',
     name: 'נבחרת',
@@ -222,7 +224,7 @@ try {
     assert.ok(
       renderer.root
         .findAllByType('a')
-        .some((a) => a.props.href === '/all-stars/players/player'),
+        .some((a) => a.props.href === (Component === AllStars ? '/teams/team' : '/all-stars/players/player')),
     );
     act(() => renderer.unmount());
     renderer = null;
@@ -232,7 +234,6 @@ try {
   const { default: ManageTournaments } = await load(
     'pages/manage/ManageTournaments.tsx',
   );
-  const { ConfirmProvider } = await load('components/ui/ConfirmProvider.tsx');
   fixture.auth.user = { role: 'admin' };
   api.get = async () => ({
     data: [

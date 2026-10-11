@@ -19,7 +19,7 @@ export default function ParticipantList({
         <label key={p.id} className="border rounded-md p-2">
           <input
             type="checkbox"
-            disabled={disabled}
+            disabled={disabled || (p.disabled && !selected.includes(p.id))}
             checked={selected.includes(p.id)}
             onChange={(e) =>
               onChange(

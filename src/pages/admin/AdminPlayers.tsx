@@ -1,3 +1,8 @@
+import TeamPlayerFields from '../../features/players/components/TeamPlayerFields';
+import { teamPlayerCreateSchema } from '../../features/players/utils/teamPlayerForm';
+import PlayerNumberField from '../../features/players/components/PlayerNumberField';
+import teamsService from '../../features/teams/teamsService';
+import type { Team } from '../../types/team';
 import NavigableRow from '../../components/ui/NavigableRow';
 import { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -26,6 +31,8 @@ import type { Player } from '../../types/player';
 type FilterType = 'all' | 'team' | 'quarterly';
 
 interface TeamFormData {
+  playerNumber: string;
+  teamId: string;
   firstName: string;
   lastName: string;
   city: string;
@@ -38,6 +45,8 @@ interface QuarterlyFormData {
 }
 
 interface EditFormData {
+  city: string;
+  playerNumber: string;
   firstName: string;
   lastName: string;
   club: string;
@@ -46,7 +55,11 @@ interface EditFormData {
 
 export default function AdminPlayers() {
   const dispatch = useAppDispatch();
-  const { players, isLoading, error } = useAppSelector((state) => state.players);
+  const { players, isLoading, error } = useAppSelector(
+    (state) => state.players,
+  );
+
+  const [teams, setTeams] = useState<Team[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
@@ -56,11 +69,32 @@ export default function AdminPlayers() {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showTeamModal) return;
+    let active = true;
+    setTeams([]);
+    teamsService
+      .getTeams()
+      .then((rows) => {
+        if (active) setTeams(rows.filter((team) => team.isActive));
+      })
+      .catch(() => {
+        if (active)
+          setFormError(
+            'לא הצלחנו לטעון נבחרות. סגרו ופתחו את הטופס כדי לנסות שוב.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [showTeamModal]);
 
   const [teamForm, setTeamForm] = useState<TeamFormData>({
     firstName: '',
     lastName: '',
     city: '',
+    playerNumber: '',
+    teamId: '',
   });
 
   const [quarterlyForm, setQuarterlyForm] = useState<QuarterlyFormData>({
@@ -74,6 +108,8 @@ export default function AdminPlayers() {
     lastName: '',
     club: '',
     isActive: true,
+    city: '',
+    playerNumber: '',
   });
 
   const loadPlayers = useCallback(() => {
@@ -94,7 +130,13 @@ export default function AdminPlayers() {
   }, [dispatch]);
 
   const resetTeamForm = () => {
-    setTeamForm({ firstName: '', lastName: '', city: '' });
+    setTeamForm({
+      firstName: '',
+      lastName: '',
+      city: '',
+      playerNumber: '',
+      teamId: '',
+    });
     setFormError(null);
   };
 
@@ -104,13 +146,23 @@ export default function AdminPlayers() {
   };
 
   const resetEditForm = () => {
-    setEditForm({ firstName: '', lastName: '', club: '', isActive: true });
+    setEditForm({
+      firstName: '',
+      lastName: '',
+      club: '',
+      isActive: true,
+      city: '',
+      playerNumber: '',
+    });
     setFormError(null);
   };
 
   const handleCreateTeamPlayer = async () => {
-    if (!teamForm.firstName.trim() || !teamForm.lastName.trim()) {
-      setFormError('כל השדות הם חובה');
+    const parsed = teamPlayerCreateSchema.safeParse(teamForm);
+    if (!parsed.success || !teamForm.teamId) {
+      setFormError(
+        !parsed.success ? parsed.error.issues[0].message : 'יש לבחור נבחרת',
+      );
       return;
     }
     try {
@@ -118,10 +170,9 @@ export default function AdminPlayers() {
       setFormError(null);
       await dispatch(
         createTeamPlayer({
-          firstName: teamForm.firstName.trim(),
-          lastName: teamForm.lastName.trim(),
-          city: teamForm.city.trim(),
-        })
+          ...parsed.data,
+          teamId: teamForm.teamId,
+        }),
       ).unwrap();
       resetTeamForm();
       setShowTeamModal(false);
@@ -146,7 +197,7 @@ export default function AdminPlayers() {
           firstName: quarterlyForm.firstName.trim(),
           lastName: quarterlyForm.lastName.trim(),
           club: quarterlyForm.club.trim(),
-        })
+        }),
       ).unwrap();
       resetQuarterlyForm();
       setShowQuarterlyModal(false);
@@ -164,6 +215,8 @@ export default function AdminPlayers() {
       firstName: player.firstName,
       lastName: player.lastName,
       club: player.club || '',
+      city: player.city || '',
+      playerNumber: player.playerNumber || '',
       isActive: player.isActive,
     });
     setFormError(null);
@@ -185,10 +238,15 @@ export default function AdminPlayers() {
           input: {
             firstName: editForm.firstName.trim(),
             lastName: editForm.lastName.trim(),
-            club: editForm.club.trim() || null,
+            ...(selectedPlayer.playerType === 'team'
+              ? {
+                  city: editForm.city.trim(),
+                  playerNumber: editForm.playerNumber.trim(),
+                }
+              : { club: editForm.club.trim() || null }),
             isActive: editForm.isActive,
           },
-        })
+        }),
       ).unwrap();
       resetEditForm();
       setShowEditModal(false);
@@ -370,33 +428,56 @@ export default function AdminPlayers() {
       {/* Add Team Player Modal */}
       {showTeamModal && (
         <Modal title="הוסף שחקן נבחרת" onClose={closeAllModals}>
-            {formError && (
-              <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {formError}
-              </div>
-            )}
-            <div className="space-y-4">
-              <PlayerNameFields
-                firstName={teamForm.firstName}
-                lastName={teamForm.lastName}
-                onChange={(field, value) =>
-                  setTeamForm({ ...teamForm, [field]: value })
-                }
-              />
-              <div>
-                <label className="block text-sm font-medium mb-1">עיר (רשות)</label>
-                <input className="w-full px-3 py-2 border rounded-md" value={teamForm.city} onChange={e => setTeamForm({ ...teamForm, city: e.target.value })} />
-                <p className="text-sm text-muted-foreground mt-2">רישום ילד בלבד, ללא חשבון התחברות.</p>
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={closeAllModals} disabled={isSubmitting}>
-                  ביטול
-                </Button>
-                <Button onClick={handleCreateTeamPlayer} disabled={isSubmitting}>
-                  {isSubmitting ? 'יוצר...' : 'הוסף שחקן נבחרת'}
-                </Button>
-              </div>
+          {formError && (
+            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+              {formError}
             </div>
+          )}
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleCreateTeamPlayer();
+            }}
+          >
+            <TeamPlayerFields
+              newPlayer
+              value={teamForm}
+              onChange={(value) => setTeamForm({ ...teamForm, ...value })}
+            />
+            <label className="block">
+              נבחרת
+              <select
+                aria-label="נבחרת"
+                required
+                className="block w-full p-2 border rounded-md bg-background"
+                value={teamForm.teamId}
+                onChange={(e) =>
+                  setTeamForm({ ...teamForm, teamId: e.target.value })
+                }
+              >
+                <option value="">בחרו נבחרת</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeAllModals}
+                disabled={isSubmitting}
+              >
+                ביטול
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'יוצר...' : 'הוסף שחקן נבחרת'}
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
 
@@ -440,47 +521,78 @@ export default function AdminPlayers() {
       {/* Edit Player Modal */}
       {showEditModal && selectedPlayer && (
         <Modal title="עריכת שחקן" onClose={closeAllModals}>
-            {formError && (
-              <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {formError}
-              </div>
-            )}
-            <div className="space-y-4">
-              <PlayerNameFields
-                firstName={editForm.firstName}
-                lastName={editForm.lastName}
-                onChange={(field, value) =>
-                  setEditForm({ ...editForm, [field]: value })
-                }
-              />
+          {formError && (
+            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+              {formError}
+            </div>
+          )}
+          <div className="space-y-4">
+            <PlayerNameFields
+              firstName={editForm.firstName}
+              lastName={editForm.lastName}
+              onChange={(field, value) =>
+                setEditForm({ ...editForm, [field]: value })
+              }
+            />
+            {selectedPlayer.playerType === 'team' ? (
+              <>
+                <label className="block">
+                  עיר
+                  <input
+                    className="block w-full p-2 border rounded-md"
+                    value={editForm.city}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, city: e.target.value })
+                    }
+                  />
+                </label>
+                <PlayerNumberField
+                  value={editForm.playerNumber}
+                  onChange={(playerNumber) =>
+                    setEditForm({ ...editForm, playerNumber })
+                  }
+                />
+              </>
+            ) : (
               <div>
                 <label className="block text-sm font-medium mb-1">חוג</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-input rounded-md bg-background"
                   value={editForm.club}
-                  onChange={(e) => setEditForm({ ...editForm, club: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, club: e.target.value })
+                  }
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  className="h-4 w-4"
-                  checked={editForm.isActive}
-                  onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-                />
-                <label htmlFor="isActive" className="text-sm font-medium">פעיל</label>
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={closeAllModals} disabled={isSubmitting}>
-                  ביטול
-                </Button>
-                <Button onClick={handleUpdatePlayer} disabled={isSubmitting}>
-                  {isSubmitting ? 'מעדכן...' : 'שמור שינויים'}
-                </Button>
-              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                className="h-4 w-4"
+                checked={editForm.isActive}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, isActive: e.target.checked })
+                }
+              />
+              <label htmlFor="isActive" className="text-sm font-medium">
+                פעיל
+              </label>
             </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={closeAllModals}
+                disabled={isSubmitting}
+              >
+                ביטול
+              </Button>
+              <Button onClick={handleUpdatePlayer} disabled={isSubmitting}>
+                {isSubmitting ? 'מעדכן...' : 'שמור שינויים'}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

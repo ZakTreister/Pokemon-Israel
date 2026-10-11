@@ -442,7 +442,7 @@ try {
           el(
             Routes,
             {},
-            el(Route, { path: '/manage/teams/:id', element: el(ToastProvider, {}, el(TeamPage)) }),
+            el(Route, { path: '/manage/teams/:id', element: el(ToastProvider, {}, el(ConfirmProvider, {}, el(TeamPage))) }),
             el(Route, {
               path: '/manage/tournaments/:id',
               element: el('p', {}, 'Existing tournament'),

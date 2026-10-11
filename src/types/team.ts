@@ -33,6 +33,7 @@ export interface TeamWithRoster extends Team {
 }
 
 export interface TeamRosterPlayer {
+  playerNumber?: string;
   id: string;
   firstName: string;
   lastName: string;

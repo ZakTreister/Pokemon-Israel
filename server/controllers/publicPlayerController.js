@@ -13,14 +13,13 @@ export const getPublicTeamPlayer = asyncHandler(async (req, res) => {
     _id: req.params.id,
     playerType: 'team',
   })
-    .select('firstName lastName city team')
+    .select('firstName lastName city playerNumber team')
     .populate('team', 'name logo');
   if (!player) {
     res.status(404);
     throw new Error('Player not found');
   }
-  const [overall, insideTeam, awards] = await Promise.all([
-    allStarsRankingData(),
+  const [insideTeam, awards] = await Promise.all([
     player.team
       ? allStarsRankingData(player.team.id)
       : Promise.resolve({ rankings: [] }),
@@ -47,7 +46,7 @@ export const getPublicTeamPlayer = asyncHandler(async (req, res) => {
     team: player.team
       ? { id: player.team.id, name: player.team.name, logo: player.team.logo }
       : null,
-    overallRanking: ranking(overall),
+    playerNumber: player.playerNumber || '',
     teamRanking: ranking(insideTeam),
     badges: awards
       .filter((award) => award.badge)

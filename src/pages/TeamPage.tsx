@@ -4,7 +4,9 @@ import {
   publicTournaments,
   type PublicTournamentSummary,
 } from '../services/publicTournaments';
-import DataTable from '../components/ui/DataTable';
+import TeamMembersTable from '../features/teams/components/TeamMembersTable';
+import TeamRankingTable from '../features/teams/components/TeamRankingTable';
+import PlayerNumberField from '../features/players/components/PlayerNumberField';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../hooks/redux';
@@ -18,11 +20,17 @@ import type { AllStarsRanking } from '../types/internalTournament';
 import { TeamEmblem } from '../components/teams/TeamCard';
 import Button from '../components/ui/Button';
 interface ChildRow {
+  playerNumber: string;
   firstName: string;
   lastName: string;
   city: string;
 }
-const emptyChild = (): ChildRow => ({ firstName: '', lastName: '', city: '' });
+const emptyChild = (): ChildRow => ({
+  firstName: '',
+  lastName: '',
+  city: '',
+  playerNumber: '',
+});
 export default function TeamPage() {
   const { id = '' } = useParams();
   const management = useLocation().pathname.startsWith('/manage/');
@@ -204,7 +212,10 @@ export default function TeamPage() {
                     הגדרות הנבחרת.
                   </p>
                   {children.map((row, index) => (
-                    <div key={index} className="grid gap-2 sm:grid-cols-4">
+                    <div
+                      key={index}
+                      className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
+                    >
                       {(['firstName', 'lastName', 'city'] as const).map(
                         (field, i) => (
                           <input
@@ -229,6 +240,18 @@ export default function TeamPage() {
                           />
                         ),
                       )}
+                      <PlayerNumberField
+                        required
+                        value={row.playerNumber}
+                        onChange={(playerNumber) =>
+                          setChildren(
+                            children.map((child, j) =>
+                              j === index ? { ...child, playerNumber } : child,
+                            ),
+                          )
+                        }
+                        disabled={busy}
+                      />
                       <Button
                         contextual
                         type="button"
@@ -264,48 +287,14 @@ export default function TeamPage() {
               <h2 className="text-2xl font-bold mb-4">
                 {section === 'members' ? 'חברי נבחרת' : 'דירוג וסטטיסטיקה'}
               </h2>
-              {!team.players.length ? (
-                <p>עדיין אין חברי נבחרת פעילים.</p>
-              ) : (
-                <DataTable
-                  rowLink={(row) => `/all-stars/players/${row.id}`}
-                  rows={team.players.map((player) => ({
-                    ...player,
-                    rank: rankings.find((row) => row.playerId === player.id),
-                  }))}
-                  rowKey={(row) => row.id}
-                  columns={[
-                    {
-                      key: 'name',
-                      label: 'שחקן',
-                      value: (row) => `${row.firstName} ${row.lastName}`,
-                      render: (row) => (
-                        <Link
-                          className="font-bold text-blue-500"
-                          to={`/all-stars/players/${row.id}`}
-                        >
-                          {row.firstName} {row.lastName}
-                        </Link>
-                      ),
-                    },
-                    { key: 'city', label: 'עיר', value: (row) => row.city },
-                    {
-                      key: 'position',
-                      label: 'מקום',
-                      value: (row) => row.rank?.position,
-                    },
-                    {
-                      key: 'points',
-                      label: 'נקודות',
-                      value: (row) => row.rank?.points ?? 0,
-                    },
-                    {
-                      key: 'tournaments',
-                      label: 'טורנירים',
-                      value: (row) => row.rank?.tournaments ?? 0,
-                    },
-                  ]}
+              {section === 'members' ? (
+                <TeamMembersTable
+                  team={team}
+                  editable={management && admin}
+                  onChanged={load}
                 />
+              ) : (
+                <TeamRankingTable rows={rankings} />
               )}
             </section>
           )}

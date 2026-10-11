@@ -51,6 +51,7 @@ export interface InternalTournamentSummary {
   competitionYear: string;
 }
 export interface InternalTournament extends InternalTournamentSummary {
+  nextRoundParticipantIds?: string[];
   playerParticipants: InternalParticipant[];
   rounds: InternalRound[];
   standings: Standing[];
