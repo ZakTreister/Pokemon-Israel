@@ -1389,3 +1389,14 @@ At the end of a substantial frontend refactor, report:
 11. final commit SHA
 
 A good refactor should make future feature work easier without changing product behavior.
+
+
+## Homepage hero direct-manipulation rule
+For the approved three-card homepage hero interaction:
+- prefer native pointer/touch behavior and lightweight shared logic over a heavy carousel dependency
+- support touch dragging with snap/settling
+- keep card dimensions stable during interaction
+- avoid layout-shifting scale effects
+- keep interaction usable with mouse/trackpad when practical
+- transition motion must respect `prefers-reduced-motion`
+- the interaction is decorative and must not interfere with page scrolling or primary navigation
