@@ -28,7 +28,7 @@ A judge may be assigned as the teacher of one or more teams. This relationship d
 | Assign/unassign/transfer player | Yes | No |
 | Change permanent roster | Yes | No |
 | Open/start a tournament | Yes | Yes |
-| Remove absent participant before round 1 | Yes | Yes — tournament participant list only |
+| Manage participants for next uncreated tournament round | Yes | Yes — tournament participation only |
 | Enter live match result | Yes | Yes |
 | Correct result while tournament is active | Yes | Yes |
 | End/advance round | Yes | Yes |
@@ -48,9 +48,9 @@ A judge may be assigned as the teacher of one or more teams. This relationship d
 
 ## Important distinction: roster vs tournament participants
 
-A judge may remove an absent player from the participant list of a tournament **before round 1**.
+A judge may manage the live tournament's participant selection for the **next uncreated round**, both before round 1 and while a later current round is running.
 
-That action must only change the tournament's participant snapshot/list.
+That action changes tournament participation only. It must not rewrite an already-created round or change the permanent team roster.
 
 It must not:
 - remove the player from the All Stars team
