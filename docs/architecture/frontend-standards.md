@@ -1020,7 +1020,7 @@ Good candidates:
 - `TournamentHeader`
 - `TournamentConnectionStatus`
 - `RoundSelector`
-- `TournamentAttendance`
+- `TournamentParticipants`
 - `TournamentRound`
 - `TournamentRoundActions`
 - `TournamentSyncError`
@@ -1035,7 +1035,7 @@ Example shape:
 <TournamentConnectionStatus />
 <RoundSelector />
 
-{setup && <TournamentAttendance />}
+<TournamentParticipants />
 
 {showStandings ? (
   <TournamentStandings />
