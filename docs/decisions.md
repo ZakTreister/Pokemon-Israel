@@ -155,7 +155,7 @@ The current row-by-row manual entry is not the preferred primary UX.
 ## 2026-10 — Live internal tournaments can cancel the latest round
 Authorized live-tournament operators can cancel only the latest/current active round.
 The cancelled round is archived for audit/history, removed from active standings, and may be re-paired.
-Previous rounds stay intact and the participant roster remains locked.
+Previous rounds stay intact. The future participant plan remains independently editable and never rewrites an already-created round.
 
 
 ## 2026-10 — One open internal tournament per team
@@ -279,3 +279,13 @@ Removing a player from a team changes membership only and does not delete the Pl
 The public **אירועים** list should look and behave like the public-safe version of management **טורנירים** rather than a separately designed tournament browser.
 
 Both views reuse the same summary/card/row presentation, filter patterns, tournament type/status labels and responsive information hierarchy where practical. The public wrapper navigates to public details/results; the management wrapper adds management-only actions and permissions.
+
+
+## 2026-10 — Live tournaments have an editable next-round participant plan
+The live internal-tournament screen adds **משתתפים** beside the existing standings/results control. The existing **דירוג ותוצאות** control is renamed **טבלה** without changing its behavior.
+
+**משתתפים** reuses the checkbox-based team-member selection pattern. Before round 1 it defines round-1 participants; after a round exists it defines participants for the next uncreated round and remains editable while the current round is being played.
+
+An already-created round is never changed by participant edits. Unchecked players retain prior results and standings impact but are excluded from future pairing. Newly checked players enter from the next round with 0 points for rounds they missed. Re-adding an eligible player for a later round is allowed.
+
+Tournament participant editing never changes permanent team membership. The implementation preserves historical participant snapshots and stores the next-round eligible set separately.
