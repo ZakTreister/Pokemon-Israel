@@ -289,3 +289,14 @@ The live internal-tournament screen adds **משתתפים** beside the existing 
 An already-created round is never changed by participant edits. Unchecked players retain prior results and standings impact but are excluded from future pairing. Newly checked players enter from the next round with 0 points for rounds they missed. Re-adding an eligible player for a later round is allowed.
 
 Tournament participant editing never changes permanent team membership. The implementation preserves historical participant snapshots and stores the next-round eligible set separately.
+
+
+## 2026-10 — Versioned specification workflow
+Approved specification work is tracked in `docs/version.md` using calendar versions such as `2026.10.1`.
+
+Codex implementation PRs must mark the requested version **DEVELOPED**, record the PR URL/final SHA/verification results, and return the PR link. The next version begins only after the prior version is marked developed unless explicitly queued otherwise.
+
+## 2026-10 — Homepage hero cards are directly draggable
+The three homepage hero trading cards keep their existing sizes. On touch devices the user can drag/swipe them horizontally and they settle/snap into position.
+
+The center card uses the existing Pikachu image asset; the side cards use Poké Ball and trophy artwork. This change affects card artwork and direct manipulation, not relative card sizing.
