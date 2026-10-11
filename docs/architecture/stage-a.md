@@ -30,13 +30,15 @@ staff identities, User links, or lock data. There are no new child-login CTAs.
 
 ## Persisted Swiss workflow
 
-Create a tournament from the active team roster, adjust attendance while in
-`setup`, then create rounds.
+Create a tournament from the active team roster. Keep a historical participant
+snapshot/union plus a separate saved next-round participant set. Before round 1
+the set defines initial attendance; while later rounds are running it remains
+editable and applies only to the next uncreated round.
 
 Concurrency is split by mutation scope.
 
 Structural tournament mutations carry `expectedRevision` and use the tournament
-revision as an atomic compare-and-swap guard. This includes attendance changes,
+revision as an atomic compare-and-swap guard. This includes next-round participant-plan changes,
 round creation/cancellation, tournament closure, and corrections to earlier
 rounds that invalidate downstream rounds. Two judges cannot perform the same
 structural transition from one revision.
