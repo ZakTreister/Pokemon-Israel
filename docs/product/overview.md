@@ -34,7 +34,7 @@ Being assigned as a team's teacher does not elevate that user's global permissio
 
 Teacher assignment is an operational ownership/context relationship used to surface the teacher's teams and quick tournament actions.
 
-Judge permissions are intentionally narrow. A judge may open and operate a live tournament, including participant check-in/removal before round 1, result entry/correction while active, round transitions and tournament completion. A judge may not create/edit/delete teams or players, change rosters, manage badges/Seasons, delete tournaments, or enter/import historical tournament data.
+Judge permissions are intentionally narrow. A judge may open and operate a live tournament, including managing the tournament's saved participants for the next uncreated round, result entry/correction while active, round transitions and tournament completion. A judge may not create/edit/delete teams or players, change rosters, manage badges/Seasons, delete tournaments, or enter/import historical tournament data.
 
 See `docs/architecture/permissions.md` for the authoritative permission matrix.
 
