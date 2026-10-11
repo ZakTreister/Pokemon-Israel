@@ -363,7 +363,7 @@ Required:
 - archive cancelled round for audit/history
 - remove its results from current standings
 - preserve previous rounds
-- roster remains locked even when round 1 is cancelled
+- cancelling a round does not erase the saved participant plan for the next round; participant planning remains independently editable
 - live Socket.IO clients receive the canonical updated state
 
 ### 25. Historical team results — paste, parse and match
@@ -685,6 +685,59 @@ Add/update tests for:
 - removal unassigns without deleting the player
 - team ranking tab columns/order
 
+### 38. Live participant editing for the next round
+Replace the old post-round-1 participant lock with an editable **משתתפים** view on the live internal-tournament screen.
+
+UI:
+- rename the existing **דירוג ותוצאות** control to **טבלה**; behavior remains unchanged
+- add **משתתפים** beside **טבלה**
+- reuse the existing checkbox-based `ParticipantList` / team-member selection presentation where practical
+- before round 1, checkboxes define the saved round-1 participant set
+- after rounds exist, checkboxes define the saved participant set for the **next uncreated round**
+- allow editing while the latest/current round is being played
+- participant planning always targets the round after the latest created round, regardless of which historical round is selected for viewing
+- helper copy clearly states that the current already-created round will not change
+- completed tournaments are read-only
+
+Behavior:
+- saving participant changes never rewrites matches/pairings/results of an already-created round
+- an unchecked player keeps all prior matches, results, points and tie-break impact, but is excluded from future pairings
+- a newly checked eligible team player joins from the next round with 0 match points for rounds missed
+- a previously unchecked eligible player may be checked again for a later round
+- participant changes affect tournament participation only, never permanent team membership
+- require at least two selected players for the next round
+
+Backend/model:
+- preserve `playerParticipants` as historical participant snapshots/union; do not delete snapshots needed by prior rounds
+- add a separate canonical saved next-round selection, e.g. `nextRoundParticipantIds`
+- initial tournament creation preloads the active roster into that next-round selection
+- participant-save may append snapshots for newly selected eligible active team players
+- pair generation uses only the saved next-round selection
+- after pairing, that saved set remains the baseline for the following round until changed
+- standings continue to derive from tournament history, so missed rounds naturally contribute 0 points for late joiners
+- participant-plan updates use tournament structural revision/CAS protection
+- ordinary match-result saves remain match-level versioned and must not fail merely because another judge saved a future participant-plan change
+- live Socket.IO clients receive canonical participant-plan updates
+
+Concurrency:
+- two competing participant-plan saves conflict safely through tournament revision
+- pairing uses the latest canonical saved participant set
+- unsaved match drafts for the current round must not be discarded merely because a participant-plan update arrives
+
+Tests:
+- edit participants before round 1
+- add a player during an active round and verify current pairings are unchanged
+- remove a player during an active round and verify current pairings/results remain, but next pairing excludes them
+- late joiner has 0 points for missed rounds
+- removed player retains historical results/standings impact
+- re-add an eligible player for a later round
+- participant changes do not mutate permanent team roster
+- structural concurrency/conflict behavior
+- participant-plan update does not stale an unrelated current-match save
+- completed tournament is not editable
+
+Do not implement manual pairing-edit/override functionality in this iteration.
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
@@ -692,7 +745,7 @@ Do not regress:
 - Player-based team participants
 - open internal tournament from team
 - preload team roster
-- remove absent participants before round 1
+- manage the saved next-round participant set before round 1 and during live rounds without mutating already-created pairings
 - server-backed Swiss pairing/results
 - Bo3 result entry including valid 1-0 outcomes
 - Points / OMP / GWP / OGP standings
