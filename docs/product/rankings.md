@@ -35,15 +35,19 @@ Team-related scoring is separate from regular club scoring.
 
 Internal team tournaments contribute to the **ranking inside that player's team**.
 
-The team page **דירוג וסטטיסטיקה** tab displays:
+The team page does not have a separate ranking tab.
+
+Team-specific ranking fields are shown directly in the unified **חברי נבחרת** table:
 - **מיקום**
-- **שם**
+- **שם מלא**
+- **עיר**
+- **מספר שחקן**
 - **נקודות**
 - **טורנירים**
 
-In the RTL table layout, **מיקום** appears immediately to the right of **שם**.
+In RTL, **מיקום** appears immediately to the right of the player name.
 
-Default sort is canonical position ascending.
+Default sort is canonical position ascending. Players without ranking data remain visible in the member table.
 
 There is no product-level **overall All Stars player ranking across different teams**. Do not calculate, display or expose a cross-team individual All Stars ranking.
 
