@@ -99,10 +99,21 @@ It should organize content into clear tabs/sections rather than a long row of ac
 Primary team tabs:
 
 ### חברי נבחרת
-Show the active team members in a clear table/list with:
+Use one unified active-team-member table. Do **not** keep a separate **דירוג וסטטיסטיקה** tab/view.
+
+The unified table includes:
+- **מיקום**
 - **שם מלא**
 - **עיר**
 - **מספר שחקן**
+- **נקודות**
+- **טורנירים**
+
+In RTL, **מיקום** appears immediately to the right of the player name.
+
+Default ordering is canonical team rank ascending (place 1 first). Team members without ranking history remain visible in the table with empty/zero ranking fields as appropriate.
+
+The ranking information is the ranking inside this team only; there is no cross-team overall All Stars player ranking.
 
 The entire player row/card remains navigable to the public team-player profile where applicable.
 
@@ -113,23 +124,6 @@ For admin, row-level member management belongs here:
 Keep these as compact contextual actions (for example a small action control or accessible `עוד פעולות` menu) rather than large peer buttons.
 
 Editing from this team context edits the Player record (including team-player fields such as name, city and player number). Removing unassigns the player from the team; it does not delete the Player record. Preserve confirmation for removal.
-
-For admin, each member row also provides compact contextual actions for:
-- **עריכת שחקן** — edit team-player fields such as name, city and player number
-- **הסרה מהנבחרת** — unassign from this team without deleting the Player
-
-These actions must remain independently clickable and must not trigger the row's profile navigation. Prefer compact row actions / **עוד פעולות** rather than adding more large buttons to the page.
-
-### דירוג וסטטיסטיקה
-Show the team-specific player ranking only.
-
-Columns, in RTL visual order:
-- **מיקום** — immediately to the right of the player name
-- **שם**
-- **נקודות**
-- **טורנירים**
-
-Default ordering is canonical team rank ascending (place 1 first). This is the ranking inside this team only; there is no cross-team overall All Stars player ranking.
 
 Additional team areas:
 - **היסטוריית טורנירים**
