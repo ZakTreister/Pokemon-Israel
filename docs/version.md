@@ -15,7 +15,7 @@ Rules:
 - A new version starts only after the previous version is marked `DEVELOPED`, unless the product owner explicitly queues another version.
 - Clarifications made before development begins may update the current pending version scope, but may not create hidden untracked requirements.
 
-## Current version
+## Previous developed version
 
 **Version:** `2026.10.1`  
 **Status:** `DEVELOPED`\
@@ -112,3 +112,49 @@ In the implementation PR for `2026.10.1`, Codex must update this section to incl
 - **Known gaps:** any remaining gap, or `none`
 
 Codex must return the PR link to the user when finished. If its environment cannot create a PR directly, it must return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Current version
+
+**Version:** `2026.10.2`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** _pending_
+
+### Scope
+
+#### 1. Merge team ranking/statistics into חברי נבחרת
+On the team page, remove the separate **דירוג וסטטיסטיקה** tab.
+
+Use one unified **חברי נבחרת** table with:
+- **מיקום**
+- **שם מלא**
+- **עיר**
+- **מספר שחקן**
+- **נקודות**
+- **טורנירים**
+
+Requirements:
+- in RTL, **מיקום** appears immediately to the right of the player name
+- default ordering is canonical team rank ascending
+- players without ranking data remain visible with neutral/empty ranking values
+- preserve full-row navigation to the public player profile
+- preserve compact admin edit/remove actions in the row
+- use team-specific ranking only; no cross-team overall All Stars ranking
+- remove the separate **דירוג וסטטיסטיקה** navigation/tab and any duplicate table/data presentation created solely for it
+- reuse the existing shared table/data primitives rather than maintaining parallel roster and ranking tables
+
+### Required verification
+Codex must inspect the current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
+
+### Completion contract for Codex
+In the implementation PR for `2026.10.2`, Codex must:
+- mark **Status** as `DEVELOPED`
+- record the actual PR URL
+- record the final implementation SHA
+- record tests/lint/build results
+- record known gaps, or `none`
+- return the PR link to the user
+
+If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
