@@ -595,7 +595,7 @@ Each team card should keep only the common operational actions visible:
 Do not keep name/logo edit, teacher change, activation/deactivation, historical entry or similar low-frequency actions as peer buttons beside the primary tournament action.
 
 Move those capabilities to the team page:
-- **חברי נבחרת**, ranking/statistics and **היסטוריית טורנירים** are organized as sections/tabs
+- **חברי נבחרת** contains both roster identity fields and team-specific ranking/statistics; **היסטוריית טורנירים** remains a separate section/tab
 - admin configuration lives under **הגדרות נבחרת**
 - very rare/destructive actions may use an accessible **עוד פעולות** menu
 - preserve all existing role permissions and confirmations
@@ -649,25 +649,23 @@ Player data/forms:
 - expose it through public-safe team-player data where needed for the approved team/profile UI
 
 Team page:
-- implement clear primary tabs/sections
+- use a single unified **חברי נבחרת** table; remove the separate **דירוג וסטטיסטיקה** tab
 
 **חברי נבחרת**
+- מיקום
 - שם מלא
 - עיר
 - מספר שחקן
+- נקודות
+- טורנירים
+- in RTL, מיקום is immediately to the right of the player name
+- default sort is canonical team rank ascending
+- players without ranking data remain visible with neutral/empty ranking values
 - whole player row remains navigable to the player's public profile
 - admin can edit the team player directly from the row/context, including name, city and player number
 - admin can remove/unassign the player from the team directly from the row/context
 - removal must not delete the Player record
 - nested edit/remove controls must not trigger row navigation
-
-**דירוג וסטטיסטיקה**
-- מיקום
-- שם
-- נקודות
-- טורנירים
-- in RTL, מיקום is immediately to the right of שם
-- default sort is canonical team rank ascending
 - use team-specific ranking only; no cross-team overall All Stars ranking
 
 Preserve the already-defined **היסטוריית טורנירים** and admin **הגדרות נבחרת** areas without turning them into another large row of buttons.
