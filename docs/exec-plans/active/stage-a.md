@@ -678,10 +678,10 @@ Add/update tests for:
 - team-context creation uses the known team
 - regular player unaffected
 - legacy missing-number compatibility
-- team member tab columns
+- unified team-member table columns/order
+- team members without ranking history remain visible
 - team-member edit/remove row actions
 - removal unassigns without deleting the player
-- team ranking tab columns/order
 
 ### 38. Live participant editing for the next round
 Replace the old post-round-1 participant lock with an editable **משתתפים** view on the live internal-tournament screen.
@@ -749,6 +749,28 @@ Required:
 - preserve responsive hero layout
 - avoid a heavy carousel dependency unless the existing stack already provides one naturally
 - respect reduced-motion preferences
+
+### 40. Version 2026.10.2 — unified team members table
+Remove the separate **דירוג וסטטיסטיקה** view from the team page.
+
+Use one **חברי נבחרת** table containing:
+- מיקום
+- שם מלא
+- עיר
+- מספר שחקן
+- נקודות
+- טורנירים
+
+Requirements:
+- merge canonical team-specific ranking data into member rows
+- keep members with no ranking history visible
+- default order remains canonical team rank ascending
+- preserve whole-row profile navigation
+- preserve compact admin edit/remove actions
+- reuse existing DataTable/member/ranking logic where practical
+- do not create or expose any overall cross-team All Stars player ranking
+
+Add/update tests for the unified table and removal of the old ranking tab.
 
 ## Existing Stage A core behavior that must remain working
 Do not regress:
