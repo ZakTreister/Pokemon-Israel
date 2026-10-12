@@ -258,10 +258,12 @@ Every All Stars/team player has a **מספר שחקן** stored as a reusable pla
 
 New team-player create/edit flows include the field and new team players require it. Legacy team players without a number remain readable/editable for backfill. The number is not an identity key, and no uniqueness/range rule is defined yet.
 
-## 2026-10 — Team page primary player tabs
-The team page has a **חברי נבחרת** view with full name, city and player number, and a **דירוג וסטטיסטיקה** view with position, name, points and tournaments.
+## 2026-10 — Team page uses one unified member/ranking table
+The team page does not have a separate **דירוג וסטטיסטיקה** tab.
 
-In RTL ranking presentation, position appears immediately to the right of the player name. Ranking is team-specific only.
+**חברי נבחרת** is the single player table and contains position, full name, city, player number, points and tournament count. In RTL, position appears immediately to the right of the player name.
+
+Ranking remains team-specific only. Team members without ranking history remain visible in the table.
 
 
 ## 2026-10 — Team-player creation includes team assignment
@@ -314,3 +316,7 @@ The **חברי נבחרת** table is the single team-player table and includes:
 - tournaments
 
 In RTL, position appears immediately to the right of the player name. Default ordering remains canonical team rank ascending. Players without ranking data remain visible.
+
+
+## 2026-10 — Version 2026.10.2
+Version `2026.10.2` removes the separate team **דירוג וסטטיסטיקה** view and merges its position, points and tournament-count data into the existing **חברי נבחרת** table.
