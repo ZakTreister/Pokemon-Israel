@@ -135,6 +135,8 @@ Additional team areas:
 - **היסטוריית טורנירים**
 - **הגדרות נבחרת** for admin-only configuration
 
+Do not show a separate **דירוג וסטטיסטיקה** tab.
+
 The page header shows team logo/name and the relevant primary tournament action.
 
 Admin-only **הגדרות נבחרת** contains configuration such as name/logo, assigned teacher and active state.
