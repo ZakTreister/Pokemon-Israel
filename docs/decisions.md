@@ -300,3 +300,17 @@ Codex implementation PRs must mark the requested version **DEVELOPED**, record t
 The three homepage hero trading cards keep their existing sizes. On touch devices the user can drag/swipe them horizontally and they settle/snap into position.
 
 The center card uses the existing Pikachu image asset; the side cards use Poké Ball and trophy artwork. This change affects card artwork and direct manipulation, not relative card sizing.
+
+
+## 2026-10 — Team member table includes ranking/statistics
+The team page no longer has a separate **דירוג וסטטיסטיקה** tab.
+
+The **חברי נבחרת** table is the single team-player table and includes:
+- position
+- full name
+- city
+- player number
+- points
+- tournaments
+
+In RTL, position appears immediately to the right of the player name. Default ordering remains canonical team rank ascending. Players without ranking data remain visible.
