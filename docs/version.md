@@ -87,6 +87,63 @@ Artwork:
 - the other side card uses a trophy illustration
 - do not enlarge the center card or otherwise change relative card sizes
 
+### Required verification
+Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
+
+### Implementation verification
+
+- `npm run test:stage-a`: **PASS** — 25 server tests, no failures or skips. Includes player-number validation/atomic team assignment, legacy backfill, historical participant retention, next-round eligibility, late joins/re-adds, structural conflicts, live synchronization and independent match versions.
+- `npm run test:stage-a:ui`: **PASS** — all 8 verification scripts. Includes participant draft preservation/conflict recovery/out-of-order responses, compact public Events, contextual member edit/unassignment, team-only ranking, SPA navigation/anchors/back-forward, required creation fields and hero drag/snap/artwork/reduced-motion behavior.
+- `npm run lint`: **PASS** — 0 errors, 4 existing warnings.
+- `npm run build`: **PASS** — production Vite build; existing Browserslist, mixed import and bundle-size warnings remain.
+- `git diff --check`: **PASS**.
+- Supplemental `npx tsc -p tsconfig.app.json --noEmit`: 17 pre-existing legacy type errors, unchanged from baseline; no new errors. This is not the configured build command.
+
+**Known gaps:** No known gaps in the approved `2026.10.1` implementation. PR creation remains pending: GitHub GraphQL and REST requests returned `Forbidden`, including the escalated API attempt. The final GitHub PR creation click is still required. Reuse an existing open `work` → `main` PR if present; otherwise create one using the link above, then replace the fallback with its actual PR URL. The legacy TypeScript errors above remain outside this version's scope.
+
+The implementation SHA identifies the final code/test commit; the following documentation-only commit records this verification and SHA in the same `work` → `main` change set.
+
+### Completion contract for Codex
+In the implementation PR for `2026.10.1`, Codex must update this section to include:
+- **Status:** `DEVELOPED`
+- **Implementation PR:** actual GitHub PR URL
+- **Implementation commit:** final implementation SHA
+- **Verification:** tests/lint/build results
+- **Known gaps:** any remaining gap, or `none`
+
+Codex must return the PR link to the user when finished. If its environment cannot create a PR directly, it must return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Current version
+
+**Version:** `2026.10.2`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** _pending_
+
+### Scope
+
+#### 1. Merge team ranking/statistics into חברי נבחרת
+On the team page, remove the separate **דירוג וסטטיסטיקה** tab.
+
+Use one unified **חברי נבחרת** table with:
+- **מיקום**
+- **שם מלא**
+- **עיר**
+- **מספר שחקן**
+- **נקודות**
+- **טורנירים**
+
+Requirements:
+- in RTL, **מיקום** appears immediately to the right of the player name
+- default ordering is canonical team rank ascending
+- players without ranking data remain visible with neutral/empty ranking values
+- preserve full-row navigation to the public player profile
+- preserve compact admin edit/remove actions in the row
+- use team-specific ranking only; no cross-team overall All Stars ranking
+- remove the separate **דירוג וסטטיסטיקה** navigation/tab and any duplicate table/data presentation created solely for it
+- reuse the existing shared table/data primitives rather than maintaining parallel roster and ranking tables
 
 #### 2. Replace Cloudinary with AWS S3 generic storage
 - Amazon S3 becomes the canonical object store for new uploads
@@ -152,64 +209,6 @@ At minimum verify:
 - creation/editing of team, player and badge succeeds without an image
 - judge mutation denial
 - legacy Cloudinary media compatibility
-
-### Implementation verification
-
-- `npm run test:stage-a`: **PASS** — 25 server tests, no failures or skips. Includes player-number validation/atomic team assignment, legacy backfill, historical participant retention, next-round eligibility, late joins/re-adds, structural conflicts, live synchronization and independent match versions.
-- `npm run test:stage-a:ui`: **PASS** — all 8 verification scripts. Includes participant draft preservation/conflict recovery/out-of-order responses, compact public Events, contextual member edit/unassignment, team-only ranking, SPA navigation/anchors/back-forward, required creation fields and hero drag/snap/artwork/reduced-motion behavior.
-- `npm run lint`: **PASS** — 0 errors, 4 existing warnings.
-- `npm run build`: **PASS** — production Vite build; existing Browserslist, mixed import and bundle-size warnings remain.
-- `git diff --check`: **PASS**.
-- Supplemental `npx tsc -p tsconfig.app.json --noEmit`: 17 pre-existing legacy type errors, unchanged from baseline; no new errors. This is not the configured build command.
-
-**Known gaps:** No known gaps in the approved `2026.10.1` implementation. PR creation remains pending: GitHub GraphQL and REST requests returned `Forbidden`, including the escalated API attempt. The final GitHub PR creation click is still required. Reuse an existing open `work` → `main` PR if present; otherwise create one using the link above, then replace the fallback with its actual PR URL. The legacy TypeScript errors above remain outside this version's scope.
-
-The implementation SHA identifies the final code/test commit; the following documentation-only commit records this verification and SHA in the same `work` → `main` change set.
-
-### Completion contract for Codex
-In the implementation PR for `2026.10.1`, Codex must update this section to include:
-- **Status:** `DEVELOPED`
-- **Implementation PR:** actual GitHub PR URL
-- **Implementation commit:** final implementation SHA
-- **Verification:** tests/lint/build results
-- **Known gaps:** any remaining gap, or `none`
-
-Codex must return the PR link to the user when finished. If its environment cannot create a PR directly, it must return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
-
-
----
-
-## Current version
-
-**Version:** `2026.10.2`  
-**Status:** `READY_FOR_DEVELOPMENT`  
-**Implementation PR:** _pending_
-
-### Scope
-
-#### 1. Merge team ranking/statistics into חברי נבחרת
-On the team page, remove the separate **דירוג וסטטיסטיקה** tab.
-
-Use one unified **חברי נבחרת** table with:
-- **מיקום**
-- **שם מלא**
-- **עיר**
-- **מספר שחקן**
-- **נקודות**
-- **טורנירים**
-
-Requirements:
-- in RTL, **מיקום** appears immediately to the right of the player name
-- default ordering is canonical team rank ascending
-- players without ranking data remain visible with neutral/empty ranking values
-- preserve full-row navigation to the public player profile
-- preserve compact admin edit/remove actions in the row
-- use team-specific ranking only; no cross-team overall All Stars ranking
-- remove the separate **דירוג וסטטיסטיקה** navigation/tab and any duplicate table/data presentation created solely for it
-- reuse the existing shared table/data primitives rather than maintaining parallel roster and ranking tables
-
-### Required verification
-Codex must inspect the current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
 ### Completion contract for Codex
 In the implementation PR for `2026.10.2`, Codex must:
