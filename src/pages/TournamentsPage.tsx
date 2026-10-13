@@ -1,34 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  publicTournaments,
-  type PublicTournamentSummary,
-} from '../services/publicTournaments';
-import { filterTournaments } from '../../shared/tournamentDomain';
+import { useTournamentList } from '../features/tournaments/hooks/useTournamentList';
+import Pagination from '../components/ui/Pagination';
 import TournamentSummaryRow from '../features/tournaments/components/TournamentSummaryRow';
 import TournamentFilters from '../features/tournaments/components/TournamentFilters';
 import { PageHero } from '../components/ui/PageHero';
 import Button from '../components/ui/Button';
-import { requestError } from '../utils/requestError';
 export default function TournamentsPage() {
-  const [rows, setRows] = useState<PublicTournamentSummary[] | null>(null);
-  const [filters, setFilters] = useState({ status: '', type: '', search: '' });
-  const [error, setError] = useState('');
-  useEffect(() => {
-    let active = true;
-    publicTournaments
-      .list()
-      .then((data) => {
-        if (active) setRows(data);
-      })
-      .catch((e) => {
-        if (active) setError(requestError(e));
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const displayed = filterTournaments(rows || [], filters);
+  const list = useTournamentList();
+  const { filters, setFilters, error } = list;
+  const rows = list.data?.items;
+  const displayed = rows || [];
   return (
     <div>
       <PageHero
@@ -39,7 +20,7 @@ export default function TournamentsPage() {
       <div className="container py-12 space-y-6">
         <TournamentFilters value={filters} onChange={setFilters} />
         {error && <p role="alert">{error}</p>}
-        {!rows && !error ? (
+        {list.loading && !error ? (
           <p role="status">טוען טורנירים...</p>
         ) : (
           <div className="space-y-3">
@@ -61,6 +42,15 @@ export default function TournamentsPage() {
               />
             ))}
           </div>
+        )}
+        {list.data && (
+          <Pagination
+            page={list.data.page}
+            totalPages={list.data.totalPages}
+            total={list.data.total}
+            onChange={list.setPage}
+            busy={list.loading}
+          />
         )}
         {rows && !displayed.length && <p>אין טורנירים בסינון זה.</p>}
       </div>

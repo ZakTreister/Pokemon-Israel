@@ -35,9 +35,12 @@ export function validateImage(buffer, mime) {
 }
 export function uploadNamespace(purpose, playerType) {
   if (purpose === 'team-logo') return 'public/teams';
+  if (purpose === 'update-image') return 'public/updates';
+  if (purpose === 'player-deck' && playerType === 'team')
+    return 'public/players';
   if (purpose === 'badge-image') return 'public/badges';
-  if (purpose === 'player-photo' && ['team', 'quarterly'].includes(playerType))
-    return playerType === 'team' ? 'public/players' : 'private/players';
+  if (purpose === 'player-photo' && playerType === 'team')
+    return 'public/players';
   fail(400, 'מטרת העלאה לא נתמכת');
 }
 async function owner(purpose, id) {
@@ -46,7 +49,9 @@ async function owner(purpose, id) {
       ? 'Team'
       : purpose === 'badge-image'
         ? 'BadgeDefinition'
-        : 'Player';
+        : purpose === 'update-image'
+          ? 'Update'
+          : 'Player';
   return mongoose.model(name).findById(id);
 }
 const storageFor = (req) => req.app.get('mediaStorage') || s3Storage;
@@ -59,7 +64,15 @@ function imageMetadata(grant) {
 }
 export async function presignUpload(req) {
   const { purpose, entityId, contentType, size } = req.body;
-  if (!['team-logo', 'player-photo', 'badge-image'].includes(purpose))
+  if (
+    ![
+      'team-logo',
+      'player-photo',
+      'player-deck',
+      'badge-image',
+      'update-image',
+    ].includes(purpose)
+  )
     fail(400, 'מטרת העלאה לא נתמכת');
   if (
     typeof contentType !== 'string' ||
@@ -82,7 +95,7 @@ export async function presignUpload(req) {
   );
   const uploadId = new mongoose.Types.ObjectId();
   const filename = `${randomUUID()}.${IMAGE_TYPES[contentType]}`;
-  const storageKey = `${namespace}/${id}/${filename}`;
+  const storageKey = `${namespace}/${id}/${purpose === 'player-deck' ? 'deck/' : ''}${filename}`;
   // Unverified bytes are never publicly reachable. Promotion freezes the final
   // key so a still-valid browser authorization cannot overwrite verified media.
   const uploadKey = `private/uploads/${uploadId}/${filename}`;
@@ -172,7 +185,11 @@ export async function resolveUpload(req, purpose, id, currentMedia) {
       ? 'logoUploadId'
       : purpose === 'badge-image'
         ? 'imageUploadId'
-        : 'photoUploadId';
+        : purpose === 'update-image'
+          ? 'imageUploadId'
+          : purpose === 'player-deck'
+            ? 'deckUploadId'
+            : 'photoUploadId';
   const value = req.body[field];
   if (value === undefined) return null;
   if (value === null) return { media: null, id };
@@ -190,7 +207,7 @@ export async function resolveUpload(req, purpose, id, currentMedia) {
     (grant.consumed && currentMedia?.storageKey !== grant.storageKey)
   )
     fail(400, 'התמונה אינה שייכת לרשומה או שאישור ההעלאה פג');
-  if (purpose === 'player-photo') {
+  if (purpose === 'player-photo' || purpose === 'player-deck') {
     const type = id
       ? (await owner(purpose, id))?.playerType
       : req.body.playerType;
@@ -223,11 +240,12 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition'].map((name, index) =>
-        mongoose.model(name).exists({
-          [`${['logoMedia', 'photoMedia', 'imageMedia'][index]}.storageKey`]:
-            key,
-        }),
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player'].map(
+        (name, index) =>
+          mongoose.model(name).exists({
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia'][index]}.storageKey`]:
+              key,
+          }),
       ),
     );
     const url = publicMediaUrl(previous);
@@ -249,7 +267,7 @@ export async function finishAttachment(req, attachment, previous) {
 export async function privatePlayerPhoto(req) {
   if (!validId(req.params.id)) fail(404, 'שחקן לא נמצא');
   const player = await mongoose.model('Player').findById(req.params.id);
-  if (!player) fail(404, 'שחקן לא נמצא');
+  if (!player || player.playerType !== 'team') fail(404, 'שחקן נבחרת לא נמצא');
   return {
     url:
       publicMediaUrl(player.photoMedia) ||

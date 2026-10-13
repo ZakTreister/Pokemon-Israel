@@ -8,6 +8,7 @@ interface ModalProps {
   onClose?: () => void;
   closeVariant?: 'outline' | 'ghost';
   panelClassName?: string;
+  footer?: ReactNode;
 }
 
 /** Presentation shell; the caller owns visibility, dismissal and form state. */
@@ -17,6 +18,7 @@ export default function Modal({
   onClose,
   closeVariant = 'outline',
   panelClassName = 'max-w-md',
+  footer,
 }: ModalProps) {
   const titleId = useId();
   return (
@@ -24,7 +26,8 @@ export default function Modal({
       <div
         role="dialog"
         aria-labelledby={titleId}
-        className={`bg-card p-6 rounded-lg w-full ${panelClassName}`}
+        aria-modal="true"
+        className={`bg-card p-6 rounded-lg w-full max-h-[calc(100dvh-2rem)] flex flex-col ${panelClassName}`}
       >
         {onClose ? (
           <div className="flex justify-between items-center mb-4">
@@ -50,7 +53,8 @@ export default function Modal({
             {title}
           </h3>
         )}
-        {children}
+        <div className="min-h-0 overflow-y-auto">{children}</div>
+        {footer && <div className="shrink-0 border-t mt-4 pt-4">{footer}</div>}
       </div>
     </div>
   );

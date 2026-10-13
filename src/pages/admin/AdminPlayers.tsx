@@ -1,18 +1,20 @@
-import TeamPlayerProfileFields from '../../features/players/components/TeamPlayerProfileFields';
+import PlayerEditDialog from '../../features/players/components/PlayerEditDialog';
+import playersService from '../../features/players/playersService';
+import Pagination from '../../components/ui/Pagination';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { requestError } from '../../utils/requestError';
 import PlayerPhotoField from '../../features/players/components/PlayerPhotoField';
 import TeamPlayerFields from '../../features/players/components/TeamPlayerFields';
 import { teamPlayerCreateSchema } from '../../features/players/utils/teamPlayerForm';
-import PlayerNumberField from '../../features/players/components/PlayerNumberField';
 import teamsService from '../../features/teams/teamsService';
 import type { Team } from '../../types/team';
 import NavigableRow from '../../components/ui/NavigableRow';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import {
   fetchPlayers,
   createQuarterlyPlayer,
   createTeamPlayer,
-  updatePlayer,
   clearError,
 } from '../../features/players/playersSlice';
 import { Card } from '../../components/ui/Card';
@@ -45,25 +47,19 @@ interface TeamFormData {
 interface QuarterlyFormData {
   firstName: string;
   lastName: string;
-  club: string;
-}
-
-interface EditFormData {
-  description?: string;
-  dateOfBirth?: string;
   city: string;
-  playerNumber: string;
-  firstName: string;
-  lastName: string;
-  club: string;
-  isActive: boolean;
 }
 
 export default function AdminPlayers() {
   const dispatch = useAppDispatch();
-  const { players, isLoading, error } = useAppSelector(
-    (state) => state.players,
-  );
+  const {
+    players,
+    isLoading,
+    error,
+    total,
+    page: resolvedPage,
+    totalPages,
+  } = useAppSelector((state) => state.players);
 
   const [teams, setTeams] = useState<Team[]>([]);
 
@@ -71,7 +67,12 @@ export default function AdminPlayers() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [showQuarterlyModal, setShowQuarterlyModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const { showConfirm } = useConfirm();
+  const [duplicates, setDuplicates] = useState<Player[]>([]);
+  const [pendingCreate, setPendingCreate] = useState<
+    (() => Promise<void>) | null
+  >(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [photoUploadId, setPhotoUploadId] = useState<
     string | null | undefined
@@ -111,27 +112,28 @@ export default function AdminPlayers() {
   const [quarterlyForm, setQuarterlyForm] = useState<QuarterlyFormData>({
     firstName: '',
     lastName: '',
-    club: '',
-  });
-
-  const [editForm, setEditForm] = useState<EditFormData>({
-    firstName: '',
-    lastName: '',
-    club: '',
-    isActive: true,
     city: '',
-    playerNumber: '',
   });
 
+  const requestSequence = useRef(0);
   const loadPlayers = useCallback(() => {
-    const params: { type?: 'team' | 'quarterly'; search?: string } = {};
+    const sequence = ++requestSequence.current;
+    const params: {
+      type?: 'team' | 'quarterly';
+      search?: string;
+      page: number;
+    } = { page };
     if (filterType !== 'all') params.type = filterType;
     if (searchQuery.trim()) params.search = searchQuery.trim();
-    dispatch(fetchPlayers(params));
-  }, [dispatch, filterType, searchQuery]);
+    return dispatch(fetchPlayers(params))
+      .unwrap()
+      .then((result) => {
+        if (sequence === requestSequence.current) setPage(result.page);
+      });
+  }, [dispatch, filterType, searchQuery, page]);
 
   useEffect(() => {
-    loadPlayers();
+    void loadPlayers().catch(() => {});
   }, [loadPlayers]);
 
   useEffect(() => {
@@ -158,27 +160,42 @@ export default function AdminPlayers() {
   const resetQuarterlyForm = () => {
     setPhotoUploadId(undefined);
     setPhotoUrl('');
-    setQuarterlyForm({ firstName: '', lastName: '', club: '' });
+    setQuarterlyForm({ firstName: '', lastName: '', city: '' });
     setFormError(null);
   };
 
-  const resetEditForm = () => {
-    setPhotoUploadId(undefined);
-    setPhotoUrl('');
-    setEditForm({
-      firstName: '',
-      lastName: '',
-      club: '',
-      isActive: true,
-      city: '',
-      playerNumber: '',
-      description: '',
-      dateOfBirth: '',
-    });
-    setFormError(null);
+  const checkDuplicates = async (
+    input: { firstName: string; lastName: string; city?: string },
+    type: 'team' | 'quarterly',
+    create: () => Promise<void>,
+  ) => {
+    const matches = await playersService.duplicates({ ...input, type });
+    if (matches.length) {
+      setDuplicates(matches);
+      setPendingCreate(() => create);
+      return true;
+    }
+    return false;
+  };
+  const archive = async (player: Player) => {
+    if (
+      !(await showConfirm({
+        title: 'מחק שחקן',
+        message: `למחוק את ${player.firstName} ${player.lastName}? ההיסטוריה תישמר.`,
+        confirmText: 'מחק שחקן',
+        variant: 'destructive',
+      }))
+    )
+      return;
+    try {
+      await playersService.deletePlayer(player.id);
+      await loadPlayers();
+    } catch (e) {
+      setFormError(requestError(e));
+    }
   };
 
-  const handleCreateTeamPlayer = async () => {
+  const handleCreateTeamPlayer = async (allowDuplicate = false) => {
     const parsed = teamPlayerCreateSchema.safeParse(teamForm);
     if (uploading || isSubmitting) return;
     if (!parsed.success || !teamForm.teamId) {
@@ -188,108 +205,68 @@ export default function AdminPlayers() {
       return;
     }
     try {
+      if (
+        !allowDuplicate &&
+        (await checkDuplicates(parsed.data, 'team', () =>
+          handleCreateTeamPlayer(true),
+        ))
+      )
+        return;
       setIsSubmitting(true);
       setFormError(null);
       await dispatch(
         createTeamPlayer({
           ...parsed.data,
+          allowDuplicate,
           teamId: teamForm.teamId,
           photoUploadId,
         }),
       ).unwrap();
       resetTeamForm();
       setShowTeamModal(false);
-      loadPlayers();
+      void loadPlayers().catch(() => {});
     } catch (err) {
-      setFormError(err as string);
+      setFormError(typeof err === 'string' ? err : requestError(err));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCreateQuarterlyPlayer = async () => {
+  const handleCreateQuarterlyPlayer = async (allowDuplicate = false) => {
     if (uploading || isSubmitting) return;
     if (!quarterlyForm.firstName.trim() || !quarterlyForm.lastName.trim()) {
       setFormError('שם פרטי ושם משפחה הם חובה');
       return;
     }
     try {
+      if (
+        !allowDuplicate &&
+        (await checkDuplicates(quarterlyForm, 'quarterly', () =>
+          handleCreateQuarterlyPlayer(true),
+        ))
+      )
+        return;
       setIsSubmitting(true);
       setFormError(null);
       await dispatch(
         createQuarterlyPlayer({
           firstName: quarterlyForm.firstName.trim(),
           lastName: quarterlyForm.lastName.trim(),
-          club: quarterlyForm.club.trim(),
-          photoUploadId,
+          city: quarterlyForm.city.trim(),
+          allowDuplicate,
         }),
       ).unwrap();
       resetQuarterlyForm();
       setShowQuarterlyModal(false);
-      loadPlayers();
+      void loadPlayers().catch(() => {});
     } catch (err) {
-      setFormError(err as string);
+      setFormError(typeof err === 'string' ? err : requestError(err));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditClick = (player: Player) => {
-    setSelectedPlayer(player);
-    setPhotoUploadId(undefined);
-    setPhotoUrl(player.photoUrl || '');
-    setEditForm({
-      firstName: player.firstName,
-      lastName: player.lastName,
-      club: player.club || '',
-      city: player.city || '',
-      playerNumber: player.playerNumber || '',
-      isActive: player.isActive,
-      description: player.description || '',
-      dateOfBirth: player.dateOfBirth || '',
-    });
-    setFormError(null);
-    setShowEditModal(true);
-  };
-
-  const handleUpdatePlayer = async () => {
-    if (!selectedPlayer || uploading || isSubmitting) return;
-    if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
-      setFormError('שם פרטי ושם משפחה הם חובה');
-      return;
-    }
-    try {
-      setIsSubmitting(true);
-      setFormError(null);
-      await dispatch(
-        updatePlayer({
-          id: selectedPlayer.id,
-          input: {
-            firstName: editForm.firstName.trim(),
-            lastName: editForm.lastName.trim(),
-            ...(selectedPlayer.playerType === 'team'
-              ? {
-                  description: editForm.description,
-                  dateOfBirth: editForm.dateOfBirth,
-                  city: editForm.city.trim(),
-                  playerNumber: editForm.playerNumber.trim(),
-                }
-              : { club: editForm.club.trim() || null }),
-            isActive: editForm.isActive,
-            photoUploadId,
-          },
-        }),
-      ).unwrap();
-      resetEditForm();
-      setShowEditModal(false);
-      setSelectedPlayer(null);
-      loadPlayers();
-    } catch (err) {
-      setFormError(err as string);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const handleEditClick = (player: Player) => setSelectedPlayer(player);
 
   const getPlayerTypeLabel = (playerType: string) => {
     return playerType === 'team' ? 'שחקן נבחרת' : 'שחקן חוגים';
@@ -298,11 +275,9 @@ export default function AdminPlayers() {
   const closeAllModals = () => {
     setShowTeamModal(false);
     setShowQuarterlyModal(false);
-    setShowEditModal(false);
     setSelectedPlayer(null);
     resetTeamForm();
     resetQuarterlyForm();
-    resetEditForm();
   };
 
   return (
@@ -329,10 +304,13 @@ export default function AdminPlayers() {
           </div>
           <input
             type="text"
-            placeholder="חפש לפי שם, משפחה או חוג..."
+            placeholder="חפש לפי שם, משפחה או עיר..."
             className="w-full pl-3 pr-10 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearchQuery(e.target.value);
+            }}
           />
         </div>
 
@@ -342,7 +320,10 @@ export default function AdminPlayers() {
             contextual
             size="sm"
             variant={filterType === 'all' ? 'default' : 'outline'}
-            onClick={() => setFilterType('all')}
+            onClick={() => {
+              setPage(1);
+              setFilterType('all');
+            }}
             className="ml-1"
           >
             הכל
@@ -351,7 +332,10 @@ export default function AdminPlayers() {
             contextual
             size="sm"
             variant={filterType === 'team' ? 'default' : 'outline'}
-            onClick={() => setFilterType('team')}
+            onClick={() => {
+              setPage(1);
+              setFilterType('team');
+            }}
             className="ml-1"
           >
             שחקני נבחרת
@@ -360,7 +344,10 @@ export default function AdminPlayers() {
             contextual
             size="sm"
             variant={filterType === 'quarterly' ? 'default' : 'outline'}
-            onClick={() => setFilterType('quarterly')}
+            onClick={() => {
+              setPage(1);
+              setFilterType('quarterly');
+            }}
           >
             שחקני חוגים
           </Button>
@@ -391,7 +378,7 @@ export default function AdminPlayers() {
                     שם משפחה
                   </th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
-                    חוג
+                    עיר
                   </th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                     סוג
@@ -423,7 +410,7 @@ export default function AdminPlayers() {
                     </td>
                     <td className="px-4 py-3 font-medium">{player.lastName}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {player.club || '—'}
+                      {player.city || '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -467,7 +454,15 @@ export default function AdminPlayers() {
                         onClick={() => handleEditClick(player)}
                       >
                         <Pencil size={14} className="ml-1" />
-                        ערוך
+                        עריכת שחקן
+                      </Button>
+                      <Button
+                        contextual
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => void archive(player)}
+                      >
+                        מחק שחקן
                       </Button>
                     </td>
                   </NavigableRow>
@@ -487,6 +482,16 @@ export default function AdminPlayers() {
         </Card>
       )}
 
+      <Pagination
+        page={resolvedPage}
+        totalPages={totalPages}
+        total={total}
+        onChange={setPage}
+        busy={isLoading}
+      />
+      {formError && !showTeamModal && !showQuarterlyModal && (
+        <p role="alert">{formError}</p>
+      )}
       {/* Add Team Player Modal */}
       {showTeamModal && (
         <Modal
@@ -576,26 +581,16 @@ export default function AdminPlayers() {
               }
             />
             <div>
-              <label className="block text-sm font-medium mb-1">חוג</label>
+              <label className="block text-sm font-medium mb-1">עיר</label>
               <input
                 type="text"
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                value={quarterlyForm.club}
+                value={quarterlyForm.city}
                 onChange={(e) =>
-                  setQuarterlyForm({ ...quarterlyForm, club: e.target.value })
+                  setQuarterlyForm({ ...quarterlyForm, city: e.target.value })
                 }
               />
             </div>
-            <PlayerPhotoField
-              playerType="quarterly"
-              value={photoUrl}
-              onChange={(image) => {
-                setPhotoUrl(image?.url || '');
-                setPhotoUploadId(image?.uploadId || null);
-              }}
-              onBusyChange={setUploading}
-              disabled={isSubmitting}
-            />
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
@@ -605,7 +600,7 @@ export default function AdminPlayers() {
                 ביטול
               </Button>
               <Button
-                onClick={handleCreateQuarterlyPlayer}
+                onClick={() => void handleCreateQuarterlyPlayer()}
                 disabled={isSubmitting || uploading}
               >
                 {isSubmitting ? 'יוצר...' : 'הוסף שחקן חוגים'}
@@ -615,105 +610,57 @@ export default function AdminPlayers() {
         </Modal>
       )}
 
-      {/* Edit Player Modal */}
-      {showEditModal && selectedPlayer && (
+      {selectedPlayer && (
+        <PlayerEditDialog
+          key={selectedPlayer.id}
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          onSaved={loadPlayers}
+        />
+      )}
+      {!!duplicates.length && (
         <Modal
-          title="עריכת שחקן"
-          onClose={isSubmitting || uploading ? undefined : closeAllModals}
+          title="שחקן דומה כבר רשום"
+          onClose={() => {
+            setDuplicates([]);
+            setPendingCreate(null);
+          }}
         >
-          {formError && (
-            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-              {formError}
-            </div>
-          )}
-          <div className="space-y-4">
-            <PlayerNameFields
-              firstName={editForm.firstName}
-              lastName={editForm.lastName}
-              onChange={(field, value) =>
-                setEditForm({ ...editForm, [field]: value })
-              }
-            />
-            {selectedPlayer.playerType === 'team' ? (
-              <>
-                <label className="block">
-                  עיר
-                  <input
-                    className="block w-full p-2 border rounded-md"
-                    value={editForm.city}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, city: e.target.value })
-                    }
-                  />
-                </label>
-                <PlayerNumberField
-                  value={editForm.playerNumber}
-                  onChange={(playerNumber) =>
-                    setEditForm({ ...editForm, playerNumber })
-                  }
-                />
-              </>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium mb-1">חוג</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={editForm.club}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, club: e.target.value })
-                  }
-                />
-              </div>
-            )}
-            {selectedPlayer.playerType === 'team' && (
-              <TeamPlayerProfileFields
-                value={editForm}
-                onChange={(profile) => setEditForm({ ...editForm, ...profile })}
-              />
-            )}
-            <PlayerPhotoField
-              playerType={selectedPlayer.playerType}
-              entityId={selectedPlayer.id}
-              value={photoUrl}
-              hasPhoto={photoUploadId !== null && !!selectedPlayer.photoMedia}
-              onChange={(image) => {
-                setPhotoUrl(image?.url || '');
-                setPhotoUploadId(image?.uploadId || null);
-              }}
-              onBusyChange={setUploading}
-              disabled={isSubmitting}
-            />
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                className="h-4 w-4"
-                checked={editForm.isActive}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, isActive: e.target.checked })
-                }
-              />
-              <label htmlFor="isActive" className="text-sm font-medium">
-                פעיל
-              </label>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
+          <p>
+            ייתכן שהשחקן כבר רשום. ניתן לערוך שחקן קיים או ליצור ילד נוסף בכל
+            זאת.
+          </p>
+          {duplicates.map((player) => (
+            <div key={player.id} className="py-3">
+              <p>
+                {player.firstName} {player.lastName} · {player.city || '—'}
+              </p>
               <Button
                 variant="outline"
-                onClick={closeAllModals}
-                disabled={isSubmitting || uploading}
+                onClick={() => {
+                  closeAllModals();
+                  setDuplicates([]);
+                  void playersService
+                    .getPlayer(player.id)
+                    .then(setSelectedPlayer)
+                    .catch((e) => setFormError(requestError(e)));
+                }}
               >
-                ביטול
-              </Button>
-              <Button
-                onClick={handleUpdatePlayer}
-                disabled={isSubmitting || uploading}
-              >
-                {isSubmitting ? 'מעדכן...' : 'שמור שינויים'}
+                ערוך שחקן קיים
               </Button>
             </div>
-          </div>
+          ))}
+          <Button
+            disabled={isSubmitting}
+            onClick={() => {
+              const create = pendingCreate;
+              setDuplicates([]);
+              setPendingCreate(null);
+              void create?.();
+            }}
+          >
+            צור בכל זאת
+          </Button>
         </Modal>
       )}
     </div>

@@ -31,6 +31,24 @@ export function profileFields(input) {
   }
   if (input.dateOfBirth !== undefined)
     fields.dateOfBirth = validateBirthDate(input.dateOfBirth);
+  if (input.joinedAt !== undefined)
+    fields.joinedAt = validateBirthDate(input.joinedAt);
+  if (input.pokemon !== undefined) {
+    if (
+      !Array.isArray(input.pokemon) ||
+      input.pokemon.length > 6 ||
+      input.pokemon.some(
+        (name) =>
+          typeof name !== 'string' ||
+          !/^[A-Za-z ]+$/.test(name) ||
+          !name.trim(),
+      )
+    )
+      fail(400, 'יש להזין עד 6 שמות פוקימונים באותיות באנגלית וברווחים בלבד');
+    fields.pokemon = input.pokemon.map((name) =>
+      name.trim().replace(/ +/g, ' '),
+    );
+  }
   return fields;
 }
 export function playerAge(dateOfBirth, today = calendarDate()) {

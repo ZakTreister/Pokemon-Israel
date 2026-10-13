@@ -3,29 +3,18 @@ import { useAppDispatch, useAppSelector } from '../../../hooks/redux';
 import {
   fetchTeams,
   fetchManageablePlayers,
-  updateTeam,
   assignPlayer,
   removePlayer,
   clearError,
 } from '../teamsSlice';
-import ImageUpload from '../../../components/ui/ImageUpload';
-import { requestError } from '../../../utils/requestError';
+import TeamEditDialog from './TeamEditDialog';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useConfirm } from '../../../components/ui/ConfirmProvider';
-import {
-  Edit2,
-  Power,
-  UserPlus,
-  UserMinus,
-  Shield,
-  AlertCircle,
-} from 'lucide-react';
-import teamsService from '../teamsService';
+import { Edit2, UserPlus, UserMinus, Shield, AlertCircle } from 'lucide-react';
 import NavigableRow from '../../../components/ui/NavigableRow';
-import type { StaffTeacher } from '../../../types/team';
 import type { Team } from '../../../types/team';
 import type { ManageablePlayer } from '../../../types/team';
 
@@ -44,22 +33,9 @@ export default function TeamAdministration({
     (state) => state.teams,
   );
 
-  const [teachers, setTeachers] = useState<StaffTeacher[]>([]);
-  const [teacher, setTeacher] = useState('');
-  useEffect(() => {
-    if (admin)
-      teamsService
-        .getTeachers()
-        .then(setTeachers)
-        .catch((e) => showToast(requestError(e), 'error'));
-  }, [admin, showToast]);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editLogo, setEditLogo] = useState('');
-  const [logoUploadId, setLogoUploadId] = useState<string | null | undefined>();
   const [assigningToTeam, setAssigningToTeam] = useState<Team | null>(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -70,56 +46,6 @@ export default function TeamAdministration({
       dispatch(clearError());
     };
   }, [dispatch]);
-
-  const handleRename = async () => {
-    if (uploading || isSubmitting || !editingTeam || !editName.trim()) return;
-    try {
-      setIsSubmitting(true);
-      await dispatch(
-        updateTeam({
-          id: editingTeam.id,
-          input: {
-            name: editName.trim(),
-            logoUploadId,
-            ...(teacher ? { teacher } : {}),
-          },
-        }),
-      ).unwrap();
-      await onChanged();
-      showToast('הנבחרת עודכנה בהצלחה', 'success');
-      setEditingTeam(null);
-      setEditName('');
-    } catch (err) {
-      showToast(err as string, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleToggleActive = async (team: Team) => {
-    const action = team.isActive ? 'להשבית' : 'להפעיל';
-    const confirmed = await showConfirm({
-      title: `${action} נבחרת`,
-      message: `האם אתה בטוח שברצונך ${action} את הנבחרת "${team.name}"?`,
-      confirmText: action,
-      cancelText: 'ביטול',
-      variant: 'destructive',
-    });
-    if (!confirmed) return;
-
-    try {
-      setIsSubmitting(true);
-      await dispatch(
-        updateTeam({ id: team.id, input: { isActive: !team.isActive } }),
-      ).unwrap();
-      await onChanged();
-      showToast('הנבחרת עודכנה בהצלחה', 'success');
-    } catch (err) {
-      showToast(err as string, 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleAssign = async () => {
     if (!assigningToTeam || !selectedPlayerId) return;
@@ -194,6 +120,14 @@ export default function TeamAdministration({
 
   return (
     <div>
+      {admin && editingTeam && (
+        <TeamEditDialog
+          key={editingTeam.id}
+          team={editingTeam}
+          onClose={() => setEditingTeam(null)}
+          onSaved={onChanged}
+        />
+      )}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">הגדרות נבחרת</h2>
       </div>
@@ -258,27 +192,11 @@ export default function TeamAdministration({
                             contextual
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setEditingTeam(team);
-                              setEditName(team.name);
-                              setEditLogo(team.logo || '');
-                              setLogoUploadId(undefined);
-                              setTeacher(team.teacher?.id || '');
-                            }}
-                            disabled={uploading || isSubmitting}
+                            onClick={() => setEditingTeam(team)}
+                            disabled={isSubmitting}
                           >
                             <Edit2 size={16} className="ml-1" />
-                            <span>שם, סמל ומורה</span>
-                          </Button>
-                          <Button
-                            contextual
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleActive(team)}
-                            disabled={uploading || isSubmitting}
-                          >
-                            <Power size={16} className="ml-1" />
-                            <span>{team.isActive ? 'השבת' : 'הפעל'}</span>
+                            <span>עריכת נבחרת</span>
                           </Button>
                           <Button
                             contextual
@@ -300,72 +218,6 @@ export default function TeamAdministration({
                         </div>
                       )}
                     </div>
-
-                    {admin && editingTeam?.id === team.id && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <div className="w-full">
-                          <ImageUpload
-                            purpose="team-logo"
-                            entityId={team.id}
-                            label="סמל הנבחרת"
-                            value={editLogo}
-                            onChange={(image) => {
-                              setEditLogo(image?.url || '');
-                              setLogoUploadId(image?.uploadId || null);
-                            }}
-                            onBusyChange={setUploading}
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                        <label>
-                          מורה הנבחרת
-                          <select
-                            aria-label="מורה הנבחרת"
-                            value={teacher}
-                            onChange={(e) => setTeacher(e.target.value)}
-                            className="p-2 border rounded-md bg-background"
-                          >
-                            <option value="">בחרו מורה</option>
-                            {teachers.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.name} ·{' '}
-                                {t.role === 'admin' ? 'מנהל' : 'שופט'}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <input
-                          type="text"
-                          className="min-w-0 flex-1 px-3 py-2 border border-input rounded-md bg-background"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && editName.trim())
-                              handleRename();
-                          }}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingTeam(null);
-                            setEditName('');
-                          }}
-                          disabled={uploading || isSubmitting}
-                        >
-                          ביטול
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleRename}
-                          disabled={
-                            uploading || isSubmitting || !editName.trim()
-                          }
-                        >
-                          {isSubmitting ? 'שומר...' : 'שמור'}
-                        </Button>
-                      </div>
-                    )}
 
                     {admin && assigningToTeam?.id === team.id && (
                       <div className="flex gap-2 mb-4 p-3 rounded-md bg-muted">
@@ -391,16 +243,14 @@ export default function TeamAdministration({
                             setAssigningToTeam(null);
                             setSelectedPlayerId('');
                           }}
-                          disabled={uploading || isSubmitting}
+                          disabled={isSubmitting}
                         >
                           ביטול
                         </Button>
                         <Button
                           size="sm"
                           onClick={handleAssign}
-                          disabled={
-                            uploading || isSubmitting || !selectedPlayerId
-                          }
+                          disabled={isSubmitting || !selectedPlayerId}
                         >
                           {isSubmitting ? 'משייך...' : 'שייך'}
                         </Button>
@@ -433,7 +283,7 @@ export default function TeamAdministration({
                                   onClick={() =>
                                     handleRemovePlayer(team, player)
                                   }
-                                  disabled={uploading || isSubmitting}
+                                  disabled={isSubmitting}
                                   className="text-muted-foreground hover:text-destructive transition-colors"
                                   aria-label="הסר מהנבחרת"
                                 >

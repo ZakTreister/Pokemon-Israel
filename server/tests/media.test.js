@@ -27,7 +27,9 @@ test('purpose namespaces and CloudFront URLs never turn private media into publi
   assert.equal(uploadNamespace('team-logo'), 'public/teams');
   assert.equal(uploadNamespace('badge-image'), 'public/badges');
   assert.equal(uploadNamespace('player-photo', 'team'), 'public/players');
-  assert.equal(uploadNamespace('player-photo', 'quarterly'), 'private/players');
+  assert.throws(() => uploadNamespace('player-photo', 'quarterly'));
+  assert.equal(uploadNamespace('player-deck', 'team'), 'public/players');
+  assert.equal(uploadNamespace('update-image'), 'public/updates');
   assert.throws(() => uploadNamespace('export'));
   assert.throws(() => uploadNamespace('player-photo', 'admin'));
   assert.equal(

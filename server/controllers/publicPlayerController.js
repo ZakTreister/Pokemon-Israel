@@ -15,7 +15,9 @@ export const getPublicTeamPlayer = asyncHandler(async (req, res) => {
     _id: req.params.id,
     playerType: 'team',
   })
-    .select('firstName lastName city playerNumber team description dateOfBirth photoMedia')
+    .select(
+      'firstName lastName city playerNumber team description dateOfBirth photoMedia joinedAt deckMedia pokemon',
+    )
     .populate('team', 'name logo logoMedia');
   if (!player) {
     res.status(404);
@@ -46,11 +48,22 @@ export const getPublicTeamPlayer = asyncHandler(async (req, res) => {
     firstName: player.firstName,
     lastName: player.lastName,
     city: player.city,
-    ...(player.description ? {description:player.description} : {}),
-    ...(player.dateOfBirth ? {age:playerAge(player.dateOfBirth)} : {}),
-    ...(publicMediaUrl(player.photoMedia) ? {photoUrl:publicMediaUrl(player.photoMedia)} : {}),
+    ...(player.description ? { description: player.description } : {}),
+    ...(player.dateOfBirth ? { age: playerAge(player.dateOfBirth) } : {}),
+    ...(publicMediaUrl(player.photoMedia)
+      ? { photoUrl: publicMediaUrl(player.photoMedia) }
+      : {}),
+    ...(player.joinedAt ? { tenureYears: playerAge(player.joinedAt) } : {}),
+    ...(publicMediaUrl(player.deckMedia)
+      ? { deckUrl: publicMediaUrl(player.deckMedia) }
+      : {}),
+    pokemon: player.pokemon || [],
     team: player.team
-      ? { id: player.team.id, name: player.team.name, logo: player.team.toJSON().logo }
+      ? {
+          id: player.team.id,
+          name: player.team.name,
+          logo: player.team.toJSON().logo,
+        }
       : null,
     playerNumber: player.playerNumber || '',
     teamRanking: ranking(insideTeam),
@@ -60,8 +73,12 @@ export const getPublicTeamPlayer = asyncHandler(async (req, res) => {
         name: award.badge.name,
         description: award.badge.description,
         icon: award.badge.icon,
-        ...(award.badge.toJSON().image ? {image:award.badge.toJSON().image} : {}),
-        ...(award.season && !award.season.deletedAt ? {seasonName:award.season.name} : {}),
+        ...(award.badge.toJSON().image
+          ? { image: award.badge.toJSON().image }
+          : {}),
+        ...(award.season && !award.season.deletedAt
+          ? { seasonName: award.season.name }
+          : {}),
         awardedAt: award.awardedAt,
       })),
   });

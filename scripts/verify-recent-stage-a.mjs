@@ -170,7 +170,26 @@ try {
     }),
     [],
   );
-  publicTournaments.list = async () => structuredClone(events);
+  const { default: api } = await load('services/api.ts');
+  api.get = async (_path, { params }) => {
+    const items = filterTournaments(events, params);
+    return {
+      data: {
+        items,
+        total: items.length,
+        page: 1,
+        pageSize: 25,
+        totalPages: 1,
+      },
+    };
+  };
+  publicTournaments.list = async () => ({
+    items: structuredClone(events),
+    total: events.length,
+    page: 1,
+    pageSize: 25,
+    totalPages: 1,
+  });
   const { default: Events } = await load('pages/TournamentsPage.tsx');
   await mount(router(el(Events), '/tournaments'));
   assert.equal(renderer.root.findAllByType('article').length, 3);
@@ -330,7 +349,9 @@ try {
   internalTournaments.create = async () => {
     throw new Error('Continue must not create');
   };
-  await mount(router(el(ToastProvider, {}, el(TeacherTeams)), '/manage'));
+  await mount(
+    provider(router(el(ToastProvider, {}, el(TeacherTeams)), '/manage')),
+  );
   assert.equal(renderer.root.findAllByType('article').length, 2);
   assert.ok(!text(renderer.toJSON()).includes('הגדרות'));
   assert.ok(!text(renderer.toJSON()).includes('חברי נבחרת חדשים'));
@@ -399,7 +420,7 @@ try {
       ),
     ),
   );
-  assert.ok(!text(renderer.toJSON()).includes('שם, סמל ומורה'));
+  assert.ok(!text(renderer.toJSON()).includes('עריכת נבחרת'));
   assert.ok(!text(renderer.toJSON()).includes('הזנת טורניר היסטורי'));
   await act(async () => {
     button('היסטוריית טורנירים').props.onClick();
@@ -410,7 +431,7 @@ try {
     button('הגדרות נבחרת').props.onClick();
     await flush();
   });
-  assert.ok(text(renderer.toJSON()).includes('שם, סמל ומורה'));
+  assert.ok(text(renderer.toJSON()).includes('עריכת נבחרת'));
   console.log(
     'Recent Stage A UI checks passed: whole-row keyboard/navigation isolation, combined Event filters, event-specific lifecycle results, compact teacher/team cards, required teacher selection and settings/history disclosure.',
   );

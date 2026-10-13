@@ -99,13 +99,11 @@ try {
   act(() => button('local 0').props.onClick());
   assert.equal(scrolls.length, 1, 'same-page state must not reset scroll');
   act(() =>
-    renderer.root
-      .findByType('a')
-      .props.onClick({
-        button: 0,
-        defaultPrevented: false,
-        preventDefault() {},
-      }),
+    renderer.root.findByType('a').props.onClick({
+      button: 0,
+      defaultPrevented: false,
+      preventDefault() {},
+    }),
   );
   assert.equal(
     scrolls.length,
@@ -257,7 +255,14 @@ try {
     { id: 'active', name: 'פעילה', isActive: true },
     { id: 'inactive', name: 'לא פעילה', isActive: false },
   ];
-  playersService.getPlayers = async () => [];
+  playersService.getPlayers = async () => ({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 25,
+    totalPages: 1,
+  });
+  playersService.duplicates = async () => [];
   let created;
   playersService.createTeamPlayer = async (input) => {
     created = input;
@@ -346,7 +351,13 @@ try {
     ),
   );
   assert.deepEqual(renderer.root.findAllByType('th').map(text), [
-    'מיקום ↑', 'שם מלא', 'עיר', 'מספר שחקן', 'נקודות', 'טורנירים', 'פעולות',
+    'מיקום ↑',
+    'שם מלא',
+    'עיר',
+    'מספר שחקן',
+    'נקודות',
+    'טורנירים',
+    'פעולות',
   ]);
   assert.ok(text(renderer.toJSON()).includes('0007'));
   act(() => button('עריכת שחקן').props.onClick());
@@ -367,7 +378,14 @@ try {
       firstName: 'לביא',
       lastName: 'כהן',
       city: 'חיפה',
-      playerNumber: 'AB-17', description: '', dateOfBirth: '', photoUploadId: undefined,
+      playerNumber: 'AB-17',
+      description: '',
+      dateOfBirth: '',
+      photoUploadId: undefined,
+      deckUploadId: undefined,
+      joinedAt: '',
+      pokemon: [],
+      isActive: true,
     },
   });
   assert.equal(changed, 1);
@@ -405,9 +423,30 @@ try {
       tournaments: 2,
     },
   ];
-  await mount(provided(el(Members, { team: {id:'team', players: ranks.map(rank => ({id:rank.playerId,firstName:rank.playerName,lastName:''}))}, rankings:ranks, editable:false, onChanged:async()=>{} })));
+  await mount(
+    provided(
+      el(Members, {
+        team: {
+          id: 'team',
+          players: ranks.map((rank) => ({
+            id: rank.playerId,
+            firstName: rank.playerName,
+            lastName: '',
+          })),
+        },
+        rankings: ranks,
+        editable: false,
+        onChanged: async () => {},
+      }),
+    ),
+  );
   assert.deepEqual(renderer.root.findAllByType('th').map(text), [
-    'מיקום ↑', 'שם מלא', 'עיר', 'מספר שחקן', 'נקודות', 'טורנירים',
+    'מיקום ↑',
+    'שם מלא',
+    'עיר',
+    'מספר שחקן',
+    'נקודות',
+    'טורנירים',
   ]);
   assert.ok(
     text(renderer.root.findByType('tbody').findAllByType('tr')[0]).startsWith(
@@ -419,18 +458,26 @@ try {
 
   const { publicTournaments } = await load('services/publicTournaments.ts');
   const { default: Events } = await load('pages/TournamentsPage.tsx');
-  publicTournaments.list = async () => [
-    {
-      id: 'event',
-      title: 'אירוע פנימי',
-      date: '2026-10-01',
-      type: 'team_internal',
-      lifecycle: 'active',
-      image: '/huge-event.png',
-      currentParticipants: 4,
-      canRegister: false,
+  api.get = async () => ({
+    data: {
+      items: [
+        {
+          id: 'event',
+          title: 'אירוע פנימי',
+          date: '2026-10-01',
+          type: 'team_internal',
+          lifecycle: 'active',
+          image: '/huge-event.png',
+          currentParticipants: 4,
+          canRegister: false,
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 25,
+      totalPages: 1,
     },
-  ];
+  });
   await mount(router(el(Events)));
   assert.equal(renderer.root.findAllByType('article').length, 1);
   assert.equal(renderer.root.findAllByType('img').length, 0);

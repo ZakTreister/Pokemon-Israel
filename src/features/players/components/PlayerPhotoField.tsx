@@ -14,7 +14,7 @@ export default function PlayerPhotoField({
   onBusyChange,
   disabled,
 }: {
-  playerType: 'team' | 'quarterly';
+  playerType: 'team';
   entityId?: string;
   value: string;
   hasPhoto?: boolean;
@@ -58,11 +58,6 @@ export default function PlayerPhotoField({
         onBusyChange={onBusyChange}
         disabled={disabled}
       />
-      {playerType === 'quarterly' && (
-        <p className="text-xs text-muted-foreground">
-          התמונה פרטית ואינה מופיעה באתר הציבורי.
-        </p>
-      )}
       {error && <p role="alert">{error}</p>}
     </div>
   );

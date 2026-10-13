@@ -1,27 +1,29 @@
+import UpdateAction from '../features/updates/components/UpdateAction';
+import { publicTournaments } from '../services/publicTournaments';
 import HeroArtwork from '../features/home/components/HeroArtwork';
 import DataTable from '../components/ui/DataTable';
 import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchTournaments } from '../features/tournaments/tournamentsSlice';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import {
   getNationalRankings,
   type NationalRanking,
 } from '../services/rankings';
 import { requestError } from '../utils/requestError';
-import { ravMesserUrl } from '../config/publicSite';
+import { TRIAL_REGISTRATION_URL } from '../config/publicSite';
 import { Calendar, Trophy, ArrowUpLeft, Newspaper } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { SectionHeading } from '../components/ui/SectionHeading';
 export default function HomePage() {
   const dispatch = useAppDispatch();
-  const {
-    tournaments,
-    isLoading: tournamentsLoading,
-    error: tournamentsError,
-  } = useAppSelector((state) => state.tournaments);
+  const [tournaments, setTournaments] = useState<
+    import('../services/publicTournaments').PublicTournamentSummary[]
+  >([]);
+  const [tournamentsLoading, setTournamentsLoading] = useState(true);
+  const [tournamentsError, setTournamentsError] = useState('');
+  const [totals, setTotals] = useState({ all: 0, upcoming: 0 });
   const {
     updates,
     isLoading: updatesLoading,
@@ -31,7 +33,6 @@ export default function HomePage() {
   const [rankings, setRankings] = useState<NationalRanking[] | null>(null);
   const [rankingsError, setRankingsError] = useState('');
   useEffect(() => {
-    dispatch(fetchTournaments());
     dispatch(fetchUpdates());
   }, [dispatch]);
   useEffect(() => {
@@ -54,8 +55,35 @@ export default function HomePage() {
         t.status !== 'completed' && new Date(t.date).getTime() > Date.now(),
     )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const totalTournaments = regular.length;
-  const upcomingCount = upcomingTournaments.length;
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      publicTournaments.summary('quarterly'),
+      publicTournaments.list({
+        type: 'quarterly',
+        status: 'upcoming',
+        pageSize: 3,
+        order: 'asc',
+      }),
+    ])
+      .then(([summary, page]) => {
+        if (active) {
+          setTotals({ all: summary.total, upcoming: summary.upcoming });
+          setTournaments(page.items);
+        }
+      })
+      .catch((e) => {
+        if (active) setTournamentsError(requestError(e));
+      })
+      .finally(() => {
+        if (active) setTournamentsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const totalTournaments = totals.all;
+  const upcomingCount = totals.upcoming;
   const featuredTournament = upcomingTournaments[0];
   const latest = [...updates].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -298,10 +326,10 @@ export default function HomePage() {
             <p className="text-muted-foreground mb-6">
               מצאו את החוג הקרוב והצטרפו למשחק, ללמידה ולקהילה.
             </p>
-            {ravMesserUrl ? (
+            {TRIAL_REGISTRATION_URL ? (
               <Button asChild variant="cta">
                 <a
-                  href={ravMesserUrl}
+                  href={TRIAL_REGISTRATION_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -319,14 +347,22 @@ export default function HomePage() {
             {updatesError && <p role="alert">{updatesError}</p>}
             {latest ? (
               <>
+                {latest.image && (
+                  <img
+                    src={latest.image}
+                    alt=""
+                    className="w-full h-44 object-cover rounded-md mb-4"
+                  />
+                )}
                 <h2 className="text-2xl font-extrabold mb-3">{latest.title}</h2>
                 <p className="text-xs text-muted-foreground mb-4">
                   {new Date(latest.date).toLocaleDateString('he-IL')}
                 </p>
                 <p className="text-muted-foreground mb-6 line-clamp-3">
-                  {latest.content}
+                  {latest.description ?? latest.content}
                 </p>
-                <Button asChild>
+                <UpdateAction update={latest} />
+                <Button asChild variant="outline">
                   <Link to={`/news/${latest.id}`}>לעדכון המלא ←</Link>
                 </Button>
               </>

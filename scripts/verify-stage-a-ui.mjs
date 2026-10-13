@@ -112,9 +112,19 @@ try {
   }
   assert.ok(!publicHeader.includes('href="/manage"'));
   assert.equal((publicHeader.match(/בהקמה/g) || []).length, 3);
-  assert.equal((publicHeader.match(/absolute -top-1 left-0 whitespace-nowrap rounded-\[3px\] border border-blue-200/g) || []).length, 3);
+  assert.equal(
+    (
+      publicHeader.match(
+        /absolute -top-1 left-0 whitespace-nowrap rounded-\[3px\] border border-blue-200/g,
+      ) || []
+    ).length,
+    3,
+  );
   assert.equal((publicHeader.match(/class="cs-nav-link"/g) || []).length, 7);
-  assert.ok(!publicHeader.includes('shadow-button'), 'Header controls use contextual styling');
+  assert.ok(
+    !publicHeader.includes('shadow-button'),
+    'Header controls use contextual styling',
+  );
   assert.ok(render(Header, '/', 'judge').includes('href="/manage"'));
   const Manage = await load('pages/manage/ManageDashboardPage.tsx');
   for (const role of ['admin', 'judge']) {
@@ -139,10 +149,23 @@ try {
     /href="\/manage\/teams"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/manage\/teams"/,
   );
   assert.ok(!nested.includes('הזנת טורניר היסטורי'));
-  assert.ok(render(Manage, '/manage/teams/012345678901234567890123/history', 'admin').includes('הזנת טורניר היסטורי'));
+  assert.ok(
+    render(
+      Manage,
+      '/manage/teams/012345678901234567890123/history',
+      'admin',
+    ).includes('הזנת טורניר היסטורי'),
+  );
   for (const role of ['admin', 'judge']) {
-    const direct = render(Manage, '/manage/teams/012345678901234567890123/historical', role);
-    assert.equal(direct.includes('שמור טורניר היסטורי שהסתיים'), role === 'admin');
+    const direct = render(
+      Manage,
+      '/manage/teams/012345678901234567890123/historical',
+      role,
+    );
+    assert.equal(
+      direct.includes('שמור טורניר היסטורי שהסתיים'),
+      role === 'admin',
+    );
   }
   assert.ok(nested.includes('נבחרת'));
   assert.equal((nested.match(/חזרה ל/g) || []).length, 1);
@@ -162,14 +185,32 @@ try {
     'live',
   ]) {
     assert.match(
-      render(Button, '/', null, {}, { variant, contextual: false, children: 'פעולה' }),
+      render(
+        Button,
+        '/',
+        null,
+        {},
+        { variant, contextual: false, children: 'פעולה' },
+      ),
       /shadow-button/,
     );
   }
   for (const variant of ['default', 'outline', 'destructive', 'cta', 'live']) {
-    assert.ok(!render(Button, '/', null, {}, { variant, contextual: true, children: 'פעולה' }).includes('shadow-button'));
+    assert.ok(
+      !render(
+        Button,
+        '/',
+        null,
+        {},
+        { variant, contextual: true, children: 'פעולה' },
+      ).includes('shadow-button'),
+    );
   }
-  assert.ok(!render(Button, '/', null, {}, { size: 'icon', children: 'סגור' }).includes('shadow-button'));
+  assert.ok(
+    !render(Button, '/', null, {}, { size: 'icon', children: 'סגור' }).includes(
+      'shadow-button',
+    ),
+  );
   const { requestError } = await vite.ssrLoadModule(
     '/src/utils/requestError.ts',
   );
@@ -294,7 +335,28 @@ try {
   const ManageTeams = await load('pages/manage/ManageTeams.tsx');
   const teamState = store.getState();
   const teamFixture = {
-    teams: { ...teamState.teams, isLoading: false, teams: [{ id: 'fixture-team', name: 'נבחרת בדיקה', isActive: true, playerCount: 1 }], manageablePlayers: [{ id: 'fixture-player', firstName: 'ילד', lastName: 'בדיקה', team: { id: 'fixture-team', name: 'נבחרת בדיקה' }, type: 'team', isActive: true }] },
+    teams: {
+      ...teamState.teams,
+      isLoading: false,
+      teams: [
+        {
+          id: 'fixture-team',
+          name: 'נבחרת בדיקה',
+          isActive: true,
+          playerCount: 1,
+        },
+      ],
+      manageablePlayers: [
+        {
+          id: 'fixture-player',
+          firstName: 'ילד',
+          lastName: 'בדיקה',
+          team: { id: 'fixture-team', name: 'נבחרת בדיקה' },
+          type: 'team',
+          isActive: true,
+        },
+      ],
+    },
   };
   const teamRow = render(ManageTeams, '/', 'admin', teamFixture);
   const judgeTeamRow = render(ManageTeams, '/', 'judge', teamFixture);
@@ -302,17 +364,33 @@ try {
   assert.ok(!judgeTeamRow.includes('ילד'), 'Team cards do not expand members');
   assert.ok(judgeTeamRow.includes('href="/manage/teams/fixture-team"'));
   assert.ok(!teamRow.includes('סגל וטורנירים'));
-  for (const forbidden of ['נבחרת חדשה', 'שם וסמל', 'שייך שחקן', 'השבת', 'הסר מהנבחרת']) assert.ok(!judgeTeamRow.includes(forbidden));
+  for (const forbidden of [
+    'נבחרת חדשה',
+    'שם וסמל',
+    'שייך שחקן',
+    'השבת',
+    'הסר מהנבחרת',
+  ])
+    assert.ok(!judgeTeamRow.includes(forbidden));
   const TournamentList = await load('pages/manage/ManageTournaments.tsx');
   assert.ok(!render(TournamentList, '/', 'judge').includes('Excel'));
   assert.ok(render(TournamentList, '/', 'admin').includes('Excel'));
   for (const label of ['חברי נבחרת', 'התחל טורניר']) {
     const labelIndex = teamRow.lastIndexOf(label);
     assert.ok(labelIndex >= 0, `Team row action: ${label}`);
-    const actionStart = Math.max(teamRow.lastIndexOf('<button', labelIndex), teamRow.lastIndexOf('<a ', labelIndex));
-    assert.ok(teamRow.slice(actionStart, labelIndex).includes('shadow-button'), `Grouped action must have shadow: ${label}`);
+    const actionStart = Math.max(
+      teamRow.lastIndexOf('<button', labelIndex),
+      teamRow.lastIndexOf('<a ', labelIndex),
+    );
+    assert.ok(
+      teamRow.slice(actionStart, labelIndex).includes('shadow-button'),
+      `Grouped action must have shadow: ${label}`,
+    );
   }
-  assert.ok(!teamRow.includes('aria-label="הסר מהנבחרת"'), 'Removal lives on the team detail');
+  assert.ok(
+    !teamRow.includes('aria-label="הסר מהנבחרת"'),
+    'Removal lives on the team detail',
+  );
   const Home = await load('pages/HomePage.tsx');
   const future = new Date(Date.now() + 86400000).toISOString();
   const state = store.getState();
@@ -353,7 +431,10 @@ try {
       ],
     },
   });
-  assert.ok(home.includes('Nearest club event'));
+  assert.ok(
+    home.includes('טוען אירועים'),
+    'server rendering shows the asynchronous event loading state',
+  );
   assert.ok(!home.includes('Must not feature internal'));
   assert.ok(home.includes('/news/news-fixture'));
   assert.ok(home.includes('מובילי הליגה הישראלית'));

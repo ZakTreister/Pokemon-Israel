@@ -8,7 +8,7 @@ import { useConfirm } from '../../../components/ui/ConfirmProvider';
 import { useToast } from '../../../components/ui/ToastProvider';
 import { useAppDispatch } from '../../../hooks/redux';
 import { removePlayer } from '../teamsSlice';
-import TeamPlayerEditModal from '../../players/components/TeamPlayerEditModal';
+import PlayerEditDialog from '../../players/components/PlayerEditDialog';
 import type { TeamWithRoster, TeamRosterPlayer } from '../../../types/team';
 export default function TeamMembersTable({
   team,
@@ -117,8 +117,13 @@ export default function TeamMembersTable({
         ]}
       />
       {editing && (
-        <TeamPlayerEditModal
-          player={editing}
+        <PlayerEditDialog
+          player={{
+            ...editing,
+            playerType: 'team',
+            user: null,
+            isActive: editing.isActive ?? true,
+          }}
           onClose={() => setEditing(null)}
           onSaved={onChanged}
         />

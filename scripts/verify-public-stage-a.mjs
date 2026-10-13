@@ -125,7 +125,13 @@ try {
   const { default: PublicPlayer } = await load('pages/AllStarsPlayerPage.tsx');
   const { default: AllStars } = await load('pages/AllStarsPage.tsx');
   const { publicTournaments } = await load('services/publicTournaments.ts');
-  publicTournaments.list = async () => [];
+  publicTournaments.list = async () => ({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 25,
+    totalPages: 1,
+  });
   const { default: Teams } = await load('pages/TeamPage.tsx');
   const { publicTeams } = await load('services/publicTeams.ts');
   const { internalTournaments } = await load('services/internalTournaments.ts');
@@ -141,7 +147,12 @@ try {
   };
   const { ConfirmProvider } = await load('components/ui/ConfirmProvider.tsx');
   const { ToastProvider } = await load('components/ui/ToastProvider.tsx');
-  const provider = (element) => el(Provider, { store: fixtureStore }, el(ToastProvider, {}, el(ConfirmProvider, {}, element)));
+  const provider = (element) =>
+    el(
+      Provider,
+      { store: fixtureStore },
+      el(ToastProvider, {}, el(ConfirmProvider, {}, element)),
+    );
   const profile = {
     id: 'player',
     firstName: 'לביא',
@@ -198,7 +209,9 @@ try {
       },
     ],
   });
-  publicTeams.list = async () => [{ id: 'team', name: 'נבחרת', playerCount: 1 }];
+  publicTeams.list = async () => [
+    { id: 'team', name: 'נבחרת', playerCount: 1 },
+  ];
   publicTeams.get = async () => ({
     id: 'team',
     name: 'נבחרת',
@@ -224,7 +237,13 @@ try {
     assert.ok(
       renderer.root
         .findAllByType('a')
-        .some((a) => a.props.href === (Component === AllStars ? '/teams/team' : '/all-stars/players/player')),
+        .some(
+          (a) =>
+            a.props.href ===
+            (Component === AllStars
+              ? '/teams/team'
+              : '/all-stars/players/player'),
+        ),
     );
     act(() => renderer.unmount());
     renderer = null;
@@ -236,16 +255,22 @@ try {
   );
   fixture.auth.user = { role: 'admin' };
   api.get = async () => ({
-    data: [
-      {
-        id: 'event',
-        title: 'טורניר',
-        date: '2026-10-01',
-        type: 'team_internal',
-        lifecycle: 'completed',
-        canManage: true,
-      },
-    ],
+    data: {
+      items: [
+        {
+          id: 'event',
+          title: 'טורניר',
+          date: '2026-10-01',
+          type: 'team_internal',
+          lifecycle: 'completed',
+          canManage: true,
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 25,
+      totalPages: 1,
+    },
   });
   const deletions = [];
   api.delete = async (path, options) => {
@@ -267,14 +292,20 @@ try {
       .findAllByType('button')
       .filter((node) => text(node) === label);
   act(() => button('מחק')[0].props.onClick());
-  assert.equal(renderer.root.findByProps({ type: 'checkbox' }).props.checked, false);
+  assert.equal(
+    renderer.root.findByProps({ type: 'checkbox' }).props.checked,
+    false,
+  );
   await act(async () => {
     button('מחק').at(-1).props.onClick();
     await flush();
   });
   assert.equal(deletions[0].permanent, false);
   act(() => button('מחק')[0].props.onClick());
-  assert.equal(renderer.root.findByProps({ type: 'checkbox' }).props.checked, false);
+  assert.equal(
+    renderer.root.findByProps({ type: 'checkbox' }).props.checked,
+    false,
+  );
   act(() =>
     renderer.root
       .findByProps({ type: 'checkbox' })

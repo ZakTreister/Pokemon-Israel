@@ -2,6 +2,8 @@ import express from 'express';
 import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
   getPlayers,
+  getDuplicatePlayers,
+  deletePlayer,
   getPlayer,
   createQuarterlyPlayer,
   createTeamPlayer,
@@ -13,6 +15,8 @@ const router = express.Router();
 router.get('/public/:id', getPublicTeamPlayer);
 
 router.get('/', protect, authorize('admin', 'judge'), getPlayers);
+router.get('/duplicates', protect, admin, getDuplicatePlayers);
+router.delete('/:id', protect, admin, deletePlayer);
 router.get('/:id', protect, authorize('admin', 'judge'), getPlayer);
 router.post('/quarterly', protect, admin, createQuarterlyPlayer);
 router.post('/team', protect, authorize('admin'), createTeamPlayer);

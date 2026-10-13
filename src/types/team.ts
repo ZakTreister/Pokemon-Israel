@@ -34,6 +34,11 @@ export interface TeamWithRoster extends Team {
 }
 
 export interface TeamRosterPlayer {
+  joinedAt?: string;
+  pokemon?: string[];
+  deckUrl?: string;
+  deckMedia?: import('../services/media').StoredMedia | null;
+  isActive?: boolean;
   description?: string;
   dateOfBirth?: string;
   photoUrl?: string;

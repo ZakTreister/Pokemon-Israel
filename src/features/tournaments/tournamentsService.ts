@@ -2,12 +2,21 @@ import api from '../../services/api';
 import { Tournament } from '../../types/tournament';
 
 const getTournaments = async (scope?: 'management') => {
-  const { data } = await api.get<Tournament[]>(
-    scope === 'management'
-      ? '/api/tournaments/management/legacy'
-      : '/api/tournaments',
-  );
-  return data;
+  if (scope === 'management')
+    return (await api.get<Tournament[]>('/api/tournaments/management/legacy'))
+      .data;
+  const records: Tournament[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const { data } = await api.get<
+      import('../../types/pagination').PageResult<Tournament>
+    >('/api/tournaments', { params: { page, pageSize: 100 } });
+    records.push(...data.items);
+    totalPages = data.totalPages;
+    page++;
+  } while (page <= totalPages);
+  return records;
 };
 
 const getTournamentById = async (id: string) => {

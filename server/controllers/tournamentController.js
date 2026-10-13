@@ -1,3 +1,4 @@
+import { paginate, tournamentQuery } from '../services/pagination.js';
 import { publicTournament } from '../services/publicTournament.js';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
@@ -7,24 +8,56 @@ import { v4 as uuidv4 } from 'uuid';
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
 // @access  Public
-const deckFields = 'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image';
+const deckFields =
+  'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image';
 export const getTournaments = asyncHandler(async (req, res) => {
-  const tournaments = await Tournament.find({}).populate('results.deck', deckFields).sort({ date: -1 });
-  res.json(tournaments.map(t => publicTournament(t)));
+  const result = await paginate(
+    Tournament,
+    tournamentQuery(req.query),
+    req.query,
+    (q) =>
+      q
+        .populate('results.deck', deckFields)
+        .sort({ date: req.query.order === 'asc' ? 1 : -1, _id: 1 }),
+  );
+  res.json({ ...result, items: result.items.map((t) => publicTournament(t)) });
 });
 export const getTournamentById = asyncHandler(async (req, res) => {
-  if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('Tournament not found'); }
-  const tournament = await Tournament.findById(req.params.id).populate('results.deck', deckFields);
-  if (!tournament) { res.status(404); throw new Error('Tournament not found'); }
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
+    res.status(404);
+    throw new Error('Tournament not found');
+  }
+  const tournament = await Tournament.findById(req.params.id).populate(
+    'results.deck',
+    deckFields,
+  );
+  if (!tournament) {
+    res.status(404);
+    throw new Error('Tournament not found');
+  }
   res.json(publicTournament(tournament, true));
 });
 // The existing legacy staff editor retains its full authenticated DTO.
 export const getLegacyManagedTournaments = asyncHandler(async (req, res) => {
-  res.json(await Tournament.find({ engineVersion: { $ne: 'swiss-v1' } }).populate('participants.user','username').populate('results.deck',deckFields).sort({ date:1 }));
+  res.json(
+    await Tournament.find({ engineVersion: { $ne: 'swiss-v1' } })
+      .populate('participants.user', 'username')
+      .populate('results.deck', deckFields)
+      .sort({ date: 1 }),
+  );
 });
 export const getLegacyManagedTournament = asyncHandler(async (req, res) => {
-  const t = await Tournament.findOne({ _id:req.params.id, engineVersion:{ $ne:'swiss-v1' } }).populate('participants.user','username').populate('results.player','username').populate('results.deck',deckFields);
-  if (!t) { res.status(404); throw new Error('Tournament not found'); }
+  const t = await Tournament.findOne({
+    _id: req.params.id,
+    engineVersion: { $ne: 'swiss-v1' },
+  })
+    .populate('participants.user', 'username')
+    .populate('results.player', 'username')
+    .populate('results.deck', deckFields);
+  if (!t) {
+    res.status(404);
+    throw new Error('Tournament not found');
+  }
   res.json(t);
 });
 
@@ -430,4 +463,33 @@ export const getOwnRegistration = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findById(req.params.id).select('participants');
   if (!tournament) { res.status(404); throw new Error('טורניר לא נמצא'); }
   res.json({ registered: tournament.participants.some(p => String(p.user) === String(req.user._id)) });
+});
+
+export const getTournamentSummary = asyncHandler(async (req, res) => {
+  const query = tournamentQuery(req.query);
+  const [totals] = await Tournament.aggregate([
+    { $match: { ...query, deletedAt: null } },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        participants: { $sum: '$currentParticipants' },
+        capacity: { $sum: '$maxParticipants' },
+      },
+    },
+  ]);
+  const upcomingQuery = {
+    $and: [query, tournamentQuery({ status: 'upcoming' })],
+  };
+  const [upcoming, nearest] = await Promise.all([
+    Tournament.countDocuments(upcomingQuery),
+    Tournament.findOne(upcomingQuery).sort({ date: 1, _id: 1 }),
+  ]);
+  res.json({
+    total: totals?.total || 0,
+    participants: totals?.participants || 0,
+    capacity: totals?.capacity || 0,
+    upcoming,
+    nearest: nearest ? publicTournament(nearest) : null,
+  });
 });

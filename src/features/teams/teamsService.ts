@@ -57,6 +57,7 @@ const teamsService = {
   createPlayers: async (
     teamId: string,
     players: Omit<CreateTeamPlayerInput, 'teamId'>[],
+    allowDuplicate = false,
   ): Promise<Player[]> => {
     const rows = players.map(
       ({
@@ -77,8 +78,12 @@ const teamsService = {
         photoUploadId,
       }),
     );
-    return (await api.post(`/api/teams/${teamId}/players`, { players: rows }))
-      .data;
+    return (
+      await api.post(`/api/teams/${teamId}/players`, {
+        players: rows,
+        allowDuplicate,
+      })
+    ).data;
   },
   getTeachers: async () =>
     (await api.get<StaffTeacher[]>('/api/teams/teachers')).data,

@@ -1,17 +1,17 @@
 import api from '../../services/api';
-import { Update } from '../../types/update';
+import { Update, UpdateInput } from '../../types/update';
 
 const getUpdates = async () => {
   const { data } = await api.get<Update[]>('/api/updates');
   return data;
 };
 
-const createUpdate = async (updateData: { title: string; content: string }) => {
+const createUpdate = async (updateData: UpdateInput) => {
   const { data } = await api.post<Update>('/api/updates', updateData);
   return data;
 };
 
-const updateUpdate = async (id: string, updateData: { title: string; content: string }) => {
+const updateUpdate = async (id: string, updateData: UpdateInput) => {
   const { data } = await api.put<Update>(`/api/updates/${id}`, updateData);
   return data;
 };
@@ -22,7 +22,8 @@ const deleteUpdate = async (id: string) => {
 
 const updatesService = {
   getUpdates,
-  getUpdate: async (id: string) => (await api.get<Update>(`/api/updates/${id}`)).data,
+  getUpdate: async (id: string) =>
+    (await api.get<Update>(`/api/updates/${id}`)).data,
   createUpdate,
   updateUpdate,
   deleteUpdate,

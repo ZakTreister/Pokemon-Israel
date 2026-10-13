@@ -198,7 +198,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   const club = await ok(
     '/players/quarterly',
     'POST',
-    { firstName: 'Club', lastName: 'Child', club: 'Club' },
+    { firstName: 'Club', lastName: 'Child', city: 'Club' },
     'admin',
     201,
   );
@@ -209,7 +209,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     403,
   );
   assert.ok(
-    (await ok('/players?type=quarterly')).every((p) => p.playerType === 'team'),
+    (await ok('/players?type=quarterly')).items.every((p) => p.playerType === 'team'),
   );
   const publicTeam = await ok(
     `/teams/public/${team.id}`,
@@ -420,7 +420,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     ],
     status: 'completed',
   });
-  const regularList = await ok('/tournaments', 'GET', undefined, null);
+  const {items:regularList} = await ok('/tournaments?pageSize=100', 'GET', undefined, null);
   assert.ok(regularList.some((row) => row.id === legacy.id));
   assert.ok(regularList.some((row) => row.id === t.id));
   const legacyRead = await ok(
@@ -779,7 +779,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
         (row) => row.playerId === players[0].id && row.points >= 9,
       ),
     );
-    const list = await ok('/tournaments/management');
+    const {items:list} = await ok('/tournaments/management?pageSize=100');
     assert.ok(
       list.some(
         (row) =>
@@ -930,7 +930,7 @@ test('judge is limited to live tournament operation and never changes permanent 
     [`/teams/${team.id}`, 'PUT', { name: 'Judge Edited', logo: 'https://example.org/judge.png', isActive: false }],
     [`/teams/${team.id}/players`, 'POST', { players: [{ firstName: 'Extra', lastName: 'Child' }] }],
     ['/players/team', 'POST', { firstName: 'Extra', lastName: 'Child' }],
-    ['/players/quarterly', 'POST', { firstName: 'Extra', lastName: 'Child', club: 'Club' }],
+    ['/players/quarterly', 'POST', { firstName: 'Extra', lastName: 'Child', city: 'Club' }],
     [`/players/${children[0].id}`, 'PUT', { firstName: 'Edited', isActive: false, team: null }],
     [`/teams/${team.id}/players/${children[0].id}`, 'PUT', {}],
     [`/teams/${team.id}/players/${children[0].id}`, 'DELETE'],
@@ -948,7 +948,7 @@ test('judge is limited to live tournament operation and never changes permanent 
   assert.equal((await request(`/players/${children[0].id}`)).status, 200);
   let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
   assert.equal((await request(`/tournaments/${t.id}`, 'DELETE', undefined, 'judge')).status, 403);
-  assert.equal((await ok('/tournaments/management')).find(row => row.id === t.id).canManage, true);
+  assert.equal((await ok('/tournaments/management')).items.find(row => row.id === t.id).canManage, true);
   t = await ok(`/internal-tournaments/${t.id}/participants`, 'PUT', {
     expectedRevision: t.revision, playerIds: children.slice(0, 2).map(child => child.id),
   });
@@ -984,8 +984,8 @@ test('judge is limited to live tournament operation and never changes permanent 
     assert.equal((await request(`/tournaments/${event.id}`, 'DELETE')).status, 403);
     assert.deepEqual(await Tournament.findById(event.id).lean(), snapshot);
     assert.equal((await ok(`/internal-tournaments/${event.id}`)).phase, 'completed');
-    assert.equal((await ok('/tournaments/management')).find(row => row.id === event.id).canManage, false);
-    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === event.id).canManage, true);
+    assert.equal((await ok('/tournaments/management')).items.find(row => row.id === event.id).canManage, false);
+    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).items.find(row => row.id === event.id).canManage, true);
   }
 });
 
@@ -1016,8 +1016,8 @@ test('judge operation requires an explicitly live source and an operational phas
       const response = await request(`/internal-tournaments/${opened.id}${suffix}`, method, { expectedRevision: opened.revision, ...body });
       assert.equal(response.status, 403, `${JSON.stringify(state)} ${method} ${suffix}`);
     }
-    assert.equal((await ok('/tournaments/management')).find(row => row.id === opened.id).canManage, false);
-    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).find(row => row.id === opened.id).canManage, true);
+    assert.equal((await ok('/tournaments/management')).items.find(row => row.id === opened.id).canManage, false);
+    assert.equal((await ok('/tournaments/management', 'GET', undefined, 'admin')).items.find(row => row.id === opened.id).canManage, true);
     assert.equal((await request(`/internal-tournaments/${opened.id}`)).status, 200);
     assert.deepEqual(await Tournament.findById(opened.id).lean(), snapshot);
     await ok(`/tournaments/${opened.id}`, 'DELETE', undefined, 'admin');
@@ -1141,7 +1141,7 @@ test('soft deletion retains audit data, frees open team slot and hides all norma
   assert.deepEqual(stored.rounds.map(r => String(r._id)), t.rounds.map(r => r._id));
   assert.equal((await request(`/internal-tournaments/${t.id}`)).status, 404);
   assert.equal((await request(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision })).status, 404);
-  assert.ok(!(await ok('/tournaments/management')).some(row => row.id === t.id));
+  assert.ok(!(await ok('/tournaments/management')).items.some(row => row.id === t.id));
   assert.ok(!(await ok(`/internal-tournaments?teamId=${team.id}`)).some(row => row.id === t.id));
   const replacement = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
   assert.notEqual(replacement.id, t.id);
@@ -1167,11 +1167,11 @@ test('soft deletion retains audit data, frees open team slot and hides all norma
 test('public team-player endpoint is an allowlist, excludes club profiles and has no directory', async () => {
   const player = await Player.create({ firstName:'Public',lastName:'Team',city:'Haifa',playerType:'team',user:null });
   const publicData = await ok(`/players/public/${player.id}`, 'GET', undefined, null);
-  assert.deepEqual(Object.keys(publicData).sort(), ['id','firstName','lastName','city','playerNumber','team','teamRanking','badges'].sort());
+  assert.deepEqual(Object.keys(publicData).sort(), ['id','firstName','lastName','city','playerNumber','team','teamRanking','badges','pokemon', ].sort());
   assert.equal(publicData.firstName, player.firstName);
   assert.equal(publicData.playerNumber, '');
   assert.ok(!('overallRanking' in publicData));
-  const club = await Player.create({ firstName:'Private',lastName:'Club',club:'Test',playerType:'quarterly' });
+  const club = await Player.create({ firstName:'Private',lastName:'Club',city:'Test',playerType:'quarterly' });
   assert.equal((await request(`/players/public/${club.id}`, 'GET', undefined, null)).status,404);
   assert.equal((await request('/players/public/not-an-id', 'GET', undefined, null)).status,404);
   assert.equal((await request('/players', 'GET', undefined, null)).status,401);
@@ -1229,14 +1229,14 @@ test('public Events and details expose all types and only each tournament standi
   assert.deepEqual(completed.standings, active.standings);
   assert.deepEqual(await ok(`/tournaments/${t.id}/results`, 'GET', undefined, null), completed.standings);
   const inter = await Tournament.create({ title:'Inter-team public',description:'Public',location:'Club',image:'/event.png',date:new Date(Date.now()+86400000),registrationDeadline:new Date(),maxParticipants:16,type:'inter_team' });
-  const list = await ok('/tournaments', 'GET', undefined, null);
+  const {items:list} = await ok('/tournaments?pageSize=100', 'GET', undefined, null);
   assert.ok(list.some(e => e.id === t.id && e.type === 'team_internal'));
   assert.ok(list.some(e => e.id === inter.id && e.type === 'inter_team'));
   assert.ok(list.some(e => e.type === 'quarterly'));
   assert.ok(!forbidden.test(JSON.stringify(list)));
   await ok(`/tournaments/${t.id}`, 'DELETE', undefined, 'admin');
   assert.equal((await request(`/tournaments/${t.id}`, 'GET', undefined, null)).status, 404);
-  assert.ok(!(await ok('/tournaments', 'GET', undefined, null)).some(e => e.id === t.id));
+  assert.ok(!(await ok('/tournaments?pageSize=100', 'GET', undefined, null)).items.some(e => e.id === t.id));
 });
 
 test('2026.10.1 player numbers are text, new creation assigns an active team and legacy backfill/unassignment is compatible', async () => {
@@ -1390,22 +1390,12 @@ test('2026.10.2 shared S3 media verifies actual objects, ownership and optional 
   assert.equal(child.id,image.entityId);assert.ok(image.storageKey.startsWith(`public/players/${child.id}/`));
   const publicData=await ok(`/players/public/${child.id}`,'GET',undefined,null);
   assert.equal(publicData.photoUrl,image.url);assert.ok(!('photoMedia' in publicData));
-  const privateImage=await uploaded('player-photo',undefined,'quarterly');
-  const club=await ok('/players/quarterly','POST',{firstName:'Photo',lastName:'Club',club:'School',photoUploadId:privateImage.uploadId},'admin',201);
-  assert.ok(club.photoMedia.storageKey.startsWith(`private/players/${club.id}/`));
-  assert.ok(!club.photoUrl);assert.equal((await request(`/players/public/${club.id}`,'GET',undefined,null)).status,404);
-  const preview=await ok(`/media/players/${club.id}/photo`,'GET',undefined,'admin');
-  assert.ok(preview.url.startsWith('https://s3.example/private-preview'));
-  assert.equal((await request(`/media/players/${club.id}/photo`,'GET',undefined,'judge')).status,403);
-  assert.equal((await request(`/media/players/${club.id}/photo`,'GET',undefined,null)).status,401);
-  const mismatch=await uploaded('player-photo',undefined,'quarterly');
-  assert.equal((await request('/players/team','POST',{firstName:'Forbidden',lastName:'Visibility',teamId:team.id,playerNumber:'P-2',photoUploadId:mismatch.uploadId},'admin')).status,400);
-  const privateReplacement=await uploaded('player-photo',club.id,'team');
-  assert.ok(privateReplacement.storageKey.startsWith('private/players/'));
-  await ok(`/players/${club.id}`,'PUT',{photoUploadId:privateReplacement.uploadId},'admin');
-  assert.ok(removedMedia.includes(privateImage.storageKey));
-  // An explicit future type change must not publish the existing private object.
-  await Player.updateOne({_id:club.id},{$set:{playerType:'team'}});
+  assert.equal((await request('/media/presign','POST',{purpose:'player-photo',playerType:'quarterly',contentType:'image/png',size:png.length},'admin')).status,400);
+  const club=await ok('/players/quarterly','POST',{firstName:'Photo',lastName:'Club',city:'School'},'admin',201);
+  assert.ok(!('photoMedia' in club));
+  assert.equal((await request(`/players/${club.id}`,'PUT',{photoUploadId:image.uploadId},'admin')).status,400);
+  // A legacy private object remains private even after a future explicit type change.
+  await Player.updateOne({_id:club.id},{$set:{playerType:'team',photoMedia:{storageKey:'private/players/legacy/photo.png',contentType:'image/png',size:png.length}}});
   const changedType=await ok(`/players/public/${club.id}`,'GET',undefined,null);
   assert.ok(!changedType.photoUrl && !JSON.stringify(changedType).includes('private/'));
   const publicReplacement=await uploaded('player-photo',child.id,'quarterly');
@@ -1495,7 +1485,7 @@ test('2026.10.2 badge Seasons, index migration, revocation/re-award and deletion
   assert.ok(await BadgeAward.findById(legacy.id));assert.ok(await BadgeAward.findById(reawarded.body.id));
   await Season.collection.insertOne({_id:new mongoose.Types.ObjectId(),name:'Deleted legacy Season',status:'active',deletedAt:new Date(),createdBy:new mongoose.Types.ObjectId(staffIds.admin)});
   await ok('/seasons','POST',{name:'Badge spring'},'admin',201);
-  const club=await ok('/players/quarterly','POST',{firstName:'Cannot',lastName:'Badge',club:'Club'},'admin',201);
+  const club=await ok('/players/quarterly','POST',{firstName:'Cannot',lastName:'Badge',city:'Club'},'admin',201);
   await ok(`/badges/${badge.id}`,'PUT',{isActive:true},'admin');
   assert.equal((await request(`/badges/${badge.id}/players/${club.id}`,'POST',{},'admin')).status,400);
   assert.equal((await request(`/badges/${badge.id}/players/${children[1].id}`,'POST',{},'judge')).status,403);
@@ -1518,4 +1508,359 @@ test('2026.10.2 optional biography/date-only birth stay editable, age-only publi
   const image=await uploaded('player-photo',undefined,'team');
   const [bulk]=await ok(`/teams/${team.id}/players`,'POST',{players:[{firstName:'Context',lastName:'Create',playerNumber:'CONTEXT',description:'Biography',dateOfBirth:'2015-04-01',photoUploadId:image.uploadId}]},'admin',201);
   assert.equal(bulk.id,image.entityId);assert.equal(bulk.team,team.id);assert.equal(bulk.description,'Biography');
+});
+
+test('2026.10.3: player archive preserves history, duplicate overrides and city/profile boundaries', async () => {
+  const team = await ok(
+    '/teams',
+    'POST',
+    { name: 'V3 archive team' },
+    'admin',
+    201,
+  );
+  const input = {
+    firstName: 'V3 Duplicate',
+    lastName: 'Child',
+    city: 'Test City',
+    playerNumber: 'V3',
+    teamId: team.id,
+  };
+  const child = await ok('/players/team', 'POST', input, 'admin', 201);
+  const duplicate = await request(
+    '/players/team',
+    'POST',
+    { ...input, firstName: '  v3   duplicate ', city: ' test  city ' },
+    'admin',
+  );
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.body.code, 'PLAYER_DUPLICATE');
+  assert.equal(duplicate.body.matches[0].id, child.id);
+  await ok(
+    '/players/team',
+    'POST',
+    { ...input, allowDuplicate: true },
+    'admin',
+    201,
+  );
+  const regular = await ok(
+    '/players/quarterly',
+    'POST',
+    {
+      firstName: 'V3 Regular',
+      lastName: 'Child',
+      city: 'Test City',
+      club: 'obsolete',
+    },
+    'admin',
+    201,
+  );
+  assert.ok(!('club' in regular));
+  assert.ok(!('photoMedia' in regular));
+  assert.equal(
+    (
+      await request(
+        '/players/quarterly',
+        'POST',
+        { firstName: 'v3 regular', lastName: 'child', city: 'test city' },
+        'admin',
+      )
+    ).status,
+    409,
+  );
+  await ok(
+    '/players/quarterly',
+    'POST',
+    {
+      firstName: 'v3 regular',
+      lastName: 'child',
+      city: 'test city',
+      allowDuplicate: true,
+    },
+    'admin',
+    201,
+  );
+  await ok(`/players/${regular.id}`, 'PUT', { city: 'Updated City' }, 'admin');
+  const deck = await uploaded('player-deck', child.id, 'team');
+  assert.ok(deck.storageKey.startsWith(`public/players/${child.id}/deck/`));
+  await ok(
+    `/players/${child.id}`,
+    'PUT',
+    {
+      joinedAt: '2020-01-01',
+      pokemon: [' Iron  Hands ', 'Pikachu'],
+      deckUploadId: deck.uploadId,
+    },
+    'admin',
+  );
+  const profile = await ok(
+    `/players/public/${child.id}`,
+    'GET',
+    undefined,
+    null,
+  );
+  assert.deepEqual(profile.pokemon, ['Iron Hands', 'Pikachu']);
+  assert.equal(profile.deckUrl, deck.url);
+  assert.ok(profile.tenureYears >= 6);
+  assert.ok(!('joinedAt' in profile));
+  for (const body of [
+    { joinedAt: '2999-01-01' },
+    { pokemon: ['פוקימון'] },
+    { pokemon: ['Pikachu1'] },
+    { pokemon: Array(7).fill('Pikachu') },
+  ])
+    assert.equal(
+      (await request(`/players/${child.id}`, 'PUT', body, 'admin')).status,
+      400,
+    );
+  const second = (await ok(`/teams/${team.id}`)).players.find(
+    (p) => p.id !== child.id,
+  );
+  const historical = await ok(
+    '/internal-tournaments/historical',
+    'POST',
+    {
+      teamId: team.id,
+      date: '2020-01-01',
+      results: [
+        { player: child.id, position: 1, points: 3 },
+        { player: second.id, position: 2, points: 0 },
+      ],
+    },
+    'admin',
+    201,
+  );
+  assert.equal(
+    (await request(`/players/${child.id}`, 'DELETE', undefined, 'judge'))
+      .status,
+    403,
+  );
+  const archivedBadge = await BadgeDefinition.create({
+    name: 'V3 archived award',
+    isActive: true, createdBy:staffIds.admin,
+  });
+  const earned = await BadgeAward.create({
+    player: child.id,
+    badge: archivedBadge._id,
+    awardedBy: staffIds.admin,
+  });
+  await ok(`/players/${child.id}`, 'DELETE', undefined, 'admin');
+  assert.equal(
+    (
+      await request(
+        `/badges/${archivedBadge.id}/players/${child.id}`,
+        'POST',
+        {},
+        'admin',
+      )
+    ).status,
+    404,
+  );
+  const archiveHistory = await ok('/badges/awards', 'GET', undefined, 'admin');
+  assert.equal(
+    archiveHistory.find((award) => award.id === earned.id).player.firstName,
+    child.firstName,
+  );
+  const raw = await Player.findById(child.id).setOptions({
+    includeDeleted: true,
+  });
+  assert.ok(raw.deletedAt);
+  assert.equal(raw.isActive, false);
+  assert.equal(String(raw.team), team.id);
+  assert.equal(
+    (await request(`/players/public/${child.id}`, 'GET', undefined, null))
+      .status,
+    404,
+  );
+  assert.ok(
+    !(await ok(`/teams/${team.id}`)).players.some((p) => p.id === child.id),
+  );
+  assert.equal(
+    (await ok(`/tournaments/${historical.id}`, 'GET', undefined, null))
+      .standings.length,
+    2,
+  );
+  assert.equal(
+    (
+      await request(
+        '/internal-tournaments/historical',
+        'POST',
+        {
+          teamId: team.id,
+          date: '2020-01-01',
+          results: [
+            { player: child.id, position: 1, points: 3 },
+            { player: second.id, position: 2, points: 0 },
+          ],
+        },
+        'admin',
+      )
+    ).status,
+    400,
+  );
+  await ok(
+    `/players/${second.id}`,
+    'PUT',
+    { deckUploadId: null, joinedAt: '', pokemon: [] },
+    'admin',
+  );
+});
+
+test('2026.10.3: authorized server pagination, combined filters, counts and stable page recovery', async () => {
+  await Player.insertMany(
+    Array.from({ length: 28 }, (_, i) => ({
+      firstName: `V3Paged ${String(i).padStart(2, '0')}`,
+      lastName: 'Fixture',
+      city: i % 2 ? 'North' : 'South',
+      playerType: i % 2 ? 'team' : 'quarterly',
+    })),
+  );
+  const first = await ok('/players?search=V3Paged', 'GET', undefined, 'admin');
+  assert.equal(first.items.length, 25);
+  assert.equal(first.total, 28);
+  assert.equal(first.totalPages, 2);
+  const next = await ok(
+    '/players?search=V3Paged&page=2',
+    'GET',
+    undefined,
+    'admin',
+  );
+  assert.equal(next.items.length, 3);
+  assert.ok(
+    next.items.every((p) => !first.items.some((row) => row.id === p.id)),
+  );
+  const filtered = await ok(
+    '/players?type=team&search=North',
+    'GET',
+    undefined,
+    'admin',
+  );
+  assert.equal(filtered.total, 14);
+  assert.equal(
+    (
+      await ok(
+        '/players?search=V3Paged&type=quarterly',
+        'GET',
+        undefined,
+        'judge',
+      )
+    ).total,
+    14,
+  );
+  const counted = await ok(
+    '/players?search=V3Paged&countOnly=true',
+    'GET',
+    undefined,
+    'admin',
+  );
+  assert.equal(counted.total, 28);
+  assert.equal(counted.items.length, 0);
+  for (const p of next.items)
+    await ok(`/players/${p.id}`, 'DELETE', undefined, 'admin');
+  const recovered = await ok(
+    '/players?search=V3Paged&page=2',
+    'GET',
+    undefined,
+    'admin',
+  );
+  assert.equal(recovered.page, 1);
+  assert.equal(recovered.total, 25);
+  await Tournament.insertMany(
+    Array.from({ length: 28 }, (_, i) => ({
+      title: `V3Paged Event ${i}`,
+      description: 'Fixture',
+      image: '/event.png',
+      location: 'V3Location',
+      date: i % 2 ? '2020-01-01' : '2999-01-01',
+      registrationDeadline: '2999-01-01',
+      maxParticipants: 32,
+      type: i % 2 ? 'inter_team' : 'quarterly',
+      status: 'upcoming',
+    })),
+  );
+  const events = await ok(
+    '/tournaments?search=V3Paged',
+    'GET',
+    undefined,
+    null,
+  );
+  assert.equal(events.items.length, 25);
+  assert.equal(events.total, 28);
+  const managed = await ok(
+    '/tournaments/management?search=V3Paged&type=inter_team&status=active',
+  );
+  assert.equal(managed.total, 14);
+  assert.ok(managed.items.every((t) => t.lifecycle === 'active'));
+  const summary = await ok(
+    '/tournaments/summary?search=V3Paged',
+    'GET',
+    undefined,
+    null,
+  );
+  assert.equal(summary.total, 28);
+  assert.equal(summary.upcoming, 14);
+  const eventCount = await ok(
+    '/tournaments?search=V3Paged&countOnly=true',
+    'GET',
+    undefined,
+    null,
+  );
+  assert.equal(eventCount.total, 28);
+  assert.equal(eventCount.items.length, 0);
+});
+
+test('2026.10.3: News CRUD, title/CTA validation, optional image and legacy content', async () => {
+  for (const input of [
+    { title: ' ' },
+    { title: 'Test', ctaText: 'CTA' },
+    { title: 'Test', ctaUrl: 'https://example.com' },
+    { title: 'Test', ctaText: 'CTA', ctaUrl: 'javascript:alert(1)' },
+  ])
+    assert.equal(
+      (await request('/updates', 'POST', input, 'admin')).status,
+      400,
+    );
+  assert.equal(
+    (await request('/updates', 'POST', { title: 'Forbidden' }, 'judge')).status,
+    403,
+  );
+  const legacy = await ok(
+    '/updates',
+    'POST',
+    { title: ' Legacy title ', content: 'Legacy description' },
+    'admin',
+    201,
+  );
+  assert.equal(legacy.title, 'Legacy title');
+  assert.equal(legacy.description, 'Legacy description');
+  const image = await uploaded('update-image', legacy.id);
+  assert.ok(image.storageKey.startsWith(`public/updates/${legacy.id}/`));
+  const updated = await ok(
+    `/updates/${legacy.id}`,
+    'PUT',
+    {
+      title: 'Updated',
+      description: 'Description',
+      imageUploadId: image.uploadId,
+      ctaText: 'Exact manager CTA',
+      ctaUrl: 'https://example.com/trial',
+    },
+    'admin',
+  );
+  assert.equal(updated.image, image.url);
+  assert.equal(updated.ctaText, 'Exact manager CTA');
+  assert.ok(!('imageMedia' in updated));
+  const cleared = await ok(
+    `/updates/${legacy.id}`,
+    'PUT',
+    { description: '', imageUploadId: null, ctaText: '', ctaUrl: '' },
+    'admin',
+  );
+  assert.equal(cleared.description, '');
+  assert.equal(cleared.image, '');
+  assert.ok(removedMedia.includes(image.storageKey));
+  await ok(`/updates/${legacy.id}`, 'DELETE', undefined, 'admin');
+  assert.equal(
+    (await request(`/updates/${legacy.id}`, 'GET', undefined, null)).status,
+    404,
+  );
 });

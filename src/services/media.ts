@@ -1,6 +1,11 @@
 import axios from 'axios';
 import api from './api';
-export type UploadPurpose = 'team-logo' | 'player-photo' | 'badge-image';
+export type UploadPurpose =
+  | 'team-logo'
+  | 'player-photo'
+  | 'player-deck'
+  | 'badge-image'
+  | 'update-image';
 export interface UploadTarget {
   purpose: UploadPurpose;
   entityId?: string;

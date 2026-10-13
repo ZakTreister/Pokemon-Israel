@@ -1,3 +1,4 @@
+import type { PageQuery, PageResult } from '../../types/pagination';
 import api from '../../services/api';
 import type {
   Player,
@@ -6,16 +7,20 @@ import type {
   UpdatePlayerInput,
 } from '../../types/player';
 
-const getPlayers = async (params?: {
-  type?: 'team' | 'quarterly';
-  search?: string;
-}): Promise<Player[]> => {
-  const query: Record<string, string> = {};
-  if (params?.type) query.type = params.type;
-  if (params?.search) query.search = params.search;
-  const { data } = await api.get('/api/players', { params: query });
-  return data;
+const getPlayers = async (
+  params?: PageQuery & { type?: 'team' | 'quarterly' },
+): Promise<PageResult<Player>> =>
+  (await api.get('/api/players', { params })).data;
+const deletePlayer = async (id: string) => {
+  await api.delete(`/api/players/${id}`);
 };
+const duplicates = async (input: {
+  firstName: string;
+  lastName: string;
+  city?: string;
+  type: 'team' | 'quarterly';
+}): Promise<Player[]> =>
+  (await api.get('/api/players/duplicates', { params: input })).data;
 
 const getPlayer = async (id: string): Promise<Player> => {
   const { data } = await api.get(`/api/players/${id}`);
@@ -23,14 +28,14 @@ const getPlayer = async (id: string): Promise<Player> => {
 };
 
 const createQuarterlyPlayer = async (
-  input: CreateQuarterlyPlayerInput
+  input: CreateQuarterlyPlayerInput,
 ): Promise<Player> => {
   const { data } = await api.post('/api/players/quarterly', input);
   return data;
 };
 
 const createTeamPlayer = async (
-  input: CreateTeamPlayerInput
+  input: CreateTeamPlayerInput,
 ): Promise<Player> => {
   const { data } = await api.post('/api/players/team', input);
   return data;
@@ -38,7 +43,7 @@ const createTeamPlayer = async (
 
 const updatePlayer = async (
   id: string,
-  input: UpdatePlayerInput
+  input: UpdatePlayerInput,
 ): Promise<Player> => {
   const { data } = await api.put(`/api/players/${id}`, input);
   return data;
@@ -46,6 +51,8 @@ const updatePlayer = async (
 
 const playersService = {
   getPlayers,
+  deletePlayer,
+  duplicates,
   getPlayer,
   createQuarterlyPlayer,
   createTeamPlayer,

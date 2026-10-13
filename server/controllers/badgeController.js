@@ -16,7 +16,11 @@ import {
 } from '../services/badgeLifecycle.js';
 const populateAward = (value) =>
   value.populate([
-    { path: 'player', select: 'firstName lastName' },
+    {
+      path: 'player',
+      select: 'firstName lastName',
+      options: { includeDeleted: true },
+    },
     {
       path: 'badge',
       select: 'name description icon image imageMedia isActive',
