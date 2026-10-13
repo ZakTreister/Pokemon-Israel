@@ -994,3 +994,32 @@ Also include in version `2026.10.3`:
 - the action must reuse/open the canonical team settings/edit flow rather than duplicating edit logic
 - judges may see the team image but cannot edit the team
 - keep **התחל טורניר / המשך טורניר** as the primary action and **עריכת נבחרת** as a secondary action
+
+
+### 46. Version 2026.10.3 — reusable Player editor and extended All Stars profile
+Also include in version `2026.10.3`:
+
+Shared editor:
+- extract the current page-owned Player edit dialog into one reusable canonical `PlayerEditDialog` + reusable edit-state/controller boundary
+- keep API/transport in the existing player service/Redux layer
+- both Players management and managed team page open the same editor
+- dialog is viewport-bounded and internally scrollable
+- desktop form uses two columns; mobile uses one
+- preserve upload/save/error state and do not duplicate edit business logic
+
+Additional optional team-player fields:
+- **תאריך הצטרפות** (`joinedAt`, date-only); derive displayed **וותק** from it; reject future dates
+- **דק אישי** image, using the shared S3 uploader and a separate `player-deck` media purpose
+- up to 6 Pokémon names
+
+Pokémon editor:
+- render one compact row initially
+- allow adding/removing rows up to 6
+- English letters and spaces only
+- trim/collapse whitespace
+- derived image slug is lowercase with spaces replaced by hyphens
+- construct images centrally from `https://r2.limitlesstcg.net/pokemon/gen9/<pokemon-name>.png`
+- include a tooltip/help affordance explaining the naming rule
+- persist normalized names/domain values, not copied external image URLs
+
+Add tests for shared-editor reuse, modal layout classes/behavior where existing UI verification supports it, new field persistence/validation, deck-media authorization, max-six Pokémon and URL slug generation.
