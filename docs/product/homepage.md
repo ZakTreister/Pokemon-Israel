@@ -71,8 +71,10 @@ Do not accidentally feature an internal team tournament as the public “next cl
 Include these homepage cards:
 
 ### הרשמה לחוג הקרוב לביתכם
-- links to the configured Rav Messer destination
-- if the URL is environment/config-driven, keep it out of hard-coded business logic
+- use the canonical shared registration destination: `https://lp.cardschool.co.il`
+- this is the approved registration URL
+- source it from the same shared configuration as the floating registration CTA
+- do not keep a separate homepage-only registration URL
 - use a clear prominent CTA
 
 ### העדכון האחרון
