@@ -146,6 +146,20 @@ Add these optional fields to the shared team-player editor.
 - persist normalized Pokémon names, not derived image URLs
 
 
+
+#### 7. Shared team edit dialog
+The approved **עריכת נבחרת** action opens a reusable dialog rather than navigating to a separate page.
+
+Requirements:
+- implement one canonical `TeamEditDialog`
+- open it from **ניהול → נבחרות All-Stars**
+- reuse the same dialog from the managed team page
+- edit core team settings: name, optional logo/image, assigned teacher and active status when applicable
+- keep roster/player assignment/removal outside this dialog
+- reuse existing teams service/Redux persistence
+- do not duplicate form state/edit logic in multiple pages
+- successful save closes the dialog and refreshes canonical team/list data without a full-page reload
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
