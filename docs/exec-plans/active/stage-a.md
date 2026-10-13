@@ -982,3 +982,15 @@ Required:
 - duplicate detection is server-backed/authoritative, not browser-only
 - duplicate warning is not a hard uniqueness constraint
 - judges remain read-only for all of these mutations
+
+
+### 45. Version 2026.10.3 — team management list corrections
+Also include in version `2026.10.3`:
+
+- in **ניהול → נבחרות All-Stars**, every team summary/card/row shows the current team logo/image when present
+- render a neutral placeholder when no logo exists
+- do not alter the fact that team images are optional
+- add a clear admin-only **עריכת נבחרת** action to each team summary/card/row
+- the action must reuse/open the canonical team settings/edit flow rather than duplicating edit logic
+- judges may see the team image but cannot edit the team
+- keep **התחל טורניר / המשך טורניר** as the primary action and **עריכת נבחרת** as a secondary action
