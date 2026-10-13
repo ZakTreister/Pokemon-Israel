@@ -207,8 +207,15 @@ Required completion:
 - include Season in management award history
 - expose public-safe Season name and optional badge image on the public All Stars player profile
 - preserve historical awards when a badge is edited or deactivated
+- allow super-admin to remove/revoke an awarded badge from a player with confirmation
+- implement award removal as soft revocation with `revokedAt` / `revokedBy`; revoked awards disappear from normal/public earned-badge views
+- allow re-awarding the same badge in the same Season after the previous award was revoked
+- allow super-admin to soft-delete a badge Season
+- persist Season deletion metadata such as `deletedAt` / `deletedBy`
+- exclude deleted Seasons from normal Season history/listing and active-Season resolution
+- deleting a Season preserves its award records but hides the deleted Season name from public player badge display
+- if an active Season is deleted, no Season remains active until another is opened
 - keep the current no-judge badge/Season mutation rule
-- no revoke/delete-award workflow is required in this version
 
 #### 7. Shared image rules
 - the upload capability itself is required in this version for team, player/child and badge management even though the images are optional
@@ -234,6 +241,9 @@ At minimum verify:
 - one same-badge award per player per Season, with re-award allowed in a later Season
 - legacy badge awards without Season remain readable
 - badge award history and public profile include Season/public-safe badge media
+- badge revocation removes the award from normal/public views and permits a later re-award
+- Season soft deletion is hidden from ordinary Season history and never counts as active
+- awards belonging to a deleted Season remain preserved, with the deleted Season name hidden publicly
 - creation/editing of team, player and badge succeeds without an image
 - judge mutation denial
 - legacy Cloudinary media compatibility
