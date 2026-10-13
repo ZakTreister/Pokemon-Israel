@@ -287,6 +287,13 @@ Every All Stars/team player has a **מספר שחקן** stored as a reusable pla
 
 New team-player create/edit flows include the field and new team players require it. Legacy team players without a number remain readable/editable for backfill. The number is not an identity key, and no uniqueness/range rule is defined yet.
 
+## 2026-10 — All Stars profile biography and age are optional
+All Stars/team players may have an optional short description and optional date of birth.
+
+The description is public profile content when present.
+
+Date of birth remains private management data. Public player APIs/pages expose only the calculated current age, never the exact birth date. Missing values remain valid and do not show empty placeholders.
+
 ## 2026-10 — Team page uses one unified member/ranking table
 The team page does not have a separate **דירוג וסטטיסטיקה** tab.
 
