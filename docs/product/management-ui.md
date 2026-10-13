@@ -185,3 +185,13 @@ During Player creation:
 - a likely match opens a Hebrew warning dialog before final creation
 - the dialog offers a path to the existing player and an explicit **צור בכל זאת** override
 - duplicate detection is a warning/confirmation flow, not a hard uniqueness constraint
+
+
+## Team list row actions
+On **ניהול → נבחרות All-Stars**:
+- show the team's current logo/image directly in each compact team card/row when available
+- use a neutral placeholder when no image exists
+- provide admin with a clear **עריכת נבחרת** action
+- reuse the canonical team edit/settings flow
+- judges remain read-only and do not receive the edit action
+- keep the existing primary **התחל טורניר / המשך טורניר** action visually primary; **עריכת נבחרת** is secondary
