@@ -135,6 +135,16 @@ Replace that space with the approved All Stars, ranking, event and news content.
 ## 2026-10 — Badge administration is super-admin only
 The Badges page, badge definition management and Season transition UX are restricted to the super-admin unless changed later.
 
+
+## 2026-10 — Badge awards are Season-aware
+Badge definitions are dynamic; the product does not hard-code a fixed set of eight badge definitions.
+
+Badges may be awarded only to All Stars/team players and only while a badge Season is active.
+
+A player may receive a given badge at most once in a particular badge Season, and may earn the same badge again in a later Season. Every new award records its badge Season. Historical awards remain preserved across Season transitions and remain visible on the approved public All Stars player profile.
+
+Legacy awards created before Season linkage remain readable during migration.
+
 ## 2026-10 — AWS S3 is the reusable file-storage provider
 This decision supersedes the earlier Cloudinary decision.
 
