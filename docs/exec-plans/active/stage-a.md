@@ -1121,3 +1121,26 @@ Footer:
 - make normal, hover and focus states readable and distinguishable
 - avoid low-opacity essential text
 - verify responsive desktop/mobile rendering
+
+
+### 52. Version 2026.10.3 — tournament pagination and count-only queries
+Also include in version `2026.10.3`:
+
+Tournament lists:
+- implement server-side pagination for management **טורנירים**
+- implement server-side pagination for public **אירועים**
+- default page size 25
+- API returns current-page items plus total/page/pageSize/totalPages
+- filters/search/soft-delete visibility are applied before pagination
+- use stable deterministic ordering
+- changing filters/search resets to page 1
+- do not fetch all tournaments and slice in the browser
+
+Counts:
+- audit touched Player/Tournament summary surfaces for full-list fetches used only to calculate a count
+- where only the count is required, use a lightweight count query or count-only pagination mode and consume canonical `total`
+- do not materialize all Player/Tournament rows solely for `.length`
+- preserve the same authorization/visibility/filter semantics as the corresponding list endpoint
+
+Registration:
+- treat `https://lp.cardschool.co.il` as the approved canonical registration URL, not a temporary placeholder
