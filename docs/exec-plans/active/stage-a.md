@@ -772,7 +772,44 @@ Requirements:
 
 Add/update tests for the unified table and removal of the old ranking tab.
 
-### 41. AWS S3 storage and optional image uploads — included in version 2026.10.2
+### 41. Complete seasonal badge implementation — included in version 2026.10.2
+The repository already has partial badge support. Finish it instead of creating a parallel badge system.
+
+Preserve:
+- `BadgeDefinition` dynamic definitions
+- admin-only badge management routes/UI
+- team-player-only awards
+- active/inactive definitions
+- public All Stars player earned-badge display
+- Badge Seasons as a badge-only concept
+
+Correct/complete:
+- `BadgeAward` stores a Season reference for every new award
+- awarding requires an active badge Season
+- replace the current lifetime uniqueness `player + badge` with Season-aware uniqueness `player + badge + season`
+- the same badge may be earned again by the same player in a later Season
+- existing legacy awards without Season remain readable
+- migrate the MongoDB unique index safely; do not leave the old unique index in place
+- management award history shows the Season
+- public player badge DTO/UI shows public-safe Season name
+- integrate the optional S3 badge image into create/edit/list/public earned-badge presentation
+- keep legacy `icon` readable as a fallback but do not use typed Lucide icon names as the primary image-management UX
+- editing/deactivating a definition does not delete historical awards
+- no award revoke/delete is required in this iteration
+
+Add/update tests for:
+- cannot award with no active badge Season
+- only team players can receive badges
+- judge cannot manage/award badges
+- same player+badge cannot be duplicated within one Season
+- same player+badge can be awarded in a later Season
+- closing/opening Seasons preserves prior awards
+- legacy Season-less awards remain readable
+- deactivating a badge blocks new awards but preserves old awards
+- management history includes Season
+- public player response includes safe badge Season/image fields but not awarding staff/private storage metadata
+
+### 42. AWS S3 storage and optional image uploads — included in version 2026.10.2
 Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
 
 Infrastructure assumptions already configured in production:
