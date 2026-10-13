@@ -543,7 +543,23 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 - improve footer text/link/hover/focus contrast without changing footer structure
 
 ### Required verification
-Codex must inspect current code first, follow the detailed product/architecture docs, add/update relevant server/UI tests, run tests, lint and build, and make no unrelated changes.
+Codex must inspect current code first and follow the detailed product/architecture docs.
+
+During implementation:
+- work in coherent feature batches
+- after each batch run only tests/checks relevant to that feature
+- do not run the full test suites, full lint or production build after every feature
+- extend existing relevant tests where practical and avoid redundant coverage
+- make no unrelated refactors
+
+After the full `2026.10.3` scope is implemented:
+- run the full configured server tests
+- run the full configured UI verification suite
+- run full lint
+- run the production build
+- record the final results below
+
+If final verification fails, iterate on the smallest failing subset first and rerun the complete final verification only after the focused failure is fixed.
 
 At minimum verify:
 - Player soft deletion/history preservation/permissions
