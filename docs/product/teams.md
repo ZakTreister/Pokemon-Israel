@@ -188,3 +188,9 @@ History must be preserved across team competition years:
 - roster membership for that year
 - year-specific team standings/statistics
 Historical data must not be lost when a new competition year starts.
+
+
+## Team-page player edit action
+In management context, every player row in **חברי נבחרת** exposes an explicit admin-only **עריכת שחקן** action/link.
+
+It opens the canonical Player edit flow and remains independent from whole-row navigation to the public player profile.
