@@ -51,3 +51,15 @@ Security requirements:
 - changing player type or media visibility must not silently expose an object that was previously private
 - domain APIs should return only the media fields appropriate for that endpoint's audience
 - deletion/replacement APIs must validate ownership; never accept an arbitrary browser-supplied S3 key as authority to delete an object
+
+
+## Child date of birth
+For All Stars/team players, date of birth is optional private management data.
+
+Requirements:
+- never return the exact date of birth from a public player API
+- never render the exact date of birth on a public page
+- public player profiles may expose only the derived current age
+- do not place date of birth in object-storage keys, analytics events or public URLs
+- validate that the date is not in the future
+- use date-only calendar semantics to avoid timezone-based birthday shifts
