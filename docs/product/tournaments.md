@@ -471,3 +471,36 @@ Known future Excel fields are expected to include at least:
 
 It is not yet known whether the file will contain one lifetime aggregate row per player or tournament-by-tournament data.
 Do not design the actual importer until the real file is available and inspected.
+
+
+## Tournament list pagination
+Tournament collection/list screens must use server-side pagination and must not load the entire tournament collection into the browser.
+
+This applies to:
+- management **טורנירים**
+- public **אירועים**
+
+Requirements:
+- default page size: **25**
+- filters/search/lifecycle/type restrictions are applied on the server before pagination
+- soft-deleted tournament exclusion happens before counting/pagination
+- use a stable deterministic sort
+- response includes pagination metadata such as `total`, `page`, `pageSize`, and `totalPages`
+- changing filters/search resets to page 1
+- page navigation fetches only the requested page
+- public and management list endpoints/presentation may share pagination/query primitives where appropriate
+- do not fetch all tournaments and slice client-side
+
+### Count-only usage
+Where a UI needs only a count, do not load full tournament records merely to count them.
+
+Prefer:
+- pagination metadata `total` from the relevant filtered query, or
+- a lightweight count-only form of the same canonical query
+
+Examples:
+- completed tournament count on a team summary
+- number of matching tournaments for a filter
+- homepage/overview counters that do not render tournament rows
+
+The count query must apply the same canonical visibility/deletion/filter rules as the corresponding list query.
