@@ -235,3 +235,15 @@ Create/edit uses the shared dialog pattern and supports:
 Delete requires confirmation.
 
 After create/edit/delete, update or refetch the canonical list without a full-page reload. Show concise Hebrew validation/save errors.
+
+
+## Players list pagination
+**ניהול → שחקנים** uses real server-side pagination.
+
+- default 25 players per page
+- search and player-type filters are server-side and combine with pagination
+- filter/search changes return to page 1
+- show current page and total-page context
+- provide clear previous/next navigation
+- do not preload all Player rows and slice them in the browser
+- preserve the current page after normal edits where sensible; recover to the previous valid page when deletion empties the last page
