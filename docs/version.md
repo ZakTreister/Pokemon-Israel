@@ -482,49 +482,81 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ### Scope
 
-#### 1. Delete/archive player
-Add a visible admin-only **מחק שחקן** action in player management.
+#### 1. Player management corrections
+- admin can soft-delete/archive Players with confirmation while preserving history
+- deleted players disappear from active lists/selectors/public discovery and cannot enter new tournaments/awards
+- managed team member rows include admin-only **עריכת שחקן** opening the canonical shared Player editor
+- Player creation performs server-backed likely-duplicate warning; both player types use normalized first name + last name + city
+- duplicate warning offers **ערוך שחקן קיים** and explicit **צור בכל זאת**
 
-Behavior:
-- show an explicit confirmation dialog
-- normal deletion is soft deletion/archive
-- preserve the Player record and all historical tournament/result references
-- exclude deleted players from normal active player lists
-- exclude deleted players from future team/tournament assignment choices
-- if the player is currently assigned to a team, deletion must leave no active roster membership
-- judge cannot delete players
-- do not hard-delete historically referenced Player records in this flow
+#### 2. Reusable Player editor
+- one shared `PlayerEditDialog` used from Players management and managed team pages
+- reusable form/controller logic; transport remains in existing player service/Redux layer
+- viewport-bounded dialog with internal scrolling
+- desktop two-column layout, mobile one column
+- regular player fields: first name, last name, city, active status; no photo
+- team player fields additionally include city, player number, photo, description, date of birth, join date/derived tenure, personal deck image and up to 6 Pokémon
+- Pokémon names allow English letters/spaces only; image URL is derived centrally from `https://r2.limitlesstcg.net/pokemon/gen9/<slug>.png`
 
-#### 2. Edit player directly from managed team page
-On each player row in the management version of the team page, add an explicit **עריכת שחקן** action/link for admin.
+#### 3. Player data cleanup and pagination
+- remove regular-player `club`; both player types use canonical `city`; no backward compatibility required
+- **ניהול → שחקנים** uses server-side pagination, default 25
+- role/type/search filters apply before pagination
+- response includes `total`, `page`, `pageSize`, `totalPages`
 
-Requirements:
-- open the canonical Player edit flow for that player
-- reuse existing edit components/logic
-- do not create a second independent player editor
-- preserve whole-row navigation to the public profile
-- edit action must not trigger row navigation
-- judge remains read-only
+#### 4. Team management corrections
+- **ניהול → נבחרות All-Stars** shows team logo/image with neutral placeholder
+- add admin-only **עריכת נבחרת**
+- implement one shared `TeamEditDialog` used from team list and managed team page
+- dialog edits core team settings: name, optional logo, teacher and active state
+- roster/player assignment stays outside the dialog
 
-#### 3. Warn before creating a likely duplicate player
-Before creating a Player, perform a server-backed normalized duplicate check.
+#### 5. Updates / News completion
+- existing Update model remains canonical News model
+- required title
+- optional description
+- optional image via shared S3 upload
+- optional CTA consisting of button text + destination URL; if one is supplied, require both
+- CTA destination validates `http://` / `https://`
+- management create/edit/delete actually persist and use shared dialogs; delete requires confirmation
+- homepage **העדכון האחרון** uses manager-configured title/description/image/CTA, including exact CTA button text
+- preserve legacy `content` as description content
 
-Matching rule:
-- team player: normalized first name + last name + city
-- club player: normalized first name + last name + club
+#### 6. Tournament pagination
+- management **טורנירים** and public **אירועים** use server-side pagination
+- default page size 25
+- type/lifecycle/search/visibility/soft-delete rules apply before pagination
+- response includes `total`, `page`, `pageSize`, `totalPages`
+- filter/search changes reset to page 1
+- page navigation fetches only requested page
+- do not load all tournaments and slice client-side
 
-When a likely duplicate exists:
-- show a clear Hebrew warning/modal
-- show enough existing-player context to identify the match
-- provide a way to open/edit the existing player where practical
-- do not silently create
-- allow admin to explicitly choose **צור בכל זאת**
-- normalize whitespace/case consistently with existing player matching rules
+#### 7. Count-only optimization
+- when UI needs only a Player/Tournament count, do not fetch full entity collections
+- use canonical pagination `total` metadata or a lightweight count-only query
+- keep authorization/filter/deletion semantics identical to the corresponding list
+- avoid N+1 count requests where summary DTOs can include the required count
 
-This is a warning workflow, not a hard uniqueness constraint.
+#### 8. Registration URL and footer contrast
+- approved canonical registration URL is `https://lp.cardschool.co.il`
+- homepage registration CTA and floating registration CTA use the same shared configuration value
+- improve footer text/link/hover/focus contrast without changing footer structure
 
 ### Required verification
-Codex must inspect current code first, reuse existing player edit/normalization infrastructure, add/update relevant automated tests, run tests, lint and build, and make no unrelated changes.
+Codex must inspect current code first, follow the detailed product/architecture docs, add/update relevant server/UI tests, run tests, lint and build, and make no unrelated changes.
+
+At minimum verify:
+- Player soft deletion/history preservation/permissions
+- shared Player editor from both entry points
+- team-vs-regular field boundaries, city migration and duplicate warning
+- Player pagination/search/filter/count metadata
+- shared TeamEditDialog and team-list logo/edit behavior
+- Updates CRUD, CTA pair validation, image upload and homepage latest-update use
+- Tournament pagination on management and public Events
+- count-only/summary queries do not fetch unnecessary entity rows
+- shared canonical registration URL
+- footer contrast
+- tests, lint and build pass
 
 ### Completion contract for Codex
 In the implementation PR for `2026.10.3`, Codex must:
