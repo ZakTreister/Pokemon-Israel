@@ -1104,3 +1104,20 @@ Also include in version `2026.10.3`:
 - regular/quarterly players do not have player-photo upload or photo fields in current management UI/API
 - keep player photo as a team-player/All Stars capability only
 - update tests for create/edit/search/duplicate behavior using city
+
+
+### 51. Version 2026.10.3 — shared registration URL and footer contrast
+Also include in version `2026.10.3`:
+
+Registration:
+- homepage **הרשמה לחוג הקרוב לביתכם** reuses the same centrally configured URL as the floating trial-registration CTA
+- current shared URL: `https://lp.cardschool.co.il`
+- do not keep separate duplicated registration URLs in different components
+- make the shared destination easy to update later in one place
+
+Footer:
+- improve text/link contrast against the existing footer background
+- preserve the footer's current information/layout structure
+- make normal, hover and focus states readable and distinguishable
+- avoid low-opacity essential text
+- verify responsive desktop/mobile rendering
