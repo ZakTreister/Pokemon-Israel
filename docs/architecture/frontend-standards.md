@@ -1489,3 +1489,19 @@ When touching the footer:
 - do not rely on very low-opacity text for essential footer content
 - preserve the existing footer structure unless a product requirement asks for a layout change
 - verify both desktop and mobile presentation
+
+
+## Pagination and count-only data access
+Large collection screens should request only the rows they render.
+
+Server-side pagination is required for:
+- Players management
+- management Tournaments
+- public Events
+
+When a component needs only a count:
+- do not fetch full entity collections just to call `.length`
+- reuse authoritative filtered-query count metadata (`total`) or a lightweight count-only query
+- keep count semantics aligned with the canonical list filters/permissions/deletion rules
+
+Avoid N+1 count fetching on card lists where the backend can return required summary counts as part of the parent summary DTO.
