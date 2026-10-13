@@ -504,3 +504,34 @@ Examples:
 - homepage/overview counters that do not render tournament rows
 
 The count query must apply the same canonical visibility/deletion/filter rules as the corresponding list query.
+
+
+## Tournament list pagination
+Tournament collection/list endpoints must use server-side pagination rather than returning the entire tournament collection.
+
+This applies to:
+- management **טורנירים**
+- public **אירועים**
+- other growing tournament-list/history surfaces where loading the full collection is unnecessary
+
+Requirements:
+- default page size: **25**
+- return current-page items plus pagination metadata: `total`, `page`, `pageSize`, `totalPages`
+- apply visibility/deletion rules, lifecycle/type filters and text search on the server before pagination
+- use a stable deterministic sort
+- changing filters/search resets to page 1
+- page navigation fetches only the requested page
+- public and management APIs may share the same pagination/query semantics while preserving their different DTO/permission boundaries
+- do not load all tournaments and slice client-side
+
+### Count-only usage
+When a screen only needs a count — for example a team tournament count, total player count, or dashboard summary — do not fetch the full underlying Player/Tournament collection merely to call `.length`.
+
+Prefer:
+- a lightweight count endpoint/query, or
+- a paginated endpoint mode that returns the canonical `total` without loading unnecessary rows
+
+The exact transport shape may be `countOnly=true`, a dedicated count endpoint, or equivalent, as long as:
+- authorization/filter semantics are identical to the corresponding list
+- the database performs a count query rather than materializing the entire collection
+- callers do not depend on hidden full-list fetches just to display a number
