@@ -158,3 +158,83 @@ In the implementation PR for `2026.10.2`, Codex must:
 - return the PR link to the user
 
 If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Queued version
+
+**Version:** `2026.10.3`  
+**Status:** `READY_FOR_DEVELOPMENT` — queued after `2026.10.2`  
+**Implementation PR:** _pending_
+
+The product owner explicitly queued this version while `2026.10.2` remains pending. Implement `2026.10.2` first unless the product owner explicitly changes the order.
+
+### Scope
+
+#### 1. Replace Cloudinary with AWS S3 generic storage
+- Amazon S3 becomes the canonical object store for new uploads
+- use the existing production bucket `cardschool-public-prod` in `eu-north-1`
+- keep the bucket private with S3 Block Public Access enabled
+- use short-lived backend-authorized presigned direct browser-to-S3 uploads
+- public objects use the `public/` prefix and are delivered through `https://d1grgd8g6bpbb7.cloudfront.net`
+- CloudFront already uses origin path `/public`
+- private objects use `private/` and must not be reachable through the public CloudFront distribution
+- replace Cloudinary-specific `publicId` assumptions with provider-neutral storage keys/metadata for new uploads
+- preserve existing Cloudinary media during migration
+- remove active Cloudinary dependency/config only after no active upload path needs it
+- keep the storage abstraction extensible for future PDFs, spreadsheets/exports and other managed files
+
+#### 2. Team logo upload
+- admin can upload, replace and remove the team logo
+- use the shared uploader/storage service
+- new team logos live under `public/teams/<team-id>/...`
+- public team UI resolves the image through CloudFront
+- judges may view but may not change the logo
+
+#### 3. Child/player photo upload
+- admin can upload, replace and remove an optional photo for any Player
+- applies to All Stars/team players and regular/club children
+- reuse the shared uploader
+- team-player photos may be public on the already-approved public player profile
+- regular/club child photos remain private and are not included in public APIs/pages
+- changing player type must not silently expose a previously private photo
+- judges cannot change player photos
+
+#### 4. Badge/tag image upload
+- super-admin can upload, replace and remove the image while creating/editing a badge definition
+- reuse the shared uploader
+- new badge images live under `public/badges/<badge-id>/...`
+- normal management flow is file upload with preview rather than manual URL entry
+
+#### 5. Shared image rules
+- JPEG, PNG and WebP
+- maximum 5 MB by default
+- backend authorization and validation are authoritative
+- one reusable image-upload component/service with preview, upload state, replacement/removal and Hebrew errors
+- do not expose AWS credentials in frontend code
+- do not implement arbitrary unrestricted file uploads in this version
+
+### Required verification
+Codex must inspect the current implementation and the AWS storage architecture docs, migrate the active upload path, add/update relevant server/UI tests, and run tests, lint and build.
+
+At minimum verify:
+- presign authorization/purpose validation
+- image type/size validation
+- storage-key namespace/ownership
+- team logo upload
+- child photo upload and public/private visibility
+- badge image upload
+- judge mutation denial
+- legacy Cloudinary media compatibility
+
+### Completion contract for Codex
+In the implementation PR for `2026.10.3`, Codex must:
+- mark **Status** as `DEVELOPED`
+- record the actual PR URL
+- record the final implementation SHA
+- record tests/lint/build results
+- record known gaps, or `none`
+- return the PR link to the user
+
+If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
