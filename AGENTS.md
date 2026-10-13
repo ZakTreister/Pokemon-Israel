@@ -66,3 +66,40 @@ Current product decisions override older code, comments, and earlier implementat
 
 ## Active execution plan
 Read `docs/exec-plans/active/stage-a.md` before implementing Stage A or Stage A corrections.
+
+
+## Efficient implementation and verification
+Use the smallest useful verification loop while developing a version.
+
+### During feature development
+- Work in coherent feature batches rather than treating every file edit as a separate milestone.
+- After a feature/sub-feature is implemented, run only the tests/checks directly relevant to that changed behavior.
+- Prefer targeted unit/integration/UI tests for the touched domain instead of the full Stage A suite.
+- Do not run the full repository test suite, full lint, and production build after every small change.
+- If a focused lint/type check is useful for touched files, use it; reserve the configured full lint/build for final version verification.
+- Extend an existing relevant test file/suite when practical instead of creating redundant verification scripts for small requirements.
+- Test a rule at the lowest useful layer. Avoid asserting the same business rule redundantly across server, component and E2E layers unless each layer covers a distinct risk.
+- Do not perform manual verification for behavior already adequately covered by automated tests, except where layout/visual interaction requires it.
+- If an unrelated pre-existing test/type/lint issue appears, document it and continue unless the current change caused or depends on it. Do not expand scope to repair unrelated legacy issues.
+
+### Final version verification
+Only after the approved version scope is complete:
+- run the full configured server/test suite
+- run the full configured UI verification suite
+- run full lint
+- run the production build
+- run any other version-required final checks documented in `docs/version.md`
+
+If the full suite finds a failure:
+1. identify the smallest failing subset
+2. fix it
+3. rerun that focused subset while iterating
+4. rerun the full final verification only after the focused failure is resolved
+
+### Reading and refactoring efficiency
+- At the start of a numbered version, read `AGENTS.md`, `docs/version.md`, and the relevant referenced product/architecture/decision docs.
+- During subsequent feature batches in the same version, reread only documents needed for that batch unless a dependency is unclear.
+- Do not repeatedly reread unrelated project docs.
+- Refactor only when required for the approved feature, to remove real duplication, or to establish an already-approved shared boundary.
+- Do not broaden work into opportunistic repository-wide cleanup.
+- Commit by coherent unit of work rather than after every tiny edit. Keep commits reviewable.
