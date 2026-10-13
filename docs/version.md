@@ -116,7 +116,7 @@ Codex must return the PR link to the user when finished. If its environment cann
 
 ---
 
-## Current version
+## Previous developed version
 
 **Version:** `2026.10.2`  
 **Status:** `DEVELOPED`\
