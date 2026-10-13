@@ -228,9 +228,9 @@ Requirements:
 #### 11. Shared registration destination and footer contrast
 Registration:
 - homepage **הרשמה לחוג הקרוב לביתכם** uses the same centrally configured URL as the floating registration CTA
-- current destination: `https://lp.cardschool.co.il`
+- approved canonical destination: `https://lp.cardschool.co.il`
 - do not hard-code a separate homepage-only URL
-- keep the destination centralized so it can be replaced later in one place
+- keep the destination centralized in one shared configuration
 
 Footer:
 - improve contrast of footer text and links against the existing footer background
@@ -238,6 +238,27 @@ Footer:
 - ensure hover/focus states remain clearly distinguishable
 - avoid low-opacity essential text
 - verify desktop and mobile
+
+
+#### 12. Tournament pagination and count-only queries
+Tournament lists:
+- management **טורנירים** uses real server-side pagination
+- public **אירועים** uses the same pagination semantics
+- default page size: **25**
+- return items plus `total`, `page`, `pageSize`, `totalPages`
+- apply authorization/public visibility, soft-delete exclusion, type/lifecycle filters and text search before pagination
+- stable deterministic sort
+- filter/search changes reset to page 1
+- do not fetch all tournaments and slice client-side
+
+Count-only optimization:
+- where a surface needs only a Player/Tournament count, do not fetch all records
+- use a lightweight database count/count-only API or equivalent paginated-total request
+- count semantics must match the corresponding list's authorization/filters
+- avoid full collection materialization solely for `.length`
+
+Registration:
+- `https://lp.cardschool.co.il` is the approved canonical registration destination
 
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
