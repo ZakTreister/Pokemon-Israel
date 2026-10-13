@@ -390,3 +390,17 @@ A likely match opens a warning dialog with the existing player and gives the adm
 The **ניהול → נבחרות All-Stars** overview shows each team's current logo/image in the team summary/card/row when available, with a neutral placeholder when absent.
 
 Admin also gets a clear **עריכת נבחרת** action from that same summary/card/row. It reuses the canonical team edit/settings flow. Judges remain read-only.
+
+
+## 2026-10 — Player editing uses one reusable editor
+The canonical Player edit dialog is shared by **ניהול → שחקנים** and managed team pages.
+
+UI/presentation lives in a reusable Player editor component with reusable form/controller logic; API/service code remains UI-agnostic. The dialog is viewport-bounded, internally scrollable, two-column on desktop and one-column on mobile.
+
+## 2026-10 — Team-player tenure is derived from join date
+All Stars/team players may store an optional date-only **תאריך הצטרפות**. User-facing **וותק** is calculated from that date rather than stored as manually maintained text.
+
+## 2026-10 — Team-player personal deck and up to six Pokémon
+All Stars/team players may have an optional uploaded personal-deck image plus up to six Pokémon names.
+
+Pokémon names accept English letters/spaces only. Their display images are derived centrally from the Limitless gen9 image base URL by lowercasing the name and replacing spaces with hyphens. Persist the names, not the derived URLs.
