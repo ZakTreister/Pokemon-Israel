@@ -1036,3 +1036,39 @@ Also include in version `2026.10.3`:
 - reuse the existing teams service/Redux persistence path
 - do not duplicate team edit form/state across pages
 - after save, close dialog and refresh canonical team/list data without full-page reload
+
+
+### 48. Version 2026.10.3 — complete Updates/News management
+Also include in version `2026.10.3`:
+
+Data/model:
+- evolve the existing Update model; do not create a parallel News model
+- title is required
+- description is optional; preserve/read legacy `content` as the description
+- optional public image using the shared S3 media layer
+- optional validated external link
+
+Management:
+- make create/edit/delete actually persist through the existing Updates API/service
+- delete uses confirmation
+- use shared Modal/Dialog rather than custom fixed-overlay markup
+- title validation is authoritative on backend and frontend
+- optional link accepts only valid `http://` / `https://` URLs
+- reuse shared ImageUpload with a distinct `update-image` purpose
+- no full-page reload after mutations
+
+Public:
+- News feed/full post show image when present
+- show description/content
+- show an explicit link CTA when link exists
+- external link uses safe new-tab attributes
+- homepage banner/latest-update continue to use the same canonical Update records
+
+Add/update tests for:
+- required trimmed title
+- optional description/image/link
+- invalid link rejection
+- create/edit/delete persistence
+- image upload authorization/purpose
+- legacy `content` compatibility
+- public image/link rendering
