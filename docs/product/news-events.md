@@ -123,7 +123,8 @@ Each update/news item supports:
 - **כותרת** — required
 - **תיאור** — optional
 - **תמונה** — optional
-- **קישור** — optional
+- **קריאה לפעולה** — optional button/CTA text
+- **קישור קריאה לפעולה** — optional destination URL
 
 Backward compatibility:
 - existing `content` data remains readable and is treated as the update description
@@ -141,8 +142,10 @@ Form behavior:
 - title is required and trimmed
 - description is optional plain text
 - image is optional and uses the shared managed-image upload flow
-- link is optional
-- validate link as a normal `http://` or `https://` URL when present
+- CTA text is optional
+- CTA destination URL is optional
+- CTA text and URL are treated as one logical action: if either is supplied, require both before save
+- validate the CTA URL as a normal `http://` or `https://` URL
 - show concise Hebrew validation/network errors
 - create/edit dialog should use the shared Modal/Dialog primitive rather than page-local overlay markup
 
@@ -167,11 +170,12 @@ The public News feed and full News post should use the available fields:
 - title
 - description/content
 - image when present
-- link when present
+- CTA button when CTA text + destination are present
 
-For an optional external link:
-- render a clear CTA/link
-- open external destinations safely with `target="_blank"` and `rel="noopener noreferrer"`
-- do not require users to paste URLs into description text just to get a clickable link
+For an optional CTA:
+- render the button using the exact CTA text configured by the manager
+- the button navigates to the configured destination URL
+- external destinations open safely with `target="_blank"` and `rel="noopener noreferrer"`
+- do not require users to paste URLs into description text just to get a clickable action
 
 The homepage news banner/latest-update card may keep their compact presentation, but should use the same canonical Update records.
