@@ -410,3 +410,11 @@ Pokémon names accept English letters/spaces only. Their display images are deri
 **עריכת נבחרת** opens one reusable `TeamEditDialog`, not a separate page.
 
 The same dialog is used from the teams management list and the managed team page. It edits the team's core settings; roster/player assignment remains outside the dialog.
+
+
+## 2026-10 — Updates are the canonical News model
+The existing Update model remains the source for **חדשות**. Do not introduce a parallel News entity.
+
+An update has a required title and optional description, image and link. Existing `content` remains backward compatible as description content.
+
+Update images use the shared AWS S3 media flow. Management create/edit/delete must be fully functional, and public News surfaces show the optional image/link when present.
