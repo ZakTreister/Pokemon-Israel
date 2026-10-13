@@ -1,3 +1,5 @@
+import { resolveUpload, finishAttachment } from '../services/mediaUpload.js';
+import { profileFields } from '../services/playerProfile.js';
 import { playerNumber as normalizePlayerNumber } from '../services/playerNumber.js';
 import asyncHandler from 'express-async-handler';
 import Player from '../models/playerModel.js';
@@ -26,7 +28,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
     ];
   }
 
-  const players = await Player.find(query)
+  const players = await Player.find(query).select(req.user.role === 'judge' ? '-dateOfBirth' : '')
     .populate('user', 'username name role')
     .sort({ firstName: 1, lastName: 1 });
 
@@ -37,7 +39,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
 // @route   GET /api/players/:id
 // @access  Private/Admin
 export const getPlayer = asyncHandler(async (req, res) => {
-  const player = await Player.findById(req.params.id).populate(
+  const player = await Player.findById(req.params.id).select(req.user.role === 'judge' ? '-dateOfBirth' : '').populate(
     'user',
     'username name role'
   );
@@ -87,9 +89,12 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
     throw new Error('A club player with this name and club already exists');
   }
 
+  req.body.playerType = 'quarterly';
+  const attachment = await resolveUpload(req, 'player-photo');
   let player;
   try {
     player = await Player.create({
+      ...(attachment?.id ? {_id: attachment.id} : {}), photoMedia: attachment?.media || null,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       club: club.trim(),
@@ -108,6 +113,7 @@ export const createQuarterlyPlayer = asyncHandler(async (req, res) => {
     throw error;
   }
 
+  await finishAttachment(req, attachment);
   res.status(201).json(player);
 });
 
@@ -117,12 +123,16 @@ export const createTeamPlayer = asyncHandler(async (req, res) => {
   if (typeof firstName !== 'string' || !firstName.trim() || typeof lastName !== 'string' || !lastName.trim() || typeof city !== 'string') {
     res.status(400); throw new Error('First name and last name are required; city must be text');
   }
+  req.body.playerType = 'team';
+  const attachment = await resolveUpload(req, 'player-photo');
+  const profile = profileFields(req.body);
   const number = normalizePlayerNumber(playerNumber, true);
   if (typeof teamId !== 'string' || !/^[a-f\d]{24}$/i.test(teamId)) { res.status(400); throw new Error('יש לבחור נבחרת פעילה'); }
   const player = await withRosterLocks([teamId], async () => {
     if (teamId && !(await Team.findById(teamId))?.isActive) { res.status(400); throw new Error('Team must be active'); }
-    return Player.create({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), playerNumber: number, playerType: 'team', team: teamId, user: null });
+    return Player.create({ ...profile, ...(attachment?.id ? {_id: attachment.id} : {}), photoMedia: attachment?.media || null, firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), playerNumber: number, playerType: 'team', team: teamId, user: null });
   });
+  await finishAttachment(req, attachment);
   res.status(201).json(player);
 });
 
@@ -141,6 +151,12 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Player not found');
   }
+
+  const previousMedia = player.photoMedia;
+  const previousProfile = { description: player.description, dateOfBirth: player.dateOfBirth };
+  const attachment = await resolveUpload(req, 'player-photo', player._id, previousMedia);
+  if (attachment) player.photoMedia = attachment.media;
+  if (player.playerType === 'team') Object.assign(player, profileFields(req.body));
 
   // Snapshot original values for rollback
   const originalFirstName = player.firstName;
@@ -230,6 +246,8 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         await linkedUser.save();
       } catch (userError) {
         // Roll back Player to original values
+        player.photoMedia = previousMedia;
+        Object.assign(player, previousProfile);
         player.firstName = originalFirstName;
         player.lastName = originalLastName;
         player.club = originalClub;
@@ -247,6 +265,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     }
 
     await updatedPlayer.populate('user', 'username name role');
+    await finishAttachment(req, attachment, previousMedia);
     res.json(updatedPlayer);
   } catch (error) {
     if (error.code === 11000) {

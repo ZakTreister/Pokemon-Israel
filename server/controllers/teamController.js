@@ -1,3 +1,5 @@
+import { resolveUpload, finishAttachment } from '../services/mediaUpload.js';
+import { profileFields } from '../services/playerProfile.js';
 import { playerNumber as normalizePlayerNumber } from '../services/playerNumber.js';
 import User from '../models/userModel.js';
 import asyncHandler from 'express-async-handler';
@@ -38,7 +40,7 @@ async function counts(team) {
   ]);
   return { playerCount, completedInternalTournamentCount };
 }
-const publicTeam = async team => ({ id: team.id, name: team.name, logo: team.logo || '', isActive: team.isActive, ...await counts(team), officialStats: null });
+const publicTeam = async team => ({ id: team.id, name: team.name, logo: team.toJSON().logo || '', isActive: team.isActive, ...await counts(team), officialStats: null });
 async function openForTeam(team) {
   const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
   return open ? { id: open.id, phase: open.phase } : null;
@@ -61,12 +63,12 @@ export const getTeams = asyncHandler(async (req, res) => {
   res.json(await Promise.all(teams.map(async team => ({ ...team.toJSON(), ...await counts(team), openInternalTournament: byTeam.get(team.id) || null }))));
 });
 export const getManageablePlayers = asyncHandler(async (req, res) => {
-  res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select('firstName lastName city playerNumber isActive team').sort({ firstName: 1, lastName: 1 }));
+  res.json(await Player.find({ playerType: 'team' }).populate('team', 'name logo isActive').select(`firstName lastName city playerNumber isActive team description photoMedia ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`).sort({ firstName: 1, lastName: 1 }));
 });
 export const getTeam = asyncHandler(async (req, res) => {
   const team = await Team.findById(req.params.id).populate('createdBy', 'username name').populate('teacher', 'name role');
   if (!team) fail(404, 'נבחרת לא נמצאה');
-  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select('firstName lastName city playerNumber isActive team').sort({ firstName: 1, lastName: 1 });
+  const players = await Player.find({ team: team._id, playerType: 'team', isActive: true }).select(`firstName lastName city playerNumber isActive team description photoMedia ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`).sort({ firstName: 1, lastName: 1 });
   const open = await Tournament.findOne({ ...OPEN_INTERNAL_FILTER, team: team._id }).select('phase');
   res.json({ ...team.toJSON(), ...await counts(team), players, openInternalTournament: open ? { id: open.id, phase: open.phase } : null });
 });
@@ -74,8 +76,10 @@ export const createTeam = asyncHandler(async (req, res) => {
   const { name, logo = '', logoPublicId = '', teacher } = req.body;
   if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
   const teacherId = await validateTeacher(teacher);
+  const attachment = await resolveUpload(req, 'team-logo');
   try {
-    const team = await Team.create({ teacher: teacherId, name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), logoPublicId: validatePublicId(logoPublicId), createdBy: req.user._id });
+    const team = await Team.create({ ...(attachment?.id ? {_id: attachment.id} : {}), logoMedia: attachment?.media || null, teacher: teacherId, name: name.trim(), normalizedName: normalizeTeamName(name), logo: validateLogo(logo), logoPublicId: validatePublicId(logoPublicId), createdBy: req.user._id });
+    await finishAttachment(req, attachment);
     await team.populate([{ path: 'createdBy', select: 'username name' }, { path: 'teacher', select: 'name role' }]);
     res.status(201).json({ ...team.toJSON(), playerCount: 0, completedInternalTournamentCount: 0 });
   } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
@@ -84,6 +88,9 @@ export const updateTeam = asyncHandler(async (req, res) => {
   const output = await withRosterLocks([req.params.id], async () => {
     const team = await Team.findById(req.params.id);
     if (!team) fail(404, 'נבחרת לא נמצאה');
+    const previousMedia = team.logoMedia;
+    const attachment = await resolveUpload(req, 'team-logo', team._id, previousMedia);
+    if (attachment) { team.logoMedia = attachment.media; team.logo = ''; team.logoPublicId = ''; }
     const { name, logo, logoPublicId, isActive, teacher } = req.body;
     if (teacher !== undefined) team.teacher = await validateTeacher(teacher);
     if (name !== undefined) {
@@ -91,7 +98,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
       team.name = name.trim();
       team.normalizedName = normalizeTeamName(name);
     }
-    if (logo !== undefined) { team.logo = validateLogo(logo); team.logoPublicId = validatePublicId(logoPublicId); }
+    if (logo !== undefined && !attachment) { team.logo = validateLogo(logo); team.logoPublicId = validatePublicId(logoPublicId); }
     else if (logoPublicId !== undefined) team.logoPublicId = validatePublicId(logoPublicId);
     if (isActive !== undefined) {
       if (typeof isActive !== 'boolean') fail(400, 'מצב נבחרת לא חוקי');
@@ -99,6 +106,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
       team.isActive = isActive;
     }
     try { await team.save(); } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
+    await finishAttachment(req, attachment, previousMedia);
     await team.populate('teacher', 'name role');
     return { ...team.toJSON(), ...await counts(team), openInternalTournament: await openForTeam(team) };
   });
@@ -128,10 +136,13 @@ export const removePlayerFromTeam = asyncHandler(async (req, res) => {
 export const loadTeamPlayers = asyncHandler(async (req, res) => {
   const rows = req.body.players;
   if (!Array.isArray(rows) || !rows.length || rows.length > 128) fail(400, 'יש להזין בין 1 ל-128 שחקנים');
-  const documents = rows.map(row => {
+  const attachments = [];
+  const documents = await Promise.all(rows.map(async row => {
     if (!row || typeof row.firstName !== 'string' || !row.firstName.trim() || typeof row.lastName !== 'string' || !row.lastName.trim() || (row.city !== undefined && typeof row.city !== 'string')) fail(400, 'שם פרטי ושם משפחה הם שדות חובה; עיר היא טקסט');
-    return new Player({ firstName: row.firstName.trim(), lastName: row.lastName.trim(), city: row.city?.trim() || '', playerNumber: normalizePlayerNumber(row.playerNumber, true), playerType: 'team', team: req.params.teamId, user: null });
-  });
+    const attachment = await resolveUpload({...req, body: {...row, playerType: 'team'}}, 'player-photo');
+    attachments.push(attachment);
+    return new Player({ ...profileFields(row), ...(attachment?.id ? {_id: attachment.id} : {}), photoMedia: attachment?.media || null, firstName: row.firstName.trim(), lastName: row.lastName.trim(), city: row.city?.trim() || '', playerNumber: normalizePlayerNumber(row.playerNumber, true), playerType: 'team', team: req.params.teamId, user: null });
+  }));
   const output = await withRosterLocks([req.params.teamId], async () => {
     const team = await Team.findById(req.params.teamId);
     if (!team?.isActive) fail(400, 'לא ניתן לטעון ילדים לנבחרת לא פעילה');
@@ -139,5 +150,6 @@ export const loadTeamPlayers = asyncHandler(async (req, res) => {
     try { return await Player.insertMany(documents, { ordered: true }); }
     catch (error) { await Player.deleteMany({ _id: { $in: documents.map(doc => doc._id) } }); throw error; }
   });
+  await Promise.all(attachments.map(attachment => finishAttachment(req, attachment)));
   res.status(201).json(output);
 });

@@ -8,6 +8,8 @@ const seasonSchema = new mongoose.Schema({
     minlength: [2, 'Season name must be at least 2 characters long'],
     maxlength: [100, 'Season name cannot exceed 100 characters'],
   },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   status: {
     type: String,
     enum: ['active', 'closed'],
@@ -39,16 +41,13 @@ seasonSchema.set('toJSON', {
   },
 });
 
-// Partial unique index: at most one active season, unlimited closed seasons.
-// The filter { status: 'active' } excludes closed seasons from the uniqueness
-// constraint, so the index only applies to documents with status 'active'.
-// The sparse option is not needed here because the filter already scopes the
-// index to active documents only.
+// Only non-deleted active Seasons occupy the single active-Season slot.
 seasonSchema.index(
   { status: 1 },
   {
+    name: 'one_active_badge_season',
     unique: true,
-    partialFilterExpression: { status: 'active' },
+    partialFilterExpression: { status: 'active', deletedAt: null },
   }
 );
 

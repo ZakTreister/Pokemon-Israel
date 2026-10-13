@@ -5,6 +5,7 @@ import {
   getActiveSeason,
   createSeason,
   closeSeason,
+  deleteSeason,
 } from '../controllers/seasonController.js';
 
 const router = express.Router();
@@ -13,5 +14,7 @@ router.get('/', protect, admin, getSeasons);
 router.get('/active', protect, admin, getActiveSeason);
 router.post('/', protect, admin, createSeason);
 router.post('/:id/close', protect, admin, closeSeason);
+
+router.delete('/:id', protect, admin, deleteSeason);
 
 export default router;

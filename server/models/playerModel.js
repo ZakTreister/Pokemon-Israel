@@ -1,3 +1,5 @@
+import { validateBirthDate } from '../services/playerProfile.js';
+import { mediaSchema, publicMediaUrl } from '../services/storage/mediaMetadata.js';
 import mongoose from 'mongoose';
 
 const playerSchema = new mongoose.Schema({
@@ -15,6 +17,9 @@ const playerSchema = new mongoose.Schema({
     minlength: [1, 'Last name must be at least 1 character long'],
     maxlength: [50, 'Last name cannot exceed 50 characters'],
   },
+  photoMedia: { type: mediaSchema, default: null },
+  description: { type: String, trim: true, maxlength: 500, default: '' },
+  dateOfBirth: { type: String, default: '', validate: { validator(value) { try { validateBirthDate(value || ''); return true; } catch { return false; } }, message: 'תאריך לידה לא תקין או עתידי' } },
   playerNumber: { type: String, trim: true, default: '' },
   city: { type: String, trim: true, maxlength: 100, default: '' },
   club: {
@@ -80,6 +85,7 @@ playerSchema.index(
 playerSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
+    if (doc.playerType === 'team') ret.photoUrl = publicMediaUrl(doc.photoMedia);
     delete ret._id;
     delete ret.__v;
     delete ret.normalizedFirstName;

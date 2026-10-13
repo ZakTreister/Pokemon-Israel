@@ -1,6 +1,6 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID, randomBytes } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
@@ -17,6 +17,9 @@ import Player from '../models/playerModel.js';
 import Team from '../models/teamModel.js';
 import Tournament from '../models/tournamentModel.js';
 import Season from '../models/seasonModel.js';
+import BadgeDefinition from '../models/badgeDefinitionModel.js';
+import BadgeAward from '../models/badgeAwardModel.js';
+import MediaUpload from '../models/mediaUploadModel.js';
 import '../models/deckModel.js';
 import teamRoutes from '../routes/teamRoutes.js';
 import playerRoutes from '../routes/playerRoutes.js';
@@ -28,6 +31,23 @@ import { errorHandler } from '../middleware/errorMiddleware.js';
 let server, origin, live;
 const tokens = {};
 const staffIds = {};
+const mediaObjects = new Map();
+const removedMedia = [];
+let cleanupFails = false;
+let tamperOnCopy = false;
+const mediaStorage = {
+  presign: async ({key,contentType,size}) => ({url:'https://s3.example/upload',fields:{key,'Content-Type':contentType,size:String(size)}}),
+  inspect: async key => { const object=mediaObjects.get(key);if(!object)throw new Error('Object not found');return {...object,etag:createHash('sha256').update(object.bytes).digest('hex'),prefix:object.bytes.subarray(0,12)}; },
+  promote: async (from,to,type,etag) => {if(tamperOnCopy){tamperOnCopy=false;mediaObjects.set(from,{bytes:Buffer.alloc(png.length,60),size:png.length,contentType:'image/png'});}if(createHash('sha256').update(mediaObjects.get(from).bytes).digest('hex')!==etag) throw new Error('Object changed during verification');mediaObjects.set(to,mediaObjects.get(from));},
+  remove: async key => {if(cleanupFails)throw new Error('Cleanup unavailable');removedMedia.push(key);mediaObjects.delete(key);},
+  readUrl: async key => `https://s3.example/private-preview?object=${encodeURIComponent(key)}&expires=300`,
+};
+const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6n4kAAAAASUVORK5CYII=','base64');
+async function uploaded(purpose,entityId,playerType) {
+  const grant = await ok('/media/presign','POST',{purpose,...(entityId?{entityId}:{}),playerType,contentType:'image/png',size:png.length},'admin',201);
+  mediaObjects.set(grant.upload.fields.key,{bytes:png,size:png.length,contentType:'image/png'});
+  return ok(`/media/${grant.uploadId}/complete`,'POST',{},'admin');
+}
 const database = `stage_a_test_${randomUUID().replaceAll('-', '')}`;
 async function request(path, method = 'GET', body, role = 'judge') {
   if (path === '/teams' && method === 'POST' && body && body.teacher === undefined) body = { ...body, teacher: staffIds.admin };
@@ -82,6 +102,7 @@ before(async () => {
   }
   const app = express();
   app.set('tournamentRandom', () => 0.25);
+  app.set('mediaStorage', mediaStorage);
   app.use(express.json());
   app.use('/api/teams', teamRoutes);
   app.use('/api/players', playerRoutes);
@@ -891,33 +912,10 @@ test('national lifetime ranking excludes all team scoring and badge transitions 
   );
 });
 
-test('media endpoint enforces admin auth, type and body size before provider access', async () => {
-  const image = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6n4kAAAAASUVORK5CYII=',
-    'base64',
-  );
-  const send = (bytes, role, mime = 'image/png') =>
-    fetch(`${origin}/api/media/images`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': mime,
-        ...(role ? { Authorization: `Bearer ${tokens[role]}` } : {}),
-      },
-      body: bytes,
-    });
-  assert.equal((await send(image, null)).status, 401);
-  assert.equal((await send(image, 'player')).status, 403);
-  assert.equal((await send(image, 'judge')).status, 403);
-  assert.equal(
-    (await send(Buffer.from('<svg/>'), 'admin', 'image/svg+xml')).status,
-    400,
-  );
-  assert.equal(
-    (await send(Buffer.alloc(5 * 1024 * 1024 + 1), 'admin')).status,
-    413,
-  );
-  if (!process.env.CLOUDINARY_API_SECRET)
-    assert.equal((await send(image, 'admin')).status, 503);
+test('media presign enforces admin authentication and purpose/type/size before provider access', async () => {
+  const valid={purpose:'team-logo',contentType:'image/png',size:png.length};
+  for(const [role,status] of [[null,401],['player',403],['judge',403]])assert.equal((await request('/media/presign','POST',valid,role)).status,status);
+  for(const invalid of [{...valid,purpose:'export'},{...valid,contentType:'image/svg+xml'},{...valid,contentType:'constructor'},{...valid,contentType:'toString'},{...valid,size:5*1024*1024+1},{...valid,size:0},{...valid,size:1.5},{...valid,entityId:'invalid'},{...valid,entityId:new mongoose.Types.ObjectId().toString()}])assert.ok([400,404].includes((await request('/media/presign','POST',invalid,'admin')).status));
 });
 
 test('judge is limited to live tournament operation and never changes permanent configuration', async () => {
@@ -1352,4 +1350,166 @@ test('2026.10.1 next-round participant plan retains history, synchronizes and ke
     assert.equal((await request(`/internal-tournaments/${t.id}/participants`, 'PUT', {expectedRevision:t.revision,playerIds:ids},'admin')).status,409);
     assert.deepEqual((await ok(`/teams/${team.id}`)).players.map(p=>p.id).sort(),[...ids,late.id].sort());
   } finally {socket.disconnect();}
+});
+
+test('2026.10.2 shared S3 media verifies actual objects, ownership and optional create/replace/remove for teams, players and badges',async()=>{
+  const teamImage=await uploaded('team-logo');
+  assert.ok(teamImage.storageKey.startsWith(`public/teams/${teamImage.entityId}/`));
+  assert.equal(teamImage.url,`https://d1grgd8g6bpbb7.cloudfront.net/teams/${teamImage.entityId}/${teamImage.storageKey.split('/').at(-1)}`);
+  assert.ok(!('publicId' in teamImage));
+  const team=await ok('/teams','POST',{name:'S3 logo team',logoUploadId:teamImage.uploadId},'admin',201);
+  assert.equal(team.id,teamImage.entityId);assert.equal(team.logo,teamImage.url);
+  assert.equal((await ok(`/teams/public/${team.id}`,'GET',undefined,null)).logo,teamImage.url);
+  const otherAdmin=await User.create({name:'Other admin',username:'other-admin',password:randomBytes(24).toString('hex'),role:'admin'});
+  tokens.otherAdmin=jwt.sign({id:otherAdmin.id},process.env.JWT_SECRET);
+  assert.equal((await request(`/media/${teamImage.uploadId}/complete`,'POST',{},'otherAdmin')).status,404);
+  const oldKey=team.logoMedia.storageKey;
+  const replacement=await uploaded('team-logo',team.id);
+  assert.equal((await request(`/teams/${team.id}`,'PUT',{logoUploadId:replacement.uploadId},'otherAdmin')).status,400);
+  const unrelated=await ok('/teams','POST',{name:'S3 unrelated'},'admin',201);
+  assert.equal((await request(`/teams/${unrelated.id}`,'PUT',{logoUploadId:replacement.uploadId},'admin')).status,400);
+  assert.equal((await request(`/teams/${team.id}`,'PUT',{logoUploadId:replacement.uploadId},'judge')).status,403);
+  assert.equal((await request(`/media/${replacement.uploadId}/complete`,'POST',{},'judge')).status,403);
+  await ok(`/teams/${team.id}`,'PUT',{logoUploadId:replacement.uploadId},'admin');
+  assert.ok(removedMedia.includes(oldKey));
+  cleanupFails=true;
+  await ok(`/teams/${team.id}`,'PUT',{logoUploadId:null},'admin');
+  cleanupFails=false;
+  assert.equal((await ok(`/teams/public/${team.id}`,'GET',undefined,null)).logo,'');
+  assert.ok(mediaObjects.has(replacement.storageKey),'cleanup failure does not break persistence');
+  const legacy=await ok('/teams','POST',{name:'Legacy Cloudinary media',logo:'https://res.cloudinary.com/legacy/image/upload/logo.png',logoPublicId:'legacy/logo'},'admin',201);
+  assert.equal((await ok(`/teams/public/${legacy.id}`,'GET',undefined,null)).logo,legacy.logo);
+  const image=await uploaded('player-photo',undefined,'team');
+  const child=await ok('/players/team','POST',{firstName:'Photo',lastName:'Team',teamId:team.id,playerNumber:'P-1',photoUploadId:image.uploadId},'admin',201);
+  assert.equal(child.id,image.entityId);assert.ok(image.storageKey.startsWith(`public/players/${child.id}/`));
+  const publicData=await ok(`/players/public/${child.id}`,'GET',undefined,null);
+  assert.equal(publicData.photoUrl,image.url);assert.ok(!('photoMedia' in publicData));
+  const privateImage=await uploaded('player-photo',undefined,'quarterly');
+  const club=await ok('/players/quarterly','POST',{firstName:'Photo',lastName:'Club',club:'School',photoUploadId:privateImage.uploadId},'admin',201);
+  assert.ok(club.photoMedia.storageKey.startsWith(`private/players/${club.id}/`));
+  assert.ok(!club.photoUrl);assert.equal((await request(`/players/public/${club.id}`,'GET',undefined,null)).status,404);
+  const preview=await ok(`/media/players/${club.id}/photo`,'GET',undefined,'admin');
+  assert.ok(preview.url.startsWith('https://s3.example/private-preview'));
+  assert.equal((await request(`/media/players/${club.id}/photo`,'GET',undefined,'judge')).status,403);
+  assert.equal((await request(`/media/players/${club.id}/photo`,'GET',undefined,null)).status,401);
+  const mismatch=await uploaded('player-photo',undefined,'quarterly');
+  assert.equal((await request('/players/team','POST',{firstName:'Forbidden',lastName:'Visibility',teamId:team.id,playerNumber:'P-2',photoUploadId:mismatch.uploadId},'admin')).status,400);
+  const privateReplacement=await uploaded('player-photo',club.id,'team');
+  assert.ok(privateReplacement.storageKey.startsWith('private/players/'));
+  await ok(`/players/${club.id}`,'PUT',{photoUploadId:privateReplacement.uploadId},'admin');
+  assert.ok(removedMedia.includes(privateImage.storageKey));
+  // An explicit future type change must not publish the existing private object.
+  await Player.updateOne({_id:club.id},{$set:{playerType:'team'}});
+  const changedType=await ok(`/players/public/${club.id}`,'GET',undefined,null);
+  assert.ok(!changedType.photoUrl && !JSON.stringify(changedType).includes('private/'));
+  const publicReplacement=await uploaded('player-photo',child.id,'quarterly');
+  await ok(`/players/${child.id}`,'PUT',{photoUploadId:publicReplacement.uploadId},'admin');
+  assert.equal((await ok(`/players/public/${child.id}`,'GET',undefined,null)).photoUrl,publicReplacement.url);
+  assert.ok(removedMedia.includes(image.storageKey));
+  await ok(`/players/${child.id}`,'PUT',{photoUploadId:null},'admin');
+  assert.ok(!('photoUrl' in await ok(`/players/public/${child.id}`,'GET',undefined,null)));
+  assert.ok(removedMedia.includes(image.storageKey));
+  const badgeImage=await uploaded('badge-image');
+  const badge=await ok('/badges','POST',{name:'S3 badge',imageUploadId:badgeImage.uploadId},'admin',201);
+  assert.equal(badge.id,badgeImage.entityId);assert.equal(badge.image,badgeImage.url);
+  const another=await uploaded('badge-image',badge.id);
+  await ok(`/badges/${badge.id}`,'PUT',{imageUploadId:another.uploadId},'admin');assert.ok(removedMedia.includes(badgeImage.storageKey));
+  await ok(`/badges/${badge.id}`,'PUT',{imageUploadId:null},'admin');assert.ok(removedMedia.includes(another.storageKey));
+  assert.equal((await ok('/badges','POST',{name:'Image optional'},'admin',201)).image,'');
+  const malformed=await ok('/media/presign','POST',{purpose:'badge-image',contentType:'image/png',size:png.length,storageKey:'public/stolen/anything.png',bucket:'evil'},'admin',201);
+  mediaObjects.set(malformed.upload.fields.key,{bytes:Buffer.from('<svg/>'),size:png.length,contentType:'image/png'});
+  assert.equal((await request(`/media/${malformed.uploadId}/complete`,'POST',{},'admin')).status,400);
+  assert.ok(removedMedia.includes(malformed.upload.fields.key));
+  assert.equal(await MediaUpload.findById(malformed.uploadId),null);
+  const wrongSize=await ok('/media/presign','POST',{purpose:'team-logo',contentType:'image/png',size:png.length},'admin',201);
+  mediaObjects.set(wrongSize.upload.fields.key,{bytes:png,size:5*1024*1024+1,contentType:'image/png'});
+  assert.equal((await request(`/media/${wrongSize.uploadId}/complete`,'POST',{},'admin')).status,400);
+  // A still-valid staging upload cannot overwrite the promoted final object.
+  const immutable=await uploaded('team-logo');
+  const grant=await MediaUpload.findById(immutable.uploadId);
+  mediaObjects.set(grant.uploadKey,{bytes:Buffer.from('<svg/>'),size:png.length,contentType:'image/png'});
+  await ok(`/media/${immutable.uploadId}/complete`,'POST',{},'admin');
+  assert.deepEqual(mediaObjects.get(immutable.storageKey).bytes,png);
+  const raced=await ok('/media/presign','POST',{purpose:'team-logo',contentType:'image/png',size:png.length},'admin',201);
+  mediaObjects.set(raced.upload.fields.key,{bytes:png,size:png.length,contentType:'image/png'});
+  tamperOnCopy=true;
+  assert.equal((await request(`/media/${raced.uploadId}/complete`,'POST',{},'admin')).status,502);
+  const racedGrant=await MediaUpload.findById(raced.uploadId);
+  assert.ok(!mediaObjects.has(racedGrant.storageKey),'changed staging content cannot be promoted after verification');
+  assert.equal((await request(`/media/${raced.uploadId}/complete`,'POST',{},'admin')).status,400);
+  const expired=await uploaded('badge-image');await MediaUpload.updateOne({_id:expired.uploadId},{$set:{expiresAt:new Date(0)}});
+  assert.equal((await request('/badges','POST',{name:'Expired image',imageUploadId:expired.uploadId},'admin')).status,400);
+});
+
+test('2026.10.2 badge Seasons, index migration, revocation/re-award and deletion preserve safe history',async()=>{
+  await Season.updateMany({status:'active'},{$set:{status:'closed'}});
+  const team=await ok('/teams','POST',{name:'Season badges'},'admin',201);
+  const children=await ok(`/teams/${team.id}/players`,'POST',{players:['First','Second'].map(firstName=>({firstName,lastName:'Badge'}))},'admin',201);
+  const badge=await ok('/badges','POST',{name:'Seasonal achievement'},'admin',201);
+  const badgeImage=await uploaded('badge-image',badge.id);
+  await ok(`/badges/${badge.id}`,'PUT',{imageUploadId:badgeImage.uploadId},'admin');
+  const legacy=await BadgeAward.create({player:children[0].id,badge:badge.id,awardedBy:staffIds.admin});
+  // Simulate the deployed lifetime constraint alongside the replacement index.
+  await BadgeAward.collection.createIndex({player:1,badge:1},{unique:true,name:'player_1_badge_1'});
+  const award=()=>request(`/badges/${badge.id}/players/${children[0].id}`,'POST',{},'admin');
+  assert.equal((await award()).status,409,'an active Season is mandatory');
+  await Season.collection.createIndex({status:1},{name:'status_1',unique:true,partialFilterExpression:{status:'active'}});
+  const season=await ok('/seasons','POST',{name:'Badge autumn'},'admin',201);
+  assert.ok(!(await Season.collection.indexes()).some(index=>index.name==='status_1'));
+  const initial=await award();assert.equal(initial.status,201,JSON.stringify(initial.body));assert.equal(initial.body.season.id,season.id);
+  const indexes=await BadgeAward.collection.indexes();assert.ok(indexes.some(i=>i.name==='one_current_badge_per_player_season'));assert.ok(!indexes.some(i=>i.name==='player_1_badge_1'));
+  const duplicate=await Promise.all([award(),award()]);assert.deepEqual(duplicate.map(r=>r.status),[409,409]);
+  await ok(`/seasons/${season.id}/close`,'POST',{},'admin');
+  const later=await ok('/seasons','POST',{name:'Badge winter'},'admin',201);
+  const newer=await award();assert.equal(newer.status,201);assert.equal(newer.body.season.id,later.id);
+  assert.equal(await BadgeAward.countDocuments({player:children[0].id,badge:badge.id}),3);
+  const publicBefore=await ok(`/players/public/${children[0].id}`,'GET',undefined,null);
+  assert.ok(publicBefore.badges.every(row=>row.image===badgeImage.url));
+  assert.ok(!JSON.stringify(publicBefore).includes('storageKey'));
+  assert.equal(publicBefore.badges.length,3);assert.ok(publicBefore.badges.some(b=>b.seasonName==='Badge autumn'));assert.ok(publicBefore.badges.some(b=>!b.seasonName));
+  assert.ok(!JSON.stringify(publicBefore.badges).includes('awardedBy'));
+  assert.equal((await request(`/badges/awards/${newer.body.id}`,'DELETE',undefined,'judge')).status,403);
+  await ok(`/badges/awards/${newer.body.id}`,'DELETE',undefined,'admin');
+  const revoked=await BadgeAward.findById(newer.body.id);assert.ok(revoked.revokedAt);assert.equal(String(revoked.revokedBy),staffIds.admin);
+  assert.ok(!(await ok('/badges/awards','GET',undefined,'admin')).some(row=>row.id===newer.body.id));
+  assert.equal((await ok(`/players/public/${children[0].id}`,'GET',undefined,null)).badges.length,2);
+  const reawarded=await award();assert.equal(reawarded.status,201,'revocation frees the same-season slot');
+  await ok(`/badges/${badge.id}`,'PUT',{name:'Renamed achievement',isActive:false},'admin');
+  assert.equal((await request(`/badges/${badge.id}/players/${children[1].id}`,'POST',{},'admin')).status,400);
+  assert.equal((await ok(`/players/public/${children[0].id}`,'GET',undefined,null)).badges.length,3);
+  assert.equal((await request(`/seasons/${later.id}`,'DELETE',undefined,'judge')).status,403);
+  await ok(`/seasons/${later.id}`,'DELETE',undefined,'admin');
+  assert.equal((await request('/seasons/active','GET',undefined,'admin')).status,404);
+  assert.ok(!(await ok('/seasons','GET',undefined,'admin')).some(row=>row.id===later.id));
+  const deleted=await Season.findById(later.id);assert.ok(deleted.deletedAt && deleted.deletedBy);
+  const history=await ok('/badges/awards','GET',undefined,'admin');
+  assert.equal(history.find(row=>row.id===reawarded.body.id).season.name,'עונה שנמחקה');
+  const publicAfter=await ok(`/players/public/${children[0].id}`,'GET',undefined,null);
+  assert.equal(publicAfter.badges.length,3);assert.ok(!JSON.stringify(publicAfter).includes('Badge winter'));
+  assert.ok(await BadgeAward.findById(legacy.id));assert.ok(await BadgeAward.findById(reawarded.body.id));
+  await Season.collection.insertOne({_id:new mongoose.Types.ObjectId(),name:'Deleted legacy Season',status:'active',deletedAt:new Date(),createdBy:new mongoose.Types.ObjectId(staffIds.admin)});
+  await ok('/seasons','POST',{name:'Badge spring'},'admin',201);
+  const club=await ok('/players/quarterly','POST',{firstName:'Cannot',lastName:'Badge',club:'Club'},'admin',201);
+  await ok(`/badges/${badge.id}`,'PUT',{isActive:true},'admin');
+  assert.equal((await request(`/badges/${badge.id}/players/${club.id}`,'POST',{},'admin')).status,400);
+  assert.equal((await request(`/badges/${badge.id}/players/${children[1].id}`,'POST',{},'judge')).status,403);
+  const simultaneous=await Promise.all([request(`/badges/${badge.id}/players/${children[1].id}`,'POST',{},'admin'),request(`/badges/${badge.id}/players/${children[1].id}`,'POST',{},'admin')]);
+  assert.deepEqual(simultaneous.map(r=>r.status).sort(),[201,409]);
+});
+
+test('2026.10.2 optional biography/date-only birth stay editable, age-only public and private from team roster DTO',async()=>{
+  const team=await ok('/teams','POST',{name:'Profile metadata'},'admin',201);
+  const player=await ok('/players/team','POST',{firstName:'Profile',lastName:'Child',teamId:team.id,playerNumber:'PROFILE',description:'שלום מהנבחרת',dateOfBirth:'2016-10-13'},'admin',201);
+  assert.equal(player.description,'שלום מהנבחרת');assert.equal(player.dateOfBirth,'2016-10-13');
+  const data=await ok(`/players/public/${player.id}`,'GET',undefined,null);
+  assert.equal(data.description,player.description);assert.ok(Number.isInteger(data.age));assert.ok(!('dateOfBirth' in data));assert.ok(!JSON.stringify(data).includes('2016-10-13'));
+  assert.ok(!JSON.stringify(await ok(`/teams/public/${team.id}`,'GET',undefined,null)).includes('dateOfBirth'));
+  assert.equal((await ok(`/teams/${team.id}`,'GET',undefined,'admin')).players.find(row=>row.id===player.id).dateOfBirth,'2016-10-13');
+  for(const payload of [{description:'x'.repeat(501)},{dateOfBirth:'2999-01-01'},{dateOfBirth:'2016-02-30'}])assert.equal((await request(`/players/${player.id}`,'PUT',payload,'admin')).status,400);
+  assert.equal((await request(`/players/${player.id}`,'PUT',{description:'judge edit'},'judge')).status,403);
+  await ok(`/players/${player.id}`,'PUT',{description:'',dateOfBirth:''},'admin');
+  const cleared=await ok(`/players/public/${player.id}`,'GET',undefined,null);assert.ok(!('age' in cleared));assert.ok(!('description' in cleared));
+  const image=await uploaded('player-photo',undefined,'team');
+  const [bulk]=await ok(`/teams/${team.id}/players`,'POST',{players:[{firstName:'Context',lastName:'Create',playerNumber:'CONTEXT',description:'Biography',dateOfBirth:'2015-04-01',photoUploadId:image.uploadId}]},'admin',201);
+  assert.equal(bulk.id,image.entityId);assert.equal(bulk.team,team.id);assert.equal(bulk.description,'Biography');
 });
