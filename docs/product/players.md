@@ -28,6 +28,7 @@ It is optional and sensitive.
 The Player record supports an optional child photo managed through the shared AWS S3 upload capability.
 
 Requirements:
+- the child/player photo is optional; player creation/editing must succeed without a photo
 - admin can upload, replace and remove the child's photo from player create/edit/profile-management flows
 - this applies to both `team` and `quarterly` / regular-club players
 - judges remain read-only and cannot change player media
