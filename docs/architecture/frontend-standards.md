@@ -1462,3 +1462,19 @@ For **ניהול → שחקנים**:
 - UI renders only the current page
 - reset page to 1 when query/filter changes
 - avoid duplicate client-side full-list filtering after a paged response
+
+
+## Player-type field boundaries
+The shared Player editor must branch cleanly by player type.
+
+Regular/quarterly player fields:
+- first name
+- last name
+- city
+- active status
+
+Team/All Stars player fields may additionally include the approved team-player profile fields and media.
+
+Do not expose team-only media/profile controls to regular players.
+
+The old regular-player `club` field is removed; both player types use canonical `city`.
