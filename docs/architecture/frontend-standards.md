@@ -1400,3 +1400,31 @@ For the approved three-card homepage hero interaction:
 - keep interaction usable with mouse/trackpad when practical
 - transition motion must respect `prefers-reduced-motion`
 - the interaction is decorative and must not interfere with page scrolling or primary navigation
+
+
+## Reusable Player editor
+Player editing must not be page-owned by `AdminPlayers`.
+
+Use a reusable domain boundary:
+- shared `PlayerEditDialog` / form presentation
+- reusable hook/controller for edit state, validation, upload state and save lifecycle
+- existing service/Redux/API layer for persistence
+
+Management pages should open the same editor by Player/id instead of copying form state and update handlers.
+
+The Player editor modal must:
+- use a viewport-bounded max height
+- scroll the form body internally rather than overflowing the page
+- keep dialog header and actions reachable
+- use a responsive two-column form grid on desktop and one column on mobile
+- allow naturally wide controls to span both columns
+
+Do not put React dialog rendering inside an API service merely to make it callable from more pages. Reuse the UI component and its controller; keep transport/service code UI-agnostic.
+
+## External Pokémon image derivation
+For the approved team-player Pokémon list:
+- validation/normalization and URL construction belong in a small domain utility, not inline JSX
+- canonical input permits English letters and spaces only
+- trim/collapse spaces, lowercase for the URL slug and replace spaces with hyphens
+- centralize the base URL `https://r2.limitlesstcg.net/pokemon/gen9/`
+- store names/domain values rather than persisting derived remote image URLs
