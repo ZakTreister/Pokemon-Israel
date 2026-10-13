@@ -208,3 +208,88 @@ If one or more likely matches already exist:
 - allow admin to explicitly continue with **צור בכל זאת** because two different children may legitimately share the same identifying fields
 - the warning must be backed by server-side duplicate lookup/checking; frontend-only comparison is not sufficient
 - normalize case/whitespace consistently with the existing duplicate-detection rules
+
+
+## Shared player editor
+The Player edit experience must be reusable from multiple management contexts.
+
+Do not keep the full edit-dialog state/business logic inside `AdminPlayers.tsx`.
+
+Preferred boundary:
+- reusable `PlayerEditDialog` / player-edit form component owns the dialog presentation
+- reusable player-edit hook/controller owns form state, validation, load/save lifecycle and upload busy/error state
+- canonical player service/Redux/API layer owns server calls
+- callers such as **ניהול → שחקנים** and a managed team page only provide the Player/player id, open/close state and an optional completion/return callback
+
+Both entry points must open the same canonical editor and produce the same validation, upload and save behavior.
+
+## Player editor layout
+The edit dialog must fit within the viewport.
+
+Requirements:
+- the dialog itself never extends beyond the visible viewport
+- constrain dialog height and make the body/content area internally scrollable when needed
+- keep title/close affordance and primary actions reachable
+- on desktop, lay out suitable form controls in **two columns**
+- on narrow/mobile screens, collapse cleanly to one column
+- full-width controls such as longer description text, image/deck upload previews or Pokémon collection controls may span both columns
+- do not solve the height problem by shrinking touch targets or making fields unreadably dense
+
+## Team-player tenure
+All Stars/team players gain an optional date-only **joinedAt** / team-join date field.
+
+Management label: **תאריך הצטרפות**.
+
+The displayed **וותק** is derived from this date rather than stored as a manually aging text value.
+
+Rules:
+- optional
+- date-only semantics; avoid timezone day-shift bugs
+- future dates are invalid
+- admin can set/change/remove it from the shared Player editor
+- club/quarterly players do not require this field
+- public/team UI may display a human-readable tenure derived from it where the existing profile design calls for seniority/tenure
+
+## Personal deck image
+All Stars/team players support an optional **דק אישי** image.
+
+Management:
+- upload/replace/remove through the shared image uploader
+- use the existing AWS S3 media architecture rather than a special upload implementation
+- keep this separate from the child's profile photo
+- recommended upload purpose/key namespace: `player-deck` under `public/players/<player-id>/deck/...`
+- creation/editing remains valid without a deck image
+- judges remain read-only
+
+Public profile:
+- when present, the current personal deck image may be displayed on the approved public All Stars player profile
+
+## Favorite / personal Pokémon
+All Stars/team players may store up to **6 Pokémon names** for profile display.
+
+Management UI:
+- start with one compact input row
+- provide **הוסף פוקימון** to add another input until the maximum of 6
+- allow removing optional rows
+- keep the Pokémon inputs visually compact and on one row/compact group where screen width allows; wrap responsively on small screens
+- show a tooltip/help affordance with the naming rules and an example
+- do not render six empty fields by default
+
+Validation:
+- maximum 6 non-empty names
+- each name is trimmed
+- allow English letters and spaces only: `A-Z`, `a-z`, and spaces
+- collapse repeated spaces
+- reject numbers, Hebrew letters and punctuation in the stored input for this version
+
+Image URL:
+- derive the image URL from the validated name; do not ask admin to paste a URL
+- normalize to lowercase
+- replace spaces with hyphens
+- use:
+  `https://r2.limitlesstcg.net/pokemon/gen9/<pokemon-name>.png`
+
+Example:
+- `Iron Hands` → `https://r2.limitlesstcg.net/pokemon/gen9/iron-hands.png`
+
+Store the normalized Pokémon names/domain values, not six copied external image URLs, so URL construction remains centralized.
