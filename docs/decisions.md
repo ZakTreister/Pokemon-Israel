@@ -135,10 +135,23 @@ Replace that space with the approved All Stars, ranking, event and news content.
 ## 2026-10 — Badge administration is super-admin only
 The Badges page, badge definition management and Season transition UX are restricted to the super-admin unless changed later.
 
-## 2026-10 — Cloudinary is the reusable image-upload provider
-Stage A introduces a reusable image-upload capability backed by Cloudinary.
-The first required use is team logos, but the same abstraction should support future child photos, badge images, news images and other media.
-Cloudinary secrets must never be exposed to the browser.
+## 2026-10 — AWS S3 is the reusable file-storage provider
+This decision supersedes the earlier Cloudinary decision.
+
+Cardschool uses Amazon S3 as the canonical reusable object store, with direct browser uploads authorized by the backend through short-lived presigned uploads.
+
+The storage layer is intentionally generic so it can later support non-image files such as PDFs, spreadsheets/exports and managed documents.
+
+Current required image consumers are:
+- team logo
+- child/player photo
+- badge/tag image
+
+The S3 bucket remains private with Block Public Access enabled. Public assets are stored under `public/` and delivered through CloudFront; private assets are stored under `private/` and are not exposed by the public CloudFront distribution.
+
+Persist provider-neutral storage keys/metadata instead of Cloudinary-specific `publicId` fields for new uploads. Preserve legacy media records during migration.
+
+AWS credentials remain server/deployment secrets and must never be exposed to the browser or committed to source control.
 
 ## 2026-10 — News Phase 1 is manual
 Use the existing Updates capability as the basis for News.
