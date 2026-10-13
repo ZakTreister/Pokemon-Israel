@@ -186,7 +186,31 @@ Requirements:
 - new badge images live under `public/badges/<badge-id>/...`
 - normal management flow is file upload with preview rather than manual URL entry
 
-#### 6. Shared image rules
+#### 6. Complete seasonal badge system
+Implement the currently partial badge feature as a complete Season-aware feature.
+
+Existing behavior to preserve:
+- dynamic badge definitions rather than a hard-coded fixed set
+- admin-only badge management
+- team-player-only badge awards
+- active/inactive badge definitions
+- earned badges on the public All Stars player profile
+- badge Season controls live on the Badges page and do not affect rankings/team/tournament eligibility
+
+Required completion:
+- add the active badge Season to every new badge award
+- require an active badge Season before awarding
+- enforce one award per `player + badge + season`, not one award for the player's lifetime
+- allow the same badge to be earned again in a later Season
+- preserve legacy awards without Season data
+- safely migrate/drop the old lifetime `player + badge` unique-index behavior
+- include Season in management award history
+- expose public-safe Season name and optional badge image on the public All Stars player profile
+- preserve historical awards when a badge is edited or deactivated
+- keep the current no-judge badge/Season mutation rule
+- no revoke/delete-award workflow is required in this version
+
+#### 7. Shared image rules
 - the upload capability itself is required in this version for team, player/child and badge management even though the images are optional
 - JPEG, PNG and WebP
 - maximum 5 MB by default
@@ -206,6 +230,10 @@ At minimum verify:
 - optional team logo upload/replacement/removal
 - optional child photo upload and public/private visibility
 - optional badge image upload/replacement/removal
+- active Season required for new badge awards
+- one same-badge award per player per Season, with re-award allowed in a later Season
+- legacy badge awards without Season remain readable
+- badge award history and public profile include Season/public-safe badge media
 - creation/editing of team, player and badge succeeds without an image
 - judge mutation denial
 - legacy Cloudinary media compatibility
