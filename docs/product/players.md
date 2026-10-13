@@ -293,3 +293,20 @@ Example:
 - `Iron Hands` → `https://r2.limitlesstcg.net/pokemon/gen9/iron-hands.png`
 
 Store the normalized Pokémon names/domain values, not six copied external image URLs, so URL construction remains centralized.
+
+
+## Players management pagination
+The general **ניהול → שחקנים** page must use server-side pagination and must not load the full Player collection into the browser.
+
+Requirements:
+- the Players API supports paged retrieval
+- default page size: **25**
+- return the current page rows plus pagination metadata such as total count, page, page size and total pages
+- existing type filter and text search must be applied on the server **before** pagination
+- changing search/filter resets to page 1
+- navigating pages fetches only the requested page
+- keep a stable canonical sort so players do not jump unpredictably between pages
+- after create/edit/delete, refresh the relevant current page and handle the case where deletion leaves the current page empty
+- judges remain subject to their existing restricted player visibility
+
+The UI should provide clear previous/next page navigation and current page/total-page context. Do not fake pagination by fetching all players and slicing client-side.
