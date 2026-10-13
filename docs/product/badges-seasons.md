@@ -8,6 +8,18 @@ A badge has:
 
 Badge definitions are dynamic, not a fixed hard-coded set.
 
+## Badge/tag image upload
+Badge images use the shared AWS S3 upload/storage capability defined in `docs/architecture/media-upload.md`.
+
+Requirements:
+- super-admin can upload an image while creating/editing a badge definition
+- super-admin can replace or remove the image
+- supported image types/limits follow the shared image-upload rules
+- new uploads are stored under `public/badges/<badge-id>/...`
+- persist provider-neutral storage metadata; do not introduce new Cloudinary `publicId` dependencies
+- the normal management UX is file upload with preview, not manual remote-URL entry
+- existing legacy badge image URLs remain readable until intentionally migrated
+
 ## Permissions
 The Badges page is super-admin only.
 Super-admin can create and manage badge definitions.
