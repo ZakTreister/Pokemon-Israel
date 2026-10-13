@@ -99,6 +99,53 @@ In **ניהול → נבחרות All-Stars**:
 - judges can view the logo but cannot edit the team
 - preserve **התחל טורניר / המשך טורניר** as the primary action; **עריכת נבחרת** is secondary
 
+
+#### 5. Reusable Player editor and dialog layout
+Refactor the current Player editing implementation so it can be opened from multiple management contexts without duplicated logic.
+
+Architecture:
+- shared canonical `PlayerEditDialog` / player form UI
+- reusable player-edit state/controller/hook for form state, validation, upload/save lifecycle
+- keep persistence calls in the existing player service/Redux/API layer
+- **ניהול → שחקנים** and the managed team page both open the same editor
+- do not put React UI inside an API service
+
+Layout:
+- dialog must not overflow the viewport
+- use a viewport-bounded max height with internally scrollable body
+- keep header/close and save/cancel reachable
+- desktop: suitable fields in a two-column grid
+- mobile: one column
+- long description/media/Pokémon controls may span both columns
+
+#### 6. Additional All Stars player fields
+Add these optional fields to the shared team-player editor.
+
+**תאריך הצטרפות / ותק**
+- persist optional date-only `joinedAt`
+- reject future dates
+- calculate/display user-facing **וותק** from this date
+- do not store an aging free-text tenure value
+
+**דק אישי**
+- optional personal deck image
+- upload/replace/remove using the shared AWS S3 image uploader
+- separate from profile photo
+- use a distinct `player-deck` purpose and public player deck namespace
+- may appear on the approved public All Stars player profile
+
+**עד 6 פוקימונים**
+- initially show one compact Pokémon-name field
+- allow adding/removing fields up to 6
+- English letters and spaces only
+- trim and collapse repeated spaces
+- URL slug: lowercase + spaces → hyphens
+- image URL is derived from:
+  `https://r2.limitlesstcg.net/pokemon/gen9/<pokemon-name>.png`
+- add tooltip/help text explaining the naming restriction and example
+- persist normalized Pokémon names, not derived image URLs
+
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
