@@ -967,3 +967,18 @@ Required:
 - show a Hebrew duplicate warning with existing-player context
 - allow explicit **צור בכל זאת** override
 - add regression tests for permissions, history preservation, duplicate warning/override, and team-page edit navigation
+
+
+### 40. Version 2026.10.3 player-management corrections
+Implement the exact behavior defined in `docs/version.md` and `docs/product/players.md`.
+
+Required:
+- admin can soft-delete a Player from **ניהול → שחקנים**, with confirmation and historical-reference preservation
+- deleted players disappear from active management/selection/public discovery and cannot be used for new tournaments/awards
+- admin gets a compact **עריכת שחקן** action from each managed team **חברי נבחרת** row
+- that action reuses the canonical Player edit flow and remains independent of public-profile row navigation
+- before Player creation, perform normalized likely-duplicate detection
+- a likely duplicate opens a Hebrew warning dialog showing the existing match and offers editing the existing player or explicit **צור בכל זאת**
+- duplicate detection is server-backed/authoritative, not browser-only
+- duplicate warning is not a hard uniqueness constraint
+- judges remain read-only for all of these mutations
