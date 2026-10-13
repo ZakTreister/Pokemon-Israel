@@ -1517,3 +1517,17 @@ For Players and Tournaments:
 - never fetch all rows solely to compute `.length`
 - keep filter/authorization semantics identical between list and count requests
 - centralize reusable pagination state/UI where it naturally serves both public Events and management Tournaments
+
+
+## Efficient verification loop
+During implementation, verify the smallest relevant scope first.
+
+- run focused tests for the changed feature/domain after each coherent feature batch
+- do not run full Stage A tests, full lint and production build after every small edit
+- extend existing tests when they already cover the correct layer
+- test business rules at the lowest useful level and avoid redundant multi-layer assertions unless each layer protects a distinct integration risk
+- reserve full test suites, full lint and production build for final version verification
+- when final verification fails, iterate on the smallest failing subset before rerunning the full suite
+- unrelated pre-existing failures should be documented rather than repaired unless they block or were caused by the requested work
+
+These rules optimize execution time without lowering the final verification bar.
