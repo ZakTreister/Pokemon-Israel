@@ -356,3 +356,17 @@ In RTL, position appears immediately to the right of the player name. Default or
 
 ## 2026-10 — Version 2026.10.2
 Version `2026.10.2` removes the separate team **דירוג וסטטיסטיקה** view and merges its position, points and tournament-count data into the existing **חברי נבחרת** table.
+
+
+## 2026-10 — Player deletion is soft and history-preserving
+Admin gets a visible **מחק שחקן** action. Normal deletion archives/soft-deletes the Player instead of removing historical competition references. Deleted players disappear from normal active lists and future assignment choices. Judge cannot delete players.
+
+## 2026-10 — Managed team rows link to canonical player editing
+On the managed team page, admin can open **עריכת שחקן** directly from each member row. This reuses the canonical Player edit flow; it is not a separate duplicate editor.
+
+## 2026-10 — Player creation warns about likely duplicates
+Before creating a player, the server checks normalized identifying fields and the UI warns when a likely existing player matches.
+
+Team players use normalized first name + last name + city. Club players use normalized first name + last name + club.
+
+The warning does not permanently block creation: admin may explicitly **צור בכל זאת** because distinct children can share the same identifying fields.
