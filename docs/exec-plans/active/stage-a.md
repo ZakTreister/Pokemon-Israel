@@ -795,7 +795,12 @@ Correct/complete:
 - integrate the optional S3 badge image into create/edit/list/public earned-badge presentation
 - keep legacy `icon` readable as a fallback but do not use typed Lucide icon names as the primary image-management UX
 - editing/deactivating a definition does not delete historical awards
-- no award revoke/delete is required in this iteration
+- super-admin can revoke/remove an award; store revocation metadata and exclude revoked awards from normal/public views
+- after revocation, the same badge can be awarded again in the same Season
+- super-admin can soft-delete a badge Season; store `deletedAt`/`deletedBy`
+- deleted Seasons are excluded from normal Season history/listing and from active-Season lookup
+- deleting an active Season leaves no active Season until another is opened
+- soft-deleting a Season preserves its badge awards; public responses omit the deleted Season name
 
 Add/update tests for:
 - cannot award with no active badge Season
@@ -806,8 +811,14 @@ Add/update tests for:
 - closing/opening Seasons preserves prior awards
 - legacy Season-less awards remain readable
 - deactivating a badge blocks new awards but preserves old awards
+- revoke/remove award hides it from normal/public badge history and permits re-award
+- judge cannot revoke awards or delete Seasons
+- soft-deleted Season disappears from normal Season history
+- deleted active Season no longer resolves as active
+- deleted Season preserves linked awards
 - management history includes Season
 - public player response includes safe badge Season/image fields but not awarding staff/private storage metadata
+- public player response does not expose a soft-deleted Season name
 
 ### 42. AWS S3 storage and optional image uploads — included in version 2026.10.2
 Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
