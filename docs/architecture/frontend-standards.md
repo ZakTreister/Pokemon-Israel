@@ -1428,3 +1428,11 @@ For the approved team-player Pokémon list:
 - trim/collapse spaces, lowercase for the URL slug and replace spaces with hyphens
 - centralize the base URL `https://r2.limitlesstcg.net/pokemon/gen9/`
 - store names/domain values rather than persisting derived remote image URLs
+
+
+## Reusable Team editor
+Team settings use one shared `TeamEditDialog` rather than separate page-specific edit forms.
+
+The dialog is opened from both the teams management list and managed team page. It owns presentation; reusable team-edit state/controller code may own form/upload/save lifecycle; the existing teams service/Redux layer remains responsible for transport/persistence.
+
+Do not mix roster/player assignment UI into the canonical team-settings dialog.
