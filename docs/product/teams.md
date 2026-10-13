@@ -200,3 +200,19 @@ It opens the canonical Player edit flow and remains independent from whole-row n
 In management context, each row in **חברי נבחרת** includes an admin-only compact **עריכת שחקן** action/link.
 
 The action opens the canonical Player edit flow for that Player. It must remain independent from the row's public-profile navigation and should preserve the current team as the return/context destination where practical. Do not duplicate player-edit business logic inside the team page.
+
+
+## Teams management list presentation
+In **ניהול → נבחרות All-Stars**, each team summary/card/row must show the team's current logo/image when one exists.
+
+Requirements:
+- use the existing canonical team logo/media field
+- keep a sensible neutral placeholder when no logo exists
+- do not require a logo in order for the team to render correctly
+- preserve responsive layout and compact management density
+
+For admin, each team summary/card/row must also expose a clear **עריכת נבחרת** action.
+
+The edit action opens the existing canonical team settings/edit flow for that team. Do not create a second independent team-edit implementation.
+
+Judges may view team identity/logo but must not see or use the edit action.
