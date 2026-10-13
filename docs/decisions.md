@@ -437,9 +437,16 @@ Regular/quarterly players do not have a player photo in the current product; pho
 
 
 ## 2026-10 — Registration CTAs share one configured destination
-Until replaced, the homepage registration card and the floating **הירשמו לשיעור ניסיון** CTA use the same centrally configured destination: `https://lp.cardschool.co.il`.
+The homepage registration card and the floating **הירשמו לשיעור ניסיון** CTA use the same approved centrally configured destination: `https://lp.cardschool.co.il`.
 
-The URL must not be duplicated independently across components.
+This is the canonical registration URL. It must not be duplicated independently across components.
 
 ## 2026-10 — Footer contrast must be improved
 The public footer keeps its current structure but its text, links and interactive states must have sufficient visual contrast against the footer background on desktop and mobile.
+
+
+## 2026-10 — Tournament lists use server-side pagination
+Management **טורנירים** and public **אירועים** use server-side pagination with a default page size of 25. Filters/search/visibility are applied before pagination; clients do not fetch the full tournament archive and slice it locally.
+
+## 2026-10 — Counts do not require full collection loads
+When UI needs only the number of Players or Tournaments, use a database count/lightweight count-only request or canonical paginated `total` metadata. Do not fetch entire collections solely to calculate `.length`.
