@@ -1436,3 +1436,17 @@ Team settings use one shared `TeamEditDialog` rather than separate page-specific
 The dialog is opened from both the teams management list and managed team page. It owns presentation; reusable team-edit state/controller code may own form/upload/save lifecycle; the existing teams service/Redux layer remains responsible for transport/persistence.
 
 Do not mix roster/player assignment UI into the canonical team-settings dialog.
+
+
+## Updates / News management
+Do not keep create/edit update dialogs as page-local overlay markup with duplicated form state.
+
+Use the shared Modal/Dialog primitive and a small reusable update form where practical.
+
+Update management must:
+- use the real create/update/delete service mutations
+- keep form validation separate from presentation JSX
+- update/refetch canonical client state after mutations without full-page reload
+- reuse shared ImageUpload for optional update images
+- validate optional external URLs centrally
+- preserve compatibility with legacy `content` records while presenting the field to users as **תיאור**
