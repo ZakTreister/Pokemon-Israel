@@ -3,7 +3,7 @@
 ## Badge definition
 A badge has:
 - name
-- image
+- optional image
 - explanation/description
 
 Badge definitions are dynamic, not a fixed hard-coded set.
@@ -12,6 +12,7 @@ Badge definitions are dynamic, not a fixed hard-coded set.
 Badge images use the shared AWS S3 upload/storage capability defined in `docs/architecture/media-upload.md`.
 
 Requirements:
+- the badge image is optional; badge creation/editing must succeed without an image
 - super-admin can upload an image while creating/editing a badge definition
 - super-admin can replace or remove the image
 - supported image types/limits follow the shared image-upload rules
