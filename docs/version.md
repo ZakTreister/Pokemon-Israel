@@ -206,6 +206,20 @@ Requirements:
 - after create/edit/delete, refresh the current page; if deleting the last row makes the page invalid/empty, move to the previous valid page
 - show clear previous/next navigation and page context in the management UI
 
+
+#### 10. Regular players use city, not club
+Remove the regular/quarterly-player `club` field and use canonical **עיר / `city`** for both player types.
+
+Requirements:
+- regular-player create/edit forms show **עיר**
+- remove **חוג** from player forms and management tables/search where it refers to the Player field
+- remove `club` from Player DTOs, create/update payloads and active model/business logic
+- no backward-compatibility requirement for legacy `club` data
+- regular-player duplicate detection becomes normalized first name + last name + city
+- Players-management search uses city rather than club
+- regular/quarterly players have no player-photo field/upload in this version
+- keep optional player photo only for team/All Stars players
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
