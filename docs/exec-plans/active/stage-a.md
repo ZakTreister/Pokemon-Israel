@@ -1144,3 +1144,27 @@ Counts:
 
 Registration:
 - treat `https://lp.cardschool.co.il` as the approved canonical registration URL, not a temporary placeholder
+
+
+### 52. Version 2026.10.3 — tournament pagination and count-only summaries
+Also include in version `2026.10.3`:
+
+Tournament pagination:
+- management **טורנירים** and public **אירועים** use server-side pagination
+- default page size 25
+- type/lifecycle/search/visibility/deletion rules apply before pagination
+- API returns `total`, `page`, `pageSize`, `totalPages`
+- filters/search reset to page 1
+- page navigation fetches only the requested page
+- do not fetch all tournaments and slice in the client
+
+Count-only optimization:
+- where only a count is displayed, do not fetch full Player/Tournament collections
+- use canonical pagination `total` metadata or a lightweight count-only variant of the same query
+- examples: team member count, completed tournament count, filtered result count and overview counters
+- counts use the same authorization, active/deleted and filter rules as the canonical list
+- avoid N+1 count requests when parent summary DTOs can carry the required count
+
+Registration URL:
+- `https://lp.cardschool.co.il` is the approved canonical registration URL
+- homepage registration CTA and floating CTA use the same shared configured value
