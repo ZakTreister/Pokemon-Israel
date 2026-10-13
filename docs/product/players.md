@@ -166,3 +166,45 @@ Judges have read-only access to player/team identity data needed for tournament 
 - delete/deactivate a player
 - assign/unassign/transfer a player between teams
 - change a player's team settings or media
+
+
+## Player deletion
+Admin must have a visible **מחק שחקן** action from player management.
+
+Deletion is soft deletion / archival by default:
+- the Player record and historical tournament/result references are preserved
+- the player is excluded from normal active player lists and future team/tournament assignment choices
+- a deleted player must not be treated as an active team member
+- historical tournament results, standings snapshots and earned history remain readable
+- deletion requires an explicit confirmation dialog
+- judge cannot delete players
+
+Do not hard-delete Player records that are referenced by historical competition data.
+
+## Edit player from team management
+On a managed team page, each player row must expose an explicit **עריכת שחקן** action/link for admin.
+
+Requirements:
+- the action opens the canonical team-player edit flow for that Player
+- do not duplicate a second independent edit implementation
+- preserve row navigation to the public player profile
+- the edit control is independently clickable and must not trigger row navigation
+- judge remains read-only for permanent player data
+
+## Duplicate-player warning on creation
+Before creating a new Player, check for an existing likely duplicate using normalized identity fields.
+
+For All Stars/team players:
+- compare normalized first name + last name + city
+
+For regular/club players:
+- compare normalized first name + last name + club
+
+If one or more likely matches already exist:
+- do not silently create the new Player
+- show a clear Hebrew warning/modal before creation
+- show enough existing-player context to recognize the possible duplicate
+- provide an action to open/edit the existing player where practical
+- allow admin to explicitly continue with **צור בכל זאת** because two different children may legitimately share the same identifying fields
+- the warning must be backed by server-side duplicate lookup/checking; frontend-only comparison is not sufficient
+- normalize case/whitespace consistently with the existing duplicate-detection rules
