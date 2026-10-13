@@ -160,6 +160,36 @@ Requirements:
 - do not duplicate form state/edit logic in multiple pages
 - successful save closes the dialog and refreshes canonical team/list data without a full-page reload
 
+
+#### 8. Complete Updates / News
+Complete the existing Updates capability as the canonical News system.
+
+Fields:
+- **כותרת** — required
+- **תיאור** — optional
+- **תמונה** — optional
+- **קישור** — optional
+
+Compatibility:
+- preserve existing `content` records and treat them as description content
+- do not create a second News model
+
+Management:
+- make create/edit/delete fully functional through the existing API/service
+- delete requires confirmation
+- title is trimmed and required
+- optional link must be a valid `http://` or `https://` URL
+- use shared Modal/Dialog
+- image upload uses shared S3/ImageUpload with an `update-image` purpose
+- successful mutations update/refetch canonical state without full-page reload
+
+Public:
+- News list/full post show image when present
+- show description/content
+- show an explicit CTA/link when an optional link exists
+- external link opens safely in a new tab
+- homepage news banner/latest-update continue using the same Update records
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
