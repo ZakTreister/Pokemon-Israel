@@ -1478,3 +1478,14 @@ Team/All Stars player fields may additionally include the approved team-player p
 Do not expose team-only media/profile controls to regular players.
 
 The old regular-player `club` field is removed; both player types use canonical `city`.
+
+
+## Footer contrast
+The public footer must meet the same readability/contrast standard as the rest of the public site.
+
+When touching the footer:
+- ensure body text, secondary text and links have sufficient contrast against the footer background
+- hover/focus states must remain clearly distinguishable
+- do not rely on very low-opacity text for essential footer content
+- preserve the existing footer structure unless a product requirement asks for a layout change
+- verify both desktop and mobile presentation
