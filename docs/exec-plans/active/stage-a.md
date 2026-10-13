@@ -1072,3 +1072,18 @@ Add/update tests for:
 - image upload authorization/purpose
 - legacy `content` compatibility
 - public image/link rendering
+
+
+### 49. Version 2026.10.3 — Players management server pagination
+Also include in version `2026.10.3`:
+
+- change **ניהול → שחקנים** to server-side pagination
+- default page size 25
+- API returns rows plus total/page/pageSize/totalPages metadata
+- apply role visibility, player-type filter and text search before pagination
+- use a stable deterministic sort
+- filter/search changes reset to page 1
+- page navigation fetches only that page
+- do not fetch the entire Player collection and slice client-side
+- after create/edit/delete refresh the relevant page; if the final row on the last page is deleted, navigate/refetch the previous valid page
+- add server/UI tests for pagination metadata, search/filter composition and page transitions
