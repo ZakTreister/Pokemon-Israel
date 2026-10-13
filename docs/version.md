@@ -476,10 +476,10 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ## Current version
 
-**Version:** `2026.10.3`  
-**Status:** `DEVELOPED`  
-**Implementation PR:** Not created, as requested. [Create work → main PR](https://github.com/ZakTreister/Pokemon-Israel/compare/main...work?expand=1)  
-**Implementation commit:** `179f90ae78f748f1e96144d93f4927264a3018da`  
+**Version:** `2026.10.3`\
+**Status:** `DEVELOPED`\
+**Implementation PR:** Not created, as requested. [Create work → main PR](https://github.com/ZakTreister/Pokemon-Israel/compare/main...work?expand=1)\
+**Implementation commit:** `179f90ae78f748f1e96144d93f4927264a3018da`\
 **Developed on:** `2026-10-13`
 
 ### Scope
