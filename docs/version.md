@@ -168,7 +168,8 @@ Fields:
 - **כותרת** — required
 - **תיאור** — optional
 - **תמונה** — optional
-- **קישור** — optional
+- **קריאה לפעולה** — optional CTA button text
+- **קישור קריאה לפעולה** — optional CTA destination URL
 
 Compatibility:
 - preserve existing `content` records and treat them as description content
@@ -178,7 +179,8 @@ Management:
 - make create/edit/delete fully functional through the existing API/service
 - delete requires confirmation
 - title is trimmed and required
-- optional link must be a valid `http://` or `https://` URL
+- CTA text and destination form one optional action: if either is supplied, require both
+- CTA destination must be a valid `http://` or `https://` URL
 - use shared Modal/Dialog
 - image upload uses shared S3/ImageUpload with an `update-image` purpose
 - successful mutations update/refetch canonical state without full-page reload
@@ -186,9 +188,11 @@ Management:
 Public:
 - News list/full post show image when present
 - show description/content
-- show an explicit CTA/link when an optional link exists
-- external link opens safely in a new tab
+- show an explicit CTA button only when both CTA text and destination exist
+- use the exact CTA text entered by the manager
+- external CTA destination opens safely in a new tab
 - homepage news banner/latest-update continue using the same Update records
+- homepage **העדכון האחרון** uses the update's configured title/description/image/CTA rather than hard-coded CTA text
 
 
 #### 9. Server-side pagination for Players management
