@@ -53,20 +53,30 @@ Legacy compatibility:
 Badge definition changes:
 - deactivating a badge prevents new awards but must not remove historical awards
 - editing a badge definition must not delete award history
-- no award-revoke/delete workflow is required unless separately specified
+
+Badge removal from a player:
+- super-admin can remove/revoke a badge award that was given to a player
+- removal is a soft revocation for audit: preserve the award record with at least `revokedAt` and `revokedBy`
+- revoked awards are excluded from the player's current/public earned-badge list and from the normal award-history list
+- management may expose revoked awards only in an explicit audit/history context if useful
+- after revocation, the same player may receive the same badge again in the same Season
+- Season-aware uniqueness must therefore apply only to non-revoked awards
+- the UI must require confirmation before removing an awarded badge
 
 ## Badge management UI
 The super-admin Badges page is the single management surface for badge definitions, badge Seasons and awards.
 
 It must support:
-- see the active badge Season and previous Seasons
+- see the active badge Season and previous non-deleted Seasons
 - open a new Season when none is active
 - close the active Season
+- soft-delete a badge Season
 - create/edit a badge definition
 - optional badge image upload/replace/remove using the shared AWS media uploader
 - activate/deactivate a badge definition
 - award an active badge to an eligible active All Stars player
-- show award history with at least player, badge, Season, awarded date and awarding staff user
+- remove/revoke a badge previously awarded to a player
+- show normal award history with at least player, badge, Season, awarded date and awarding staff user
 
 The badge image is optional. Name remains required; description is optional.
 
@@ -119,6 +129,27 @@ The super-admin performs Season transitions manually from the Badges page.
 
 The current Season should be visible on the Badges page.
 Season transition controls belong there.
+
+## Season soft deletion
+A badge Season can be deleted by super-admin, but deletion is soft.
+
+Persist deletion metadata such as:
+- `deletedAt`
+- `deletedBy`
+
+Behavior:
+- a deleted Season is excluded from the normal **עונות קודמות** / Season-history UI
+- a deleted Season is excluded from ordinary Season list/API responses unless an explicit admin audit view requests deleted records
+- a deleted Season can never be considered the active Season
+- if the currently active Season is deleted, it immediately stops being active and no new badge may be awarded until another Season is opened
+- deleting a Season does **not** delete or revoke badge-award records that were created in that Season
+- awards from a deleted Season remain preserved for audit/data integrity
+- public player badge display may continue to show the badge itself, but must not expose the deleted Season's name; omit the Season label for that award
+- normal management award history should not present the deleted Season as a selectable/history Season; when an award row from that Season must be shown, use a neutral marker such as **עונה שנמחקה** rather than restoring it to the Season-history list
+- creating a future Season must not be blocked by a soft-deleted Season
+- no restore UI is required in this version
+
+Deletion requires an explicit confirmation.
 
 ## Team competition year is separate
 The annual All Stars scoring cycle that resets around September 1 is a separate concept from Season.
