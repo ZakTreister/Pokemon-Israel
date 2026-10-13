@@ -11,12 +11,17 @@ const getBadges = async (): Promise<BadgeDefinition[]> => {
   return data;
 };
 
-const createBadge = async (input: CreateBadgeInput): Promise<BadgeDefinition> => {
+const createBadge = async (
+  input: CreateBadgeInput,
+): Promise<BadgeDefinition> => {
   const { data } = await api.post('/api/badges', input);
   return data;
 };
 
-const updateBadge = async (id: string, input: UpdateBadgeInput): Promise<BadgeDefinition> => {
+const updateBadge = async (
+  id: string,
+  input: UpdateBadgeInput,
+): Promise<BadgeDefinition> => {
   const { data } = await api.put(`/api/badges/${id}`, input);
   return data;
 };
@@ -34,13 +39,15 @@ const getBadgeAwards = async (params?: {
 
 const awardBadge = async (
   badgeId: string,
-  playerId: string
+  playerId: string,
 ): Promise<BadgeAward> => {
   const { data } = await api.post(`/api/badges/${badgeId}/players/${playerId}`);
   return data;
 };
 
 const badgesService = {
+  revokeAward: async (id: string): Promise<{ id: string }> =>
+    (await api.delete(`/api/badges/awards/${id}`)).data,
   getBadges,
   createBadge,
   updateBadge,

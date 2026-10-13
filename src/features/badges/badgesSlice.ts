@@ -21,7 +21,10 @@ const initialState: BadgesState = {
   error: null,
 };
 
-type ApiError = { response?: { data?: { message?: string } }; message?: string };
+type ApiError = {
+  response?: { data?: { message?: string } };
+  message?: string;
+};
 
 export const fetchBadges = createAsyncThunk(
   'badges/fetchAll',
@@ -30,23 +33,28 @@ export const fetchBadges = createAsyncThunk(
       return await badgesService.getBadges();
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת תגים';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בטעינת תגים';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const fetchBadgeAwards = createAsyncThunk(
   'badges/fetchAwards',
-  async (params: { playerId?: string; teamId?: string } | undefined, thunkAPI) => {
+  async (
+    params: { playerId?: string; teamId?: string } | undefined,
+    thunkAPI,
+  ) => {
     try {
       return await badgesService.getBadgeAwards(params);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת הענקות';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בטעינת הענקות';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const createBadge = createAsyncThunk(
@@ -56,10 +64,11 @@ export const createBadge = createAsyncThunk(
       return await badgesService.createBadge(input);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה ביצירת תג';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה ביצירת תג';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const updateBadge = createAsyncThunk(
@@ -69,23 +78,33 @@ export const updateBadge = createAsyncThunk(
       return await badgesService.updateBadge(id, input);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בעדכון תג';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בעדכון תג';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const awardBadge = createAsyncThunk(
   'badges/award',
-  async ({ badgeId, playerId }: { badgeId: string; playerId: string }, thunkAPI) => {
+  async (
+    { badgeId, playerId }: { badgeId: string; playerId: string },
+    thunkAPI,
+  ) => {
     try {
       return await badgesService.awardBadge(badgeId, playerId);
     } catch (error) {
       const err = error as ApiError;
-      const message = err.response?.data?.message || err.message || 'שגיאה בהענקת תג';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בהענקת תג';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
+);
+
+export const revokeBadgeAward = createAsyncThunk(
+  'badges/revoke',
+  async (id: string) => badgesService.revokeAward(id),
 );
 
 const badgesSlice = createSlice({
@@ -126,7 +145,12 @@ const badgesSlice = createSlice({
       })
       .addCase(updateBadge.fulfilled, (state, action) => {
         state.badges = state.badges.map((b) =>
-          b.id === action.payload.id ? action.payload : b
+          b.id === action.payload.id ? action.payload : b,
+        );
+      })
+      .addCase(revokeBadgeAward.fulfilled, (state, action) => {
+        state.awards = state.awards.filter(
+          (award) => award.id !== action.payload.id,
         );
       })
       .addCase(awardBadge.fulfilled, (state, action) => {

@@ -135,10 +135,39 @@ Replace that space with the approved All Stars, ranking, event and news content.
 ## 2026-10 — Badge administration is super-admin only
 The Badges page, badge definition management and Season transition UX are restricted to the super-admin unless changed later.
 
-## 2026-10 — Cloudinary is the reusable image-upload provider
-Stage A introduces a reusable image-upload capability backed by Cloudinary.
-The first required use is team logos, but the same abstraction should support future child photos, badge images, news images and other media.
-Cloudinary secrets must never be exposed to the browser.
+
+## 2026-10 — Badge awards are Season-aware
+Badge definitions are dynamic; the product does not hard-code a fixed set of eight badge definitions.
+
+Badges may be awarded only to All Stars/team players and only while a badge Season is active.
+
+A player may receive a given badge at most once in a particular badge Season, and may earn the same badge again in a later Season. Every new award records its badge Season. Historical awards remain preserved across Season transitions and remain visible on the approved public All Stars player profile.
+
+Legacy awards created before Season linkage remain readable during migration.
+
+Badge awards can be removed from a player by super-admin. Removal is recorded as a soft revocation so audit data is preserved, while revoked awards disappear from normal/public earned-badge views. A revoked award does not block re-awarding that badge in the same Season.
+
+Badge Seasons can also be soft-deleted by super-admin. Deleted Seasons do not appear in normal Season history and never count as active. Their historical award records remain preserved, but public player data does not expose the deleted Season's name.
+
+## 2026-10 — AWS S3 is the reusable file-storage provider
+This decision supersedes the earlier Cloudinary decision.
+
+Cardschool uses Amazon S3 as the canonical reusable object store, with direct browser uploads authorized by the backend through short-lived presigned uploads.
+
+The storage layer is intentionally generic so it can later support non-image files such as PDFs, spreadsheets/exports and managed documents.
+
+The current release must provide image-upload capability for:
+- optional team logo
+- optional child/player photo
+- optional badge/tag image
+
+None of these images is a required field. Team, player/child and badge creation/editing must remain valid without an image; the requirement is that authorized administrators have the option to upload, replace and remove one.
+
+The S3 bucket remains private with Block Public Access enabled. Public assets are stored under `public/` and delivered through CloudFront; private assets are stored under `private/` and are not exposed by the public CloudFront distribution.
+
+Persist provider-neutral storage keys/metadata instead of Cloudinary-specific `publicId` fields for new uploads. Preserve legacy media records during migration.
+
+AWS credentials remain server/deployment secrets and must never be exposed to the browser or committed to source control.
 
 ## 2026-10 — News Phase 1 is manual
 Use the existing Updates capability as the basis for News.
@@ -257,6 +286,13 @@ This is implemented centrally at the React Router/layout boundary so links, prog
 Every All Stars/team player has a **מספר שחקן** stored as a reusable player display/profile field, including for future shirt/kit presentation.
 
 New team-player create/edit flows include the field and new team players require it. Legacy team players without a number remain readable/editable for backfill. The number is not an identity key, and no uniqueness/range rule is defined yet.
+
+## 2026-10 — All Stars profile biography and age are optional
+All Stars/team players may have an optional short description and optional date of birth.
+
+The description is public profile content when present.
+
+Date of birth remains private management data. Public player APIs/pages expose only the calculated current age, never the exact birth date. Missing values remain valid and do not show empty placeholders.
 
 ## 2026-10 — Team page uses one unified member/ranking table
 The team page does not have a separate **דירוג וסטטיסטיקה** tab.

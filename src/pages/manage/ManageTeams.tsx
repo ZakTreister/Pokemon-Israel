@@ -22,7 +22,7 @@ export default function ManageTeams() {
   const [teacher, setTeacher] = useState('');
   const [teachers, setTeachers] = useState<StaffTeacher[]>([]);
   const [logo, setLogo] = useState('');
-  const [logoPublicId, setLogoPublicId] = useState('');
+  const [logoUploadId, setLogoUploadId] = useState<string | null | undefined>();
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -43,13 +43,13 @@ export default function ManageTeams() {
     setBusy(true);
     try {
       await dispatch(
-        createTeam({ name: name.trim(), teacher, logo, logoPublicId }),
+        createTeam({ name: name.trim(), teacher, logoUploadId }),
       ).unwrap();
       setOpen(false);
       setName('');
       setTeacher('');
       setLogo('');
-      setLogoPublicId('');
+      setLogoUploadId(undefined);
       showToast('הנבחרת נוצרה בהצלחה', 'success');
     } catch (e) {
       showToast(requestError(e), 'error');
@@ -105,11 +105,12 @@ export default function ManageTeams() {
             </select>
           </label>
           <ImageUpload
+            purpose="team-logo"
             label="סמל הנבחרת"
             value={logo}
             onChange={(image) => {
-              setLogo(image?.secureUrl || '');
-              setLogoPublicId(image?.publicId || '');
+              setLogo(image?.url || '');
+              setLogoUploadId(image?.uploadId || null);
             }}
             onBusyChange={setUploading}
             disabled={busy}

@@ -1,3 +1,5 @@
+import TeamPlayerProfileFields from '../features/players/components/TeamPlayerProfileFields';
+import PlayerPhotoField from '../features/players/components/PlayerPhotoField';
 import TeamAdministration from '../features/teams/components/TeamAdministration';
 import TeamTournamentAction from '../features/teams/components/TeamTournamentAction';
 import {
@@ -5,7 +7,6 @@ import {
   type PublicTournamentSummary,
 } from '../services/publicTournaments';
 import TeamMembersTable from '../features/teams/components/TeamMembersTable';
-import TeamRankingTable from '../features/teams/components/TeamRankingTable';
 import PlayerNumberField from '../features/players/components/PlayerNumberField';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
@@ -13,13 +14,16 @@ import { useAppSelector } from '../hooks/redux';
 import { publicTeams } from '../services/publicTeams';
 import teamsService from '../features/teams/teamsService';
 import { internalTournaments } from '../services/internalTournaments';
-import api from '../services/api';
 import { requestError } from '../utils/requestError';
 import type { TeamWithRoster } from '../types/team';
 import type { AllStarsRanking } from '../types/internalTournament';
 import { TeamEmblem } from '../components/teams/TeamCard';
 import Button from '../components/ui/Button';
 interface ChildRow {
+  description?: string;
+  dateOfBirth?: string;
+  photoUploadId?: string | null;
+  photoUrl?: string;
   playerNumber: string;
   firstName: string;
   lastName: string;
@@ -43,6 +47,7 @@ export default function TeamPage() {
   const [rankings, setRankings] = useState<AllStarsRanking[]>([]);
   const [children, setChildren] = useState<ChildRow[]>([emptyChild()]);
   const [editing, setEditing] = useState(false);
+  const [pendingUploads, setPendingUploads] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const load = useCallback(async () => {
@@ -74,10 +79,11 @@ export default function TeamPage() {
     };
   }, [id, section]);
   const loadChildren = async () => {
+    if (busy || pendingUploads) return;
     setBusy(true);
     setError('');
     try {
-      await api.post(`/api/teams/${id}/players`, { players: children });
+      await teamsService.createPlayers(id, children);
       setChildren([emptyChild()]);
       setEditing(false);
       await load();
@@ -132,7 +138,6 @@ export default function TeamPage() {
           <nav aria-label="תוכן נבחרת" className="flex flex-wrap gap-2 mb-6">
             {[
               ['members', 'חברי נבחרת'],
-              ['ranking', 'דירוג וסטטיסטיקה'],
               ['history', 'היסטוריית טורנירים'],
               ...(management && admin ? [['settings', 'הגדרות נבחרת']] : []),
             ].map(([key, label]) => (
@@ -250,13 +255,50 @@ export default function TeamPage() {
                             ),
                           )
                         }
-                        disabled={busy}
+                        disabled={busy || pendingUploads > 0}
                       />
+                      <div className="sm:col-span-2 lg:col-span-5 space-y-3">
+                        <TeamPlayerProfileFields
+                          value={row}
+                          onChange={(profile) =>
+                            setChildren(
+                              children.map((child, j) =>
+                                j === index ? { ...child, ...profile } : child,
+                              ),
+                            )
+                          }
+                        />
+                        <PlayerPhotoField
+                          playerType="team"
+                          value={row.photoUrl || ''}
+                          onChange={(image) =>
+                            setChildren((current) =>
+                              current.map((child, j) =>
+                                j === index
+                                  ? {
+                                      ...child,
+                                      photoUrl: image?.url || '',
+                                      photoUploadId: image?.uploadId || null,
+                                    }
+                                  : child,
+                              ),
+                            )
+                          }
+                          onBusyChange={(uploading) =>
+                            setPendingUploads(
+                              (count) => count + (uploading ? 1 : -1),
+                            )
+                          }
+                          disabled={busy}
+                        />
+                      </div>
                       <Button
                         contextual
                         type="button"
                         variant="outline"
-                        disabled={children.length === 1 || busy}
+                        disabled={
+                          children.length === 1 || busy || pendingUploads > 0
+                        }
                         onClick={() =>
                           setChildren(children.filter((_, j) => j !== index))
                         }
@@ -274,7 +316,7 @@ export default function TeamPage() {
                     >
                       שורה נוספת
                     </Button>
-                    <Button disabled={busy}>
+                    <Button disabled={busy || pendingUploads > 0}>
                       {busy ? 'שומר...' : 'שמור חברי נבחרת'}
                     </Button>
                   </div>
@@ -282,20 +324,15 @@ export default function TeamPage() {
               )}
             </details>
           )}
-          {(section === 'members' || section === 'ranking') && (
+          {section === 'members' && (
             <section>
-              <h2 className="text-2xl font-bold mb-4">
-                {section === 'members' ? 'חברי נבחרת' : 'דירוג וסטטיסטיקה'}
-              </h2>
-              {section === 'members' ? (
-                <TeamMembersTable
-                  team={team}
-                  editable={management && admin}
-                  onChanged={load}
-                />
-              ) : (
-                <TeamRankingTable rows={rankings} />
-              )}
+              <h2 className="text-2xl font-bold mb-4">חברי נבחרת</h2>
+              <TeamMembersTable
+                team={team}
+                rankings={rankings}
+                editable={management && admin}
+                onChanged={load}
+              />
             </section>
           )}
         </>

@@ -24,6 +24,23 @@ Common fields include:
 For some children an Israeli national ID may later be available.
 It is optional and sensitive.
 
+## Child/player photo
+The Player record supports an optional child photo managed through the shared AWS S3 upload capability.
+
+Requirements:
+- the child/player photo is optional; player creation/editing must succeed without a photo
+- admin can upload, replace and remove the child's photo from player create/edit/profile-management flows
+- this applies to both `team` and `quarterly` / regular-club players
+- judges remain read-only and cannot change player media
+- new uploads persist provider-neutral storage metadata rather than Cloudinary-specific identifiers
+- reuse the shared image-upload component; do not create a separate uploader just for players
+- no child login/self-service is introduced by this feature
+
+Visibility:
+- an All Stars/team player's photo may be exposed on the already-approved public player profile and can be stored under `public/players/<player-id>/...`
+- regular/club players have no public individual profile; their photos must not be returned by public APIs or displayed on public pages and should be stored under `private/players/<player-id>/...`
+- a change of player type must not automatically make a previously private photo public; an authorized media visibility transition must be explicit
+
 ## Future matching/deduplication rule
 When matching a player during imports/integrations:
 1. If national ID is provided, try exact national-ID identity first.
@@ -45,6 +62,32 @@ Requirements:
 - no uniqueness rule or numeric range is defined yet; do not invent one until product requirements specify it
 - club/regular players do not require this field
 
+## Optional All Stars profile fields
+All Stars / team players support two additional optional profile fields:
+
+### Description / biography
+- canonical field: `description` (or an equivalently clear existing naming convention)
+- applies only to `playerType: team`
+- optional; empty value is valid
+- editable by admin in team-player create/edit flows
+- displayed on the public All Stars player profile when non-empty
+- plain text only; do not render unsanitized rich HTML
+- keep it concise; maximum 500 characters
+
+### Date of birth and public age
+- canonical field: `dateOfBirth`
+- applies only to `playerType: team`
+- optional; empty value is valid
+- store it as a date-only value (`YYYY-MM-DD` semantics), not a timestamp whose timezone conversion can move the birthday by a day
+- future dates are invalid
+- admin can set/change/remove it in team-player create/edit flows
+- the exact date of birth is private management data and must **not** be returned by the public player endpoint
+- the public All Stars player profile shows only the player's current integer age when date of birth exists
+- calculate age from the current calendar date and birthday; decrement by one until the birthday has occurred in the current year
+- age should update naturally over time without rewriting the Player record
+- if no date of birth exists, omit the age rather than showing an unknown/zero placeholder
+- regular/club players do not gain these public-profile fields in this version
+
 ## Creating a team player
 When an admin creates a **שחקן נבחרת** from the general Players management page, the form must include a required **נבחרת** selector.
 
@@ -59,7 +102,7 @@ Creation rules:
 For a team player, the primary contextual management surface is the team's **חברי נבחרת** tab.
 
 From that tab, admin must be able to:
-- edit the player's editable team-player fields, including name, city and player number
+- edit the player's editable team-player fields, including name, city, player number, optional description, optional date of birth and optional photo
 - remove/unassign the player from that team
 
 These actions should be compact row actions or an accessible row **עוד פעולות** menu, not large page-level buttons.
@@ -92,7 +135,8 @@ The player page should use only appropriate public data already available in the
 - current All Stars team
 - player number
 - seniority / tenure
-- a short biography
+- optional description / short biography
+- age when a date of birth exists; never expose the exact date of birth publicly
 - score/ranking inside the team
 - image of current personal deck
 - earned badges
@@ -111,6 +155,7 @@ Requirements:
 - do not create a new team player from this flow in an unassigned state
 - keep the existing team-context creation/import flow compatible
 - include the other required team-player fields such as name and **מספר שחקן**
+- include optional profile fields such as description, date of birth and photo without making them required
 
 ## Editing player profile data
 Because children do not log in in Stage A, child/team profile information is managed by admin, not by the child.

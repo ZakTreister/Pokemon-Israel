@@ -3,6 +3,7 @@ export interface BadgeDefinition {
   name: string;
   description: string;
   icon: string;
+  image?: string;
   isActive: boolean;
   createdBy: {
     id: string;
@@ -23,8 +24,10 @@ export interface BadgeAward {
     name: string;
     description: string;
     icon: string;
+    image?: string;
     isActive: boolean;
   };
+  season?: { id?: string; name: string } | null;
   awardedAt: string;
   awardedBy: {
     id: string;
@@ -34,12 +37,14 @@ export interface BadgeAward {
 }
 
 export interface CreateBadgeInput {
+  imageUploadId?: string | null;
   name: string;
   description?: string;
   icon?: string;
 }
 
 export interface UpdateBadgeInput {
+  imageUploadId?: string | null;
   name?: string;
   description?: string;
   icon?: string;

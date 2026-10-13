@@ -6,6 +6,7 @@ import {
   updateBadge,
   getBadgeAwards,
   awardBadge,
+  revokeBadgeAward,
 } from '../controllers/badgeController.js';
 
 const router = express.Router();
@@ -13,6 +14,7 @@ const router = express.Router();
 // /awards must be declared before /:id pattern conflicts
 router.get('/', protect, authorize('admin'), getBadges);
 router.get('/awards', protect, authorize('admin'), getBadgeAwards);
+router.delete('/awards/:id', protect, authorize('admin'), revokeBadgeAward);
 router.post('/', protect, authorize('admin'), createBadge);
 router.put('/:id', protect, authorize('admin'), updateBadge);
 router.post('/:badgeId/players/:playerId', protect, authorize('admin'), awardBadge);

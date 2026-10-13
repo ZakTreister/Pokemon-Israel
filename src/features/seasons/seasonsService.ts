@@ -22,6 +22,8 @@ const closeSeason = async (id: string): Promise<Season> => {
 };
 
 const seasonsService = {
+  deleteSeason: async (id: string): Promise<{ id: string }> =>
+    (await api.delete(`/api/seasons/${id}`)).data,
   getSeasons,
   getActiveSeason,
   createSeason,

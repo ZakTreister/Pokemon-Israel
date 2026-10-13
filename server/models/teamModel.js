@@ -1,3 +1,4 @@
+import { mediaSchema, publicMediaUrl } from '../services/storage/mediaMetadata.js';
 import mongoose from 'mongoose';
 
 const teamSchema = new mongoose.Schema({
@@ -8,6 +9,7 @@ const teamSchema = new mongoose.Schema({
     minlength: [1, 'Team name must be at least 1 character long'],
     maxlength: [100, 'Team name cannot exceed 100 characters'],
   },
+  logoMedia: { type: mediaSchema, default: null },
   teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   logo: { type: String, trim: true, maxlength: 2000, default: '' },
   logoPublicId: { type: String, maxlength: 255, default: '' },
@@ -33,6 +35,7 @@ const teamSchema = new mongoose.Schema({
 teamSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
+    ret.logo = publicMediaUrl(doc.logoMedia) || ret.logo || '';
     delete ret._id;
     delete ret.__v;
     delete ret.rosterLock;

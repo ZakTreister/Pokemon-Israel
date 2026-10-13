@@ -1,3 +1,4 @@
+import type { CreateTeamPlayerInput, Player } from '../../types/player';
 import api from '../../services/api';
 import type {
   Team,
@@ -53,6 +54,32 @@ const removePlayer = async (
 };
 
 const teamsService = {
+  createPlayers: async (
+    teamId: string,
+    players: Omit<CreateTeamPlayerInput, 'teamId'>[],
+  ): Promise<Player[]> => {
+    const rows = players.map(
+      ({
+        firstName,
+        lastName,
+        city,
+        playerNumber,
+        description,
+        dateOfBirth,
+        photoUploadId,
+      }) => ({
+        firstName,
+        lastName,
+        city,
+        playerNumber,
+        description,
+        dateOfBirth,
+        photoUploadId,
+      }),
+    );
+    return (await api.post(`/api/teams/${teamId}/players`, { players: rows }))
+      .data;
+  },
   getTeachers: async () =>
     (await api.get<StaffTeacher[]>('/api/teams/teachers')).data,
   getMyTeams: async () => (await api.get<Team[]>('/api/teams/mine')).data,

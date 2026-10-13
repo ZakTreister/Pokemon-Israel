@@ -772,6 +772,134 @@ Requirements:
 
 Add/update tests for the unified table and removal of the old ranking tab.
 
+### 41. Complete seasonal badge implementation — included in version 2026.10.2
+The repository already has partial badge support. Finish it instead of creating a parallel badge system.
+
+Preserve:
+- `BadgeDefinition` dynamic definitions
+- admin-only badge management routes/UI
+- team-player-only awards
+- active/inactive definitions
+- public All Stars player earned-badge display
+- Badge Seasons as a badge-only concept
+
+Correct/complete:
+- `BadgeAward` stores a Season reference for every new award
+- awarding requires an active badge Season
+- replace the current lifetime uniqueness `player + badge` with Season-aware uniqueness `player + badge + season`
+- the same badge may be earned again by the same player in a later Season
+- existing legacy awards without Season remain readable
+- migrate the MongoDB unique index safely; do not leave the old unique index in place
+- management award history shows the Season
+- public player badge DTO/UI shows public-safe Season name
+- integrate the optional S3 badge image into create/edit/list/public earned-badge presentation
+- keep legacy `icon` readable as a fallback but do not use typed Lucide icon names as the primary image-management UX
+- editing/deactivating a definition does not delete historical awards
+- super-admin can revoke/remove an award; store revocation metadata and exclude revoked awards from normal/public views
+- after revocation, the same badge can be awarded again in the same Season
+- super-admin can soft-delete a badge Season; store `deletedAt`/`deletedBy`
+- deleted Seasons are excluded from normal Season history/listing and from active-Season lookup
+- deleting an active Season leaves no active Season until another is opened
+- soft-deleting a Season preserves its badge awards; public responses omit the deleted Season name
+
+Add/update tests for:
+- cannot award with no active badge Season
+- only team players can receive badges
+- judge cannot manage/award badges
+- same player+badge cannot be duplicated within one Season
+- same player+badge can be awarded in a later Season
+- closing/opening Seasons preserves prior awards
+- legacy Season-less awards remain readable
+- deactivating a badge blocks new awards but preserves old awards
+- revoke/remove award hides it from normal/public badge history and permits re-award
+- judge cannot revoke awards or delete Seasons
+- soft-deleted Season disappears from normal Season history
+- deleted active Season no longer resolves as active
+- deleted Season preserves linked awards
+- management history includes Season
+- public player response includes safe badge Season/image fields but not awarding staff/private storage metadata
+- public player response does not expose a soft-deleted Season name
+
+### 42. Optional All Stars profile fields — included in version 2026.10.2
+Add optional profile metadata for `playerType: team`.
+
+Data:
+- optional plain-text `description`, maximum 500 characters
+- optional date-only `dateOfBirth`
+- do not add these as required fields
+- reject future birth dates
+- preserve legacy players with neither field
+
+Management:
+- add both fields to team-player create/edit forms, including team-context editing
+- admin may clear either value
+- judges remain read-only for player profile data
+
+Public API/profile:
+- expose description when present
+- calculate and expose integer `age` when `dateOfBirth` is present
+- never expose exact `dateOfBirth` through the public player DTO
+- omit age when no date of birth is stored
+- implement age calculation using date-only calendar semantics so timezone conversion cannot change the result by a day
+
+Add/update tests for:
+- optional create/edit/clear behavior
+- 500-character description limit
+- future birth date rejection
+- public description exposure
+- exact date of birth absent from public response
+- age calculation before/on/after birthday
+- legacy player without these fields remains compatible
+
+### 43. AWS S3 storage and optional image uploads — included in version 2026.10.2
+Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
+
+Infrastructure assumptions already configured in production:
+- S3 bucket `cardschool-public-prod`
+- region `eu-north-1`
+- bucket remains private with Block Public Access enabled
+- CloudFront domain `https://d1grgd8g6bpbb7.cloudfront.net`
+- CloudFront origin path `/public`
+- Render backend environment contains the AWS/S3/media variables defined in the architecture doc
+
+Required implementation:
+- use backend-authorized short-lived presigned direct uploads to S3
+- replace active Cloudinary-specific signing/upload behavior
+- use provider-neutral `storageKey`-style metadata for new media
+- preserve legacy Cloudinary-backed records during migration
+- keep the shared uploader reusable for future non-image file purposes
+
+Required image-upload capabilities:
+- images are optional for all three entities; absence of an image must never block create/edit
+- **team** — admin can upload/replace/remove an optional team logo
+- **child/player** — admin can upload/replace/remove an optional child photo for team and regular/club players; team-player photo may appear on the existing public profile, regular/club photo remains private
+- **badge/tag** — super-admin can upload/replace/remove an optional badge image
+
+UI:
+- reuse one shared image-upload component/service
+- image preview, busy/progress state, replacement/removal and concise Hebrew error handling
+- no manual image-URL field as the primary management workflow
+
+Permissions/security:
+- team and player media mutations are admin-only
+- badge media follows existing badge-management admin authority
+- judges are read-only for permanent media
+- JPEG/PNG/WebP only for this image scope, default 5 MB maximum
+- never expose AWS credentials or private S3 keys/objects publicly
+- CloudFront serves only the `public/` namespace
+
+Add/update tests for:
+- presign authorization and purpose validation
+- allowed/blocked image type and size behavior
+- generated key namespace/ownership
+- team logo upload persistence/display
+- child photo upload and public-vs-private behavior
+- badge image upload persistence/display
+- judges cannot mutate permanent media
+- legacy Cloudinary media remains readable during migration
+
+Do not implement unrestricted arbitrary file upload in this version; only make the storage abstraction extensible for later file types.
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation

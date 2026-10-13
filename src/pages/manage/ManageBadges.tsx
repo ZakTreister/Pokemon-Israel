@@ -1,3 +1,6 @@
+import BadgeDefinitionFields from '../../features/badges/components/BadgeDefinitionFields';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { requestError } from '../../utils/requestError';
 import BadgeSeasonsControls from './BadgeSeasonsControls';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -8,9 +11,15 @@ import {
   updateBadge,
   awardBadge,
   clearError,
+  revokeBadgeAward,
 } from '../../features/badges/badgesSlice';
 import { fetchManageablePlayers } from '../../features/teams/teamsSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { useToast } from '../../components/ui/ToastProvider';
 import { Plus, Edit2, Power, Award, AlertCircle } from 'lucide-react';
@@ -18,15 +27,50 @@ import type { BadgeDefinition } from '../../types/badge';
 
 export default function ManageBadges() {
   const dispatch = useAppDispatch();
+  const { showConfirm } = useConfirm();
+  const activeSeason = useAppSelector((state) => state.seasons.activeSeason);
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageUploadId, setImageUploadId] = useState<
+    string | null | undefined
+  >();
+  const removeAward = async (id: string) => {
+    if (
+      isSubmitting ||
+      !(await showConfirm({
+        title: 'הסרת תג מהשחקן',
+        message:
+          'להסיר את התג? ההענקה תישמר בארכיון וניתן יהיה להעניק אותו שוב.',
+        confirmText: 'הסר תג',
+        variant: 'destructive',
+      }))
+    )
+      return;
+    setIsSubmitting(true);
+    try {
+      await dispatch(revokeBadgeAward(id)).unwrap();
+      showToast('התג הוסר', 'success');
+    } catch (e) {
+      showToast(typeof e === 'string' ? e : requestError(e), 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const { showToast } = useToast();
-  const { badges, awards, isLoading, error } = useAppSelector((state) => state.badges);
+  const { badges, awards, isLoading, error } = useAppSelector(
+    (state) => state.badges,
+  );
   const { manageablePlayers } = useAppSelector((state) => state.teams);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '', icon: '' });
-  const [editingBadge, setEditingBadge] = useState<BadgeDefinition | null>(null);
-  const [editData, setEditData] = useState({ name: '', description: '', icon: '' });
-  const [awardingBadge, setAwardingBadge] = useState<BadgeDefinition | null>(null);
+  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [editingBadge, setEditingBadge] = useState<BadgeDefinition | null>(
+    null,
+  );
+  const [editData, setEditData] = useState({ name: '', description: '' });
+  const [awardingBadge, setAwardingBadge] = useState<BadgeDefinition | null>(
+    null,
+  );
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,13 +84,15 @@ export default function ManageBadges() {
   }, [dispatch]);
 
   const handleCreate = async () => {
-    if (!formData.name.trim()) return;
+    if (uploading || isSubmitting || !formData.name.trim()) return;
     try {
       setIsSubmitting(true);
-      await dispatch(createBadge(formData)).unwrap();
+      await dispatch(createBadge({ ...formData, imageUploadId })).unwrap();
       showToast('התג נוצר בהצלחה', 'success');
-      setFormData({ name: '', description: '', icon: '' });
+      setFormData({ name: '', description: '' });
       setShowCreateForm(false);
+      setImageUrl('');
+      setImageUploadId(undefined);
     } catch (err) {
       showToast(err as string, 'error');
     } finally {
@@ -55,10 +101,16 @@ export default function ManageBadges() {
   };
 
   const handleUpdate = async () => {
-    if (!editingBadge || !editData.name.trim()) return;
+    if (uploading || isSubmitting || !editingBadge || !editData.name.trim())
+      return;
     try {
       setIsSubmitting(true);
-      await dispatch(updateBadge({ id: editingBadge.id, input: editData })).unwrap();
+      await dispatch(
+        updateBadge({
+          id: editingBadge.id,
+          input: { ...editData, imageUploadId },
+        }),
+      ).unwrap();
       showToast('התג עודכן בהצלחה', 'success');
       setEditingBadge(null);
     } catch (err) {
@@ -71,7 +123,9 @@ export default function ManageBadges() {
   const handleToggleActive = async (badge: BadgeDefinition) => {
     try {
       setIsSubmitting(true);
-      await dispatch(updateBadge({ id: badge.id, input: { isActive: !badge.isActive } })).unwrap();
+      await dispatch(
+        updateBadge({ id: badge.id, input: { isActive: !badge.isActive } }),
+      ).unwrap();
       showToast('התג עודכן בהצלחה', 'success');
     } catch (err) {
       showToast(err as string, 'error');
@@ -81,10 +135,12 @@ export default function ManageBadges() {
   };
 
   const handleAward = async () => {
-    if (!awardingBadge || !selectedPlayerId) return;
+    if (!activeSeason || !awardingBadge || !selectedPlayerId) return;
     try {
       setIsSubmitting(true);
-      await dispatch(awardBadge({ badgeId: awardingBadge.id, playerId: selectedPlayerId })).unwrap();
+      await dispatch(
+        awardBadge({ badgeId: awardingBadge.id, playerId: selectedPlayerId }),
+      ).unwrap();
       showToast('התג הוענק בהצלחה', 'success');
       setAwardingBadge(null);
       setSelectedPlayerId('');
@@ -99,17 +155,34 @@ export default function ManageBadges() {
 
   return (
     <div>
-      <div className="mb-8 pb-8 border-b"><BadgeSeasonsControls /><p className="text-sm text-muted-foreground mt-4">עונות התגים אינן משנות את הדירוגים ואינן נועלות נבחרות או טורנירים.</p></div>
+      <div className="mb-8 pb-8 border-b">
+        <BadgeSeasonsControls />
+        <p className="text-sm text-muted-foreground mt-4">
+          עונות התגים אינן משנות את הדירוגים ואינן נועלות נבחרות או טורנירים.
+        </p>
+      </div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול תגים</h2>
         {!showCreateForm && (
-          <Button onClick={() => setShowCreateForm(true)}>
+          <Button
+            onClick={() => {
+              setImageUrl('');
+              setImageUploadId(undefined);
+              setEditingBadge(null);
+              setShowCreateForm(true);
+            }}
+          >
             <Plus size={18} className="ml-1" />
             <span>תג חדש</span>
           </Button>
         )}
       </div>
 
+      {!activeSeason && (
+        <p role="status" className="mb-4">
+          יש לפתוח עונת תגים פעילה לפני הענקת תג.
+        </p>
+      )}
       {error && (
         <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm flex items-center gap-2">
           <AlertCircle size={16} />
@@ -124,48 +197,34 @@ export default function ManageBadges() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">שם התג *</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  placeholder="לדוגמה: אלוף העונה"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">תיאור</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  rows={2}
-                  placeholder="תיאור התג"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">אייקון (שם lucide)</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  placeholder="לדוגמה: Trophy"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                />
-              </div>
+              <BadgeDefinitionFields
+                value={formData}
+                onChange={setFormData}
+                imageUrl={imageUrl}
+                onImageChange={(image) => {
+                  setImageUrl(image?.url || '');
+                  setImageUploadId(image?.uploadId || null);
+                }}
+                onBusyChange={setUploading}
+                disabled={uploading || isSubmitting}
+              />
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowCreateForm(false);
-                    setFormData({ name: '', description: '', icon: '' });
+                    setImageUrl('');
+                    setImageUploadId(undefined);
+                    setFormData({ name: '', description: '' });
                   }}
-                  disabled={isSubmitting}
+                  disabled={uploading || isSubmitting}
                 >
                   ביטול
                 </Button>
-                <Button onClick={handleCreate} disabled={isSubmitting || !formData.name.trim()}>
+                <Button
+                  onClick={handleCreate}
+                  disabled={uploading || isSubmitting || !formData.name.trim()}
+                >
                   {isSubmitting ? 'יוצר...' : 'צור תג'}
                 </Button>
               </div>
@@ -184,11 +243,21 @@ export default function ManageBadges() {
       ) : (
         <div className="space-y-4">
           {badges.map((badge) => (
-            <Card key={badge.id} className={!badge.isActive ? 'opacity-60' : ''}>
+            <Card
+              key={badge.id}
+              className={!badge.isActive ? 'opacity-60' : ''}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-3">
-                    {badge.icon && (
+                    {badge.image && (
+                      <img
+                        src={badge.image}
+                        alt={badge.name}
+                        className="w-14 h-14 object-contain rounded"
+                      />
+                    )}
+                    {!badge.image && badge.icon && (
                       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                         <Award size={20} />
                       </div>
@@ -196,16 +265,20 @@ export default function ManageBadges() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium text-lg">{badge.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          badge.isActive
-                            ? 'bg-success/10 text-success'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            badge.isActive
+                              ? 'bg-success/10 text-success'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
                           {badge.isActive ? 'פעיל' : 'לא פעיל'}
                         </span>
                       </div>
                       {badge.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{badge.description}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {badge.description}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -215,14 +288,16 @@ export default function ManageBadges() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
+                        setShowCreateForm(false);
+                        setImageUrl(badge.image || '');
+                        setImageUploadId(undefined);
                         setEditingBadge(badge);
                         setEditData({
                           name: badge.name,
                           description: badge.description,
-                          icon: badge.icon,
                         });
                       }}
-                      disabled={isSubmitting}
+                      disabled={uploading || isSubmitting}
                     >
                       <Edit2 size={16} className="ml-1" />
                       <span>ערוך</span>
@@ -231,7 +306,7 @@ export default function ManageBadges() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleActive(badge)}
-                      disabled={isSubmitting}
+                      disabled={uploading || isSubmitting}
                     >
                       <Power size={16} className="ml-1" />
                       <span>{badge.isActive ? 'השבת' : 'הפעל'}</span>
@@ -243,7 +318,12 @@ export default function ManageBadges() {
                         setAwardingBadge(badge);
                         setSelectedPlayerId('');
                       }}
-                      disabled={isSubmitting || !badge.isActive}
+                      disabled={
+                        uploading ||
+                        isSubmitting ||
+                        !badge.isActive ||
+                        !activeSeason
+                      }
                     >
                       <Award size={16} className="ml-1" />
                       <span>הענק</span>
@@ -253,43 +333,34 @@ export default function ManageBadges() {
 
                 {editingBadge?.id === badge.id && (
                   <div className="mt-4 p-3 rounded-md bg-muted space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">שם התג *</label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        value={editData.name}
-                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">תיאור</label>
-                      <textarea
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        rows={2}
-                        value={editData.description}
-                        onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">אייקון</label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        value={editData.icon}
-                        onChange={(e) => setEditData({ ...editData, icon: e.target.value })}
-                      />
-                    </div>
+                    <BadgeDefinitionFields
+                      value={editData}
+                      onChange={setEditData}
+                      entityId={badge.id}
+                      imageUrl={imageUrl}
+                      onImageChange={(image) => {
+                        setImageUrl(image?.url || '');
+                        setImageUploadId(image?.uploadId || null);
+                      }}
+                      onBusyChange={setUploading}
+                      disabled={uploading || isSubmitting}
+                    />
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingBadge(null)}
-                        disabled={isSubmitting}
+                        disabled={uploading || isSubmitting}
                       >
                         ביטול
                       </Button>
-                      <Button size="sm" onClick={handleUpdate} disabled={isSubmitting || !editData.name.trim()}>
+                      <Button
+                        size="sm"
+                        onClick={handleUpdate}
+                        disabled={
+                          uploading || isSubmitting || !editData.name.trim()
+                        }
+                      >
                         {isSubmitting ? 'שומר...' : 'שמור'}
                       </Button>
                     </div>
@@ -298,7 +369,9 @@ export default function ManageBadges() {
 
                 {awardingBadge?.id === badge.id && (
                   <div className="mt-4 p-3 rounded-md bg-muted space-y-3">
-                    <label className="block text-sm font-medium">בחר שחקן נבחרת להענקת התג:</label>
+                    <label className="block text-sm font-medium">
+                      בחר שחקן נבחרת להענקת התג:
+                    </label>
                     <select
                       className="w-full px-3 py-2 border border-input rounded-md bg-background"
                       value={selectedPlayerId}
@@ -320,11 +393,17 @@ export default function ManageBadges() {
                           setAwardingBadge(null);
                           setSelectedPlayerId('');
                         }}
-                        disabled={isSubmitting}
+                        disabled={uploading || isSubmitting}
                       >
                         ביטול
                       </Button>
-                      <Button size="sm" onClick={handleAward} disabled={isSubmitting || !selectedPlayerId}>
+                      <Button
+                        size="sm"
+                        onClick={handleAward}
+                        disabled={
+                          uploading || isSubmitting || !selectedPlayerId
+                        }
+                      >
                         {isSubmitting ? 'מעניק...' : 'הענק תג'}
                       </Button>
                     </div>
@@ -350,24 +429,49 @@ export default function ManageBadges() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-muted border-b border-border text-right">
-                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שחקן</th>
-                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תג</th>
-                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">תאריך</th>
-                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">הוענק על ידי</th>
+                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                      שחקן
+                    </th>
+                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                      תג
+                    </th>
+                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                      עונה
+                    </th>
+                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                      תאריך
+                    </th>
+                    <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                      הוענק על ידי
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {awards.slice(0, 20).map((award) => (
+                  {awards.map((award) => (
                     <tr key={award.id} className="border-b border-border">
                       <td className="px-4 py-3 font-medium">
                         {award.player.firstName} {award.player.lastName}
                       </td>
                       <td className="px-4 py-3">{award.badge.name}</td>
+                      <td className="px-4 py-3">
+                        {award.season?.name || 'ללא עונה (הענקה קודמת)'}
+                      </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {new Date(award.awardedAt).toLocaleDateString('he-IL')}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {award.awardedBy?.name || award.awardedBy?.username || '—'}
+                        {award.awardedBy?.name ||
+                          award.awardedBy?.username ||
+                          '—'}
+                        <Button
+                          contextual
+                          size="sm"
+                          variant="outline"
+                          disabled={isSubmitting}
+                          onClick={() => void removeAward(award.id)}
+                        >
+                          הסר תג
+                        </Button>
                       </td>
                     </tr>
                   ))}

@@ -23,6 +23,7 @@ A judge may be assigned as the teacher of one or more teams. This relationship d
 | View teams and rosters | Yes | Yes, read-only |
 | Create/edit/delete/deactivate team | Yes | No |
 | Upload/change team logo | Yes | No |
+| Upload/change/remove player photo | Yes | No |
 | Assign/change team teacher | Yes | No |
 | Create/edit/delete/deactivate player | Yes | No |
 | Assign/unassign/transfer player | Yes | No |
@@ -40,9 +41,11 @@ A judge may be assigned as the teacher of one or more teams. This relationship d
 | Permanently hard-delete tournament | Yes | No |
 | Manual historical internal-team tournament entry | Yes | No |
 | Historical regular/club Excel import | Yes | No |
-| Manage badge definitions | Yes | No |
+| Manage badge definitions, including badge image | Yes | No |
 | Award/manage badges | Yes | No |
+| Remove/revoke awarded badge | Yes | No |
 | Transition badge Season | Yes | No |
+| Soft-delete badge Season | Yes | No |
 | Annual team-year reset | Yes | No |
 | Manage league/system configuration | Yes | No |
 

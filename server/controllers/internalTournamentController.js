@@ -103,7 +103,7 @@ function base(team, participants, req, source) {
     date,
     registrationDeadline: date,
     location: team.name,
-    image: team.logo || "/pokemon_kids_logo.png",
+    image: team.toJSON().logo || "/pokemon_kids_logo.png",
     maxParticipants: 128,
     currentParticipants: participants.length,
     type: "team_internal",
@@ -111,7 +111,7 @@ function base(team, participants, req, source) {
     scoringPolicy: SWISS_POLICY,
     team: team._id,
     teamNameSnapshot: team.name,
-    teamLogoSnapshot: team.logo,
+    teamLogoSnapshot: team.toJSON().logo,
     competitionYear: COMPETITION_YEAR,
     source,
     phase: "setup",
@@ -450,7 +450,7 @@ export async function allStarsRankingData(teamId) {
     }
   const players = await Player.find({ _id: { $in: [...totals.keys()] } })
     .select("firstName lastName team")
-    .populate("team", "name logo");
+    .populate("team", "name logo logoMedia");
   const playersById = new Map(players.map((p) => [p.id, p]));
   const rows = [...totals.values()]
     .map((row) => {
@@ -464,7 +464,7 @@ export async function allStarsRankingData(teamId) {
           ? {
               id: player.team.id,
               name: player.team.name,
-              logo: player.team.logo || "",
+              logo: player.team.toJSON().logo || "",
             }
           : null,
       };

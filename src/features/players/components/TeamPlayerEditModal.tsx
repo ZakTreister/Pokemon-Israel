@@ -1,3 +1,4 @@
+import PlayerPhotoField from './PlayerPhotoField';
 import { useState } from 'react';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
@@ -22,11 +23,18 @@ export default function TeamPlayerEditModal({
     lastName: player.lastName,
     city: player.city || '',
     playerNumber: player.playerNumber || '',
+    description: player.description || '',
+    dateOfBirth: player.dateOfBirth || '',
   });
+  const [photoUploadId, setPhotoUploadId] = useState<
+    string | null | undefined
+  >();
+  const [photoUrl, setPhotoUrl] = useState(player.photoUrl || '');
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const save = async () => {
-    if (busy) return;
+    if (busy || uploading) return;
     const parsed = teamPlayerEditSchema.safeParse(value);
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
@@ -36,7 +44,10 @@ export default function TeamPlayerEditModal({
     setError('');
     try {
       await dispatch(
-        updatePlayer({ id: player.id, input: parsed.data }),
+        updatePlayer({
+          id: player.id,
+          input: { ...parsed.data, photoUploadId },
+        }),
       ).unwrap();
       await onSaved();
       onClose();
@@ -47,7 +58,7 @@ export default function TeamPlayerEditModal({
     }
   };
   return (
-    <Modal title="עריכת שחקן" onClose={busy ? undefined : onClose}>
+    <Modal title="עריכת שחקן" onClose={busy || uploading ? undefined : onClose}>
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -61,16 +72,30 @@ export default function TeamPlayerEditModal({
           </p>
         )}
         <TeamPlayerFields value={value} onChange={setValue} />
+        <PlayerPhotoField
+          playerType="team"
+          entityId={player.id}
+          value={photoUrl}
+          hasPhoto={photoUploadId !== null && !!player.photoMedia}
+          onChange={(image) => {
+            setPhotoUrl(image?.url || '');
+            setPhotoUploadId(image?.uploadId || null);
+          }}
+          onBusyChange={setUploading}
+          disabled={busy || uploading}
+        />
         <div className="flex justify-end gap-2">
           <Button
             type="button"
             variant="outline"
-            disabled={busy}
+            disabled={busy || uploading}
             onClick={onClose}
           >
             ביטול
           </Button>
-          <Button disabled={busy}>{busy ? 'שומר…' : 'שמור שינויים'}</Button>
+          <Button disabled={busy || uploading}>
+            {busy ? 'שומר…' : 'שמור שינויים'}
+          </Button>
         </div>
       </form>
     </Modal>

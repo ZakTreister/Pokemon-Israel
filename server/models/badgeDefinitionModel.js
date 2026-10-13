@@ -1,3 +1,4 @@
+import { mediaSchema, publicMediaUrl } from '../services/storage/mediaMetadata.js';
 import mongoose from 'mongoose';
 
 const badgeDefinitionSchema = new mongoose.Schema({
@@ -25,6 +26,8 @@ const badgeDefinitionSchema = new mongoose.Schema({
     maxlength: [50, 'Icon cannot exceed 50 characters'],
     default: '',
   },
+  imageMedia: { type: mediaSchema, default: null },
+  image: { type: String, default: '' },
   isActive: {
     type: Boolean,
     default: true,
@@ -41,6 +44,7 @@ const badgeDefinitionSchema = new mongoose.Schema({
 badgeDefinitionSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
+    ret.image = publicMediaUrl(doc.imageMedia) || ret.image || '';
     delete ret._id;
     delete ret.__v;
     return ret;
