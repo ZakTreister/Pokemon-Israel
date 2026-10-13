@@ -221,3 +221,17 @@ The same dialog is used from:
 It contains core team settings only: name, optional logo, assigned teacher and active status when applicable. Roster assignment/removal remains outside this dialog.
 
 After successful save, close the dialog and refresh the current team/list state without a full-page reload.
+
+
+## Updates management
+**ניהול עדכונים** is a working CRUD surface, not a visual placeholder.
+
+Create/edit uses the shared dialog pattern and supports:
+- required **כותרת**
+- optional **תיאור**
+- optional **תמונה**
+- optional **קישור**
+
+Delete requires confirmation.
+
+After create/edit/delete, update or refetch the canonical list without a full-page reload. Show concise Hebrew validation/save errors.
