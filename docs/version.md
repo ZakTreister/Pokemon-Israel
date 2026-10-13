@@ -217,7 +217,25 @@ Required completion:
 - if an active Season is deleted, no Season remains active until another is opened
 - keep the current no-judge badge/Season mutation rule
 
-#### 7. Shared image rules
+#### 7. Optional All Stars profile description and birthday
+Add optional profile fields for team players:
+- optional `description` / short biography, maximum 500 plain-text characters
+- optional `dateOfBirth` stored with date-only semantics
+
+Management:
+- admin can set/change/remove both fields in team-player create/edit flows
+- neither field is required
+- regular/club players are unchanged by this scope
+
+Public profile:
+- show description when present
+- show calculated current age when date of birth is present
+- never expose the exact date of birth in the public API or page
+- omit age entirely when date of birth is absent
+- reject future dates
+- calculate age correctly around birthdays without timezone day-shift bugs
+
+#### 8. Shared image rules
 - the upload capability itself is required in this version for team, player/child and badge management even though the images are optional
 - JPEG, PNG and WebP
 - maximum 5 MB by default
@@ -242,6 +260,9 @@ At minimum verify:
 - legacy badge awards without Season remain readable
 - badge award history and public profile include Season/public-safe badge media
 - badge revocation removes the award from normal/public views and permits a later re-award
+- optional team-player description persists and appears publicly when present
+- optional team-player date of birth remains private while public DTO/profile expose only correctly calculated age
+- future birth dates are rejected and missing birth date omits age
 - Season soft deletion is hidden from ordinary Season history and never counts as active
 - awards belonging to a deleted Season remain preserved, with the deleted Season name hidden publicly
 - creation/editing of team, player and badge succeeds without an image
