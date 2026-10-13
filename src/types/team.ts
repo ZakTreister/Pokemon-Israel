@@ -14,6 +14,7 @@ export interface Team {
   isActive: boolean;
   logo?: string;
   logoPublicId?: string;
+  logoUploadId?: string | null;
   completedInternalTournamentCount?: number;
   officialStats?: {
     position: number;
@@ -33,6 +34,10 @@ export interface TeamWithRoster extends Team {
 }
 
 export interface TeamRosterPlayer {
+  description?: string;
+  dateOfBirth?: string;
+  photoUrl?: string;
+  photoMedia?: import('../services/media').StoredMedia | null;
   playerNumber?: string;
   id: string;
   firstName: string;
@@ -59,6 +64,7 @@ export interface CreateTeamInput {
   teacher: string;
   logo?: string;
   logoPublicId?: string;
+  logoUploadId?: string | null;
   name: string;
 }
 
@@ -66,6 +72,7 @@ export interface UpdateTeamInput {
   teacher?: string;
   logo?: string;
   logoPublicId?: string;
+  logoUploadId?: string | null;
   name?: string;
   isActive?: boolean;
 }

@@ -1,3 +1,5 @@
+import TeamPlayerProfileFields from '../../features/players/components/TeamPlayerProfileFields';
+import PlayerPhotoField from '../../features/players/components/PlayerPhotoField';
 import TeamPlayerFields from '../../features/players/components/TeamPlayerFields';
 import { teamPlayerCreateSchema } from '../../features/players/utils/teamPlayerForm';
 import PlayerNumberField from '../../features/players/components/PlayerNumberField';
@@ -31,6 +33,8 @@ import type { Player } from '../../types/player';
 type FilterType = 'all' | 'team' | 'quarterly';
 
 interface TeamFormData {
+  description?: string;
+  dateOfBirth?: string;
   playerNumber: string;
   teamId: string;
   firstName: string;
@@ -45,6 +49,8 @@ interface QuarterlyFormData {
 }
 
 interface EditFormData {
+  description?: string;
+  dateOfBirth?: string;
   city: string;
   playerNumber: string;
   firstName: string;
@@ -67,6 +73,11 @@ export default function AdminPlayers() {
   const [showQuarterlyModal, setShowQuarterlyModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [photoUploadId, setPhotoUploadId] = useState<
+    string | null | undefined
+  >();
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   useEffect(() => {
@@ -130,22 +141,30 @@ export default function AdminPlayers() {
   }, [dispatch]);
 
   const resetTeamForm = () => {
+    setPhotoUploadId(undefined);
+    setPhotoUrl('');
     setTeamForm({
       firstName: '',
       lastName: '',
       city: '',
       playerNumber: '',
+      description: '',
+      dateOfBirth: '',
       teamId: '',
     });
     setFormError(null);
   };
 
   const resetQuarterlyForm = () => {
+    setPhotoUploadId(undefined);
+    setPhotoUrl('');
     setQuarterlyForm({ firstName: '', lastName: '', club: '' });
     setFormError(null);
   };
 
   const resetEditForm = () => {
+    setPhotoUploadId(undefined);
+    setPhotoUrl('');
     setEditForm({
       firstName: '',
       lastName: '',
@@ -153,12 +172,15 @@ export default function AdminPlayers() {
       isActive: true,
       city: '',
       playerNumber: '',
+      description: '',
+      dateOfBirth: '',
     });
     setFormError(null);
   };
 
   const handleCreateTeamPlayer = async () => {
     const parsed = teamPlayerCreateSchema.safeParse(teamForm);
+    if (uploading || isSubmitting) return;
     if (!parsed.success || !teamForm.teamId) {
       setFormError(
         !parsed.success ? parsed.error.issues[0].message : 'יש לבחור נבחרת',
@@ -172,6 +194,7 @@ export default function AdminPlayers() {
         createTeamPlayer({
           ...parsed.data,
           teamId: teamForm.teamId,
+          photoUploadId,
         }),
       ).unwrap();
       resetTeamForm();
@@ -185,6 +208,7 @@ export default function AdminPlayers() {
   };
 
   const handleCreateQuarterlyPlayer = async () => {
+    if (uploading || isSubmitting) return;
     if (!quarterlyForm.firstName.trim() || !quarterlyForm.lastName.trim()) {
       setFormError('שם פרטי ושם משפחה הם חובה');
       return;
@@ -197,6 +221,7 @@ export default function AdminPlayers() {
           firstName: quarterlyForm.firstName.trim(),
           lastName: quarterlyForm.lastName.trim(),
           club: quarterlyForm.club.trim(),
+          photoUploadId,
         }),
       ).unwrap();
       resetQuarterlyForm();
@@ -211,6 +236,8 @@ export default function AdminPlayers() {
 
   const handleEditClick = (player: Player) => {
     setSelectedPlayer(player);
+    setPhotoUploadId(undefined);
+    setPhotoUrl(player.photoUrl || '');
     setEditForm({
       firstName: player.firstName,
       lastName: player.lastName,
@@ -218,13 +245,15 @@ export default function AdminPlayers() {
       city: player.city || '',
       playerNumber: player.playerNumber || '',
       isActive: player.isActive,
+      description: player.description || '',
+      dateOfBirth: player.dateOfBirth || '',
     });
     setFormError(null);
     setShowEditModal(true);
   };
 
   const handleUpdatePlayer = async () => {
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || uploading || isSubmitting) return;
     if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
       setFormError('שם פרטי ושם משפחה הם חובה');
       return;
@@ -240,11 +269,14 @@ export default function AdminPlayers() {
             lastName: editForm.lastName.trim(),
             ...(selectedPlayer.playerType === 'team'
               ? {
+                  description: editForm.description,
+                  dateOfBirth: editForm.dateOfBirth,
                   city: editForm.city.trim(),
                   playerNumber: editForm.playerNumber.trim(),
                 }
               : { club: editForm.club.trim() || null }),
             isActive: editForm.isActive,
+            photoUploadId,
           },
         }),
       ).unwrap();
@@ -306,7 +338,8 @@ export default function AdminPlayers() {
 
         <div className="flex flex-wrap gap-2">
           <span className="text-sm font-medium ml-2 leading-8">סוג:</span>
-          <Button contextual
+          <Button
+            contextual
             size="sm"
             variant={filterType === 'all' ? 'default' : 'outline'}
             onClick={() => setFilterType('all')}
@@ -314,7 +347,8 @@ export default function AdminPlayers() {
           >
             הכל
           </Button>
-          <Button contextual
+          <Button
+            contextual
             size="sm"
             variant={filterType === 'team' ? 'default' : 'outline'}
             onClick={() => setFilterType('team')}
@@ -322,7 +356,8 @@ export default function AdminPlayers() {
           >
             שחקני נבחרת
           </Button>
-          <Button contextual
+          <Button
+            contextual
             size="sm"
             variant={filterType === 'quarterly' ? 'default' : 'outline'}
             onClick={() => setFilterType('quarterly')}
@@ -349,25 +384,47 @@ export default function AdminPlayers() {
             <table className="w-full">
               <thead>
                 <tr className="bg-muted border-b border-border text-right">
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם פרטי</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">שם משפחה</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">חוג</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">סוג</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">סטטוס</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">חשבון</th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">פעולות</th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    שם פרטי
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    שם משפחה
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    חוג
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    סוג
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    סטטוס
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    חשבון
+                  </th>
+                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+                    פעולות
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {players.map((player) => (
                   <NavigableRow
                     key={player.id}
-                    to={player.playerType === 'team' ? `/all-stars/players/${player.id}` : ''}
+                    to={
+                      player.playerType === 'team'
+                        ? `/all-stars/players/${player.id}`
+                        : ''
+                    }
                     className="border-b border-border"
                   >
-                    <td className="px-4 py-3 font-medium">{player.firstName}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {player.firstName}
+                    </td>
                     <td className="px-4 py-3 font-medium">{player.lastName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{player.club || '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {player.club || '—'}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -394,14 +451,17 @@ export default function AdminPlayers() {
                       {player.user ? (
                         <span className="flex items-center gap-1 text-success">
                           <ShieldCheck size={14} />
-                          <span className="text-xs">{player.user.username}</span>
+                          <span className="text-xs">
+                            {player.user.username}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <Button contextual
+                      <Button
+                        contextual
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditClick(player)}
@@ -419,7 +479,9 @@ export default function AdminPlayers() {
           {players.length === 0 && (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">לא נמצאו שחקנים התואמים את החיפוש</p>
+              <p className="text-muted-foreground">
+                לא נמצאו שחקנים התואמים את החיפוש
+              </p>
             </div>
           )}
         </Card>
@@ -427,7 +489,10 @@ export default function AdminPlayers() {
 
       {/* Add Team Player Modal */}
       {showTeamModal && (
-        <Modal title="הוסף שחקן נבחרת" onClose={closeAllModals}>
+        <Modal
+          title="הוסף שחקן נבחרת"
+          onClose={isSubmitting || uploading ? undefined : closeAllModals}
+        >
           {formError && (
             <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
               {formError}
@@ -464,16 +529,26 @@ export default function AdminPlayers() {
                 ))}
               </select>
             </label>
+            <PlayerPhotoField
+              playerType="team"
+              value={photoUrl}
+              onChange={(image) => {
+                setPhotoUrl(image?.url || '');
+                setPhotoUploadId(image?.uploadId || null);
+              }}
+              onBusyChange={setUploading}
+              disabled={isSubmitting}
+            />
             <div className="flex justify-end gap-2 mt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={closeAllModals}
-                disabled={isSubmitting}
+                disabled={isSubmitting || uploading}
               >
                 ביטול
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || uploading}>
                 {isSubmitting ? 'יוצר...' : 'הוסף שחקן נבחרת'}
               </Button>
             </div>
@@ -483,44 +558,69 @@ export default function AdminPlayers() {
 
       {/* Add Quarterly Player Modal */}
       {showQuarterlyModal && (
-        <Modal title="הוסף שחקן חוגים" onClose={closeAllModals}>
-            {formError && (
-              <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {formError}
-              </div>
-            )}
-            <div className="space-y-4">
-              <PlayerNameFields
-                firstName={quarterlyForm.firstName}
-                lastName={quarterlyForm.lastName}
-                onChange={(field, value) =>
-                  setQuarterlyForm({ ...quarterlyForm, [field]: value })
+        <Modal
+          title="הוסף שחקן חוגים"
+          onClose={isSubmitting || uploading ? undefined : closeAllModals}
+        >
+          {formError && (
+            <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+              {formError}
+            </div>
+          )}
+          <div className="space-y-4">
+            <PlayerNameFields
+              firstName={quarterlyForm.firstName}
+              lastName={quarterlyForm.lastName}
+              onChange={(field, value) =>
+                setQuarterlyForm({ ...quarterlyForm, [field]: value })
+              }
+            />
+            <div>
+              <label className="block text-sm font-medium mb-1">חוג</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                value={quarterlyForm.club}
+                onChange={(e) =>
+                  setQuarterlyForm({ ...quarterlyForm, club: e.target.value })
                 }
               />
-              <div>
-                <label className="block text-sm font-medium mb-1">חוג</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={quarterlyForm.club}
-                  onChange={(e) => setQuarterlyForm({ ...quarterlyForm, club: e.target.value })}
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={closeAllModals} disabled={isSubmitting}>
-                  ביטול
-                </Button>
-                <Button onClick={handleCreateQuarterlyPlayer} disabled={isSubmitting}>
-                  {isSubmitting ? 'יוצר...' : 'הוסף שחקן חוגים'}
-                </Button>
-              </div>
             </div>
+            <PlayerPhotoField
+              playerType="quarterly"
+              value={photoUrl}
+              onChange={(image) => {
+                setPhotoUrl(image?.url || '');
+                setPhotoUploadId(image?.uploadId || null);
+              }}
+              onBusyChange={setUploading}
+              disabled={isSubmitting}
+            />
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={closeAllModals}
+                disabled={isSubmitting || uploading}
+              >
+                ביטול
+              </Button>
+              <Button
+                onClick={handleCreateQuarterlyPlayer}
+                disabled={isSubmitting || uploading}
+              >
+                {isSubmitting ? 'יוצר...' : 'הוסף שחקן חוגים'}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
 
       {/* Edit Player Modal */}
       {showEditModal && selectedPlayer && (
-        <Modal title="עריכת שחקן" onClose={closeAllModals}>
+        <Modal
+          title="עריכת שחקן"
+          onClose={isSubmitting || uploading ? undefined : closeAllModals}
+        >
           {formError && (
             <div className="mb-4 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
               {formError}
@@ -566,6 +666,24 @@ export default function AdminPlayers() {
                 />
               </div>
             )}
+            {selectedPlayer.playerType === 'team' && (
+              <TeamPlayerProfileFields
+                value={editForm}
+                onChange={(profile) => setEditForm({ ...editForm, ...profile })}
+              />
+            )}
+            <PlayerPhotoField
+              playerType={selectedPlayer.playerType}
+              entityId={selectedPlayer.id}
+              value={photoUrl}
+              hasPhoto={photoUploadId !== null && !!selectedPlayer.photoMedia}
+              onChange={(image) => {
+                setPhotoUrl(image?.url || '');
+                setPhotoUploadId(image?.uploadId || null);
+              }}
+              onBusyChange={setUploading}
+              disabled={isSubmitting}
+            />
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -584,11 +702,14 @@ export default function AdminPlayers() {
               <Button
                 variant="outline"
                 onClick={closeAllModals}
-                disabled={isSubmitting}
+                disabled={isSubmitting || uploading}
               >
                 ביטול
               </Button>
-              <Button onClick={handleUpdatePlayer} disabled={isSubmitting}>
+              <Button
+                onClick={handleUpdatePlayer}
+                disabled={isSubmitting || uploading}
+              >
                 {isSubmitting ? 'מעדכן...' : 'שמור שינויים'}
               </Button>
             </div>

@@ -56,7 +56,7 @@ export default function TeamAdministration({
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [editName, setEditName] = useState('');
   const [editLogo, setEditLogo] = useState('');
-  const [editPublicId, setEditPublicId] = useState('');
+  const [logoUploadId, setLogoUploadId] = useState<string | null | undefined>();
   const [assigningToTeam, setAssigningToTeam] = useState<Team | null>(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -80,8 +80,7 @@ export default function TeamAdministration({
           id: editingTeam.id,
           input: {
             name: editName.trim(),
-            logo: editLogo.trim(),
-            logoPublicId: editPublicId,
+            logoUploadId,
             ...(teacher ? { teacher } : {}),
           },
         }),
@@ -263,7 +262,7 @@ export default function TeamAdministration({
                               setEditingTeam(team);
                               setEditName(team.name);
                               setEditLogo(team.logo || '');
-                              setEditPublicId(team.logoPublicId || '');
+                              setLogoUploadId(undefined);
                               setTeacher(team.teacher?.id || '');
                             }}
                             disabled={uploading || isSubmitting}
@@ -306,11 +305,13 @@ export default function TeamAdministration({
                       <div className="flex flex-wrap gap-2 mb-4">
                         <div className="w-full">
                           <ImageUpload
+                            purpose="team-logo"
+                            entityId={team.id}
                             label="סמל הנבחרת"
                             value={editLogo}
                             onChange={(image) => {
-                              setEditLogo(image?.secureUrl || '');
-                              setEditPublicId(image?.publicId || '');
+                              setEditLogo(image?.url || '');
+                              setLogoUploadId(image?.uploadId || null);
                             }}
                             onBusyChange={setUploading}
                             disabled={isSubmitting}

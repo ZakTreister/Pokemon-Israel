@@ -40,10 +40,23 @@ export default function AllStarsPlayerPage() {
             → חזרה ל{player.team ? 'נבחרת' : 'All Stars'}
           </Link>
           <div className="cs-public-card p-6">
+            {player.photoUrl && (
+              <img
+                src={player.photoUrl}
+                alt={`תמונה של ${player.firstName}`}
+                className="h-28 w-28 rounded-lg object-cover mb-4"
+              />
+            )}
             <p className="text-blue-500 font-bold">ALL STARS</p>
             <h1 className="text-3xl font-extrabold">
               {player.firstName} {player.lastName}
             </h1>
+            {player.age !== undefined && <p>גיל: {player.age}</p>}
+            {player.description && (
+              <p className="whitespace-pre-wrap break-words mt-3">
+                {player.description}
+              </p>
+            )}
             {player.city && <p>{player.city}</p>}
             {player.playerNumber && <p>מספר שחקן: {player.playerNumber}</p>}
             {player.team && (
@@ -69,8 +82,20 @@ export default function AllStarsPlayerPage() {
               <ul className="grid gap-3 sm:grid-cols-2">
                 {player.badges.map((badge, i) => (
                   <li key={i} className="cs-public-card p-4">
+                    {badge.image && (
+                      <img
+                        src={badge.image}
+                        alt={badge.name}
+                        className="w-14 h-14 object-contain"
+                      />
+                    )}
+                    {badge.seasonName && (
+                      <p className="text-sm text-muted-foreground">
+                        {badge.seasonName}
+                      </p>
+                    )}
                     <h3 className="font-bold">
-                      {badge.icon} {badge.name}
+                      {!badge.image && badge.icon} {badge.name}
                     </h3>
                     <p>{badge.description}</p>
                     <time dateTime={badge.awardedAt}>

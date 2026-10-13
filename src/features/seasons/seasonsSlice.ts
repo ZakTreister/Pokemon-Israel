@@ -22,11 +22,15 @@ export const fetchSeasons = createAsyncThunk(
     try {
       return await seasonsService.getSeasons();
     } catch (error) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת עונות';
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בטעינת עונות';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const fetchActiveSeason = createAsyncThunk(
@@ -35,14 +39,18 @@ export const fetchActiveSeason = createAsyncThunk(
     try {
       return await seasonsService.getActiveSeason();
     } catch (error) {
-      const err = error as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const err = error as {
+        response?: { status?: number; data?: { message?: string } };
+        message?: string;
+      };
       if (err.response?.status === 404) {
         return null;
       }
-      const message = err.response?.data?.message || err.message || 'שגיאה בטעינת עונה פעילה';
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בטעינת עונה פעילה';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const createSeason = createAsyncThunk(
@@ -51,11 +59,15 @@ export const createSeason = createAsyncThunk(
     try {
       return await seasonsService.createSeason(name);
     } catch (error) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      const message = err.response?.data?.message || err.message || 'שגיאה ביצירת עונה';
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה ביצירת עונה';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const closeSeason = createAsyncThunk(
@@ -64,11 +76,20 @@ export const closeSeason = createAsyncThunk(
     try {
       return await seasonsService.closeSeason(id);
     } catch (error) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      const message = err.response?.data?.message || err.message || 'שגיאה בסגירת עונה';
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const message =
+        err.response?.data?.message || err.message || 'שגיאה בסגירת עונה';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
+);
+
+export const deleteSeason = createAsyncThunk(
+  'seasons/delete',
+  async (id: string) => seasonsService.deleteSeason(id),
 );
 
 const seasonsSlice = createSlice({
@@ -88,7 +109,8 @@ const seasonsSlice = createSlice({
       .addCase(fetchSeasons.fulfilled, (state, action) => {
         state.isLoading = false;
         state.seasons = action.payload;
-        state.activeSeason = action.payload.find((s: Season) => s.status === 'active') || null;
+        state.activeSeason =
+          action.payload.find((s: Season) => s.status === 'active') || null;
       })
       .addCase(fetchSeasons.rejected, (state, action) => {
         state.isLoading = false;
@@ -109,9 +131,16 @@ const seasonsSlice = createSlice({
         state.seasons.unshift(action.payload);
         state.activeSeason = action.payload;
       })
+      .addCase(deleteSeason.fulfilled, (state, action) => {
+        state.seasons = state.seasons.filter(
+          (season) => season.id !== action.payload.id,
+        );
+        if (state.activeSeason?.id === action.payload.id)
+          state.activeSeason = null;
+      })
       .addCase(closeSeason.fulfilled, (state, action) => {
         state.seasons = state.seasons.map((s) =>
-          s.id === action.payload.id ? action.payload : s
+          s.id === action.payload.id ? action.payload : s,
         );
         state.activeSeason = null;
       });

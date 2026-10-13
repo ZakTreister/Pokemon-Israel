@@ -1,4 +1,8 @@
 export interface Player {
+  description?: string;
+  dateOfBirth?: string;
+  photoUrl?: string;
+  photoMedia?: import('../services/media').StoredMedia | null;
   id: string;
   firstName: string;
   lastName: string;
@@ -17,12 +21,16 @@ export interface Player {
 }
 
 export interface CreateQuarterlyPlayerInput {
+  photoUploadId?: string | null;
   firstName: string;
   lastName: string;
   club: string;
 }
 
 export interface CreateTeamPlayerInput {
+  description?: string;
+  dateOfBirth?: string;
+  photoUploadId?: string | null;
   playerNumber: string;
   firstName: string;
   lastName: string;
@@ -31,6 +39,9 @@ export interface CreateTeamPlayerInput {
 }
 
 export interface UpdatePlayerInput {
+  description?: string;
+  dateOfBirth?: string;
+  photoUploadId?: string | null;
   playerNumber?: string;
   city?: string;
   firstName?: string;

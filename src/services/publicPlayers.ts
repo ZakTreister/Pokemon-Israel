@@ -5,6 +5,9 @@ interface PublicRanking {
   tournaments: number;
 }
 export interface PublicTeamPlayer {
+  description?: string;
+  age?: number;
+  photoUrl?: string;
   id: string;
   firstName: string;
   lastName: string;
@@ -13,6 +16,8 @@ export interface PublicTeamPlayer {
   playerNumber?: string;
   teamRanking: PublicRanking | null;
   badges: {
+    image?: string;
+    seasonName?: string;
     name: string;
     description: string;
     icon: string;

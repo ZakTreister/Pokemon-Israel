@@ -1,3 +1,5 @@
+import { rankedTeamMembers } from '../utils/teamMembers';
+import type { AllStarsRanking } from '../../../types/internalTournament';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from '../../../components/ui/DataTable';
@@ -10,10 +12,12 @@ import TeamPlayerEditModal from '../../players/components/TeamPlayerEditModal';
 import type { TeamWithRoster, TeamRosterPlayer } from '../../../types/team';
 export default function TeamMembersTable({
   team,
+  rankings = [],
   editable,
   onChanged,
 }: {
   team: TeamWithRoster;
+  rankings?: AllStarsRanking[];
   editable: boolean;
   onChanged: () => Promise<void>;
 }) {
@@ -48,11 +52,12 @@ export default function TeamMembersTable({
   return (
     <>
       <DataTable
-        rows={team.players}
+        rows={rankedTeamMembers(team.players, rankings)}
         rowKey={(row) => row.id}
-        defaultSort="name"
+        defaultSort="position"
         rowLink={(row) => `/all-stars/players/${row.id}`}
         columns={[
+          { key: 'position', label: 'מיקום', value: (row) => row.position },
           {
             key: 'name',
             label: 'שם מלא',
@@ -71,6 +76,12 @@ export default function TeamMembersTable({
             key: 'playerNumber',
             label: 'מספר שחקן',
             value: (row) => row.playerNumber || '—',
+          },
+          { key: 'points', label: 'נקודות', value: (row) => row.points },
+          {
+            key: 'tournaments',
+            label: 'טורנירים',
+            value: (row) => row.tournaments,
           },
           ...(editable
             ? [

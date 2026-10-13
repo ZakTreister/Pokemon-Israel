@@ -317,9 +317,6 @@ try {
   const { default: Members } = await load(
     'features/teams/components/TeamMembersTable.tsx',
   );
-  const { default: Ranking } = await load(
-    'features/teams/components/TeamRankingTable.tsx',
-  );
   const team = {
     id: 'team',
     players: [
@@ -349,10 +346,7 @@ try {
     ),
   );
   assert.deepEqual(renderer.root.findAllByType('th').map(text), [
-    'שם מלא ↑',
-    'עיר',
-    'מספר שחקן',
-    'פעולות',
+    'מיקום ↑', 'שם מלא', 'עיר', 'מספר שחקן', 'נקודות', 'טורנירים', 'פעולות',
   ]);
   assert.ok(text(renderer.toJSON()).includes('0007'));
   act(() => button('עריכת שחקן').props.onClick());
@@ -373,7 +367,7 @@ try {
       firstName: 'לביא',
       lastName: 'כהן',
       city: 'חיפה',
-      playerNumber: 'AB-17',
+      playerNumber: 'AB-17', description: '', dateOfBirth: '', photoUploadId: undefined,
     },
   });
   assert.equal(changed, 1);
@@ -393,7 +387,7 @@ try {
     provided(el(Members, { team, editable: false, onChanged: async () => {} })),
   );
   assert.ok(!button('עריכת שחקן') && !button('הסרה מהנבחרת'));
-  assert.equal(renderer.root.findAllByType('th').length, 3);
+  assert.equal(renderer.root.findAllByType('th').length, 6);
   unmount();
   const ranks = [
     {
@@ -411,12 +405,9 @@ try {
       tournaments: 2,
     },
   ];
-  await mount(router(el(Ranking, { rows: ranks })));
+  await mount(provided(el(Members, { team: {id:'team', players: ranks.map(rank => ({id:rank.playerId,firstName:rank.playerName,lastName:''}))}, rankings:ranks, editable:false, onChanged:async()=>{} })));
   assert.deepEqual(renderer.root.findAllByType('th').map(text), [
-    'מיקום ↑',
-    'שם',
-    'נקודות',
-    'טורנירים',
+    'מיקום ↑', 'שם מלא', 'עיר', 'מספר שחקן', 'נקודות', 'טורנירים',
   ]);
   assert.ok(
     text(renderer.root.findByType('tbody').findAllByType('tr')[0]).startsWith(

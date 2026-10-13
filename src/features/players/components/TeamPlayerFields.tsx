@@ -1,8 +1,11 @@
+import TeamPlayerProfileFields, {
+  type TeamProfileValues,
+} from './TeamPlayerProfileFields';
 import { useId } from 'react';
 import PlayerNameFields from './PlayerNameFields';
 import PlayerNumberField from './PlayerNumberField';
 import FormField from '../../../components/ui/FormField';
-export interface TeamPlayerValues {
+export interface TeamPlayerValues extends TeamProfileValues {
   firstName: string;
   lastName: string;
   city: string;
@@ -34,6 +37,10 @@ export default function TeamPlayerFields({
           className="w-full p-2 border rounded-md bg-background"
         />
       </FormField>
+      <TeamPlayerProfileFields
+        value={value}
+        onChange={(profile) => onChange({ ...value, ...profile })}
+      />
       <PlayerNumberField
         value={value.playerNumber}
         required={newPlayer}
