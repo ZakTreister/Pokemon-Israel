@@ -10,6 +10,19 @@ An All Stars team has at least:
 
 Team names must remain uniquely normalized as in the existing model.
 
+## Team logo upload
+Team logos use the shared AWS S3 upload/storage capability defined in `docs/architecture/media-upload.md`.
+
+Requirements:
+- admin can upload a logo during team creation/editing
+- admin can replace or remove the logo
+- judges may view but may not change permanent team media
+- new logos are stored under `public/teams/<team-id>/...`
+- public team surfaces use the CloudFront media URL derived from the stored key
+- persist provider-neutral storage metadata; new code must not depend on Cloudinary `publicId`
+- reuse the shared image-upload component and normal preview/progress/error behavior
+- preserve legacy team logo URLs while migrating existing records; do not break existing logos merely because storage provider changes
+
 ## Creating and managing teams
 - Team configuration is admin-only.
 - Judges may view team information as needed to open/manage tournaments, but may not change team settings.
