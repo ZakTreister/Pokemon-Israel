@@ -1377,6 +1377,12 @@ test('2026.10.2 shared S3 media verifies actual objects, ownership and optional 
   cleanupFails=false;
   assert.equal((await ok(`/teams/public/${team.id}`,'GET',undefined,null)).logo,'');
   assert.ok(mediaObjects.has(replacement.storageKey),'cleanup failure does not break persistence');
+  const historicalLogo=await uploaded('team-logo',team.id);
+  await ok(`/teams/${team.id}`,'PUT',{logoUploadId:historicalLogo.uploadId},'admin');
+  const snapshot=await Tournament.create({title:'Retained logo snapshot',description:'History',date:new Date(),location:'Test',maxParticipants:2,registrationDeadline:new Date(),image:historicalLogo.url,teamLogoSnapshot:historicalLogo.url});
+  await ok(`/tournaments/${snapshot.id}`,'DELETE',undefined,'admin');
+  await ok(`/teams/${team.id}`,'PUT',{logoUploadId:null},'admin');
+  assert.ok(mediaObjects.has(historicalLogo.storageKey),'referenced historical/audit tournament artwork is not deleted');
   const legacy=await ok('/teams','POST',{name:'Legacy Cloudinary media',logo:'https://res.cloudinary.com/legacy/image/upload/logo.png',logoPublicId:'legacy/logo'},'admin',201);
   assert.equal((await ok(`/teams/public/${legacy.id}`,'GET',undefined,null)).logo,legacy.logo);
   const image=await uploaded('player-photo',undefined,'team');

@@ -230,7 +230,18 @@ export async function finishAttachment(req, attachment, previous) {
         }),
       ),
     );
-    if (!referenced.some(Boolean)) await storageFor(req).remove(key);
+    const url = publicMediaUrl(previous);
+    // Historical tournament artwork stores a public URL snapshot, not a media
+    // subdocument. Include soft-deleted/audit records when checking references.
+    const historicalReference =
+      url && mongoose.models.Tournament
+        ? await mongoose.models.Tournament.collection.findOne(
+            { $or: [{ image: url }, { teamLogoSnapshot: url }] },
+            { projection: { _id: 1 } },
+          )
+        : null;
+    if (!referenced.some(Boolean) && !historicalReference)
+      await storageFor(req).remove(key);
   } catch {
     console.warn('Media cleanup deferred after successful attachment');
   }
