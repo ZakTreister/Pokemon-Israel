@@ -224,6 +224,21 @@ Requirements:
 - regular/quarterly players have no player-photo field/upload in this version
 - keep optional player photo only for team/All Stars players
 
+
+#### 11. Shared registration destination and footer contrast
+Registration:
+- homepage **הרשמה לחוג הקרוב לביתכם** uses the same centrally configured URL as the floating registration CTA
+- current destination: `https://lp.cardschool.co.il`
+- do not hard-code a separate homepage-only URL
+- keep the destination centralized so it can be replaced later in one place
+
+Footer:
+- improve contrast of footer text and links against the existing footer background
+- preserve the footer's current structure/layout
+- ensure hover/focus states remain clearly distinguishable
+- avoid low-opacity essential text
+- verify desktop and mobile
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
