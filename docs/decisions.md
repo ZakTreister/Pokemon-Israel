@@ -418,3 +418,9 @@ The existing Update model remains the source for **חדשות**. Do not introduc
 An update has a required title and optional description, image and link. Existing `content` remains backward compatible as description content.
 
 Update images use the shared AWS S3 media flow. Management create/edit/delete must be fully functional, and public News surfaces show the optional image/link when present.
+
+
+## 2026-10 — Players management uses server-side pagination
+**ניהול → שחקנים** must not load every Player into the browser.
+
+The canonical Players list endpoint applies authorization, type filter and text search on the server before pagination, uses a stable sort, and returns pagination metadata. The default management page size is 25.
