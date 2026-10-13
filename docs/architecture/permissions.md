@@ -43,7 +43,9 @@ A judge may be assigned as the teacher of one or more teams. This relationship d
 | Historical regular/club Excel import | Yes | No |
 | Manage badge definitions, including badge image | Yes | No |
 | Award/manage badges | Yes | No |
+| Remove/revoke awarded badge | Yes | No |
 | Transition badge Season | Yes | No |
+| Soft-delete badge Season | Yes | No |
 | Annual team-year reset | Yes | No |
 | Manage league/system configuration | Yes | No |
 
