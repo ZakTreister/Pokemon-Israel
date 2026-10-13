@@ -1046,28 +1046,31 @@ Data/model:
 - title is required
 - description is optional; preserve/read legacy `content` as the description
 - optional public image using the shared S3 media layer
-- optional validated external link
+- optional CTA composed of CTA button text + validated destination URL
 
 Management:
 - make create/edit/delete actually persist through the existing Updates API/service
 - delete uses confirmation
 - use shared Modal/Dialog rather than custom fixed-overlay markup
 - title validation is authoritative on backend and frontend
-- optional link accepts only valid `http://` / `https://` URLs
+- CTA text and destination are one logical optional action: if either is provided, require both
+- CTA destination accepts only valid `http://` / `https://` URLs
 - reuse shared ImageUpload with a distinct `update-image` purpose
 - no full-page reload after mutations
 
 Public:
 - News feed/full post show image when present
 - show description/content
-- show an explicit link CTA when link exists
-- external link uses safe new-tab attributes
+- show an explicit CTA button only when both CTA text and destination exist
+- use the exact manager-configured CTA button text
+- external destination uses safe new-tab attributes
+- homepage **העדכון האחרון** uses the update's configured image/description/CTA instead of hard-coded CTA copy
 - homepage banner/latest-update continue to use the same canonical Update records
 
 Add/update tests for:
 - required trimmed title
-- optional description/image/link
-- invalid link rejection
+- optional description/image/CTA
+- CTA pair validation and invalid URL rejection
 - create/edit/delete persistence
 - image upload authorization/purpose
 - legacy `content` compatibility
