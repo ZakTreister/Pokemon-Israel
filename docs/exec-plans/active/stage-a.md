@@ -1087,3 +1087,17 @@ Also include in version `2026.10.3`:
 - do not fetch the entire Player collection and slice client-side
 - after create/edit/delete refresh the relevant page; if the final row on the last page is deleted, navigate/refetch the previous valid page
 - add server/UI tests for pagination metadata, search/filter composition and page transitions
+
+
+### 50. Version 2026.10.3 — regular player city unification
+Also include in version `2026.10.3`:
+
+- remove active use of the regular-player `club` field
+- both player types use canonical `city`
+- regular-player create/edit UI uses **עיר**, not **חוג**
+- regular-player duplicate detection becomes normalized first name + last name + city
+- Players-management search/filter behavior searches city rather than club where relevant
+- remove `club` from DTOs/payloads/model/business logic; no backward-compatibility requirement
+- regular/quarterly players do not have player-photo upload or photo fields in current management UI/API
+- keep player photo as a team-player/All Stars capability only
+- update tests for create/edit/search/duplicate behavior using city
