@@ -179,3 +179,12 @@ For an optional CTA:
 - do not require users to paste URLs into description text just to get a clickable action
 
 The homepage news banner/latest-update card may keep their compact presentation, but should use the same canonical Update records.
+
+
+## Events pagination
+The public **אירועים** tournament list uses the shared server-side tournament pagination contract.
+
+- default 25 events per page
+- filtering/search happens before pagination on the server
+- display current page/total-page context and next/previous navigation
+- never fetch the complete tournament archive merely to render the Events list
