@@ -434,3 +434,12 @@ The separate regular-player `club` field is removed. Both team players and regul
 Regular-player duplicate detection uses normalized first name + last name + city. No backward compatibility for `club` is required.
 
 Regular/quarterly players do not have a player photo in the current product; photo upload remains a team-player/All Stars capability.
+
+
+## 2026-10 — Registration CTAs share one configured destination
+Until replaced, the homepage registration card and the floating **הירשמו לשיעור ניסיון** CTA use the same centrally configured destination: `https://lp.cardschool.co.il`.
+
+The URL must not be duplicated independently across components.
+
+## 2026-10 — Footer contrast must be improved
+The public footer keeps its current structure but its text, links and interactive states must have sufficient visual contrast against the footer background on desktop and mobile.
