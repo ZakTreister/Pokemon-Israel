@@ -404,3 +404,9 @@ All Stars/team players may store an optional date-only **תאריך הצטרפו
 All Stars/team players may have an optional uploaded personal-deck image plus up to six Pokémon names.
 
 Pokémon names accept English letters/spaces only. Their display images are derived centrally from the Limitless gen9 image base URL by lowercasing the name and replacing spaces with hyphens. Persist the names, not the derived URLs.
+
+
+## 2026-10 — Team editing uses a shared dialog
+**עריכת נבחרת** opens one reusable `TeamEditDialog`, not a separate page.
+
+The same dialog is used from the teams management list and the managed team page. It edits the team's core settings; roster/player assignment remains outside the dialog.
