@@ -772,7 +772,7 @@ Requirements:
 
 Add/update tests for the unified table and removal of the old ranking tab.
 
-### 41. Version 2026.10.3 — AWS S3 storage and required image uploads
+### 41. AWS S3 storage and optional image uploads — included in version 2026.10.2
 Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
 
 Infrastructure assumptions already configured in production:
@@ -790,10 +790,11 @@ Required implementation:
 - preserve legacy Cloudinary-backed records during migration
 - keep the shared uploader reusable for future non-image file purposes
 
-Required image consumers:
-- **team** — admin can upload/replace/remove team logo
-- **child/player** — admin can upload/replace/remove child photo for team and regular/club players; team-player photo may appear on the existing public profile, regular/club photo remains private
-- **badge/tag** — super-admin can upload/replace/remove badge image
+Required image-upload capabilities:
+- images are optional for all three entities; absence of an image must never block create/edit
+- **team** — admin can upload/replace/remove an optional team logo
+- **child/player** — admin can upload/replace/remove an optional child photo for team and regular/club players; team-player photo may appear on the existing public profile, regular/club photo remains private
+- **badge/tag** — super-admin can upload/replace/remove an optional badge image
 
 UI:
 - reuse one shared image-upload component/service
