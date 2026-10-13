@@ -820,7 +820,38 @@ Add/update tests for:
 - public player response includes safe badge Season/image fields but not awarding staff/private storage metadata
 - public player response does not expose a soft-deleted Season name
 
-### 42. AWS S3 storage and optional image uploads — included in version 2026.10.2
+### 42. Optional All Stars profile fields — included in version 2026.10.2
+Add optional profile metadata for `playerType: team`.
+
+Data:
+- optional plain-text `description`, maximum 500 characters
+- optional date-only `dateOfBirth`
+- do not add these as required fields
+- reject future birth dates
+- preserve legacy players with neither field
+
+Management:
+- add both fields to team-player create/edit forms, including team-context editing
+- admin may clear either value
+- judges remain read-only for player profile data
+
+Public API/profile:
+- expose description when present
+- calculate and expose integer `age` when `dateOfBirth` is present
+- never expose exact `dateOfBirth` through the public player DTO
+- omit age when no date of birth is stored
+- implement age calculation using date-only calendar semantics so timezone conversion cannot change the result by a day
+
+Add/update tests for:
+- optional create/edit/clear behavior
+- 500-character description limit
+- future birth date rejection
+- public description exposure
+- exact date of birth absent from public response
+- age calculation before/on/after birthday
+- legacy player without these fields remains compatible
+
+### 43. AWS S3 storage and optional image uploads — included in version 2026.10.2
 Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
 
 Infrastructure assumptions already configured in production:
