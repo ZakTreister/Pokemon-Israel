@@ -250,3 +250,14 @@ The shared media layer also supports an optional current personal-deck image for
 - public namespace may use `public/players/<player-id>/deck/...`
 - replace/remove uses the same safe attachment/replacement rules as other managed images
 - judges are read-only
+
+
+### Update/news image
+The shared media layer supports an optional public image for Updates/News.
+
+- use a distinct upload purpose such as `update-image`
+- store under a public namespace such as `public/updates/<update-id>/...`
+- reuse the shared ImageUpload component and presigned S3 flow
+- image is optional
+- replace/remove follows the same safe media attachment rules as other public managed images
+- legacy updates without image metadata remain valid
