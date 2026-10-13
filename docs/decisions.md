@@ -145,6 +145,10 @@ A player may receive a given badge at most once in a particular badge Season, an
 
 Legacy awards created before Season linkage remain readable during migration.
 
+Badge awards can be removed from a player by super-admin. Removal is recorded as a soft revocation so audit data is preserved, while revoked awards disappear from normal/public earned-badge views. A revoked award does not block re-awarding that badge in the same Season.
+
+Badge Seasons can also be soft-deleted by super-admin. Deleted Seasons do not appear in normal Season history and never count as active. Their historical award records remain preserved, but public player data does not expose the deleted Season's name.
+
 ## 2026-10 — AWS S3 is the reusable file-storage provider
 This decision supersedes the earlier Cloudinary decision.
 
