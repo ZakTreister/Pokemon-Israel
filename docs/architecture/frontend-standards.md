@@ -1505,3 +1505,15 @@ When a component needs only a count:
 - keep count semantics aligned with the canonical list filters/permissions/deletion rules
 
 Avoid N+1 count fetching on card lists where the backend can return required summary counts as part of the parent summary DTO.
+
+
+## Pagination and count-only queries
+Growing collection screens must not fetch full datasets when the UI needs only one page or only a count.
+
+For Players and Tournaments:
+- use server-side pagination for list screens
+- use canonical pagination metadata for totals
+- when only a count is needed, prefer a lightweight/count-only request rather than fetching item payloads
+- never fetch all rows solely to compute `.length`
+- keep filter/authorization semantics identical between list and count requests
+- centralize reusable pagination state/UI where it naturally serves both public Events and management Tournaments
