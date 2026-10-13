@@ -247,3 +247,15 @@ After create/edit/delete, update or refetch the canonical list without a full-pa
 - provide clear previous/next navigation
 - do not preload all Player rows and slice them in the browser
 - preserve the current page after normal edits where sensible; recover to the previous valid page when deletion empties the last page
+
+
+## Tournament list pagination
+Management **טורנירים** uses real server-side pagination, matching the Players-management approach.
+
+- default 25 tournaments per page
+- lifecycle/type/search filters are server-side
+- changing filters/search returns to page 1
+- show clear previous/next controls and page context
+- do not preload all tournaments
+
+For summary counters, use pagination `total` / count-only data instead of loading entity rows when the rows are not displayed.
