@@ -142,10 +142,12 @@ Cardschool uses Amazon S3 as the canonical reusable object store, with direct br
 
 The storage layer is intentionally generic so it can later support non-image files such as PDFs, spreadsheets/exports and managed documents.
 
-Current required image consumers are:
-- team logo
-- child/player photo
-- badge/tag image
+The current release must provide image-upload capability for:
+- optional team logo
+- optional child/player photo
+- optional badge/tag image
+
+None of these images is a required field. Team, player/child and badge creation/editing must remain valid without an image; the requirement is that authorized administrators have the option to upload, replace and remove one.
 
 The S3 bucket remains private with Block Public Access enabled. Public assets are stored under `public/` and delivered through CloudFront; private assets are stored under `private/` and are not exposed by the public CloudFront distribution.
 
