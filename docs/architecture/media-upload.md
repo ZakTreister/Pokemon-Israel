@@ -239,3 +239,14 @@ Implementation work for this version must:
 - replace `publicId` assumptions with provider-neutral storage keys
 - preserve existing records during migration
 - remove Cloudinary environment-variable requirements after no active code path depends on them
+
+
+### Team-player personal deck image
+The shared media layer also supports an optional current personal-deck image for All Stars/team players.
+
+- reuse the same presigned S3 upload mechanism and shared ImageUpload UI
+- use a distinct upload purpose such as `player-deck`
+- store separately from the player profile photo
+- public namespace may use `public/players/<player-id>/deck/...`
+- replace/remove uses the same safe attachment/replacement rules as other managed images
+- judges are read-only
