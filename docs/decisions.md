@@ -370,3 +370,17 @@ Before creating a player, the server checks normalized identifying fields and th
 Team players use normalized first name + last name + city. Club players use normalized first name + last name + club.
 
 The warning does not permanently block creation: admin may explicitly **צור בכל זאת** because distinct children can share the same identifying fields.
+
+
+## 2026-10 — Player deletion is soft deletion
+Admin has an explicit **מחק שחקן** action in Players management. It requires confirmation and soft-deletes/archives the Player so tournament results, rankings, awards and historical references remain intact.
+
+Deleted players are removed from active lists/selection, current team membership and ordinary public discovery, and cannot participate in new tournament or badge operations. Judges cannot delete players.
+
+## 2026-10 — Team page links to canonical player editor
+In management context, **חברי נבחרת** rows include a compact admin-only **עריכת שחקן** action. It opens/reuses the canonical Player edit flow rather than introducing a second team-specific editor.
+
+## 2026-10 — Player creation warns about likely duplicates
+Player creation performs normalized, server-backed likely-duplicate detection before final creation.
+
+A likely match opens a warning dialog with the existing player and gives the admin a path to edit that player or explicitly **צור בכל זאת**. It is a warning/confirmation flow rather than a hard uniqueness constraint.
