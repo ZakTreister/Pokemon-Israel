@@ -1023,3 +1023,16 @@ Pokémon editor:
 - persist normalized names/domain values, not copied external image URLs
 
 Add tests for shared-editor reuse, modal layout classes/behavior where existing UI verification supports it, new field persistence/validation, deck-media authorization, max-six Pokémon and URL slug generation.
+
+
+### 47. Version 2026.10.3 — shared team edit dialog
+Also include in version `2026.10.3`:
+
+- implement one reusable `TeamEditDialog`
+- open it from **ניהול → נבחרות All-Stars → עריכת נבחרת**
+- open/reuse the same dialog from the managed team page
+- edit core team settings: name, optional logo, assigned teacher and active state when applicable
+- keep roster/player assignment operations outside the dialog
+- reuse the existing teams service/Redux persistence path
+- do not duplicate team edit form/state across pages
+- after save, close dialog and refresh canonical team/list data without full-page reload
