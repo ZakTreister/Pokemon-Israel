@@ -384,3 +384,9 @@ In management context, **חברי נבחרת** rows include a compact admin-only
 Player creation performs normalized, server-backed likely-duplicate detection before final creation.
 
 A likely match opens a warning dialog with the existing player and gives the admin a path to edit that player or explicitly **צור בכל זאת**. It is a warning/confirmation flow rather than a hard uniqueness constraint.
+
+
+## 2026-10 — Team management rows show logo and edit action
+The **ניהול → נבחרות All-Stars** overview shows each team's current logo/image in the team summary/card/row when available, with a neutral placeholder when absent.
+
+Admin also gets a clear **עריכת נבחרת** action from that same summary/card/row. It reuses the canonical team edit/settings flow. Judges remain read-only.
