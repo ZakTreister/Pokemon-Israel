@@ -194,3 +194,9 @@ Historical data must not be lost when a new competition year starts.
 In management context, every player row in **חברי נבחרת** exposes an explicit admin-only **עריכת שחקן** action/link.
 
 It opens the canonical Player edit flow and remains independent from whole-row navigation to the public player profile.
+
+
+### Managed team player edit action
+In management context, each row in **חברי נבחרת** includes an admin-only compact **עריכת שחקן** action/link.
+
+The action opens the canonical Player edit flow for that Player. It must remain independent from the row's public-profile navigation and should preserve the current team as the return/context destination where practical. Do not duplicate player-edit business logic inside the team page.
