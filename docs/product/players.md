@@ -333,3 +333,11 @@ Requirements:
 - do not show photo upload in regular-player create/edit flows
 - do not persist or expose regular-player photo media as part of this scope
 - the optional Player photo remains a team-player / All Stars capability only
+
+
+## Player count-only usage
+Where a surface needs only a number of Players and does not render Player rows, do not fetch full Player documents solely to count them.
+
+Use the same authorized/filter-aware pagination query's `total` metadata or a lightweight count-only variant.
+
+Examples include team/member counts and management/overview counters. Count logic must respect active/deleted/player-type/team filters consistently with the corresponding canonical list query.
