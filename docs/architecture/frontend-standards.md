@@ -1450,3 +1450,15 @@ Update management must:
 - reuse shared ImageUpload for optional update images
 - validate optional external URLs centrally
 - preserve compatibility with legacy `content` records while presenting the field to users as **תיאור**
+
+
+## Large management collections
+For growing management datasets such as Players, use server-side pagination rather than loading the entire collection.
+
+For **ניהול → שחקנים**:
+- page/filter/search are request parameters and part of list state
+- server applies authorization, filter/search and stable sort before skip/limit pagination
+- response includes page metadata
+- UI renders only the current page
+- reset page to 1 when query/filter changes
+- avoid duplicate client-side full-list filtering after a paged response
