@@ -114,3 +114,64 @@ Future goal: either ingest WhatsApp Channel posts or use one external/source-of-
 
 Do not build Stage A around WhatsApp scraping.
 The current product does not depend on automated WhatsApp ingestion.
+
+
+## Update / News item fields
+Complete the existing Updates capability rather than creating a second news model.
+
+Each update/news item supports:
+- **כותרת** — required
+- **תיאור** — optional
+- **תמונה** — optional
+- **קישור** — optional
+
+Backward compatibility:
+- existing `content` data remains readable and is treated as the update description
+- do not break or hide existing updates merely because the management UI now calls this field **תיאור**
+- a migration/rename may be introduced only if legacy records remain fully compatible
+
+### Management behavior
+The existing **ניהול עדכונים** page must provide working CRUD:
+- create update
+- edit update
+- delete update with confirmation
+- refresh/update local canonical state after successful mutation without full-page reload
+
+Form behavior:
+- title is required and trimmed
+- description is optional plain text
+- image is optional and uses the shared managed-image upload flow
+- link is optional
+- validate link as a normal `http://` or `https://` URL when present
+- show concise Hebrew validation/network errors
+- create/edit dialog should use the shared Modal/Dialog primitive rather than page-local overlay markup
+
+### Update image
+Update/news images use the shared AWS S3 media architecture.
+
+Recommended upload purpose:
+- `update-image`
+
+Recommended public namespace:
+- `public/updates/<update-id>/...`
+
+Rules:
+- JPEG/PNG/WebP
+- default image size limit follows the shared media rules
+- upload/replace/remove from create/edit management flow
+- image remains optional
+- keep legacy updates without media valid
+
+### Public presentation
+The public News feed and full News post should use the available fields:
+- title
+- description/content
+- image when present
+- link when present
+
+For an optional external link:
+- render a clear CTA/link
+- open external destinations safely with `target="_blank"` and `rel="noopener noreferrer"`
+- do not require users to paste URLs into description text just to get a clickable link
+
+The homepage news banner/latest-update card may keep their compact presentation, but should use the same canonical Update records.
