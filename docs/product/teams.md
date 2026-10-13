@@ -216,3 +216,27 @@ For admin, each team summary/card/row must also expose a clear **עריכת נב
 The edit action opens the existing canonical team settings/edit flow for that team. Do not create a second independent team-edit implementation.
 
 Judges may view team identity/logo but must not see or use the edit action.
+
+
+## Shared team editor dialog
+The approved **עריכת נבחרת** experience is a reusable dialog, not a separate page.
+
+Create one canonical reusable `TeamEditDialog` that can be opened from:
+- **ניהול → נבחרות All-Stars**
+- the managed team page
+
+The dialog edits the team's core settings:
+- team name
+- optional logo/image
+- assigned teacher
+- active/inactive status when this status is exposed as part of team settings
+
+Architecture:
+- keep the dialog UI reusable
+- keep form/loading/upload/save state in a reusable team-edit controller/hook where useful
+- keep persistence/API calls in the existing teams service/Redux layer
+- do not duplicate the same edit form in `ManageTeams`, `TeamPage` or `TeamAdministration`
+
+The dialog should close after a successful save and refresh the calling surface's canonical team data.
+
+Roster/player assignment operations are not part of `TeamEditDialog`; keep them in their appropriate team-management context.
