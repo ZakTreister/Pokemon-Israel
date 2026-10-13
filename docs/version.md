@@ -190,6 +190,22 @@ Public:
 - external link opens safely in a new tab
 - homepage news banner/latest-update continue using the same Update records
 
+
+#### 9. Server-side pagination for Players management
+**ניהול → שחקנים** must not fetch the full Player collection.
+
+Requirements:
+- implement real server-side pagination
+- default page size: **25**
+- Players API returns current-page rows and pagination metadata: total, page, pageSize and totalPages
+- apply existing authorization/role visibility, type filter and text search before pagination
+- use a stable deterministic sort
+- changing search/filter resets to page 1
+- next/previous page fetches only the requested page
+- do not implement client-side fake pagination over a full fetch
+- after create/edit/delete, refresh the current page; if deleting the last row makes the page invalid/empty, move to the previous valid page
+- show clear previous/next navigation and page context in the management UI
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
