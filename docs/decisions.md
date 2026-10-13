@@ -424,3 +424,11 @@ Update images use the shared AWS S3 media flow. Management create/edit/delete mu
 **ניהול → שחקנים** must not load every Player into the browser.
 
 The canonical Players list endpoint applies authorization, type filter and text search on the server before pagination, uses a stable sort, and returns pagination metadata. The default management page size is 25.
+
+
+## 2026-10 — Both player types use city; regular players have no photo
+The separate regular-player `club` field is removed. Both team players and regular/quarterly players use canonical **עיר / `city`**.
+
+Regular-player duplicate detection uses normalized first name + last name + city. No backward compatibility for `club` is required.
+
+Regular/quarterly players do not have a player photo in the current product; photo upload remains a team-player/All Stars capability.
