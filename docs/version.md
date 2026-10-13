@@ -87,6 +87,18 @@ Artwork:
 - the other side card uses a trophy illustration
 - do not enlarge the center card or otherwise change relative card sizes
 
+
+#### 4. Team management: show image and edit action
+In **ניהול → נבחרות All-Stars**:
+
+- each team summary/card/row shows the current team logo/image when one exists
+- show a neutral placeholder when no logo exists
+- team image remains optional
+- add a clear admin-only **עריכת נבחרת** action
+- reuse/open the canonical team edit/settings flow; do not duplicate team-edit logic
+- judges can view the logo but cannot edit the team
+- preserve **התחל טורניר / המשך טורניר** as the primary action; **עריכת נבחרת** is secondary
+
 ### Required verification
 Codex must inspect current implementation, follow the detailed docs, add/update relevant tests, run tests, lint and build, and make no unrelated changes.
 
