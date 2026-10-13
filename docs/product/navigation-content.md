@@ -145,3 +145,11 @@ The management menu must work as a closable mobile drawer/panel:
 
 ## Static pages
 About the League and Birthday Booking are repository-managed static content, not CMS-managed pages, unless a future decision changes this.
+
+
+## Shared registration destination
+Until a new registration destination is approved, all public registration/trial CTAs that represent the same enrollment action should reuse the same centrally configured URL as the floating CTA:
+
+`https://lp.cardschool.co.il`
+
+Do not duplicate this URL separately in homepage components. Keep one shared configuration value so the destination can be changed once later.
