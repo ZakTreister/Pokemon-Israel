@@ -297,3 +297,69 @@ In the implementation PR for `2026.10.2`, Codex must:
 - return the PR link to the user
 
 If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Current version
+
+**Version:** `2026.10.3`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** _pending_
+
+### Scope
+
+#### 1. Delete/archive player
+Add a visible admin-only **מחק שחקן** action in player management.
+
+Behavior:
+- show an explicit confirmation dialog
+- normal deletion is soft deletion/archive
+- preserve the Player record and all historical tournament/result references
+- exclude deleted players from normal active player lists
+- exclude deleted players from future team/tournament assignment choices
+- if the player is currently assigned to a team, deletion must leave no active roster membership
+- judge cannot delete players
+- do not hard-delete historically referenced Player records in this flow
+
+#### 2. Edit player directly from managed team page
+On each player row in the management version of the team page, add an explicit **עריכת שחקן** action/link for admin.
+
+Requirements:
+- open the canonical Player edit flow for that player
+- reuse existing edit components/logic
+- do not create a second independent player editor
+- preserve whole-row navigation to the public profile
+- edit action must not trigger row navigation
+- judge remains read-only
+
+#### 3. Warn before creating a likely duplicate player
+Before creating a Player, perform a server-backed normalized duplicate check.
+
+Matching rule:
+- team player: normalized first name + last name + city
+- club player: normalized first name + last name + club
+
+When a likely duplicate exists:
+- show a clear Hebrew warning/modal
+- show enough existing-player context to identify the match
+- provide a way to open/edit the existing player where practical
+- do not silently create
+- allow admin to explicitly choose **צור בכל זאת**
+- normalize whitespace/case consistently with existing player matching rules
+
+This is a warning workflow, not a hard uniqueness constraint.
+
+### Required verification
+Codex must inspect current code first, reuse existing player edit/normalization infrastructure, add/update relevant automated tests, run tests, lint and build, and make no unrelated changes.
+
+### Completion contract for Codex
+In the implementation PR for `2026.10.3`, Codex must:
+- mark **Status** as `DEVELOPED`
+- record the actual PR URL
+- record the final implementation SHA
+- record tests/lint/build results
+- record known gaps, or `none`
+- return the PR link to the user
+
+If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
