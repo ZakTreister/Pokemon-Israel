@@ -341,3 +341,9 @@ Where a surface needs only a number of Players and does not render Player rows, 
 Use the same authorized/filter-aware pagination query's `total` metadata or a lightweight count-only variant.
 
 Examples include team/member counts and management/overview counters. Count logic must respect active/deleted/player-type/team filters consistently with the corresponding canonical list query.
+
+
+### Count-only player queries
+If another screen needs only a Player count, do not fetch all Player records to calculate it.
+
+Use the canonical total/count returned by a lightweight server query or count-only pagination mode with the same authorization/filter semantics as the normal Players list.
