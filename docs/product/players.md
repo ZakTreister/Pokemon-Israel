@@ -310,3 +310,26 @@ Requirements:
 - judges remain subject to their existing restricted player visibility
 
 The UI should provide clear previous/next page navigation and current page/total-page context. Do not fake pagination by fetching all players and slicing client-side.
+
+
+## Regular-player location field
+Regular/club players no longer use a separate `club` field.
+
+Use the same canonical **עיר / `city`** field for both player types:
+- team player: first name, last name, city
+- regular/quarterly player: first name, last name, city
+
+Requirements:
+- remove `club` from create/edit forms, DTOs, API payloads, model usage, search/filtering and duplicate detection
+- regular-player creation/editing requires/uses **עיר** instead of **חוג**
+- duplicate detection for regular players becomes normalized first name + last name + city
+- management search should search city rather than club
+- no backward-compatibility requirement for legacy `club` values; remove the active dependency rather than carrying dual fields
+
+## Regular-player photo
+Regular/quarterly players do **not** have a player-photo field in the current product.
+
+Requirements:
+- do not show photo upload in regular-player create/edit flows
+- do not persist or expose regular-player photo media as part of this scope
+- the optional Player photo remains a team-player / All Stars capability only
