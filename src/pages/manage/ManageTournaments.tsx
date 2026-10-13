@@ -1,7 +1,8 @@
-import { filterTournaments } from '../../../shared/tournamentDomain';
+import { useTournamentList } from '../../features/tournaments/hooks/useTournamentList';
+import Pagination from '../../components/ui/Pagination';
 import TournamentSummaryRow from '../../features/tournaments/components/TournamentSummaryRow';
 import TournamentFilters from '../../features/tournaments/components/TournamentFilters';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAppSelector } from '../../hooks/redux';
@@ -17,21 +18,16 @@ interface Entry {
   lifecycle: 'upcoming' | 'active' | 'completed';
   engineVersion?: string;
   teamNameSnapshot?: string;
-  canManage: boolean;
+  canManage?: boolean;
 }
 export default function ManageTournaments() {
   const { user } = useAppSelector((state) => state.auth);
   const { showConfirm } = useConfirm();
-  const [entries, setEntries] = useState<Entry[] | null>(null);
-  const [filters, setFilters] = useState({ status: '', type: '', search: '' });
+  const list = useTournamentList(true);
+  const entries = list.data?.items ?? null;
+  const { filters, setFilters } = list;
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const load = useCallback(async () => {
-    setEntries((await api.get<Entry[]>('/api/tournaments/management')).data);
-  }, []);
-  useEffect(() => {
-    load().catch((e) => setError(requestError(e)));
-  }, [load]);
   const remove = async (entry: Entry) => {
     let permanent = false;
     if (
@@ -52,7 +48,7 @@ export default function ManageTournaments() {
       await api.delete(`/api/tournaments/${entry.id}`, {
         params: { permanent },
       });
-      await load();
+      await list.reload();
     } catch (e) {
       setError(requestError(e));
     } finally {
@@ -87,16 +83,16 @@ export default function ManageTournaments() {
         )}
       </div>
       <TournamentFilters value={filters} onChange={setFilters} />
-      {error && (
+      {(error || list.error) && (
         <p role="alert" className="text-destructive">
-          {error}
+          {error || list.error}
         </p>
       )}
-      {entries === null ? (
+      {list.loading ? (
         <p>טוען טורנירים...</p>
       ) : (
         <div className="space-y-3">
-          {filterTournaments(entries, filters).map((t) => (
+          {(entries || []).map((t) => (
             <TournamentSummaryRow
               key={t.id}
               tournament={t}
@@ -134,10 +130,17 @@ export default function ManageTournaments() {
               }
             />
           ))}
-          {!filterTournaments(entries, filters).length && (
-            <p>אין טורנירים בסינון זה.</p>
-          )}
+          {!entries?.length && <p>אין טורנירים בסינון זה.</p>}
         </div>
+      )}
+      {list.data && (
+        <Pagination
+          page={list.data.page}
+          totalPages={list.data.totalPages}
+          total={list.data.total}
+          onChange={list.setPage}
+          busy={list.loading}
+        />
       )}
     </div>
   );

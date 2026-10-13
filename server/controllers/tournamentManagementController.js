@@ -1,15 +1,23 @@
+import { paginate, tournamentQuery } from '../services/pagination.js';
 import { tournamentLifecycle } from '../../shared/tournamentDomain.js';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import { notifyTournament } from '../services/tournamentLive.js';
 export const getManagedTournaments = asyncHandler(async (req, res) => {
-  const records = await Tournament.find({})
-    .select(
-      'title date location type status phase engineVersion team teamNameSnapshot currentParticipants source revision',
-    )
-    .sort({ date: -1 });
-  res.json(
-    records.map((t) => ({
+  const result = await paginate(
+    Tournament,
+    tournamentQuery(req.query),
+    req.query,
+    (q) =>
+      q
+        .select(
+          'title date location type status phase engineVersion team teamNameSnapshot currentParticipants source revision',
+        )
+        .sort({ date: -1, _id: -1 }),
+  );
+  res.json({
+    ...result,
+    items: result.items.map((t) => ({
       ...t.toJSON(),
       type: t.type || 'quarterly',
       lifecycle: tournamentLifecycle(t),
@@ -20,7 +28,7 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
           ['setup', 'running'].includes(t.phase) &&
           t.status !== 'completed'),
     })),
-  );
+  });
 });
 export const deleteTournament = asyncHandler(async (req, res) => {
   if (!/^[a-f\d]{24}$/i.test(req.params.id)) {

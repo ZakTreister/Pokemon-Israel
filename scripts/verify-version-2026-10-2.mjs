@@ -214,7 +214,15 @@ try {
       isLoading: false,
       error: null,
     },
-    players: { players: [], isLoading: false, error: null },
+    players: {
+      players: [],
+      isLoading: false,
+      error: null,
+      total: 0,
+      page: 1,
+      pageSize: 25,
+      totalPages: 1,
+    },
     badges: { badges: [], awards: [], isLoading: false, error: null },
     seasons: { seasons: [], activeSeason: null, isLoading: false, error: null },
   };
@@ -238,7 +246,14 @@ try {
     { id: 'teacher', name: 'מורה', role: 'admin' },
   ];
   teams.getManageablePlayers = async () => [];
-  players.getPlayers = async () => [];
+  players.getPlayers = async () => ({
+    items: state.players.players,
+    total: state.players.players.length,
+    page: 1,
+    pageSize: 25,
+    totalPages: 1,
+  });
+  players.duplicates = async () => [];
   badges.getBadges = async () => [];
   badges.getBadgeAwards = async () => [];
   seasons.getSeasons = async () => [];
@@ -341,38 +356,29 @@ try {
     'an async image response preserves other member edits',
   );
   axios.post = async () => ({ status: 204 });
-  act(() => renderer.root.findByProps({'aria-label':'שם משפחה 1'}).props.onChange({target:{value:'ילד'}}));
-  act(() => renderer.root.findByProps({'aria-label':'מספר שחקן'}).props.onChange({target:{value:'P-1'}}));
-  await act(async () => { renderer.root.findByType('form').props.onSubmit({preventDefault(){}}); await flush(); });
-  const bulkRequest = calls.find(call => call.path === '/api/teams/team/players');
-  assert.equal(bulkRequest.data.players[0].firstName,'שם מעודכן');
-  assert.equal(bulkRequest.data.players[0].photoUploadId,'upload');
-  assert.ok(!('photoUrl' in bulkRequest.data.players[0]),'transient preview URLs are not persisted');
-  unmount();
-
-  const { default: PhotoField } = await load(
-    'features/players/components/PlayerPhotoField.tsx',
+  act(() =>
+    renderer.root
+      .findByProps({ 'aria-label': 'שם משפחה 1' })
+      .props.onChange({ target: { value: 'ילד' } }),
   );
-  api.get = async () => {
-    throw new Error('Network Error');
-  };
-  let removedWithoutPreview;
-  await mount(
-    el(PhotoField, {
-      playerType: 'quarterly',
-      entityId: 'club',
-      value: '',
-      hasPhoto: true,
-      onChange: (value) => (removedWithoutPreview = value),
-      onBusyChange: () => {},
-    }),
+  act(() =>
+    renderer.root
+      .findByProps({ 'aria-label': 'מספר שחקן' })
+      .props.onChange({ target: { value: 'P-1' } }),
   );
+  await act(async () => {
+    renderer.root.findByType('form').props.onSubmit({ preventDefault() {} });
+    await flush();
+  });
+  const bulkRequest = calls.find(
+    (call) => call.path === '/api/teams/team/players',
+  );
+  assert.equal(bulkRequest.data.players[0].firstName, 'שם מעודכן');
+  assert.equal(bulkRequest.data.players[0].photoUploadId, 'upload');
   assert.ok(
-    button('הסר תמונה'),
-    'a failed private preview does not prevent removal',
+    !('photoUrl' in bulkRequest.data.players[0]),
+    'transient preview URLs are not persisted',
   );
-  act(() => button('הסר תמונה').props.onClick());
-  assert.equal(removedWithoutPreview, null);
   unmount();
 
   const { default: AdminPlayers } = await load('pages/admin/AdminPlayers.tsx');
@@ -453,7 +459,7 @@ try {
       .props.onClick();
     await flush();
   });
-  assert.equal(clubInput.club, 'מועדון');
+  assert.equal(clubInput.city, 'מועדון');
   assert.equal(
     clubInput.photoUploadId,
     undefined,
@@ -465,32 +471,27 @@ try {
       id: 'club',
       firstName: 'ילד',
       lastName: 'חוג',
-      club: 'מועדון',
+      city: 'מועדון',
       isActive: true,
       playerType: 'quarterly',
       photoMedia: { storageKey: 'private/players/club/photo.png' },
     },
   ];
-  api.get = async (path) => {
-    assert.equal(path, '/api/media/players/club/photo');
-    return { data: { url: 'https://s3.example/private-preview?expires=300' } };
-  };
   await mount(provided(route(el(AdminPlayers))));
   await act(async () => {
-    button('ערוך').props.onClick();
+    button('עריכת שחקן').props.onClick();
     await flush();
   });
-  assert.ok(
-    dialog()
-      .findByType('img')
-      .props.src.startsWith('https://s3.example/private-preview'),
+  assert.equal(
+    dialog().findAllByProps({ type: 'file' }).length,
+    0,
+    'regular editor has no media controls',
   );
-  act(() => button('הסר תמונה').props.onClick());
   await act(async () => {
     button('שמור שינויים').props.onClick();
     await flush();
   });
-  assert.equal(editInput.photoUploadId, null);
+  assert.ok(!('photoUploadId' in editInput));
   assert.ok(!('dateOfBirth' in editInput));
   unmount();
 
@@ -714,8 +715,300 @@ try {
   assert.equal(renderer.root.findAllByType('img').length, 2);
   assert.ok(!text(renderer.toJSON()).includes('2016-10-13'));
   unmount();
+  // 2026.10.3 extends the same domain verification, rather than a parallel harness.
+  const { default: PlayerEditor } = await load(
+    'features/players/components/PlayerEditDialog.tsx',
+  );
+  const { pokemonImageUrl, playerEditSchema } = await load(
+    'features/players/utils/playerProfile.ts',
+  );
+  assert.equal(
+    pokemonImageUrl(' Iron  Hands '),
+    'https://r2.limitlesstcg.net/pokemon/gen9/iron-hands.png',
+  );
+  const editFixture = {
+    id: 'v3',
+    firstName: 'Test',
+    lastName: 'Child',
+    city: 'City',
+    playerType: 'team',
+    isActive: true,
+    user: null,
+  };
+  let savedProfile;
+  players.updatePlayer = async (id, input) => {
+    savedProfile = input;
+    return { ...editFixture, ...input };
+  };
+  await mount(
+    provided(
+      route(
+        el(PlayerEditor, {
+          player: editFixture,
+          onClose: () => {},
+          onSaved: async () => {},
+        }),
+      ),
+    ),
+  );
+  assert.ok(dialog().props.className.includes('max-h-'));
+  assert.ok(
+    dialog().findByType('form').props.className.includes('md:grid-cols-2'),
+  );
+  assert.equal(
+    dialog().findAllByProps({ type: 'file' }).length,
+    2,
+    'photo and deck are distinct',
+  );
+  act(() =>
+    dialog()
+      .findAllByProps({ type: 'date' })
+      .find((input) => !input.props['aria-label'])
+      .props.onChange({ target: { value: '2020-01-01' } }),
+  );
+  act(() =>
+    dialog()
+      .findByProps({ 'aria-label': 'פוקימון 1' })
+      .props.onChange({ target: { value: ' Iron  Hands ' } }),
+  );
+  for (let i = 1; i < 6; i++) act(() => button('הוסף פוקימון').props.onClick());
+  assert.equal(button('הוסף פוקימון').props.disabled, true);
+  assert.equal(
+    dialog()
+      .findAllByType('input')
+      .filter((input) => input.props['aria-label']?.startsWith('פוקימון '))
+      .length,
+    6,
+  );
+  await act(async () => {
+    button('שמור שינויים').props.onClick();
+    await flush();
+  });
+  assert.deepEqual(savedProfile.pokemon, ['Iron Hands']);
+  assert.equal(savedProfile.joinedAt, '2020-01-01');
+  assert.ok(
+    !playerEditSchema.safeParse({ ...savedProfile, pokemon: ['Pikachu1'] })
+      .success,
+  );
+  unmount();
+
+  const { default: TeamEditor } = await load(
+    'features/teams/components/TeamEditDialog.tsx',
+  );
+  const { default: TeamCard } = await load(
+    'features/teams/components/OperationalTeamCard.tsx',
+  );
+  let teamSaved;
+  teams.updateTeam = async (id, input) => {
+    teamSaved = input;
+    return { ...team, ...input };
+  };
+  await mount(
+    provided(
+      route(
+        el(TeamCard, {
+          team: { ...team, logo: 'https://example.com/logo.png' },
+          members: true,
+        }),
+      ),
+    ),
+  );
+  assert.equal(
+    renderer.root.findByType('img').props.src,
+    'https://example.com/logo.png',
+  );
+  await act(async () => {
+    button('עריכת נבחרת').props.onClick();
+    await flush();
+  });
+  assert.equal(renderer.root.findAllByType(TeamEditor).length, 1);
+  act(() =>
+    dialog()
+      .findAllByType('input')
+      .find(
+        (input) =>
+          input.props.type !== 'file' && input.props.type !== 'checkbox',
+      )
+      .props.onChange({ target: { value: 'Renamed' } }),
+  );
+  await act(async () => {
+    button('שמור שינויים').props.onClick();
+    await flush();
+  });
+  assert.equal(teamSaved.name, 'Renamed');
+  assert.equal(renderer.root.findAllByType(TeamEditor).length, 0);
+  unmount();
+  state.auth.user.role = 'judge';
+  await mount(provided(route(el(TeamCard, { team, members: true }))));
+  assert.ok(!button('עריכת נבחרת'));
+  unmount();
+  state.auth.user.role = 'admin';
+
+  const { default: Events } = await load('pages/TournamentsPage.tsx');
+  const listRequests = [];
+  api.get = async (path, { params }) => {
+    listRequests.push({ path, params });
+    return {
+      data: {
+        items: [],
+        total: 30,
+        page: params.page,
+        pageSize: 25,
+        totalPages: 2,
+      },
+    };
+  };
+  await mount(route(el(Events), '/tournaments'));
+  assert.equal(listRequests.at(-1).params.page, 1);
+  await act(async () => {
+    button('הבא').props.onClick();
+    await flush();
+  });
+  assert.equal(listRequests.at(-1).params.page, 2);
+  await act(async () => {
+    renderer.root
+      .findByType('input')
+      .props.onChange({ target: { value: 'query' } });
+    await flush();
+  });
+  assert.equal(listRequests.at(-1).params.page, 1);
+  assert.equal(listRequests.at(-1).params.search, 'query');
+  unmount();
+
+  const { default: UpdateEditor } = await load(
+    'features/updates/components/UpdateEditDialog.tsx',
+  );
+  const { default: updatesService } = await load(
+    'features/updates/updatesService.ts',
+  );
+  const { default: UpdateAction } = await load(
+    'features/updates/components/UpdateAction.tsx',
+  );
+  let updateSaved;
+  updatesService.createUpdate = async (input) => {
+    updateSaved = input;
+    return { id: 'update', ...input };
+  };
+  await mount(el(UpdateEditor, { onClose: () => {}, onSaved: async () => {} }));
+  const updateInput = (index, value) =>
+    act(() =>
+      dialog()
+        .findAllByType('input')
+        .filter((input) => input.props.type !== 'file')
+        [index].props.onChange({ target: { value } }),
+    );
+  updateInput(0, ' Manager title ');
+  updateInput(1, 'Exact CTA');
+  await act(async () => {
+    button('שמור').props.onClick();
+    await flush();
+  });
+  assert.ok(renderer.root.findByProps({ role: 'alert' }));
+  assert.equal(updateSaved, undefined);
+  updateInput(2, 'https://example.com');
+  await act(async () => {
+    button('שמור').props.onClick();
+    await flush();
+  });
+  assert.equal(updateSaved.title, 'Manager title');
+  assert.equal(updateSaved.ctaText, 'Exact CTA');
+  unmount();
+  await mount(
+    el(UpdateAction, {
+      update: { ...updateSaved, id: 'news', date: '2026-10-13', content: '' },
+    }),
+  );
+  const cta = renderer.root.findByType('a');
+  assert.equal(text(cta), 'Exact CTA');
+  assert.equal(cta.props.rel, 'noopener noreferrer');
+  unmount();
+  const { default: Home } = await load('pages/HomePage.tsx');
+  const { publicTournaments } = await load('services/publicTournaments.ts');
+  const { TRIAL_REGISTRATION_URL } = await load('config/publicSite.ts');
+  const homepageRequests = [];
+  publicTournaments.summary = async () => ({
+    total: 40,
+    upcoming: 7,
+    participants: 0,
+    capacity: 0,
+    nearest: null,
+  });
+  publicTournaments.list = async (params) => {
+    homepageRequests.push(params);
+    return {
+      items: [
+        {
+          id: 'featured',
+          title: 'Nearest club event',
+          type: 'quarterly',
+          date: new Date(Date.now() + 86400000).toISOString(),
+          status: 'upcoming',
+        },
+      ],
+      total: 7,
+      page: 1,
+      pageSize: 3,
+      totalPages: 3,
+    };
+  };
+  state.updates = {
+    updates: [
+      {
+        id: 'configured',
+        title: 'Configured news',
+        content: 'Legacy content',
+        description: 'Configured description',
+        image: 'https://example.com/news.png',
+        ctaText: 'Manager CTA',
+        ctaUrl: 'https://example.com/action',
+        date: '2026-10-13',
+      },
+    ],
+    isLoading: false,
+    error: null,
+  };
+  updatesService.getUpdates = async () => state.updates.updates;
+  api.get = async (path) => ({
+    data:
+      path === '/api/teams/public' ? [] : { rankings: [], tournamentCount: 0 },
+  });
+  await mount(provided(route(el(Home))));
+  assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
+  assert.ok(text(renderer.toJSON()).includes('Configured description'));
+  assert.equal(homepageRequests[0].pageSize, 3);
+  assert.equal(homepageRequests[0].type, 'quarterly');
+  assert.ok(
+    renderer.root
+      .findAllByType('a')
+      .some((link) => link.props.href === TRIAL_REGISTRATION_URL),
+  );
+  assert.ok(
+    renderer.root
+      .findAllByType('a')
+      .some(
+        (link) =>
+          text(link) === 'Manager CTA' &&
+          link.props.href === 'https://example.com/action',
+      ),
+  );
+  unmount();
+  const { default: Footer } = await load('components/layout/Footer.tsx');
+  await mount(route(el(Footer)));
+  assert.ok(
+    renderer.root.findByType('footer').props.className.includes('text-white'),
+  );
+  assert.ok(
+    renderer.root
+      .findAllByType('a')
+      .filter((link) => link.props.href !== '/')
+      .every((link) => link.props.className.includes('focus-visible')),
+  );
+  unmount();
   console.log(
-    '2026.10.2 UI checks passed: authenticated presign/direct upload/verification, preview/busy/error/removal, unified canonical ranking including unranked members, optional team/club photos and biography/birth management, generic team/badge uploads, Season-aware badge display and confirmed revocation/Season deletion.',
+    '2026.10.3 UI checks passed: shared bounded player/team editors, team-only fields, Pokémon/deck/join date, team logo/admin actions, paginated request transitions and News validation/CTA.',
+  );
+  console.log(
+    '2026.10.2 UI checks passed: authenticated presign/direct upload/verification, preview/busy/error/removal, unified canonical ranking including unranked members, optional team photos and regular city boundaries and biography/birth management, generic team/badge uploads, Season-aware badge display and confirmed revocation/Season deletion.',
   );
 } finally {
   axios.post = originalAxiosPost;

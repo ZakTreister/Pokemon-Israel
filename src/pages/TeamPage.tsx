@@ -1,3 +1,8 @@
+import Pagination from '../components/ui/Pagination';
+import Modal from '../components/ui/Modal';
+import PlayerEditDialog from '../features/players/components/PlayerEditDialog';
+import playersService from '../features/players/playersService';
+import type { Player } from '../types/player';
 import TeamPlayerProfileFields from '../features/players/components/TeamPlayerProfileFields';
 import PlayerPhotoField from '../features/players/components/PlayerPhotoField';
 import TeamAdministration from '../features/teams/components/TeamAdministration';
@@ -42,6 +47,12 @@ export default function TeamPage() {
   const admin = user?.role === 'admin';
   const staff = user?.role === 'admin' || user?.role === 'judge';
   const [section, setSection] = useState('members');
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyMeta, setHistoryMeta] = useState({ total: 0, totalPages: 1 });
+  const [duplicateMatches, setDuplicateMatches] = useState<Player[] | null>(
+    null,
+  );
+  const [existingPlayer, setExistingPlayer] = useState<Player | null>(null);
   const [history, setHistory] = useState<PublicTournamentSummary[]>([]);
   const [team, setTeam] = useState<TeamWithRoster | null>(null);
   const [rankings, setRankings] = useState<AllStarsRanking[]>([]);
@@ -67,9 +78,15 @@ export default function TeamPage() {
     if (section !== 'history') return;
     let active = true;
     publicTournaments
-      .list()
+      .list({ teamId: id, page: historyPage })
       .then((events) => {
-        if (active) setHistory(events.filter((event) => event.team === id));
+        if (active) {
+          setHistory(events.items);
+          setHistoryMeta({
+            total: events.total,
+            totalPages: events.totalPages,
+          });
+        }
       })
       .catch((e) => {
         if (active) setError(requestError(e));
@@ -77,24 +94,74 @@ export default function TeamPage() {
     return () => {
       active = false;
     };
-  }, [id, section]);
-  const loadChildren = async () => {
+  }, [id, section, historyPage]);
+  const loadChildren = async (allowDuplicate = false) => {
     if (busy || pendingUploads) return;
     setBusy(true);
     setError('');
     try {
-      await teamsService.createPlayers(id, children);
+      await teamsService.createPlayers(id, children, allowDuplicate);
       setChildren([emptyChild()]);
       setEditing(false);
       await load();
     } catch (e) {
-      setError(requestError(e));
+      const failure = e as {
+        response?: { data?: { code?: string; matches?: Player[] } };
+      };
+      if (failure.response?.data?.code === 'PLAYER_DUPLICATE')
+        setDuplicateMatches(failure.response.data.matches || []);
+      else setError(requestError(e));
     } finally {
       setBusy(false);
     }
   };
   return (
     <div className={management ? 'py-6' : 'container py-12'}>
+      {existingPlayer && (
+        <PlayerEditDialog
+          player={existingPlayer}
+          onClose={() => setExistingPlayer(null)}
+          onSaved={load}
+        />
+      )}
+      {duplicateMatches && (
+        <Modal
+          title="שחקנים דומים כבר רשומים"
+          onClose={() => setDuplicateMatches(null)}
+        >
+          <p>
+            ייתכן ששחקנים אלה כבר רשומים. אפשר לערוך שחקן קיים או לאשר יצירה בכל
+            זאת.
+          </p>
+          {duplicateMatches.map((player) => (
+            <div key={player.id}>
+              <p>
+                {player.firstName} {player.lastName} · {player.city}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDuplicateMatches(null);
+                  void playersService
+                    .getPlayer(player.id)
+                    .then(setExistingPlayer)
+                    .catch((e) => setError(requestError(e)));
+                }}
+              >
+                ערוך שחקן קיים
+              </Button>
+            </div>
+          ))}
+          <Button
+            onClick={() => {
+              setDuplicateMatches(null);
+              void loadChildren(true);
+            }}
+          >
+            צור בכל זאת
+          </Button>
+        </Modal>
+      )}
       {!management && (
         <Button asChild variant="outline" className="mb-5">
           <Link to={staff ? '/manage/teams' : '/all-stars'}>
@@ -178,6 +245,12 @@ export default function TeamPage() {
                   </Link>
                 </details>
               )}
+              <Pagination
+                page={historyPage}
+                totalPages={historyMeta.totalPages}
+                total={historyMeta.total}
+                onChange={setHistoryPage}
+              />
               {history.length ? (
                 history.map((event) => (
                   <p key={event.id}>

@@ -1,31 +1,46 @@
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/Card';
+import { useEffect, useState } from 'react';
+import { publicTournaments } from '../../services/publicTournaments';
+import { requestError } from '../../utils/requestError';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
 import { CalendarDays, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminOverview() {
-  const dispatch = useAppDispatch();
-  const { tournaments, isLoading } = useAppSelector((state) => state.tournaments);
-
+  const [summary, setSummary] = useState<Awaited<
+    ReturnType<typeof publicTournaments.summary>
+  > | null>(null);
+  const [error, setError] = useState('');
   useEffect(() => {
-    dispatch(fetchTournaments());
-  }, [dispatch]);
-
-  // Calculate statistics
-  const upcomingTournaments = (tournaments || []).filter(t => t.status === 'upcoming').length;
-  const totalParticipants = (tournaments || []).reduce((sum, t) => sum + t.currentParticipants, 0);
-  
-  // Get nearest upcoming tournament
-  const nearestTournament = (tournaments || [])
-    .filter(t => t.status === 'upcoming')
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-
+    let active = true;
+    publicTournaments
+      .summary()
+      .then((data) => {
+        if (active) setSummary(data);
+      })
+      .catch((e) => {
+        if (active) setError(requestError(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const isLoading = !summary && !error;
+  const upcomingTournaments = summary?.upcoming || 0;
+  const totalParticipants = summary?.participants || 0;
+  const nearestTournament = summary?.nearest;
   return (
     <div>
-      <h2 className="text-2xl font-extrabold text-foreground mb-6">סקירה כללית</h2>
-      
+      <h2 className="text-2xl font-extrabold text-foreground mb-6">
+        סקירה כללית
+      </h2>
+
+      {error && <p role="alert">{error}</p>}
       {isLoading ? (
         <div className="animate-pulse text-center py-12">טוען נתונים...</div>
       ) : (
@@ -34,11 +49,13 @@ export default function AdminOverview() {
             <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>טורנירים קרובים</CardDescription>
-                <CardTitle className="text-3xl">{upcomingTournaments}</CardTitle>
+                <CardTitle className="text-3xl">
+                  {upcomingTournaments}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <Link 
-                  to="/admin/tournaments" 
+                <Link
+                  to="/admin/tournaments"
                   className="text-sm text-blue-500 flex items-center hover:underline font-bold"
                 >
                   <span>ניהול טורנירים</span>
@@ -46,15 +63,15 @@ export default function AdminOverview() {
                 </Link>
               </CardContent>
             </Card>
-            
+
             <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>סה"כ משתתפים</CardDescription>
                 <CardTitle className="text-3xl">{totalParticipants}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Link 
-                  to="/admin/users" 
+                <Link
+                  to="/admin/users"
                   className="text-sm text-blue-500 flex items-center hover:underline font-bold"
                 >
                   <span>ניהול משתמשים</span>
@@ -62,17 +79,15 @@ export default function AdminOverview() {
                 </Link>
               </CardContent>
             </Card>
-            
+
             <Card className="cs-stat min-h-[150px]">
               <CardHeader className="pb-2">
                 <CardDescription>אחוז תפוסה בטורנירים</CardDescription>
                 <CardTitle className="text-3xl">
-                  {(tournaments || []).length > 0
-                    ? Math.round(
-                        (totalParticipants / 
-                        (tournaments || []).reduce((sum, t) => sum + t.maxParticipants, 0)) * 100
-                      )
-                    : 0}%
+                  {summary?.capacity
+                    ? Math.round((totalParticipants / summary.capacity) * 100)
+                    : 0}
+                  %
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -82,7 +97,7 @@ export default function AdminOverview() {
               </CardContent>
             </Card>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-6">
             <Card>
               <CardHeader>
@@ -94,11 +109,17 @@ export default function AdminOverview() {
               <CardContent>
                 {nearestTournament ? (
                   <div>
-                    <h3 className="font-medium text-lg mb-2">{nearestTournament.title}</h3>
+                    <h3 className="font-medium text-lg mb-2">
+                      {nearestTournament.title}
+                    </h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">תאריך:</span>
-                        <span>{new Date(nearestTournament.date).toLocaleDateString('he-IL')}</span>
+                        <span>
+                          {new Date(nearestTournament.date).toLocaleDateString(
+                            'he-IL',
+                          )}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">מיקום:</span>
@@ -106,11 +127,14 @@ export default function AdminOverview() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">משתתפים:</span>
-                        <span>{nearestTournament.currentParticipants} / {nearestTournament.maxParticipants}</span>
+                        <span>
+                          {nearestTournament.currentParticipants} /{' '}
+                          {nearestTournament.maxParticipants}
+                        </span>
                       </div>
                       <div className="pt-3">
-                        <Link 
-                          to={`/admin/tournaments/${nearestTournament.id}`} 
+                        <Link
+                          to={`/admin/tournaments/${nearestTournament.id}`}
                           className="text-blue-500 hover:underline font-bold"
                         >
                           ניהול הטורניר

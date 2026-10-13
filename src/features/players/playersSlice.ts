@@ -9,23 +9,37 @@ import type {
 
 interface PlayersState {
   players: Player[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  requestId?: string;
   isLoading: boolean;
   error: string | null;
 }
 
 const initialState: PlayersState = {
   players: [],
+  total: 0,
+  page: 1,
+  pageSize: 25,
+  totalPages: 1,
   isLoading: false,
   error: null,
 };
 
-type ApiError = { response?: { data?: { message?: string } }; message?: string };
+type ApiError = {
+  response?: { data?: { message?: string } };
+  message?: string;
+};
 
 export const fetchPlayers = createAsyncThunk(
   'players/fetchAll',
   async (
-    params: { type?: 'team' | 'quarterly'; search?: string } | undefined,
-    thunkAPI
+    params:
+      | { type?: 'team' | 'quarterly'; search?: string; page?: number }
+      | undefined,
+    thunkAPI,
   ) => {
     try {
       return await playersService.getPlayers(params);
@@ -35,7 +49,7 @@ export const fetchPlayers = createAsyncThunk(
         err.response?.data?.message || err.message || 'שגיאה בטעינת שחקנים';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const createQuarterlyPlayer = createAsyncThunk(
@@ -49,7 +63,7 @@ export const createQuarterlyPlayer = createAsyncThunk(
         err.response?.data?.message || err.message || 'שגיאה ביצירת שחקן חוגים';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const createTeamPlayer = createAsyncThunk(
@@ -63,15 +77,12 @@ export const createTeamPlayer = createAsyncThunk(
         err.response?.data?.message || err.message || 'שגיאה ביצירת שחקן נבחרת';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 export const updatePlayer = createAsyncThunk(
   'players/update',
-  async (
-    { id, input }: { id: string; input: UpdatePlayerInput },
-    thunkAPI
-  ) => {
+  async ({ id, input }: { id: string; input: UpdatePlayerInput }, thunkAPI) => {
     try {
       return await playersService.updatePlayer(id, input);
     } catch (error) {
@@ -80,7 +91,7 @@ export const updatePlayer = createAsyncThunk(
         err.response?.data?.message || err.message || 'שגיאה בעדכון שחקן';
       return thunkAPI.rejectWithValue(message);
     }
-  }
+  },
 );
 
 const playersSlice = createSlice({
@@ -93,15 +104,22 @@ const playersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPlayers.pending, (state) => {
+      .addCase(fetchPlayers.pending, (state, action) => {
+        state.requestId = action.meta.requestId;
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchPlayers.fulfilled, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.isLoading = false;
-        state.players = action.payload;
+        state.players = action.payload.items;
+        state.total = action.payload.total;
+        state.page = action.payload.page;
+        state.pageSize = action.payload.pageSize;
+        state.totalPages = action.payload.totalPages;
       })
       .addCase(fetchPlayers.rejected, (state, action) => {
+        if (state.requestId !== action.meta.requestId) return;
         state.isLoading = false;
         state.error = action.payload as string;
       })
@@ -113,7 +131,7 @@ const playersSlice = createSlice({
       })
       .addCase(updatePlayer.fulfilled, (state, action) => {
         state.players = state.players.map((p) =>
-          p.id === action.payload.id ? action.payload : p
+          p.id === action.payload.id ? action.payload : p,
         );
       });
   },

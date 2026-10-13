@@ -1,4 +1,9 @@
 export interface Player {
+  joinedAt?: string;
+  pokemon?: string[];
+  deckUploadId?: string | null;
+  deckUrl?: string;
+  deckMedia?: import('../services/media').StoredMedia | null;
   description?: string;
   dateOfBirth?: string;
   photoUrl?: string;
@@ -9,7 +14,6 @@ export interface Player {
   city?: string;
   playerNumber?: string;
   team?: string | null;
-  club: string | null;
   playerType: 'team' | 'quarterly';
   user: {
     id: string;
@@ -21,13 +25,19 @@ export interface Player {
 }
 
 export interface CreateQuarterlyPlayerInput {
-  photoUploadId?: string | null;
+  allowDuplicate?: boolean;
   firstName: string;
   lastName: string;
-  club: string;
+  city: string;
 }
 
 export interface CreateTeamPlayerInput {
+  allowDuplicate?: boolean;
+  joinedAt?: string;
+  pokemon?: string[];
+  deckUploadId?: string | null;
+  deckUrl?: string;
+  deckMedia?: import('../services/media').StoredMedia | null;
   description?: string;
   dateOfBirth?: string;
   photoUploadId?: string | null;
@@ -39,6 +49,11 @@ export interface CreateTeamPlayerInput {
 }
 
 export interface UpdatePlayerInput {
+  joinedAt?: string;
+  pokemon?: string[];
+  deckUploadId?: string | null;
+  deckUrl?: string;
+  deckMedia?: import('../services/media').StoredMedia | null;
   description?: string;
   dateOfBirth?: string;
   photoUploadId?: string | null;
@@ -46,6 +61,5 @@ export interface UpdatePlayerInput {
   city?: string;
   firstName?: string;
   lastName?: string;
-  club?: string | null;
   isActive?: boolean;
 }

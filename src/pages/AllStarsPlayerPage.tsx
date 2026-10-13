@@ -1,3 +1,4 @@
+import { pokemonImageUrl } from '../features/players/utils/playerProfile';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -56,6 +57,33 @@ export default function AllStarsPlayerPage() {
               <p className="whitespace-pre-wrap break-words mt-3">
                 {player.description}
               </p>
+            )}
+            {player.tenureYears !== undefined && (
+              <p>וותק: {player.tenureYears} שנים</p>
+            )}
+            {player.deckUrl && (
+              <section className="mt-4">
+                <h2 className="font-bold">דק אישי</h2>
+                <img
+                  src={player.deckUrl}
+                  alt="דק אישי"
+                  className="w-full max-h-96 object-contain"
+                />
+              </section>
+            )}
+            {!!player.pokemon?.length && (
+              <ul className="flex flex-wrap gap-3 mt-4">
+                {player.pokemon.map((name, index) => (
+                  <li key={index}>
+                    <img
+                      src={pokemonImageUrl(name)}
+                      alt={name}
+                      className="w-20 h-20 object-contain"
+                    />
+                    <span>{name}</span>
+                  </li>
+                ))}
+              </ul>
             )}
             {player.city && <p>{player.city}</p>}
             {player.playerNumber && <p>מספר שחקן: {player.playerNumber}</p>}

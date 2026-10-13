@@ -37,3 +37,25 @@ test('profile fields are optional, clearable and bounded; future/impossible/non-
     assert.throws(() => validateBirthDate(value, '2026-10-13'));
   assert.equal(validateBirthDate('2024-02-29', '2026-10-13'), '2024-02-29');
 });
+
+test('join date and compact Pokemon names use date-only validation and normalized domain values', () => {
+  assert.deepEqual(
+    profileFields({
+      joinedAt: '2020-01-01',
+      pokemon: [' Iron   Hands ', 'Pikachu'],
+    }),
+    { joinedAt: '2020-01-01', pokemon: ['Iron Hands', 'Pikachu'] },
+  );
+  for (const input of [
+    { joinedAt: '2999-01-01' },
+    { pokemon: Array(7).fill('Pikachu') },
+    { pokemon: ['Mr. Mime'] },
+    { pokemon: ['Pikachu1'] },
+    { pokemon: ['פיקאצ׳ו'] },
+  ])
+    assert.throws(() => profileFields(input));
+  assert.deepEqual(profileFields({ joinedAt: '', pokemon: [] }), {
+    joinedAt: '',
+    pokemon: [],
+  });
+});

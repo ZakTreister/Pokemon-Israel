@@ -5,6 +5,9 @@ interface PublicRanking {
   tournaments: number;
 }
 export interface PublicTeamPlayer {
+  tenureYears?: number;
+  deckUrl?: string;
+  pokemon?: string[];
   description?: string;
   age?: number;
   photoUrl?: string;

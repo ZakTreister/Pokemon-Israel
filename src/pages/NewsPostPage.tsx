@@ -1,3 +1,4 @@
+import UpdateAction from '../features/updates/components/UpdateAction';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import updatesService from '../features/updates/updatesService';
@@ -41,22 +42,32 @@ export default function NewsPostPage() {
           <h1 className="text-3xl sm:text-4xl font-extrabold my-6">
             {post.title}
           </h1>
+          {post.image && (
+            <img
+              src={post.image}
+              alt=""
+              className="w-full max-h-96 object-contain rounded-md mb-5"
+            />
+          )}
+          <UpdateAction update={post} />
           <div className="whitespace-pre-wrap break-words leading-8">
-            {post.content.split(/(https?:\/\/[^\s<>]+)/g).map((part, index) =>
-              /^https?:\/\//.test(part) ? (
-                <a
-                  key={index}
-                  href={part}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline break-all"
-                >
-                  {part}
-                </a>
-              ) : (
-                part
-              ),
-            )}
+            {(post.description ?? post.content ?? '')
+              .split(/(https?:\/\/[^\s<>]+)/g)
+              .map((part, index) =>
+                /^https?:\/\//.test(part) ? (
+                  <a
+                    key={index}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline break-all"
+                  >
+                    {part}
+                  </a>
+                ) : (
+                  part
+                ),
+              )}
           </div>
         </article>
       )}

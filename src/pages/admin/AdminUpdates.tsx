@@ -1,197 +1,92 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchUpdates } from '../../features/updates/updatesSlice';
-import { Plus, Pencil, Trash2, Calendar } from 'lucide-react';
+import updatesService from '../../features/updates/updatesService';
+import UpdateEditDialog from '../../features/updates/components/UpdateEditDialog';
 import Button from '../../components/ui/Button';
-import { Card, CardContent } from '../../components/ui/Card';
-import { formatDistanceToNow } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { Update } from '../../types/update';
-
+import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { requestError } from '../../utils/requestError';
+import type { Update } from '../../types/update';
 export default function AdminUpdates() {
   const dispatch = useAppDispatch();
-  const { updates, isLoading } = useAppSelector((state) => state.updates);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUpdate, setSelectedUpdate] = useState<Update | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-
+  const { updates, isLoading, error } = useAppSelector(
+    (state) => state.updates,
+  );
+  const [editing, setEditing] = useState<Update | null | undefined>();
+  const [mutationError, setMutationError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const { showConfirm } = useConfirm();
   useEffect(() => {
     dispatch(fetchUpdates());
   }, [dispatch]);
-
-  // Sort updates by date (newest first)
-  const sortedUpdates = [...updates].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
-  });
-
-  const handleEditClick = (update: Update) => {
-    setSelectedUpdate(update);
-    setEditTitle(update.title);
-    setEditContent(update.content);
-    setShowEditModal(true);
+  const refresh = async () => {
+    await dispatch(fetchUpdates()).unwrap();
   };
-
-  const handleEditClose = () => {
-    setShowEditModal(false);
-    setSelectedUpdate(null);
-    setEditTitle('');
-    setEditContent('');
+  const remove = async (update: Update) => {
+    if (
+      !(await showConfirm({
+        title: 'מחיקת עדכון',
+        message: `למחוק את "${update.title}"?`,
+        confirmText: 'מחק',
+        variant: 'destructive',
+      }))
+    )
+      return;
+    setBusy(true);
+    setMutationError('');
+    try {
+      await updatesService.deleteUpdate(update.id);
+      await refresh();
+    } catch (e) {
+      setMutationError(requestError(e));
+    } finally {
+      setBusy(false);
+    }
   };
-
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">ניהול עדכונים</h2>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus size={18} className="ml-1" />
-          <span>עדכון חדש</span>
-        </Button>
+        <Button onClick={() => setEditing(null)}>עדכון חדש</Button>
       </div>
-
-      {/* Updates List */}
+      {(error || mutationError) && <p role="alert">{error || mutationError}</p>}
       {isLoading ? (
-        <div className="animate-pulse text-center py-12">טוען עדכונים...</div>
+        <p role="status">טוען עדכונים…</p>
+      ) : !updates.length ? (
+        <p>לא נמצאו עדכונים</p>
       ) : (
-        <>
-          {sortedUpdates.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg mb-4">לא נמצאו עדכונים</p>
+        updates.map((update) => (
+          <article key={update.id} className="border rounded-lg p-4">
+            <h3 className="font-bold text-lg">{update.title}</h3>
+            <p className="whitespace-pre-wrap">
+              {update.description ?? update.content}
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Button
+                contextual
+                variant="outline"
+                onClick={() => setEditing(update)}
+              >
+                ערוך
+              </Button>
+              <Button
+                contextual
+                variant="destructive"
+                disabled={busy}
+                onClick={() => void remove(update)}
+              >
+                מחק
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {sortedUpdates.map((update) => (
-                <Card key={update.id} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-lg">{update.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                          <Calendar size={14} />
-                          <span>
-                            {formatDistanceToNow(new Date(update.date), { 
-                              addSuffix: true, 
-                              locale: he 
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground">{update.content}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button contextual
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditClick(update)}
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button contextual
-                          variant="destructive" 
-                          size="sm"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </>
+          </article>
+        ))
       )}
-
-      {/* Add Update Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">הוספת עדכון חדש</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">כותרת</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="כותרת העדכון"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">תוכן</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  rows={4}
-                  placeholder="תוכן העדכון"
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  ביטול
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Handle update creation
-                    setShowAddModal(false);
-                  }}
-                >
-                  הוסף עדכון
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Update Modal */}
-      {showEditModal && selectedUpdate && (
-        <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm p-4 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">עריכת עדכון</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">כותרת</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="כותרת העדכון"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">תוכן</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  rows={4}
-                  placeholder="תוכן העדכון"
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={handleEditClose}
-                >
-                  ביטול
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Handle update edit
-                    handleEditClose();
-                  }}
-                >
-                  שמור שינויים
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {editing !== undefined && (
+        <UpdateEditDialog
+          update={editing || undefined}
+          onClose={() => setEditing(undefined)}
+          onSaved={refresh}
+        />
       )}
     </div>
   );

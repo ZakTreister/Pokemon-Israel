@@ -1,3 +1,4 @@
+import UpdateAction from '../features/updates/components/UpdateAction';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
@@ -33,12 +34,22 @@ export default function NewsPage() {
                 <p className="text-sm text-blue-500 font-bold">
                   {new Date(update.date).toLocaleDateString('he-IL')}
                 </p>
+                {update.image && (
+                  <img
+                    src={update.image}
+                    alt=""
+                    className="w-full h-44 object-cover rounded-md mt-3"
+                  />
+                )}
                 <h2 className="text-2xl font-extrabold mt-3 mb-4">
                   {update.title}
                 </h2>
                 <p className="text-muted-foreground line-clamp-4 mb-6">
-                  {update.content}
+                  {update.description ?? update.content}
                 </p>
+                <div className="mb-4">
+                  <UpdateAction update={update} />
+                </div>
                 <Button asChild variant="outline" className="mt-auto">
                   <Link to={`/news/${update.id}`}>לעדכון המלא</Link>
                 </Button>

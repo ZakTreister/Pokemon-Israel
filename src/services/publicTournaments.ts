@@ -1,3 +1,4 @@
+import type { PageQuery, PageResult } from '../types/pagination';
 import api from './api';
 import type { Deck } from '../types/deck';
 import type { Standing } from '../types/internalTournament';
@@ -12,6 +13,7 @@ export interface PublicTournamentSummary {
   date: string;
   location: string;
   image: string;
+  prizePool?: string;
   type: TournamentType;
   lifecycle: TournamentLifecycle;
   status: string;
@@ -27,8 +29,29 @@ export interface PublicTournament extends PublicTournamentSummary {
   teamPlayers: boolean;
 }
 export const publicTournaments = {
-  list: async () =>
-    (await api.get<PublicTournamentSummary[]>('/api/tournaments')).data,
+  summary: async (type?: string) =>
+    (
+      await api.get<{
+        total: number;
+        participants: number;
+        capacity: number;
+        upcoming: number;
+        nearest: PublicTournamentSummary | null;
+      }>('/api/tournaments/summary', { params: { type } })
+    ).data,
+  list: async (
+    params?: PageQuery & {
+      type?: string;
+      status?: string;
+      teamId?: string;
+      order?: 'asc';
+    },
+  ) =>
+    (
+      await api.get<PageResult<PublicTournamentSummary>>('/api/tournaments', {
+        params,
+      })
+    ).data,
   get: async (id: string) =>
     (await api.get<PublicTournament>(`/api/tournaments/${id}`)).data,
 };
