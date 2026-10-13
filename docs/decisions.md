@@ -450,3 +450,11 @@ Management **טורנירים** and public **אירועים** use server-side pa
 
 ## 2026-10 — Counts do not require full collection loads
 When UI needs only the number of Players or Tournaments, use a database count/lightweight count-only request or canonical paginated `total` metadata. Do not fetch entire collections solely to calculate `.length`.
+
+
+## 2026-10 — Codex uses focused tests during development
+During a version, Codex runs only tests/checks relevant to the feature batch being implemented. Full tests, full lint and production build run once after the complete version scope is implemented.
+
+If final verification exposes a failure, Codex iterates using the smallest failing subset and reruns the full suite only after that subset passes.
+
+Codex should avoid redundant test layers, unrelated refactors, repeated reading of irrelevant docs and tiny per-file commits.
