@@ -83,3 +83,9 @@ Read-only team/player information may still be shown when it helps the judge ide
 Every admin-only mutation must enforce role checks on the server.
 
 A judge calling an admin-only endpoint directly must receive an authorization failure even if the frontend normally hides that control.
+
+
+### Player deletion behavior
+Admin may soft-delete/archive players. Judge may not.
+
+Player deletion must preserve historical tournament/results integrity; do not hard-delete referenced historical Player records as part of the normal UI flow.
