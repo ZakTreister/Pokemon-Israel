@@ -24,6 +24,22 @@ Common fields include:
 For some children an Israeli national ID may later be available.
 It is optional and sensitive.
 
+## Child/player photo
+The Player record supports an optional child photo managed through the shared AWS S3 upload capability.
+
+Requirements:
+- admin can upload, replace and remove the child's photo from player create/edit/profile-management flows
+- this applies to both `team` and `quarterly` / regular-club players
+- judges remain read-only and cannot change player media
+- new uploads persist provider-neutral storage metadata rather than Cloudinary-specific identifiers
+- reuse the shared image-upload component; do not create a separate uploader just for players
+- no child login/self-service is introduced by this feature
+
+Visibility:
+- an All Stars/team player's photo may be exposed on the already-approved public player profile and can be stored under `public/players/<player-id>/...`
+- regular/club players have no public individual profile; their photos must not be returned by public APIs or displayed on public pages and should be stored under `private/players/<player-id>/...`
+- a change of player type must not automatically make a previously private photo public; an authorized media visibility transition must be explicit
+
 ## Future matching/deduplication rule
 When matching a player during imports/integrations:
 1. If national ID is provided, try exact national-ID identity first.
