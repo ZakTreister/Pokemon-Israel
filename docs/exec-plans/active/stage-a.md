@@ -772,6 +772,54 @@ Requirements:
 
 Add/update tests for the unified table and removal of the old ranking tab.
 
+### 41. Version 2026.10.3 — AWS S3 storage and required image uploads
+Replace the current Cloudinary-backed upload path with the reusable AWS S3 storage architecture defined in `docs/architecture/media-upload.md`.
+
+Infrastructure assumptions already configured in production:
+- S3 bucket `cardschool-public-prod`
+- region `eu-north-1`
+- bucket remains private with Block Public Access enabled
+- CloudFront domain `https://d1grgd8g6bpbb7.cloudfront.net`
+- CloudFront origin path `/public`
+- Render backend environment contains the AWS/S3/media variables defined in the architecture doc
+
+Required implementation:
+- use backend-authorized short-lived presigned direct uploads to S3
+- replace active Cloudinary-specific signing/upload behavior
+- use provider-neutral `storageKey`-style metadata for new media
+- preserve legacy Cloudinary-backed records during migration
+- keep the shared uploader reusable for future non-image file purposes
+
+Required image consumers:
+- **team** — admin can upload/replace/remove team logo
+- **child/player** — admin can upload/replace/remove child photo for team and regular/club players; team-player photo may appear on the existing public profile, regular/club photo remains private
+- **badge/tag** — super-admin can upload/replace/remove badge image
+
+UI:
+- reuse one shared image-upload component/service
+- image preview, busy/progress state, replacement/removal and concise Hebrew error handling
+- no manual image-URL field as the primary management workflow
+
+Permissions/security:
+- team and player media mutations are admin-only
+- badge media follows existing badge-management admin authority
+- judges are read-only for permanent media
+- JPEG/PNG/WebP only for this image scope, default 5 MB maximum
+- never expose AWS credentials or private S3 keys/objects publicly
+- CloudFront serves only the `public/` namespace
+
+Add/update tests for:
+- presign authorization and purpose validation
+- allowed/blocked image type and size behavior
+- generated key namespace/ownership
+- team logo upload persistence/display
+- child photo upload and public-vs-private behavior
+- badge image upload persistence/display
+- judges cannot mutate permanent media
+- legacy Cloudinary media remains readable during migration
+
+Do not implement unrestricted arbitrary file upload in this version; only make the storage abstraction extensible for later file types.
+
 ## Existing Stage A core behavior that must remain working
 Do not regress:
 - team creation
