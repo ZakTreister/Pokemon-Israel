@@ -209,3 +209,15 @@ It must remain usable on normal laptop/desktop heights:
 - long text, media upload/preview and the compact Pokémon-list editor may span the full grid width
 
 The team-page **עריכת שחקן** action and the Players-management **ערוך** action must open this same editor.
+
+
+## Team edit dialog
+The **עריכת נבחרת** action opens a reusable dialog over the current management page.
+
+The same dialog is used from:
+- **ניהול → נבחרות All-Stars**
+- the managed team page
+
+It contains core team settings only: name, optional logo, assigned teacher and active status when applicable. Roster assignment/removal remains outside this dialog.
+
+After successful save, close the dialog and refresh the current team/list state without a full-page reload.
