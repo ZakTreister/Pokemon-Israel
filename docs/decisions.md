@@ -415,9 +415,11 @@ The same dialog is used from the teams management list and the managed team page
 ## 2026-10 — Updates are the canonical News model
 The existing Update model remains the source for **חדשות**. Do not introduce a parallel News entity.
 
-An update has a required title and optional description, image and link. Existing `content` remains backward compatible as description content.
+An update has a required title and optional description, image and CTA.
 
-Update images use the shared AWS S3 media flow. Management create/edit/delete must be fully functional, and public News surfaces show the optional image/link when present.
+The CTA consists of two fields: manager-configured button text and its destination URL. If one is supplied, both are required. Existing `content` remains backward compatible as description content.
+
+Update images use the shared AWS S3 media flow. Management create/edit/delete must be fully functional. Public News surfaces and the homepage **העדכון האחרון** component use the configured update image/description/CTA, including the exact CTA button text supplied by management.
 
 
 ## 2026-10 — Players management uses server-side pagination
