@@ -195,3 +195,17 @@ On **ניהול → נבחרות All-Stars**:
 - reuse the canonical team edit/settings flow
 - judges remain read-only and do not receive the edit action
 - keep the existing primary **התחל טורניר / המשך טורניר** action visually primary; **עריכת נבחרת** is secondary
+
+
+## Player editor dialog layout
+The canonical Player editor is shared across management entry points.
+
+It must remain usable on normal laptop/desktop heights:
+- cap modal height to the viewport
+- scroll the body internally
+- keep header/close and save/cancel reachable
+- desktop uses a responsive two-column field grid
+- mobile uses one column
+- long text, media upload/preview and the compact Pokémon-list editor may span the full grid width
+
+The team-page **עריכת שחקן** action and the Players-management **ערוך** action must open this same editor.
