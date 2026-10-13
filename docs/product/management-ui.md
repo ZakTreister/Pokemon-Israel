@@ -166,3 +166,22 @@ Do not reserve blank mobile space for errors that do not exist.
 Do not wrap the full match list in a redundant outer Card.
 
 See `docs/product/internal-tournament-ui.md` for the approved information hierarchy and match-card layout.
+
+
+## Player management corrections
+On the general **ניהול → שחקנים** page:
+- admin has an explicit **מחק שחקן** action
+- deletion requires confirmation
+- deletion is soft deletion/archival so historical tournament, ranking and badge references remain intact
+- deleted players disappear from active lists and future selectors
+
+On a managed team's **חברי נבחרת** table:
+- admin has a compact **עריכת שחקן** action/link
+- it opens the canonical Player editor rather than creating a second team-specific edit form
+- it remains independent from public-profile row navigation
+
+During Player creation:
+- normalized likely-duplicate detection is server-backed
+- a likely match opens a Hebrew warning dialog before final creation
+- the dialog offers a path to the existing player and an explicit **צור בכל זאת** override
+- duplicate detection is a warning/confirmation flow, not a hard uniqueness constraint
