@@ -947,3 +947,23 @@ When complete:
 - push to the requested working branch
 - report final commit SHA
 - report build/lint verification
+
+
+### 44. Version 2026.10.3 — player management corrections
+
+Implement the exact player-management corrections defined in `docs/version.md` and `docs/product/players.md`.
+
+Required:
+- add visible admin-only **מחק שחקן** action
+- normal deletion is soft/archive and preserves historical tournament/result references
+- deleted players are excluded from active lists and future team/tournament assignment choices
+- require confirmation before deletion
+- add explicit admin-only **עריכת שחקן** action/link on each managed team member row
+- reuse the canonical Player edit flow rather than duplicating edit logic
+- preserve independent row navigation/action behavior
+- before create, perform server-backed likely-duplicate detection
+- team-player duplicate key: normalized first name + last name + city
+- club-player duplicate key: normalized first name + last name + club
+- show a Hebrew duplicate warning with existing-player context
+- allow explicit **צור בכל זאת** override
+- add regression tests for permissions, history preservation, duplicate warning/override, and team-page edit navigation
