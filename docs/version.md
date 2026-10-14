@@ -680,7 +680,7 @@ No PR was created. The link above opens GitHub's PR creation form; the final cre
 
 ---
 
-## Current version
+## Previous developed version
 
 **Version:** `2026.10.5`\
 **Status:** `DEVELOPED`\
@@ -721,3 +721,28 @@ No PR was created. The link above opens GitHub's PR creation form; the final cre
 **Known implementation gaps:** none. The separate judge `J2` official league rank remains pending authoritative standings, unchanged and outside this version's scope. A26 no longer depends on that data source.
 
 The implementation SHA identifies the final code/test commit. This following documentation-only commit records completion metadata on `main`. No feature branch or PR was created.
+
+---
+
+## Current version
+
+**Version:** `2026.10.6`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation branch:** `main` (direct implementation; no PR)  
+**Implementation commit:** Pending
+
+### Scope
+
+1. **A26 compact presentation**: when internal-tournament counts differ, display only the maximum as a prominent number and a compact line per lagging team. E.g. `2` then `G-Chomps — חסר 1`; remove the comparison sentence and explanatory/disclaimer. Retain canonical current-year counts, KPI title, equal/empty/error handling.
+2. **One-row Pokémon icons**: on the public All Stars player page, all configured Pokémon (up to six) remain **in a single horizontal row under the portrait at all viewport widths**, their icon and Poké Ball frame sizes shrink to fit, **without positive minimum dimensions**; optionally cap maximum size. Never wrap or horizontally overflow/scroll.
+3. **Deck section label**: change the public page's `דק אישי` to **`דק נוכחי`** consistently in heading, ARIA label and image alt, preserving final-position deck section and unchanged media/API data.
+
+### Detailed source of truth
+- `docs/product/management-ui.md` — A26 display details
+- `docs/product/players.md` — Pokémon row and current-deck label
+- `docs/architecture/frontend-standards.md` — responsive/accessibility rules
+
+### Verification and completion
+- Update focused UI checks to verify absence of A26 explanatory text, maximum and every lagging line; Pokémon no-wrap and shrinkable no-minimum sizing; renamed deck heading/aria/alt; existing profiles and empty/equal/error states remain intact.
+- Follow `AGENTS.md`: focused tests during development and full configured tests, lint and build at completion.
+- Work, commit and push **directly on `main`** (no feature branch or PR). Mark version `DEVELOPED` with actual verification results, final SHA and known gaps.
