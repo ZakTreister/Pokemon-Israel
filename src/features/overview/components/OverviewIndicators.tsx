@@ -43,18 +43,15 @@ export function EncounterValue({ balance }: { balance: EncounterBalance }) {
       </div>
     );
   return (
-    <div className="text-sm leading-relaxed">
-      <p>בהשוואה לנבחרת עם הכי הרבה מפגשים: {balance.maximum}</p>
-      <ul className="mt-2 space-y-1">
+    <div>
+      <div>{balance.maximum}</div>
+      <ul className="mt-2 space-y-1 text-sm leading-relaxed">
         {balance.lagging.map((team) => (
           <li key={team.id}>
             {team.name} — {team.gap === 1 ? 'חסר 1' : `חסרים ${team.gap}`}
           </li>
         ))}
       </ul>
-      <p className="font-normal mt-2">
-        הפער במספר המפגשים; אינו מצביע על מפגש שתוכנן או הוחמץ.
-      </p>
     </div>
   );
 }

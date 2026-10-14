@@ -43,21 +43,21 @@ export default function AllStarsPlayerPage() {
             → חזרה ל{player.team ? 'נבחרת' : 'All Stars'}
           </Link>
           <div className="cs-public-card p-6 flex flex-wrap items-start justify-between gap-6">
-            <div className="min-w-0 max-w-full">
+            <div className="w-40 sm:w-48 min-w-0 max-w-full">
               {player.photoUrl ? (
                 <img
                   src={player.photoUrl}
                   alt={`תמונה של ${player.firstName}`}
-                  className="h-40 w-40 sm:h-48 sm:w-48 rounded-lg object-cover border"
+                  className="aspect-square w-full rounded-lg object-cover border"
                 />
               ) : (
                 <div
                   role="img"
                   aria-label="אין תמונת שחקן"
-                  className="h-40 w-40 sm:h-48 sm:w-48 rounded-lg bg-muted flex items-center justify-center"
+                  className="aspect-square w-full rounded-lg bg-muted flex items-center justify-center"
                 >
                   <UserRound
-                    className="w-20 h-20 text-muted-foreground"
+                    className="w-1/2 h-1/2 max-w-full text-muted-foreground"
                     aria-hidden="true"
                   />
                 </div>
@@ -65,7 +65,7 @@ export default function AllStarsPlayerPage() {
               {!!player.pokemon?.length && (
                 <ul
                   aria-label="הפוקימונים של השחקן"
-                  className="mt-3 flex flex-wrap gap-2 max-w-[20rem]"
+                  className="cs-pokemon-row mt-3"
                 >
                   {player.pokemon.slice(0, 6).map((name, index) => (
                     <li
@@ -76,7 +76,7 @@ export default function AllStarsPlayerPage() {
                       <img
                         src={pokemonImageUrl(name)}
                         alt={name}
-                        className="h-10 w-10 object-contain"
+                        className="object-contain"
                       />
                     </li>
                   ))}
@@ -160,11 +160,11 @@ export default function AllStarsPlayerPage() {
             </section>
           )}
           {player.deckUrl && (
-            <section aria-label="דק אישי" className="cs-public-card p-6">
-              <h2 className="text-xl font-bold mb-4">דק אישי</h2>
+            <section aria-label="דק נוכחי" className="cs-public-card p-6">
+              <h2 className="text-xl font-bold mb-4">דק נוכחי</h2>
               <img
                 src={player.deckUrl}
-                alt="דק אישי"
+                alt="דק נוכחי"
                 className="w-full max-h-[36rem] object-contain rounded-md"
               />
             </section>

@@ -1055,7 +1055,10 @@ try {
   assert.equal(renderer.root.findAllByType('li').length,0);assert.ok(text(renderer.toJSON()).includes('לכל נבחרת השנה'));
   unmount();
   await mount(el(EncounterValue,{balance:{status:'uneven',maximum:4,competitionYear:'official-year',lagging:[{id:'zero',name:'אפס',gap:4},{id:'partial',name:'ברק',gap:1}]}}));
-  assert.deepEqual(renderer.root.findAllByType('li').map(text),['אפס — חסרים 4','ברק — חסר 1']);assert.ok(text(renderer.toJSON()).includes('אינו מצביע על מפגש שתוכנן'));
+  assert.deepEqual(renderer.root.findAllByType('li').map(text),['אפס — חסרים 4','ברק — חסר 1']);assert.ok(text(renderer.toJSON()).startsWith('4'));
+  assert.ok(!text(renderer.toJSON()).includes('בהשוואה'));
+  assert.ok(!text(renderer.toJSON()).includes('הפער במספר'));
+  assert.equal(renderer.root.findAllByType('p').length,0);
   unmount();
   await mount(route(el(JudgeIndicators,{team:{...team,leaguePosition:null,completedInternalTournamentCount:2}})));
   assert.equal(renderer.root.findAllByType(StatCard).length,3);assert.ok(text(renderer.toJSON()).includes('טרם נקבע'));
@@ -1072,19 +1075,25 @@ try {
   assert.equal(renderer.root.findAllByType(StatCard).length,6,'three metrics per assigned team');assert.equal(renderer.root.findAllByType('article').length,2,'operational team cards preserved');
   unmount();state.auth.user.role='admin';
   // Full profile hierarchy and graceful missing-media state.
-  api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});
+  api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands','Eevee','Mew','Pidgey','Charizard'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});
   await mount(route(el(PublicPlayer),'/all-stars/players/v4','/all-stars/players/:playerId'));
   const profileSections=renderer.root.findAllByType('section');
-  assert.equal(profileSections.at(-1).props['aria-label'],'דק אישי');
+  assert.equal(profileSections.at(-1).props['aria-label'],'דק נוכחי');
   const pokemons=renderer.root.findByProps({'aria-label':'הפוקימונים של השחקן'});
   assert.equal(pokemons.parent.findAllByType('img')[0].props.src,image.url);
   assert.ok(pokemons.findAllByType('li').every(icon=>icon.props.className==='cs-pokemon-frame'));
   assert.equal(pokemons.findAllByType('img')[1].props.src,pokemonImageUrl('Iron Hands'));
   assert.equal(renderer.root.findAllByType('a').find(link=>link.findAllByType('img').some(img=>img.props.src==='https://example.com/team.png')).props.href,'/teams/team');
+  assert.ok(pokemons.props.className.includes('cs-pokemon-row'));
+  assert.ok(!pokemons.props.className.includes('flex-wrap'));
+  assert.equal(pokemons.findAllByType('li').length,6);
+  assert.ok(pokemons.findAllByType('img').every(icon=>!/(?:^| )(?:(?:min-)?w|h)-\d/.test(icon.props.className)));
+  assert.equal(profileSections.at(-1).findByType('h2').children.join(''),'דק נוכחי');
+  assert.equal(profileSections.at(-1).findByType('img').props.alt,'דק נוכחי');
   unmount();
   api.get=async()=>({data:{id:'empty',firstName:'ללא',lastName:'תמונה',team:null,teamRanking:null,badges:[]}});
   await mount(route(el(PublicPlayer),'/all-stars/players/empty','/all-stars/players/:playerId'));
-  assert.ok(renderer.root.findByProps({'aria-label':'אין תמונת שחקן'}));assert.equal(renderer.root.findAllByType('img').length,0);assert.equal(renderer.root.findAllByProps({'aria-label':'דק אישי'}).length,0);
+  assert.ok(renderer.root.findByProps({'aria-label':'אין תמונת שחקן'}));assert.equal(renderer.root.findAllByType('img').length,0);assert.equal(renderer.root.findAllByProps({'aria-label':'דק נוכחי'}).length,0);
   unmount();
   const {readFile}=await import('node:fs/promises');
   const css=await readFile('src/index.css','utf8');
@@ -1093,6 +1102,17 @@ try {
   assert.ok((luminance(foreground)+0.05)/(luminance(background)+0.05)>=4.5,'shared header tokens meet WCAG AA');
   assert.ok(css.includes('.cs-management thead')&&css.includes('--table-header-foreground: var(--cs-white)'));
   assert.ok(css.includes('.cs-management thead button:focus-visible'));
+  const rowRules=css.match(/\.cs-pokemon-row\s*\{([^}]+)\}/)[1];
+  const frameRules=css.match(/\.cs-pokemon-frame\s*\{([^}]+)\}/)[1];
+  const imageRules=css.match(/\.cs-pokemon-frame img\s*\{([^}]+)\}/)[1];
+  assert.ok(rowRules.includes('flex-wrap: nowrap')&&rowRules.includes('width: 100%'));
+  assert.ok(frameRules.includes('flex: 0 1 3rem'));
+  for(const rules of [frameRules,imageRules]){
+    assert.ok(rules.includes('min-width: 0')&&rules.includes('min-height: 0'));
+    assert.ok(!/min-(?:width|height):\s*[1-9]/.test(rules));
+  }
+  assert.ok(!/overflow[^:]*:\s*(?:auto|scroll|hidden)/.test(rowRules),'fit without scrolling or clipping');
+  console.log('2026.10.6 UI checks passed: compact maximum/gap list, six shrinkable no-wrap Pokémon, current-deck labels and retained empty/equal/error states.');
   console.log('2026.10.4 UI checks passed: icon actions, shared field order/heights/media columns, role-specific KPI order/availability/balance, preserved operation cards and image-first profile with deck last.');
   console.log(
     '2026.10.3 UI checks passed: shared bounded player/team editors, team-only fields, Pokémon/deck/join date, team logo/admin actions, paginated request transitions and News validation/CTA.',
