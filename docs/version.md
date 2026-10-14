@@ -605,7 +605,7 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ---
 
-## Current version
+## Previous developed version
 
 **Version:** `2026.10.4`\
 **Status:** `DEVELOPED`\
@@ -677,3 +677,47 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 Responsive layout is verified through component hierarchy/classes and interaction assertions. No manual screenshots or click-through checklist were created.
 
 No PR was created. The link above opens GitHub's PR creation form; the final creation click is still required. The implementation SHA identifies the final code/test commit; the following documentation-only commit records completion metadata.
+
+---
+
+## Current version
+
+**Version:** `2026.10.5`\
+**Status:** `DEVELOPED`\
+**Implementation PR:** None — implemented and pushed directly to `main`, as requested.\
+**Implementation commit:** `3f0909d62a81d615f54304cdad11c4023e3b56bf`\
+**Developed on:** `2026-10-14`\
+**Approved specification source:** `work` at `af98102` (only version 2026.10.5 specifications applied; no branch merge).
+
+### Scope
+
+#### 1. A26 overview indicator — count internal team tournaments instead of inter-team encounters
+- Keep the approved six admin dashboard KPIs and their 3+3 row ordering unchanged.
+- For `A26` (**מפגשי נבחרות השנה**), use **only completed, non-deleted `team_internal` tournaments** for each active team. Count one eligible internal tournament as one meeting for the referenced `Tournament.team`. Explicitly exclude all `inter_team` and `quarterly` tournaments.
+- Scope "השנה" by tournament event date to the current team competition-year window (September 1–August 31, using the `Asia/Jerusalem` calendar). The existing `stage-a-initial` competitionYear placeholder is not a valid year boundary and must not make historical imports count as current-year meetings.
+- Preserve the approved comparison UI: if all active teams have equal counts, show the common number; otherwise list every team below the maximum and its gap, sorted largest gap first. Teams with zero eligible meetings must appear in the comparison. A gap means fewer meetings than the current leader, not a missed scheduled fixture.
+- Use an efficient server-side grouped count query; reuse the existing overview response shape, presenter and cache/fetch flow as far as practical. A26 must no longer depend on unimplemented inter-team standings, two-team encounter associations, or official league ranking. The separate judge `J2` league rank stays unavailable until it has authoritative data.
+- Keep existing `J1`, `J2`, `J7`, `A1`, `A2`, `A3`, `A13` and `A40` behavior unchanged.
+
+### Detailed source of truth
+- `docs/product/management-ui.md` — corrected A26 source/type, year definition, matching and display rules
+- `docs/architecture/frontend-standards.md` — reusable and accessible UI, focused verification
+
+### Required verification and completion
+- Add/update focused tests verifying completed internal tournaments only, date/year boundary, historic imports, soft-deleted records, active/zero-count teams, equal/uneven comparison, and exclusion of `inter_team` and `quarterly`.
+- Follow the existing `AGENTS.md` verification workflow: targeted tests during development; full configured tests/lint/build at version completion.
+- Commit and push directly on `main` per the implementation request; mark `2026.10.5` `DEVELOPED` with actual verification results and known gaps.
+- Do not create a branch or PR; return the final commit SHA.
+
+
+### Implementation verification
+
+- `npm run test:stage-a`: **PASS** — 39 server tests, no failures/skips. Focused coverage verifies internal-only completed meeting counts, canonical completed phase, soft deletion, active/inactive and zero-count teams, equal/uneven comparison, event-date filtering of historical imports despite the `stage-a-initial` placeholder, exclusion of quarterly/inter-team records, September rollover in the Jerusalem calendar, inclusive start/exclusive next-year start and genuine grouped-query failure handling.
+- `npm run test:stage-a:ui`: **PASS** — all 9 configured verification scripts. Existing presenter tests retain equal/uneven comparison and KPI order; added the no-active-teams empty state and actionable query-error presentation. Judge indicators and other dashboard behavior remain covered by the existing regressions.
+- `npm run lint`: **PASS** — 0 errors, 4 pre-existing warnings.
+- `npm run build`: **PASS** — production Vite build; existing Browserslist, mixed-import and bundle-size warnings remain.
+- `git diff --check`: **PASS**.
+
+**Known implementation gaps:** none. The separate judge `J2` official league rank remains pending authoritative standings, unchanged and outside this version's scope. A26 no longer depends on that data source.
+
+The implementation SHA identifies the final code/test commit. This following documentation-only commit records completion metadata on `main`. No feature branch or PR was created.
