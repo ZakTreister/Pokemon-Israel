@@ -19,7 +19,7 @@ export default function PlayerNameFields({
         <input
           id={`${id}-first`}
           type="text"
-          className="w-full px-3 py-2 border border-input rounded-md bg-background"
+          className="cs-player-input"
           value={firstName}
           onChange={(e) => onChange('firstName', e.target.value)}
         />
@@ -28,7 +28,7 @@ export default function PlayerNameFields({
         <input
           id={`${id}-last`}
           type="text"
-          className="w-full px-3 py-2 border border-input rounded-md bg-background"
+          className="cs-player-input"
           value={lastName}
           onChange={(e) => onChange('lastName', e.target.value)}
         />

@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
-import { publicTournaments } from '../../services/publicTournaments';
+import {
+  getOverview,
+  type AdminOverviewSummary,
+} from '../../features/overview/overviewService';
+import { AdminIndicators } from '../../features/overview/components/OverviewIndicators';
 import { requestError } from '../../utils/requestError';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '../../components/ui/Card';
-import { CalendarDays, ArrowRight } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function AdminOverview() {
-  const [summary, setSummary] = useState<Awaited<
-    ReturnType<typeof publicTournaments.summary>
-  > | null>(null);
+  const [summary, setSummary] = useState<AdminOverviewSummary | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    publicTournaments
-      .summary()
+    getOverview()
       .then((data) => {
-        if (active) setSummary(data);
+        if (active && data.role === 'admin') setSummary(data);
       })
       .catch((e) => {
         if (active) setError(requestError(e));
@@ -31,8 +31,6 @@ export default function AdminOverview() {
     };
   }, []);
   const isLoading = !summary && !error;
-  const upcomingTournaments = summary?.upcoming || 0;
-  const totalParticipants = summary?.participants || 0;
   const nearestTournament = summary?.nearest;
   return (
     <div>
@@ -43,61 +41,9 @@ export default function AdminOverview() {
       {error && <p role="alert">{error}</p>}
       {isLoading ? (
         <div className="animate-pulse text-center py-12">טוען נתונים...</div>
-      ) : (
+      ) : summary ? (
         <>
-          <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-3 mb-8">
-            <Card className="cs-stat min-h-[150px]">
-              <CardHeader className="pb-2">
-                <CardDescription>טורנירים קרובים</CardDescription>
-                <CardTitle className="text-3xl">
-                  {upcomingTournaments}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link
-                  to="/admin/tournaments"
-                  className="text-sm text-blue-500 flex items-center hover:underline font-bold"
-                >
-                  <span>ניהול טורנירים</span>
-                  <ArrowRight size={14} className="mr-1" />
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="cs-stat min-h-[150px]">
-              <CardHeader className="pb-2">
-                <CardDescription>סה"כ משתתפים</CardDescription>
-                <CardTitle className="text-3xl">{totalParticipants}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link
-                  to="/admin/users"
-                  className="text-sm text-blue-500 flex items-center hover:underline font-bold"
-                >
-                  <span>ניהול משתמשים</span>
-                  <ArrowRight size={14} className="mr-1" />
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card className="cs-stat min-h-[150px]">
-              <CardHeader className="pb-2">
-                <CardDescription>אחוז תפוסה בטורנירים</CardDescription>
-                <CardTitle className="text-3xl">
-                  {summary?.capacity
-                    ? Math.round((totalParticipants / summary.capacity) * 100)
-                    : 0}
-                  %
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <span className="text-sm text-muted-foreground">
-                  מתוך קיבולת כוללת
-                </span>
-              </CardContent>
-            </Card>
-          </div>
-
+          {summary && <AdminIndicators summary={summary} />}
           <div className="grid grid-cols-1 gap-6">
             <Card>
               <CardHeader>
@@ -134,7 +80,7 @@ export default function AdminOverview() {
                       </div>
                       <div className="pt-3">
                         <Link
-                          to={`/admin/tournaments/${nearestTournament.id}`}
+                          to={nearestTournament.managementPath}
                           className="text-blue-500 hover:underline font-bold"
                         >
                           ניהול הטורניר
@@ -149,7 +95,7 @@ export default function AdminOverview() {
             </Card>
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

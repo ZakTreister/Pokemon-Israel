@@ -67,6 +67,7 @@ const teamsService = {
         playerNumber,
         description,
         dateOfBirth,
+        joinedAt,
         photoUploadId,
       }) => ({
         firstName,
@@ -75,6 +76,7 @@ const teamsService = {
         playerNumber,
         description,
         dateOfBirth,
+        joinedAt,
         photoUploadId,
       }),
     );

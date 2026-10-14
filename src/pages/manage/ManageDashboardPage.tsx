@@ -89,7 +89,7 @@ export default function ManageDashboardPage() {
     );
   const nested = location.pathname.split('/').filter(Boolean).length > 2;
   return (
-    <div className="cs-workspace">
+    <div className="cs-workspace cs-management">
       <div className="container py-6">
         <div
           className={`flex items-center justify-between ${tournamentOperation ? 'mb-3' : 'mb-6'}`}
@@ -186,8 +186,8 @@ export default function ManageDashboardPage() {
                 index
                 element={
                   <>
-                    <TeacherTeams />
                     {admin && <AdminOverview />}
+                    <TeacherTeams />
                   </>
                 }
               />

@@ -1,3 +1,5 @@
+import { UserRound } from 'lucide-react';
+import { TeamEmblem } from '../components/teams/TeamCard';
 import { pokemonImageUrl } from '../features/players/utils/playerProfile';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -40,51 +42,65 @@ export default function AllStarsPlayerPage() {
           >
             → חזרה ל{player.team ? 'נבחרת' : 'All Stars'}
           </Link>
-          <div className="cs-public-card p-6">
-            {player.photoUrl && (
-              <img
-                src={player.photoUrl}
-                alt={`תמונה של ${player.firstName}`}
-                className="h-28 w-28 rounded-lg object-cover mb-4"
-              />
+          <div className="cs-public-card p-6 flex flex-wrap items-start justify-between gap-6">
+            <div className="min-w-0 max-w-full">
+              {player.photoUrl ? (
+                <img
+                  src={player.photoUrl}
+                  alt={`תמונה של ${player.firstName}`}
+                  className="h-40 w-40 sm:h-48 sm:w-48 rounded-lg object-cover border"
+                />
+              ) : (
+                <div
+                  role="img"
+                  aria-label="אין תמונת שחקן"
+                  className="h-40 w-40 sm:h-48 sm:w-48 rounded-lg bg-muted flex items-center justify-center"
+                >
+                  <UserRound
+                    className="w-20 h-20 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </div>
+              )}
+              {!!player.pokemon?.length && (
+                <ul
+                  aria-label="הפוקימונים של השחקן"
+                  className="mt-3 flex flex-wrap gap-2 max-w-[20rem]"
+                >
+                  {player.pokemon.slice(0, 6).map((name, index) => (
+                    <li
+                      key={`${name}-${index}`}
+                      title={name}
+                      className="cs-pokemon-frame"
+                    >
+                      <img
+                        src={pokemonImageUrl(name)}
+                        alt={name}
+                        className="h-10 w-10 object-contain"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {player.team && (
+              <Link
+                aria-label={`לנבחרת ${player.team.name}`}
+                to={`/teams/${player.team.id}`}
+                className="flex flex-col items-center gap-2 text-blue-500 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+              >
+                <TeamEmblem team={player.team} />
+              </Link>
             )}
+          </div>
+          <section
+            aria-label="פרטי שחקן"
+            className="cs-public-card p-6 space-y-3"
+          >
             <p className="text-blue-500 font-bold">ALL STARS</p>
             <h1 className="text-3xl font-extrabold">
               {player.firstName} {player.lastName}
             </h1>
-            {player.age !== undefined && <p>גיל: {player.age}</p>}
-            {player.description && (
-              <p className="whitespace-pre-wrap break-words mt-3">
-                {player.description}
-              </p>
-            )}
-            {player.tenureYears !== undefined && (
-              <p>וותק: {player.tenureYears} שנים</p>
-            )}
-            {player.deckUrl && (
-              <section className="mt-4">
-                <h2 className="font-bold">דק אישי</h2>
-                <img
-                  src={player.deckUrl}
-                  alt="דק אישי"
-                  className="w-full max-h-96 object-contain"
-                />
-              </section>
-            )}
-            {!!player.pokemon?.length && (
-              <ul className="flex flex-wrap gap-3 mt-4">
-                {player.pokemon.map((name, index) => (
-                  <li key={index}>
-                    <img
-                      src={pokemonImageUrl(name)}
-                      alt={name}
-                      className="w-20 h-20 object-contain"
-                    />
-                    <span>{name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
             {player.city && <p>{player.city}</p>}
             {player.playerNumber && <p>מספר שחקן: {player.playerNumber}</p>}
             {player.team && (
@@ -92,7 +108,16 @@ export default function AllStarsPlayerPage() {
                 {player.team.name}
               </Link>
             )}
-          </div>
+            {player.age !== undefined && <p>גיל: {player.age}</p>}
+            {player.tenureYears !== undefined && (
+              <p>וותק: {player.tenureYears} שנים</p>
+            )}
+            {player.description && (
+              <p className="whitespace-pre-wrap break-words mt-3">
+                {player.description}
+              </p>
+            )}
+          </section>
           <section className="cs-public-card p-6">
             <h2 className="text-xl font-bold">דירוג בנבחרת</h2>
             {player.teamRanking ? (
@@ -132,6 +157,16 @@ export default function AllStarsPlayerPage() {
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+          {player.deckUrl && (
+            <section aria-label="דק אישי" className="cs-public-card p-6">
+              <h2 className="text-xl font-bold mb-4">דק אישי</h2>
+              <img
+                src={player.deckUrl}
+                alt="דק אישי"
+                className="w-full max-h-[36rem] object-contain rounded-md"
+              />
             </section>
           )}
         </>

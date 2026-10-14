@@ -1,7 +1,7 @@
 import express from 'express';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
-  getTeams,
+  getTeams, getOverview,
   getTeachers,
   getMyTeams,
   getPublicTeams,
@@ -19,6 +19,7 @@ const router = express.Router();
 
 // /manageable-players must be declared before /:id
 router.get('/teachers', protect, authorize('admin'), getTeachers);
+router.get('/overview', protect, authorize('admin', 'judge'), getOverview);
 router.get('/mine', protect, authorize('admin', 'judge'), getMyTeams);
 router.get('/public', getPublicTeams);
 router.get('/public/:id', getPublicTeam);

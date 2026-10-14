@@ -22,7 +22,7 @@ export default function PlayerNumberField({
         onChange={(e) => onChange(e.target.value)}
         required={required}
         disabled={disabled}
-        className="w-full p-2 border rounded-md bg-background"
+        className="cs-player-input"
       />
     </FormField>
   );

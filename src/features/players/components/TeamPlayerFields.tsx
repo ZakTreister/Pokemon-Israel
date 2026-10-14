@@ -1,7 +1,7 @@
 import TeamPlayerProfileFields, {
   type TeamProfileValues,
 } from './TeamPlayerProfileFields';
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import PlayerNameFields from './PlayerNameFields';
 import PlayerNumberField from './PlayerNumberField';
 import FormField from '../../../components/ui/FormField';
@@ -15,10 +15,12 @@ export default function TeamPlayerFields({
   value,
   onChange,
   newPlayer = false,
+  children,
 }: {
   value: TeamPlayerValues;
   onChange: (value: TeamPlayerValues) => void;
   newPlayer?: boolean;
+  children?: ReactNode;
 }) {
   const id = useId();
   return (
@@ -34,17 +36,18 @@ export default function TeamPlayerFields({
           value={value.city}
           maxLength={100}
           onChange={(e) => onChange({ ...value, city: e.target.value })}
-          className="w-full p-2 border rounded-md bg-background"
+          className="cs-player-input"
         />
       </FormField>
-      <TeamPlayerProfileFields
-        value={value}
-        onChange={(profile) => onChange({ ...value, ...profile })}
-      />
       <PlayerNumberField
         value={value.playerNumber}
         required={newPlayer}
         onChange={(playerNumber) => onChange({ ...value, playerNumber })}
+      />
+      {children}
+      <TeamPlayerProfileFields
+        value={value}
+        onChange={(profile) => onChange({ ...value, ...profile })}
       />
     </>
   );

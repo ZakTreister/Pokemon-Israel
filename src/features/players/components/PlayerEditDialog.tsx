@@ -57,7 +57,7 @@ export default function PlayerEditDialog({
         <label>
           עיר
           <input
-            className="block w-full p-2 border rounded-md bg-background"
+            className="cs-player-input"
             value={value.city}
             onChange={(e) => setValue({ ...value, city: e.target.value })}
           />
@@ -68,34 +68,15 @@ export default function PlayerEditDialog({
             onChange={(playerNumber) => setValue({ ...value, playerNumber })}
           />
         )}
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={value.isActive}
-            onChange={(e) => setValue({ ...value, isActive: e.target.checked })}
-          />
-          פעיל
-        </label>
         {team && (
           <>
-            <label>
-              תאריך הצטרפות
-              <input
-                type="date"
-                className="block w-full p-2 border rounded-md bg-background"
-                value={value.joinedAt}
-                onChange={(e) =>
-                  setValue({ ...value, joinedAt: e.target.value })
-                }
-              />
-            </label>
             <div className="md:col-span-2">
               <TeamPlayerProfileFields
                 value={value}
                 onChange={(profile) => setValue({ ...value, ...profile })}
               />
             </div>
-            <div className="md:col-span-2">
+            <div className="min-w-0">
               <PlayerPhotoField
                 playerType="team"
                 entityId={player.id}
@@ -109,7 +90,7 @@ export default function PlayerEditDialog({
                 }}
               />
             </div>
-            <div className="md:col-span-2">
+            <div className="min-w-0">
               <ImageUpload
                 purpose="player-deck"
                 playerType="team"
@@ -140,7 +121,7 @@ export default function PlayerEditDialog({
                     <input
                       aria-label={`פוקימון ${index + 1}`}
                       dir="ltr"
-                      className="p-2 border rounded-md w-36 bg-background"
+                      className="cs-player-input max-w-36"
                       value={name}
                       onChange={(e) =>
                         setValue({
@@ -185,6 +166,14 @@ export default function PlayerEditDialog({
             </fieldset>
           </>
         )}
+        <label className="md:col-span-2 flex items-center gap-2 pt-2">
+          <input
+            type="checkbox"
+            checked={value.isActive}
+            onChange={(e) => setValue({ ...value, isActive: e.target.checked })}
+          />
+          פעיל
+        </label>
       </form>
     </Modal>
   );

@@ -187,7 +187,7 @@ export default function HistoricalTournamentPage() {
           </label>
           <div className="overflow-x-auto">
             <table className="w-full text-right">
-              <thead>
+              <thead className="cs-table-head">
                 <tr>
                   {[
                     'מקום',

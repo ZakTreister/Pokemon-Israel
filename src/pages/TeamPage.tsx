@@ -27,6 +27,7 @@ import Button from '../components/ui/Button';
 interface ChildRow {
   description?: string;
   dateOfBirth?: string;
+  joinedAt?: string;
   photoUploadId?: string | null;
   photoUrl?: string;
   playerNumber: string;
@@ -314,7 +315,7 @@ export default function TeamPage() {
                                 ),
                               )
                             }
-                            className="p-2 border rounded-md bg-background"
+                            className="cs-player-input"
                           />
                         ),
                       )}

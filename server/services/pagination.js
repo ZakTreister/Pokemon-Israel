@@ -23,7 +23,7 @@ export function tournamentQuery(params, now = new Date()) {
   if (['quarterly', 'team_internal', 'inter_team'].includes(params.type))
     clauses.push(
       params.type === 'quarterly'
-        ? { $or: [{ type: 'quarterly' }, { type: { $exists: false } }] }
+        ? { $or: [{ type: 'quarterly' }, { type: null }] }
         : { type: params.type },
     );
   const completed = { $or: [{ status: 'completed' }, { phase: 'completed' }] };
