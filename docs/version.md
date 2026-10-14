@@ -726,10 +726,11 @@ The implementation SHA identifies the final code/test commit. This following doc
 
 ## Current version
 
-**Version:** `2026.10.6`  
-**Status:** `READY_FOR_DEVELOPMENT`  
-**Implementation branch:** `main` (direct implementation; no PR)  
-**Implementation commit:** Pending
+**Version:** `2026.10.6`\
+**Status:** `DEVELOPED`\
+**Implementation branch:** `main` (direct implementation; no PR)\
+**Implementation commit:** `995f82befe066530f8516f4c8b4555c07bf287e9`\
+**Developed on:** `2026-10-14`
 
 ### Scope
 
@@ -746,3 +747,17 @@ The implementation SHA identifies the final code/test commit. This following doc
 - Update focused UI checks to verify absence of A26 explanatory text, maximum and every lagging line; Pokémon no-wrap and shrinkable no-minimum sizing; renamed deck heading/aria/alt; existing profiles and empty/equal/error states remain intact.
 - Follow `AGENTS.md`: focused tests during development and full configured tests, lint and build at completion.
 - Work, commit and push **directly on `main`** (no feature branch or PR). Mark version `DEVELOPED` with actual verification results, final SHA and known gaps.
+
+
+### Implementation verification
+
+- `npm run test:stage-a`: **PASS** — 39 server tests, no failures/skips. Existing annual internal-meeting calculation, lifecycle, archive, authorization and tournament regressions remain intact; no server/data changes in this version.
+- `npm run test:stage-a:ui`: **PASS** — all 9 configured scripts. Focused assertions verify the prominent A26 maximum and every lagging-team line without explanatory text; retained equal/empty/error states; all six configured Pokémon beneath the portrait in a no-wrap, shrinkable row with zero minimum dimensions and no scrolling/clipping workaround; and `דק נוכחי` in the final section heading, ARIA label and image alt. Existing profile/media/missing-field behavior remains covered.
+- Responsive sizing is verified through component hierarchy and CSS contracts: portrait-bounded row, percentage gaps, shrinkable frames, proportional icon sizes, zero minimum width/height and maximum-only size caps. No manual screenshots or click-through checklist were created.
+- `npm run lint`: **PASS** — 0 errors, 4 pre-existing warnings.
+- `npm run build`: **PASS** — production Vite build; existing Browserslist, mixed-import and bundle-size warnings remain.
+- `git diff --check`: **PASS**.
+
+**Known implementation gaps:** none.
+
+Implemented directly on `main`; no feature branch or PR was created. The implementation SHA identifies the final code/test commit; the following documentation-only commit records completion metadata.
