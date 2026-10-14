@@ -259,3 +259,61 @@ Management **טורנירים** uses real server-side pagination, matching the P
 - do not preload all tournaments
 
 For summary counters, use pagination `total` / count-only data instead of loading entity rows when the rows are not displayed.
+
+
+
+
+## Overview dashboard KPIs — approved 2026.10.4
+
+Replace the existing generic overview KPI strip with role-appropriate, fixed KPI sets. Keep the existing operational `הנבחרות שלי` cards (including the single start/continue-tournament action) and other relevant overview content; avoid duplicating KPI cards.
+
+**Judge** (assigned team): exactly three compact metrics scoped to **that assigned team**:
+1. **שחקנים פעילים** (`J1`): non-deleted active `team` Players currently assigned to the team.
+2. **מיקום בליגה** (`J2`): canonical position in the **current competition year's official inter-team standings**, displayed as `X / N` where N is the number of competing ranked teams. Never derive it from internal player rankings. If official standings are not available/implemented, show `טרם נקבע` or a clearly unavailable state, not an invented rank or an assumed zero.
+3. **טורנירים פנימיים** (`J7`): number of non-deleted, completed `team_internal` tournaments for this team (including recorded historical internal tournaments). Label/count as completed, not merely created.
+
+If a judge is assigned multiple teams, keep these three metrics scoped **per team**, rather than merging unrelated teams. Do not reveal another judge's team-only management data.
+
+**Admin**: exactly six system-wide KPI cards in the following **fixed two-row order** (three columns on desktop; responsive stacking on mobile). Do not keep the old `A17` type-breakdown card in the dashboard; it is replaced by the completed-quarterly-tournaments metric.
+
+**Row 1 — All Stars teams**
+1. **נבחרות פעילות** (`A1`): count active Teams.
+2. **שחקני נבחרות** (`A2`): count active, non-archived Players with `playerType='team'`.
+3. **מפגשי נבחרות השנה** (`A26`): dynamic **per-team comparison of completed official inter-team encounters** in the **current official team competition year** (not calendar year). See exact display and calculation below.
+
+**Row 2 — Live operations and club activity**
+4. **טורנירים פעילים** (`A13`): count all non-deleted tournaments whose canonical lifecycle is currently `active`, across tournament types.
+5. **שחקני חוגים** (`A3`): count active, non-archived Players with `playerType='quarterly'`.
+6. **טורנירים רבעוניים שהושלמו** (`A40`, new KPI, replacing `A17`): count completed, non-deleted **quarterly/club tournaments across all years**, including legacy tournaments without an explicit `type` (the existing `type || 'quarterly'` fallback). Include tournaments only if canonical lifecycle is `completed`; exclude future/active ones. Each tournament document is counted once. No grouping into other tournament types.
+
+**A26 computation / display — important revised definition**
+- Select **all currently active teams** (not only teams that have encounter data); include teams with **zero** completed encounters.
+- Consider official, canonical inter-team encounters with `type='inter_team'`, canonical **completed** lifecycle, `deletedAt=null`, and the **current official competition year** per the official annual team-competition reset/key. Exclude incomplete, cancelled and soft-deleted encounters.
+- Count **one participation per team per completed encounter**, using **both actual competing team IDs**. Thus an encounter of Team A vs Team B adds 1 to Team A's count and 1 to Team B's count; this KPI is **not** a count of globally distinct encounters, Swiss rounds, player matches or team league points. Do not infer two teams from a single `team` ID.
+- `maxEncounters = max(completedEncounterCount for each active team)`. If all active teams have equal counts, the card shows **that single count** and the subtitle **לכל נבחרת השנה**, including 0 if the canonical league data exists but no encounters have yet occurred.
+- Otherwise, show the **names of every lagging active team** and **its missing count** `maxEncounters - teamCount` (e.g. `נבחרת ברק — חסרים 2`; `נבחרת אש — חסר 1`). Do not show leaders as if lagging. A compact line indicating the highest per-team count can clarify the comparison. If all lagging teams cannot fit without clipping, let this card accommodate the list or allow an accessible in-card expansion; do not silently omit names.
+- "חסרים" means the **gap from the currently highest-played team**, **not** proof that an encounter was scheduled or missed. The card should make that comparison apparent to avoid claiming missing scheduled events.
+- Do not compare against historic/inactive teams. Use a stable sort (greatest gap first, then team name), and stable team IDs as keys.
+- The current schema/implementation does **not yet provide authoritative two-team encounter participants or fully functioning official team standings**. Before reporting a real A26 number, rely on or implement a canonical association of both participating team IDs and competition-year assignment as part of the required feature work. Never fabricate counts, infer participants from a lone `team` field, treat absence of a working data source as genuine zero, or secretly count all system encounters instead. If authoritative encounter data is not yet available, display a clear unavailable/pending-data state.
+- Use grouped/aggregate database-side computations rather than fetching all tournament and player records into the browser. Keep the team-scoped judge KPIs as previously approved.
+
+**Presentation and implementation**:
+- Cards are concise, linkable to the relevant authorized management/team view, and use the existing CardSchool stat-card system. Respect keyboard/RTL/mobile and role restrictions.
+- In `A26`, show either the equal per-team count or the full lagging-team/gap list (never both modes at once). Show `A40` as one concise total with an all-time completed-tournaments scope.
+- All counts/rankings come from server-side count/group/summary queries or canonical derived competition results, not fetching entire Player/Team/Tournament collections just to calculate `.length`.
+- Reuse count and lifecycle semantics across lists, dashboards and soft-delete filters. Prefer one role-appropriate overview summary endpoint/shared query functions, avoiding repeated N+1 requests.
+- The official inter-team encounter engine/team standings are still future work. Accurate `A26` and `J2` require authoritative completed-encounter participation and competition-year data; until then, show honest unavailable states rather than invented counts or rankings.
+- Preserve useful existing "nearest tournament" and team quick-operation context below the KPIs when applicable, without adding a fourth/seventh KPI.
+
+## Player management table refinements — 2026.10.4
+In **ניהול → שחקנים**:
+- render **עריכת שחקן** and **מחק שחקן** as compact icon-only contextual actions, using the shared button/icon system; keep accessible Hebrew names (`aria-label` and/or title/tooltip), keyboard focus, touch targets and the existing deletion confirmation/authorization
+- clicking either action must not activate clickable-row navigation
+- remove the **חשבון** column from the Players table; it currently shows the optional legacy `player.user.username` relationship, but children do not require login accounts in Stage A
+- removing this table column must **not** delete/migrate the optional legacy User linkage or alter backward compatibility/API semantics
+
+## Management table header contrast — 2026.10.4
+- replace the excessively pale header-row styling on management tables with a clearly differentiated background and readable foreground using existing CardSchool theme tokens
+- ensure WCAG AA text contrast (at least 4.5:1 for normal header text), including RTL/mobile and hover/focus/sort states
+- prefer a shared DataTable/table-header primitive or reusable styling over repeating ad-hoc class changes across pages
+- retain existing table columns, sorting, filters and behavior except for the expressly removed **חשבון** column above

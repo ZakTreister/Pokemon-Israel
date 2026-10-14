@@ -474,7 +474,7 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ---
 
-## Current version
+## Last developed version
 
 **Version:** `2026.10.3`\
 **Status:** `DEVELOPED`\
@@ -601,3 +601,59 @@ In the implementation PR for `2026.10.3`, Codex must:
 - return the PR link to the user
 
 If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Current version
+
+**Version:** `2026.10.4`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** Pending  
+**Implementation commit:** Pending
+
+### Scope
+
+#### 1. Players-management table polish
+- replace the edit/delete text buttons in **ניהול → שחקנים** with accessible, contextual icon-only actions; preserve confirmation, authorization, keyboard support and non-navigating action clicks
+- remove the legacy **חשבון** column from the table; keep underlying optional legacy User linkage intact for backward compatibility
+- improve management-table header rows with darker/clearer shared semantic backgrounds and WCAG AA foreground contrast; reuse styling across affected tables
+
+#### 2. Player form layout polish
+- improve field order, spacing and responsive two-column grid in the canonical Player editor and matching creation forms
+- put **תאריך לידה** and **תאריך הצטרפות** beside each other above **תיאור קצר** for team players
+- put **תמונת שחקן** and **דק אישי** beside each other on desktop, stacking on mobile
+- move the **פעיל** checkbox to the bottom of both team and regular-player forms
+- standardize the height of all single-line inputs, date fields and selects; keep textarea/media controls appropriately sized
+- preserve the canonical editor, field validation, uploads, semantics and permissions
+
+#### 3. Public All Stars player profile layout
+- reorder the public player page as portrait/team identity and small Poké Ball-framed Pokémon icons at the top, readable identity/bio/stats/badges in the middle, and the personal deck image **last**
+- display **up to 6 configured Pokémon** in small Poké Ball-styled frames **directly beneath the player photo**, using the existing Pokémon image URL helper
+- place the existing team's logo in the header/media area, visually balanced with the player portrait, linked to the public team page
+- maintain clear responsive RTL layout, accessible labels, optional-field fallbacks, team-only ranking and existing public data privacy
+- do not add a new backend/media integration solely for the team logo or Poké Ball styling
+
+#### 4. Role-specific overview dashboard indicators
+- Judge: exactly three **team-scoped** indicators — `J1` active players, `J2` position in the official inter-team league, `J7` completed internal tournaments. Show separate sets for multiple assigned teams; do not fabricate league position when official inter-team standings do not yet exist.
+- Admin: exactly six **system-wide** indicators in a fixed 3+3 dashboard layout (responsive):
+  - **Row 1:** `A1` active teams, `A2` active team players, `A26` completed official encounters **per active team** in the current competition year.
+  - **Row 2:** `A13` currently active tournaments, `A3` active club/quarterly players, **`A40` completed quarterly tournaments** (all time, non-deleted, including legacy type-null tournaments).
+- **Revised `A26`:** compute one completed encounter participation for each of its two competing teams, grouped by active team for the current official competition year. If **all active teams have the same count**, show this common number (`N לכל נבחרת`). If counts differ, list **each team below the maximum and its gap** (`max - count`), including teams on zero; label the difference as a comparison to the highest-played team, not necessarily an unscheduled/missed fixture. Exclude soft-deleted/unfinished encounters and past competition years. Do not infer both teams from the single existing tournament `team` field; unavailable canonical encounter participant data must produce an honest unavailable state, not fabricated results.
+- The former `A17` all-types breakdown is **not** one of the six selected indicators.
+- Use efficient server-side summaries/counts and canonical ranking/lifecycle semantics, not full entity list fetching. Preserve existing operational team cards and useful nearest-tournament panel below the KPIs.
+- See `docs/product/management-ui.md` for complete definitions, year/data availability constraints and responsive/accessibility requirements.
+
+### Detailed source of truth
+- `docs/product/management-ui.md` — Players-table actions, legacy account column, reusable table-header styling/contrast and role-specific overview metrics
+- `docs/product/players.md` — precise Player form layout, public All Stars player page hierarchy and responsive behavior
+- `docs/architecture/frontend-standards.md` — reusable components, accessible forms/tables and focused verification
+
+### Verification and completion
+- check both Players-management and team-page entry points into the shared editor; verify regular/team forms, desktop/mobile layout and input sizes
+- check nested icon actions do not navigate and delete confirmation remains intact
+- check table header contrast across management screens
+- verify judge KPIs and the exact admin 3+3 row order, A26 equal-count and uneven-count/zero-participation team scenarios with competition-year/soft-delete semantics, completed-only all-time A40 including legacy quarterly records, and honest unavailable league-data states
+- verify public All Stars player page: small Poké Ball-framed Pokémon under portrait, team logo identity, readable details/ranking/badges, deck as final section and absent-field/mobile cases
+- during development run only directly relevant tests; once the version is complete run the full configured tests, lint and build per `AGENTS.md`
+- update this version to `DEVELOPED` with commit, actual test results and known gaps; do not create a PR, return the direct `work` → `main` PR creation link
