@@ -153,14 +153,14 @@ Rework the public `/all-stars/players/:playerId` page into a coherent, image-fir
 - Place the current team's logo/emblem in a balanced, clearly associated position in this top identity area (for example as a separate smaller team identity tile opposite the portrait). Keep the team logo visually secondary to the player's portrait and make the team identity navigate to the team's public page.
 - The public-player response already includes `team.logo`; reuse that existing value, with a clean fallback if unavailable. No new backend field or separate fetch should be needed.
 - Directly **under the player portrait**, display the player's **up to six** favorite Pokémon as **small icon-sized images** (not large standalone image cards). Each Pokémon image should be placed *inside or in front of* a compact **Poké Ball-styled circular frame** so the Pokémon remains recognizable and the Poké Ball outline/button motif is visibly clear.
-- Show only Pokémon actually configured; do not render six empty slots. Wrap or reduce spacing responsively without clipping on narrow screens. Reuse the existing central Pokémon-image URL derivation; no new stored image values.
+- Show only Pokémon actually configured (up to 6); do not render empty slots. Keep all configured Pokémon **in one horizontal row directly beneath the portrait at every viewport width**, without wrapping, horizontal scrolling or clipping. Icon images and their Poké Ball frames must **shrink fluidly** to fit within the available portrait/row width, even when all six are present. **Do not impose a positive minimum width/height/size on icon or frame**; a reasonable maximum size is allowed. Use `min-width: 0`/appropriate flex or grid min-content resets as needed, and preserve the Poké Ball motif and alt text. Reuse the central Pokémon-image URL helper.
 - Decorative Poké Ball framing should be built with lightweight CSS/reusable visual styling or an existing suitable asset; do not require an externally fetched new decorative image. Preserve accessible alt text/names for each Pokémon.
 
 **Content order below the top imagery**
 1. Player's full name as the page heading, team name/link, and key identity facts such as player number and city.
 2. Available age, tenure and optional short description, grouped semantically in a readable hierarchy.
 3. Team-specific competitive statistics/ranking (position, points, tournament count) and any awarded badges, keeping their existing meaning and display rules.
-4. **Personal deck image last**, in a final dedicated section after **all** profile details, ranking and badges. Omit this section entirely if no deck image exists.
+4. **Current deck (`דק נוכחי`) image last**, in a final dedicated section after **all** profile details, ranking and badges. On the public player page use `דק נוכחי` for the section heading, accessible name and image alt text instead of `דק אישי`. Omit the section entirely if no deck exists; do not change persisted deck fields or upload purposes.
 
 Keep ordinary textual information **between** the top player/team/Pokémon imagery and the final deck image. Avoid inserting text or badges after the deck. Do not duplicate player/team details, create a global All Stars individual ranking, expose date of birth, or change the public player authorization/data contract.
 
@@ -382,3 +382,8 @@ Apply these ordering and spacing requirements to the canonical Player edit dialo
 - position the **פעיל** checkbox at the **bottom of the form** (for both team and regular players), above the form actions
 - normalize the visible height of all single-line text, number, date and select inputs using shared form styles; do not force textareas, checkboxes or image upload controls to single-line input height
 - preserve touch-friendly targets, clear focus/validation styling, RTL alignment, internal modal scrolling and reachable save/cancel actions
+
+
+## Public player visual corrections — 2026.10.6
+- Pokémon: exactly one unbroken horizontal row under the player portrait, up to six configured icon images in Poké Ball frames; both frame and icon shrink freely on narrow displays, no positive minimum dimensions, no horizontal scroll/overflow, and a maximum size is allowed.
+- Public player page deck section: show **דק נוכחי** (including heading/ARIA/alt); keep it last. Existing storage, uploaded image and underlying DTO stay unchanged.
