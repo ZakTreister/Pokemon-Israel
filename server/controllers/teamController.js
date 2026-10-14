@@ -1,3 +1,5 @@
+import {adminOverview} from '../services/overview.js';
+import {tournamentQuery} from '../services/pagination.js';
 import {
   likelyPlayers,
   migratePlayerIdentityIndex,
@@ -78,8 +80,7 @@ async function summaryCounts(teams) {
         $match: {
           team: { $in: ids },
           type: 'team_internal',
-          engineVersion: 'swiss-v1',
-          status: 'completed',
+          ...tournamentQuery({status:'completed'}),
           deletedAt: null,
         },
       },
@@ -131,8 +132,7 @@ async function counts(team) {
     Tournament.countDocuments({
       team: team._id,
       type: 'team_internal',
-      engineVersion: 'swiss-v1',
-      status: 'completed',
+      ...tournamentQuery({status:'completed'}),
     }),
   ]);
   return { playerCount, completedInternalTournamentCount };
@@ -370,4 +370,10 @@ export const loadTeamPlayers = asyncHandler(async (req, res) => {
     attachments.map((attachment) => finishAttachment(req, attachment)),
   );
   res.status(201).json(output);
+});
+
+export const getOverview = asyncHandler(async(req,res)=>{
+  if(req.user.role==='admin') { res.json(await adminOverview());return; }
+  const teams=await Team.find({teacher:req.user._id}).select('name logo logoMedia isActive teacher').sort({normalizedName:1,_id:1});
+  res.json({role:'judge',teams:(await managementTeams(teams)).map(team=>({...team,leaguePosition:null}))});
 });

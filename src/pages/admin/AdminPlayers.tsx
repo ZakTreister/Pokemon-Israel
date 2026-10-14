@@ -27,7 +27,7 @@ import {
   Users,
   AlertCircle,
   Pencil,
-  ShieldCheck,
+  Trash2,
   CircleDot,
 } from 'lucide-react';
 import type { Player } from '../../types/player';
@@ -37,6 +37,7 @@ type FilterType = 'all' | 'team' | 'quarterly';
 interface TeamFormData {
   description?: string;
   dateOfBirth?: string;
+  joinedAt?: string;
   playerNumber: string;
   teamId: string;
   firstName: string;
@@ -369,8 +370,8 @@ export default function AdminPlayers() {
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="bg-muted border-b border-border text-right">
+              <thead className="cs-table-head">
+                <tr className="border-b border-border text-right">
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                     שם פרטי
                   </th>
@@ -385,9 +386,6 @@ export default function AdminPlayers() {
                   </th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                     סטטוס
-                  </th>
-                  <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
-                    חשבון
                   </th>
                   <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                     פעולות
@@ -435,34 +433,25 @@ export default function AdminPlayers() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {player.user ? (
-                        <span className="flex items-center gap-1 text-success">
-                          <ShieldCheck size={14} />
-                          <span className="text-xs">
-                            {player.user.username}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
                       <Button
                         contextual
                         variant="outline"
-                        size="sm"
+                        size="icon"
+                        aria-label="עריכת שחקן"
+                        title="עריכת שחקן"
                         onClick={() => handleEditClick(player)}
                       >
-                        <Pencil size={14} className="ml-1" />
-                        עריכת שחקן
+                        <Pencil size={16} aria-hidden="true" />
                       </Button>
                       <Button
                         contextual
                         variant="destructive"
-                        size="sm"
+                        size="icon"
+                        aria-label="מחק שחקן"
+                        title="מחק שחקן"
                         onClick={() => void archive(player)}
                       >
-                        מחק שחקן
+                        <Trash2 size={16} aria-hidden="true" />
                       </Button>
                     </td>
                   </NavigableRow>
@@ -496,6 +485,7 @@ export default function AdminPlayers() {
       {showTeamModal && (
         <Modal
           title="הוסף שחקן נבחרת"
+          panelClassName="max-w-3xl"
           onClose={isSubmitting || uploading ? undefined : closeAllModals}
         >
           {formError && (
@@ -504,7 +494,7 @@ export default function AdminPlayers() {
             </div>
           )}
           <form
-            className="space-y-4"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
             onSubmit={(e) => {
               e.preventDefault();
               void handleCreateTeamPlayer();
@@ -514,37 +504,40 @@ export default function AdminPlayers() {
               newPlayer
               value={teamForm}
               onChange={(value) => setTeamForm({ ...teamForm, ...value })}
-            />
-            <label className="block">
-              נבחרת
-              <select
-                aria-label="נבחרת"
-                required
-                className="block w-full p-2 border rounded-md bg-background"
-                value={teamForm.teamId}
-                onChange={(e) =>
-                  setTeamForm({ ...teamForm, teamId: e.target.value })
-                }
-              >
-                <option value="">בחרו נבחרת</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <PlayerPhotoField
-              playerType="team"
-              value={photoUrl}
-              onChange={(image) => {
-                setPhotoUrl(image?.url || '');
-                setPhotoUploadId(image?.uploadId || null);
-              }}
-              onBusyChange={setUploading}
-              disabled={isSubmitting}
-            />
-            <div className="flex justify-end gap-2 mt-6">
+            >
+              <label className="block md:col-span-2">
+                נבחרת
+                <select
+                  aria-label="נבחרת"
+                  required
+                  className="cs-player-input"
+                  value={teamForm.teamId}
+                  onChange={(e) =>
+                    setTeamForm({ ...teamForm, teamId: e.target.value })
+                  }
+                >
+                  <option value="">בחרו נבחרת</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </TeamPlayerFields>
+            <div className="min-w-0">
+              <PlayerPhotoField
+                playerType="team"
+                value={photoUrl}
+                onChange={(image) => {
+                  setPhotoUrl(image?.url || '');
+                  setPhotoUploadId(image?.uploadId || null);
+                }}
+                onBusyChange={setUploading}
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="md:col-span-2 flex justify-end gap-2 mt-6">
               <Button
                 type="button"
                 variant="outline"
@@ -572,7 +565,7 @@ export default function AdminPlayers() {
               {formError}
             </div>
           )}
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <PlayerNameFields
               firstName={quarterlyForm.firstName}
               lastName={quarterlyForm.lastName}
@@ -584,14 +577,14 @@ export default function AdminPlayers() {
               <label className="block text-sm font-medium mb-1">עיר</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                className="cs-player-input"
                 value={quarterlyForm.city}
                 onChange={(e) =>
                   setQuarterlyForm({ ...quarterlyForm, city: e.target.value })
                 }
               />
             </div>
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="md:col-span-2 flex justify-end gap-2 mt-6">
               <Button
                 variant="outline"
                 onClick={closeAllModals}

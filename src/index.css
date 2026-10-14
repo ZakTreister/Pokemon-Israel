@@ -25,6 +25,8 @@
 @layer base {
   :root {
     --cs-navy: #061a45;
+    --table-header: var(--cs-navy);
+    --table-header-foreground: var(--cs-white);
     --cs-navy-2: #092b6e;
     --cs-blue: #0a64c9;
     --cs-blue-2: #1688f2;
@@ -501,3 +503,12 @@
     flex-wrap: wrap;
   }
 }
+
+/* Shared readable header surface in both themes; child headings inherit contrast. */
+.cs-table-head, .cs-management thead { background: var(--table-header); color: var(--table-header-foreground); }
+.cs-table-head th, .cs-management thead th { color: inherit; }
+.cs-table-head button:focus-visible, .cs-management thead button:focus-visible { outline: 2px solid var(--cs-yellow); outline-offset: 3px; }
+.cs-player-input { width: 100%; height: 2.75rem; padding: 0.5rem 0.75rem; border: 1px solid hsl(var(--input)); border-radius: var(--radius); background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.cs-player-input:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.cs-pokemon-frame { position: relative; isolation: isolate; display: grid; place-items: center; width: 3rem; height: 3rem; flex: none; border-radius: 50%; border: 2px solid var(--cs-navy); background: linear-gradient(to bottom, var(--cs-red) 0 47%, var(--cs-navy) 47% 53%, var(--cs-white) 53%); }
+.cs-pokemon-frame::before { content: ''; position: absolute; width: 0.85rem; height: 0.85rem; background: var(--cs-white); border: 2px solid var(--cs-navy); border-radius: 50%; z-index: -1; }

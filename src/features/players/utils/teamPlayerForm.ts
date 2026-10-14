@@ -5,6 +5,7 @@ export const teamPlayerEditSchema = z.object({
   city: z.string().trim().max(100),
   description: z.string().max(500, 'התיאור מוגבל ל-500 תווים').optional(),
   dateOfBirth: z.string().optional(),
+  joinedAt: z.string().optional(),
   playerNumber: z.string().trim(),
 });
 export const teamPlayerCreateSchema = teamPlayerEditSchema.extend({

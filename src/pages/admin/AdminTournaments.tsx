@@ -832,8 +832,8 @@ PlayerB 6
                   {/* Desktop Table View */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
-                      <thead>
-                        <tr className="bg-muted border-b border-border text-right">
+                      <thead className="cs-table-head">
+                        <tr className="border-b border-border text-right">
                           <th className="px-4 py-2 text-sm font-medium">מיקום סופי</th>
                           <th className="px-4 py-2 text-sm font-medium">שחקן</th>
                           <th className="px-4 py-2 text-sm font-medium">נקודות מקוריות</th>

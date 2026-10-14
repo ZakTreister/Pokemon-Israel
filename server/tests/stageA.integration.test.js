@@ -1864,3 +1864,46 @@ test('2026.10.3: News CRUD, title/CTA validation, optional image and legacy cont
     404,
   );
 });
+
+test('2026.10.4 overview counts are canonical, archival-safe and role/team scoped',async()=>{
+  const assigned=await ok('/teams','POST',{name:'V4 assigned',teacher:staffIds.judge},'admin',201);
+  const another=await ok('/teams','POST',{name:'V4 another assigned',teacher:staffIds.judge},'admin',201);
+  const foreign=await ok('/teams','POST',{name:'V4 foreign',teacher:staffIds.admin},'admin',201);
+  await Player.insertMany([
+    {firstName:'V4',lastName:'Active',playerType:'team',team:assigned.id,isActive:true},
+    {firstName:'V4',lastName:'Inactive',playerType:'team',team:assigned.id,isActive:false},
+    {firstName:'V4',lastName:'Archived',playerType:'team',team:assigned.id,isActive:true,deletedAt:new Date()},
+    {firstName:'V4',lastName:'Regular',playerType:'quarterly',city:'City',isActive:true},
+  ]);
+  const fixture={title:'V4 event',description:'Fixture',image:'/event.png',date:'2020-01-01',location:'Fixture',registrationDeadline:'2020-01-01',maxParticipants:32};
+  await Tournament.insertMany([
+    {...fixture,type:'team_internal',team:assigned.id,status:'completed',source:'historical'},
+    {...fixture,type:'team_internal',team:assigned.id,status:'upcoming',phase:'setup',engineVersion:'swiss-v1'},
+    {...fixture,type:'team_internal',team:assigned.id,status:'completed',deletedAt:new Date()},
+    {...fixture,type:'team_internal',team:another.id,status:'completed'},
+    {...fixture,type:'team_internal',team:foreign.id,status:'completed'},
+    {...fixture,type:'quarterly',status:'completed'},
+    {...fixture,type:null,status:'completed'},
+    {...fixture,type:'quarterly',status:'upcoming',phase:'completed'},
+    {...fixture,type:'quarterly',status:'completed',deletedAt:new Date()},
+    {...fixture,type:'quarterly',status:'upcoming',date:'2999-01-01'},
+    {...fixture,type:'inter_team',status:'completed',competitionYear:'past',team:assigned.id},
+    {...fixture,type:'inter_team',status:'upcoming'},
+  ]);
+  assert.equal((await request('/teams/overview','GET',undefined,null)).status,401);
+  assert.equal((await request('/teams/overview','GET',undefined,'player')).status,403);
+  const judge=await ok('/teams/overview?teacher='+staffIds.admin);
+  assert.equal(judge.role,'judge');assert.ok(!('activeTeams' in judge));
+  const first=judge.teams.find(team=>team.id===assigned.id);
+  assert.equal(first.playerCount,1);assert.equal(first.completedInternalTournamentCount,1);assert.equal(first.leaguePosition,null);
+  assert.ok(judge.teams.some(team=>team.id===another.id));assert.ok(!judge.teams.some(team=>team.id===foreign.id));
+  const admin=await ok('/teams/overview','GET',undefined,'admin');
+  assert.equal(admin.role,'admin');assert.equal(admin.activeTeams,await Team.countDocuments({isActive:true}));
+  assert.equal(admin.activeTeamPlayers,await Player.countDocuments({isActive:true,playerType:'team'}));
+  assert.equal(admin.activeQuarterlyPlayers,await Player.countDocuments({isActive:true,playerType:'quarterly'}));
+  const completed=await ok('/tournaments?type=quarterly&status=completed&countOnly=true','GET',undefined,null);
+  const active=await ok('/tournaments?status=active&countOnly=true','GET',undefined,null);
+  assert.equal(admin.completedQuarterlyTournaments,completed.total);assert.equal(admin.activeTournaments,active.total);
+  assert.ok(completed.total>=3);assert.deepEqual(admin.encounterBalance,{status:'unavailable'},'single-team/past-year records do not fabricate official encounter participations');
+  assert.ok(admin.nearest?.managementPath.startsWith('/manage/'));
+});

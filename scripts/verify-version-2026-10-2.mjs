@@ -46,7 +46,7 @@ try {
     renderer = null;
   };
   const button = (label) =>
-    renderer.root.findAllByType('button').find((node) => text(node) === label);
+    renderer.root.findAllByType('button').find((node) => text(node) === label || node.props['aria-label'] === label);
   const route = (component, path = '/', pattern = path) =>
     el(
       MemoryRouter,
@@ -763,7 +763,7 @@ try {
   act(() =>
     dialog()
       .findAllByProps({ type: 'date' })
-      .find((input) => !input.props['aria-label'])
+      .find((input) => input.props['aria-label'] === 'תאריך הצטרפות')
       .props.onChange({ target: { value: '2020-01-01' } }),
   );
   act(() =>
@@ -1004,6 +1004,93 @@ try {
       .every((link) => link.props.className.includes('focus-visible')),
   );
   unmount();
+  // 2026.10.4: reuse the existing domain harness for presentation regressions.
+  await mount(provided(route(el(PlayerEditor,{player:editFixture,onClose:()=>{},onSaved:async()=>{}}))));
+  const editorForm=dialog().findByType('form');
+  const orderedInputs=editorForm.findAllByType('input');
+  assert.equal(orderedInputs.at(-1).props.type,'checkbox','active is the final form control');
+  const dates=editorForm.findAllByProps({type:'date'});
+  assert.deepEqual(dates.map(field=>field.props['aria-label']),['תאריך לידה','תאריך הצטרפות']);
+  const gridParent=node=>{let parent=node.parent;while(parent&&!parent.props.className?.includes('grid'))parent=parent.parent;return parent;};
+  assert.equal(gridParent(dates[0]),gridParent(dates[1]),'dates share the responsive row');
+  assert.ok(editorForm.findAllByType('input').filter(field=>field.props.type!=='checkbox'&&field.props.type!=='file').every(field=>field.props.className.includes('cs-player-input')));
+  const uploads=editorForm.findAllByProps({type:'file'});
+  assert.equal(uploads.length,2);
+  const mediaWrappers=editorForm.findAll(node=>node.type==='div'&&node.props.className==='min-w-0');
+  assert.equal(mediaWrappers.length,2,'photo/deck occupy separate desktop columns');
+  unmount();
+  const {default:AdminPlayerTable}=await load('pages/admin/AdminPlayers.tsx');
+  state.players.players=[{...editFixture,user:{username:'legacy-staff-link'}}];
+  players.getPlayers=async()=>({items:state.players.players,total:1,page:1,pageSize:25,totalPages:1});
+  let deleted=false;players.deletePlayer=async()=>{deleted=true;};
+  await mount(provided(route(el(AdminPlayerTable),'/manage/players')));
+  assert.ok(!text(renderer.toJSON()).includes('חשבון'));
+  assert.ok(!text(renderer.toJSON()).includes('legacy-staff-link'),'only the display column is removed');
+  for(const label of ['עריכת שחקן','מחק שחקן']){
+    const iconAction=button(label);assert.equal(text(iconAction),'');assert.equal(iconAction.props.title,label);assert.ok(!iconAction.props.className.includes('shadow-button'));assert.ok(iconAction.props.className.includes('h-10'));
+  }
+  act(()=>button('עריכת שחקן').props.onClick());
+  const playerRow=renderer.root.findAllByType('tr').find(row=>row.props.onClick);
+  act(()=>playerRow.props.onClick({target:{closest:()=>button('עריכת שחקן')}}));
+  assert.equal(renderer.root.findAllByType(PlayerEditor).length,1,'global management uses the canonical editor');
+  assert.ok(text(renderer.toJSON()).includes('שמור שינויים'));
+  act(()=>button('ביטול').props.onClick());
+  await act(async()=>{button('מחק שחקן').props.onClick();await flush();});
+  assert.equal(deleted,false,'icon deletion still requires confirmation');
+  assert.ok(text(renderer.toJSON()).includes('ההיסטוריה תישמר'));
+  act(()=>button('ביטול').props.onClick());
+  unmount();
+  const {AdminIndicators,JudgeIndicators,EncounterValue}=await load('features/overview/components/OverviewIndicators.tsx');
+  const adminSummary={role:'admin',activeTeams:2,activeTeamPlayers:10,activeQuarterlyPlayers:7,activeTournaments:3,completedQuarterlyTournaments:12,encounterBalance:{status:'unavailable'},nearest:null};
+  const {default:StatCard}=await load('components/ui/StatCard.tsx');
+  await mount(route(el(AdminIndicators,{summary:adminSummary})));
+  assert.deepEqual(renderer.root.findAllByType(StatCard).map(card=>card.props.label),['נבחרות פעילות','שחקני נבחרות','מפגשי נבחרות השנה','טורנירים פעילים','שחקני חוגים','טורנירים רבעוניים שהושלמו']);
+  assert.ok(renderer.root.findByType('section').props.className.includes('lg:grid-cols-3'));
+  assert.ok(text(renderer.toJSON()).includes('טרם זמין'));
+  unmount();
+  await mount(el(EncounterValue,{balance:{status:'equal',count:3,maximum:3,competitionYear:'official-year'}}));
+  assert.equal(renderer.root.findAllByType('li').length,0);assert.ok(text(renderer.toJSON()).includes('לכל נבחרת השנה'));
+  unmount();
+  await mount(el(EncounterValue,{balance:{status:'uneven',maximum:4,competitionYear:'official-year',lagging:[{id:'zero',name:'אפס',gap:4},{id:'partial',name:'ברק',gap:1}]}}));
+  assert.deepEqual(renderer.root.findAllByType('li').map(text),['אפס — חסרים 4','ברק — חסר 1']);assert.ok(text(renderer.toJSON()).includes('אינו מצביע על מפגש שתוכנן'));
+  unmount();
+  await mount(route(el(JudgeIndicators,{team:{...team,leaguePosition:null,completedInternalTournamentCount:2}})));
+  assert.equal(renderer.root.findAllByType(StatCard).length,3);assert.ok(text(renderer.toJSON()).includes('טרם נקבע'));
+  unmount();
+  const {default:Overview}=await load('pages/admin/AdminOverview.tsx');
+  api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{...adminSummary,nearest:{id:'next',title:'Nearest tournament',date:'2999-01-01',managementPath:'/manage/tournaments/next'}}};};
+  await mount(route(el(Overview)));
+  assert.equal(renderer.root.findAllByType(StatCard).length,6);assert.ok(text(renderer.toJSON()).includes('Nearest tournament'));
+  unmount();
+  const {default:TeacherOverview}=await load('pages/manage/TeacherTeams.tsx');
+  state.auth.user.role='judge';
+  api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[{...team,leaguePosition:null,openInternalTournament:{id:'open'}},{...team,id:'other',name:'אחרת',leaguePosition:null}]}};};
+  await mount(provided(route(el(TeacherOverview),'/manage')));
+  assert.equal(renderer.root.findAllByType(StatCard).length,6,'three metrics per assigned team');assert.equal(renderer.root.findAllByType('article').length,2,'operational team cards preserved');
+  unmount();state.auth.user.role='admin';
+  // Full profile hierarchy and graceful missing-media state.
+  api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});
+  await mount(route(el(PublicPlayer),'/all-stars/players/v4','/all-stars/players/:playerId'));
+  const profileSections=renderer.root.findAllByType('section');
+  assert.equal(profileSections.at(-1).props['aria-label'],'דק אישי');
+  const pokemons=renderer.root.findByProps({'aria-label':'הפוקימונים של השחקן'});
+  assert.equal(pokemons.parent.findAllByType('img')[0].props.src,image.url);
+  assert.ok(pokemons.findAllByType('li').every(icon=>icon.props.className==='cs-pokemon-frame'));
+  assert.equal(pokemons.findAllByType('img')[1].props.src,pokemonImageUrl('Iron Hands'));
+  assert.equal(renderer.root.findAllByType('a').find(link=>link.findAllByType('img').some(img=>img.props.src==='https://example.com/team.png')).props.href,'/teams/team');
+  unmount();
+  api.get=async()=>({data:{id:'empty',firstName:'ללא',lastName:'תמונה',team:null,teamRanking:null,badges:[]}});
+  await mount(route(el(PublicPlayer),'/all-stars/players/empty','/all-stars/players/:playerId'));
+  assert.ok(renderer.root.findByProps({'aria-label':'אין תמונת שחקן'}));assert.equal(renderer.root.findAllByType('img').length,0);assert.equal(renderer.root.findAllByProps({'aria-label':'דק אישי'}).length,0);
+  unmount();
+  const {readFile}=await import('node:fs/promises');
+  const css=await readFile('src/index.css','utf8');
+  const luminance=hex=>{const channels=hex.match(/[a-f0-9]{2}/gi).map(value=>parseInt(value,16)/255).map(value=>value<=0.04045?value/12.92:((value+0.055)/1.055)**2.4);return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;};
+  const background=css.match(/--cs-navy: #(\w{6})/)[1];const foreground=css.match(/--cs-white: #(\w{6})/)[1];
+  assert.ok((luminance(foreground)+0.05)/(luminance(background)+0.05)>=4.5,'shared header tokens meet WCAG AA');
+  assert.ok(css.includes('.cs-management thead')&&css.includes('--table-header-foreground: var(--cs-white)'));
+  assert.ok(css.includes('.cs-management thead button:focus-visible'));
+  console.log('2026.10.4 UI checks passed: icon actions, shared field order/heights/media columns, role-specific KPI order/availability/balance, preserved operation cards and image-first profile with deck last.');
   console.log(
     '2026.10.3 UI checks passed: shared bounded player/team editors, team-only fields, Pokémon/deck/join date, team logo/admin actions, paginated request transitions and News validation/CTA.',
   );

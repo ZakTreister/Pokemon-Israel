@@ -427,8 +427,8 @@ export default function ManageBadges() {
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="bg-muted border-b border-border text-right">
+                <thead className="cs-table-head">
+                  <tr className="border-b border-border text-right">
                     <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                       שחקן
                     </th>
