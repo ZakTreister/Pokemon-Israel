@@ -627,14 +627,22 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 - standardize the height of all single-line inputs, date fields and selects; keep textarea/media controls appropriately sized
 - preserve the canonical editor, field validation, uploads, semantics and permissions
 
+#### 3. Public All Stars player profile layout
+- reorder the public player page as portrait/team identity and small Poké Ball-framed Pokémon icons at the top, readable identity/bio/stats/badges in the middle, and the personal deck image **last**
+- display **up to 6 configured Pokémon** in small Poké Ball-styled frames **directly beneath the player photo**, using the existing Pokémon image URL helper
+- place the existing team's logo in the header/media area, visually balanced with the player portrait, linked to the public team page
+- maintain clear responsive RTL layout, accessible labels, optional-field fallbacks, team-only ranking and existing public data privacy
+- do not add a new backend/media integration solely for the team logo or Poké Ball styling
+
 ### Detailed source of truth
 - `docs/product/management-ui.md` — Players-table actions, legacy account column, reusable table-header styling/contrast
-- `docs/product/players.md` — precise Player form layout and responsive behavior
+- `docs/product/players.md` — precise Player form layout, public All Stars player page hierarchy and responsive behavior
 - `docs/architecture/frontend-standards.md` — reusable components, accessible forms/tables and focused verification
 
 ### Verification and completion
 - check both Players-management and team-page entry points into the shared editor; verify regular/team forms, desktop/mobile layout and input sizes
 - check nested icon actions do not navigate and delete confirmation remains intact
 - check table header contrast across management screens
+- verify public All Stars player page: small Poké Ball-framed Pokémon under portrait, team logo identity, readable details/ranking/badges, deck as final section and absent-field/mobile cases
 - during development run only directly relevant tests; once the version is complete run the full configured tests, lint and build per `AGENTS.md`
 - update this version to `DEVELOPED` with commit, actual test results and known gaps; do not create a PR, return the direct `work` → `main` PR creation link
