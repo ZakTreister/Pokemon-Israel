@@ -474,7 +474,7 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ---
 
-## Current version
+## Last developed version
 
 **Version:** `2026.10.3`\
 **Status:** `DEVELOPED`\
@@ -601,3 +601,40 @@ In the implementation PR for `2026.10.3`, Codex must:
 - return the PR link to the user
 
 If PR creation is unavailable, return the direct GitHub compare/create-PR link and clearly state that the final GitHub PR creation click is still required.
+
+
+---
+
+## Current version
+
+**Version:** `2026.10.4`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** Pending  
+**Implementation commit:** Pending
+
+### Scope
+
+#### 1. Players-management table polish
+- replace the edit/delete text buttons in **ניהול → שחקנים** with accessible, contextual icon-only actions; preserve confirmation, authorization, keyboard support and non-navigating action clicks
+- remove the legacy **חשבון** column from the table; keep underlying optional legacy User linkage intact for backward compatibility
+- improve management-table header rows with darker/clearer shared semantic backgrounds and WCAG AA foreground contrast; reuse styling across affected tables
+
+#### 2. Player form layout polish
+- improve field order, spacing and responsive two-column grid in the canonical Player editor and matching creation forms
+- put **תאריך לידה** and **תאריך הצטרפות** beside each other above **תיאור קצר** for team players
+- put **תמונת שחקן** and **דק אישי** beside each other on desktop, stacking on mobile
+- move the **פעיל** checkbox to the bottom of both team and regular-player forms
+- standardize the height of all single-line inputs, date fields and selects; keep textarea/media controls appropriately sized
+- preserve the canonical editor, field validation, uploads, semantics and permissions
+
+### Detailed source of truth
+- `docs/product/management-ui.md` — Players-table actions, legacy account column, reusable table-header styling/contrast
+- `docs/product/players.md` — precise Player form layout and responsive behavior
+- `docs/architecture/frontend-standards.md` — reusable components, accessible forms/tables and focused verification
+
+### Verification and completion
+- check both Players-management and team-page entry points into the shared editor; verify regular/team forms, desktop/mobile layout and input sizes
+- check nested icon actions do not navigate and delete confirmation remains intact
+- check table header contrast across management screens
+- during development run only directly relevant tests; once the version is complete run the full configured tests, lint and build per `AGENTS.md`
+- update this version to `DEVELOPED` with commit, actual test results and known gaps; do not create a PR, return the direct `work` → `main` PR creation link
