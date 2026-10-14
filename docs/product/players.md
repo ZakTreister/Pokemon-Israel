@@ -347,3 +347,16 @@ Examples include team/member counts and management/overview counters. Count logi
 If another screen needs only a Player count, do not fetch all Player records to calculate it.
 
 Use the canonical total/count returned by a lightweight server query or count-only pagination mode with the same authorization/filter semantics as the normal Players list.
+
+
+## Player form visual layout refinements — 2026.10.4
+Apply these ordering and spacing requirements to the canonical Player edit dialog and to creation forms where the same fields exist. Preserve one reusable player form/editor workflow, existing validation, roles and save/upload behavior.
+
+- use an orderly two-column responsive grid on desktop, stacking into one column on mobile, with consistent labels, row spacing and field widths
+- group basic identity fields logically first (first/last names, city, and player number/team selection when applicable)
+- for All Stars/team players, place **תאריך לידה** and **תאריך הצטרפות** side by side in one row, **above** the full-width **תיאור קצר** field
+- place **תמונת שחקן** and **דק אישי** upload/preview controls side by side in the next appropriate row; stack on narrow screens; align their labels, sizing and preview areas without changing media upload/storage logic
+- put the Pokémon name collection after the profile/media controls, retaining its compact behavior and max of six
+- position the **פעיל** checkbox at the **bottom of the form** (for both team and regular players), above the form actions
+- normalize the visible height of all single-line text, number, date and select inputs using shared form styles; do not force textareas, checkboxes or image upload controls to single-line input height
+- preserve touch-friendly targets, clear focus/validation styling, RTL alignment, internal modal scrolling and reachable save/cancel actions
