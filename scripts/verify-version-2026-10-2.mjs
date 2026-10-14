@@ -1046,7 +1046,10 @@ try {
   await mount(route(el(AdminIndicators,{summary:adminSummary})));
   assert.deepEqual(renderer.root.findAllByType(StatCard).map(card=>card.props.label),['נבחרות פעילות','שחקני נבחרות','מפגשי נבחרות השנה','טורנירים פעילים','שחקני חוגים','טורנירים רבעוניים שהושלמו']);
   assert.ok(renderer.root.findByType('section').props.className.includes('lg:grid-cols-3'));
-  assert.ok(text(renderer.toJSON()).includes('טרם זמין'));
+  assert.ok(text(renderer.toJSON()).includes('לא ניתן לטעון'));
+  unmount();
+  await mount(el(EncounterValue,{balance:{status:'empty',competitionYear:'2026-2027'}}));
+  assert.equal(text(renderer.toJSON()),'אין נבחרות פעילות');
   unmount();
   await mount(el(EncounterValue,{balance:{status:'equal',count:3,maximum:3,competitionYear:'official-year'}}));
   assert.equal(renderer.root.findAllByType('li').length,0);assert.ok(text(renderer.toJSON()).includes('לכל נבחרת השנה'));

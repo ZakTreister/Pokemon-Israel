@@ -25,10 +25,12 @@ function Indicator({
   );
 }
 export function EncounterValue({ balance }: { balance: EncounterBalance }) {
+  if (balance.status === 'empty')
+    return <span className="text-lg leading-normal">אין נבחרות פעילות</span>;
   if (balance.status === 'unavailable')
     return (
       <span className="text-lg leading-normal">
-        טרם זמין — נתוני הליגה הרשמיים טרם נקבעו
+        לא ניתן לטעון את נתוני המפגשים. נסו שוב.
       </span>
     );
   if (balance.status === 'equal')

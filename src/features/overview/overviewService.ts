@@ -2,6 +2,7 @@ import api from '../../services/api';
 import type { Team } from '../../types/team';
 export type EncounterBalance =
   | { status: 'unavailable' }
+  | { status: 'empty'; competitionYear: string }
   | { status: 'equal'; competitionYear: string; count: number; maximum: number }
   | {
       status: 'uneven';

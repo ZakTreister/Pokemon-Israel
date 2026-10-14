@@ -6,7 +6,7 @@ const teams = [
   { id: 'b', name: 'ברק' },
   { id: 'c', name: 'כוכב' },
 ];
-test('official encounter balance requires authoritative competition-year data and retains zero-count teams', () => {
+test('team meeting comparison requires authoritative year/count data and retains zero-count teams', () => {
   assert.deepEqual(encounterBalance(teams, null), { status: 'unavailable' });
   assert.deepEqual(encounterBalance(teams, { counts: [] }), {
     status: 'unavailable',
@@ -47,5 +47,23 @@ test('official encounter balance requires authoritative competition-year data an
       counts: [{ teamId: 'a', count: -1 }],
     }),
     { status: 'unavailable' },
+  );
+});
+
+test('internal meeting year uses Jerusalem September boundaries, including the UTC date before rollover', async () => {
+  const { teamMeetingYear } = await import('../services/overview.js');
+  const before = teamMeetingYear(new Date('2026-08-31T20:59:59.999Z'));
+  const after = teamMeetingYear(new Date('2026-08-31T21:00:00.000Z'));
+  assert.equal(before.competitionYear, '2025-2026');
+  assert.equal(after.competitionYear, '2026-2027');
+  assert.equal(after.start.toISOString(), '2026-08-31T21:00:00.000Z');
+  assert.equal(after.end.toISOString(), '2027-08-31T21:00:00.000Z');
+  assert.equal(
+    teamMeetingYear(new Date('2027-01-01T12:00:00Z')).competitionYear,
+    '2026-2027',
+  );
+  assert.deepEqual(
+    encounterBalance([], { competitionYear: '2026-2027', counts: [] }),
+    { status: 'empty', competitionYear: '2026-2027' },
   );
 });

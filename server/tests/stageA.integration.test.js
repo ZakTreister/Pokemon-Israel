@@ -1904,6 +1904,43 @@ test('2026.10.4 overview counts are canonical, archival-safe and role/team scope
   const completed=await ok('/tournaments?type=quarterly&status=completed&countOnly=true','GET',undefined,null);
   const active=await ok('/tournaments?status=active&countOnly=true','GET',undefined,null);
   assert.equal(admin.completedQuarterlyTournaments,completed.total);assert.equal(admin.activeTournaments,active.total);
-  assert.ok(completed.total>=3);assert.deepEqual(admin.encounterBalance,{status:'unavailable'},'single-team/past-year records do not fabricate official encounter participations');
+  assert.ok(completed.total>=3);assert.ok(['equal','uneven'].includes(admin.encounterBalance.status),'internal meeting counts do not depend on inter-team infrastructure');
   assert.ok(admin.nearest?.managementPath.startsWith('/manage/'));
+});
+
+test('2026.10.5 A26 groups completed internal meetings by event date, including imports and zero teams',async()=>{
+ const {adminOverview,internalMeetingBalance,teamMeetingYear}=await import('../services/overview.js');
+ const now=new Date('2026-10-14T12:00:00Z');const window=teamMeetingYear(now);
+ const makeTeam=async(name,isActive=true)=>Team.create({name,createdBy:staffIds.admin,isActive});
+ const a=await makeTeam('V5 Leader');const b=await makeTeam('V5 Partial');const zero=await makeTeam('V5 Zero');const inactive=await makeTeam('V5 Inactive',false);
+ const fixture={title:'V5 meeting',description:'Fixture',image:'/event.png',location:'Fixture',registrationDeadline:now,maxParticipants:32,team:a._id,type:'team_internal',status:'completed',competitionYear:'stage-a-initial',source:'historical'};
+ await Tournament.insertMany([
+  {...fixture,date:window.start},
+  {...fixture,date:new Date(window.end.getTime()-1)},
+  {...fixture,date:now},
+  {...fixture,date:now,status:'upcoming',phase:'completed'},
+  {...fixture,date:new Date(window.start.getTime()-1)},
+  {...fixture,date:window.end},
+  {...fixture,date:'2020-01-01',createdAt:now},
+  {...fixture,date:now,deletedAt:now},
+  {...fixture,date:now,status:'upcoming',phase:'setup'},
+  {...fixture,date:now,type:'inter_team'},
+  {...fixture,date:now,type:'quarterly'},
+  {...fixture,date:now,team:b._id},
+  ...Array.from({length:10},()=>({...fixture,date:now,team:inactive._id})),
+ ]);
+ const balance=await internalMeetingBalance([a,b,zero],now);
+ assert.equal(balance.status,'uneven');assert.equal(balance.maximum,4);
+ assert.deepEqual(balance.lagging,[{id:zero.id,name:zero.name,gap:4},{id:b.id,name:b.name,gap:3}]);
+ const equal=await internalMeetingBalance([a],now);assert.equal(equal.status,'equal');assert.equal(equal.count,4);
+ const none=await internalMeetingBalance([zero],now);assert.equal(none.count,0);
+ const overview=await adminOverview(now);assert.ok(overview.encounterBalance.maximum<10,'inactive teams cannot establish the maximum');
+ assert.ok(!overview.encounterBalance.lagging?.some(team=>team.id===inactive.id));
+ const source=await Tournament.findOne({title:fixture.title,date:'2020-01-01'});assert.equal(source.competitionYear,'stage-a-initial');
+ const aggregate=Tournament.aggregate;
+ try {
+  Tournament.aggregate=()=>{throw new Error('count query unavailable');};
+  const failed=await adminOverview(now);assert.deepEqual(failed.encounterBalance,{status:'unavailable'});assert.equal(failed.activeTeams,overview.activeTeams);
+ } finally {Tournament.aggregate=aggregate;}
+
 });
