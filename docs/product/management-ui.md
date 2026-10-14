@@ -274,20 +274,35 @@ Replace the existing generic overview KPI strip with role-appropriate, fixed KPI
 
 If a judge is assigned multiple teams, keep these three metrics scoped **per team**, rather than merging unrelated teams. Do not reveal another judge's team-only management data.
 
-**Admin**: exactly six compact system-wide KPI cards, in this order (three per row on desktop, responsive on narrower screens):
-1. **נבחרות פעילות** (`A1`): count active, non-deleted Teams.
-2. **שחקני נבחרות** (`A2`): active, non-archived Players with `playerType='team'`.
-3. **שחקני חוגים** (`A3`): active, non-archived Players with `playerType='quarterly'` (legacy internal enum).
-4. **טורנירים פעילים** (`A13`): non-deleted canonical tournaments whose lifecycle is currently `active`, regardless of tournament type; apply the shared `tournamentLifecycle` semantics, not merely `status==='upcoming'`.
-5. **מפגשי נבחרות השנה** (`A26`): count **distinct completed inter-team encounter tournament records**, with `type='inter_team'`, `status='completed'` or equivalent canonical completed lifecycle, `deletedAt=null`, assigned to the **current official team competition year**. This is the annual competitive cycle controlled by the official September-ish reset / `competitionYear` boundary, **not the January–December calendar year**, and not a count of Swiss rounds or individual matches. Each canonical encounter counts once regardless of participating teams/number of games. Use a date-based migration/backfill only if the official yearly boundary is known; avoid silently assigning ambiguous legacy `inter_team` events to the wrong year. If inter-team encounters are eventually stored as multiple encounters inside one tournament, this indicator must count the actual canonical encounter entities instead; do not mislabel tournament document count as encounter count.
-6. **טורנירים לפי סוג** (`A17`): a compact **total plus 3-part category breakdown** (visual mini-bar/legend), counting all non-deleted canonical tournaments across **all dates** and lifecycle states, grouped exactly once into `team_internal` (פנימיים), `inter_team` (בין נבחרות), and `quarterly` (חוגים). Treat legacy records without a type as `quarterly` per the existing canonical fallback. Total = sum of three type counts. This all-time breakdown intentionally differs from the year-scoped, completed-only A26 count. Display the distinct scopes clearly.
+**Admin**: exactly six system-wide KPI cards in the following **fixed two-row order** (three columns on desktop; responsive stacking on mobile). Do not keep the old `A17` type-breakdown card in the dashboard; it is replaced by the completed-quarterly-tournaments metric.
+
+**Row 1 — All Stars teams**
+1. **נבחרות פעילות** (`A1`): count active Teams.
+2. **שחקני נבחרות** (`A2`): count active, non-archived Players with `playerType='team'`.
+3. **מפגשי נבחרות השנה** (`A26`): dynamic **per-team comparison of completed official inter-team encounters** in the **current official team competition year** (not calendar year). See exact display and calculation below.
+
+**Row 2 — Live operations and club activity**
+4. **טורנירים פעילים** (`A13`): count all non-deleted tournaments whose canonical lifecycle is currently `active`, across tournament types.
+5. **שחקני חוגים** (`A3`): count active, non-archived Players with `playerType='quarterly'`.
+6. **טורנירים רבעוניים שהושלמו** (`A40`, new KPI, replacing `A17`): count completed, non-deleted **quarterly/club tournaments across all years**, including legacy tournaments without an explicit `type` (the existing `type || 'quarterly'` fallback). Include tournaments only if canonical lifecycle is `completed`; exclude future/active ones. Each tournament document is counted once. No grouping into other tournament types.
+
+**A26 computation / display — important revised definition**
+- Select **all currently active teams** (not only teams that have encounter data); include teams with **zero** completed encounters.
+- Consider official, canonical inter-team encounters with `type='inter_team'`, canonical **completed** lifecycle, `deletedAt=null`, and the **current official competition year** per the official annual team-competition reset/key. Exclude incomplete, cancelled and soft-deleted encounters.
+- Count **one participation per team per completed encounter**, using **both actual competing team IDs**. Thus an encounter of Team A vs Team B adds 1 to Team A's count and 1 to Team B's count; this KPI is **not** a count of globally distinct encounters, Swiss rounds, player matches or team league points. Do not infer two teams from a single `team` ID.
+- `maxEncounters = max(completedEncounterCount for each active team)`. If all active teams have equal counts, the card shows **that single count** and the subtitle **לכל נבחרת השנה**, including 0 if the canonical league data exists but no encounters have yet occurred.
+- Otherwise, show the **names of every lagging active team** and **its missing count** `maxEncounters - teamCount` (e.g. `נבחרת ברק — חסרים 2`; `נבחרת אש — חסר 1`). Do not show leaders as if lagging. A compact line indicating the highest per-team count can clarify the comparison. If all lagging teams cannot fit without clipping, let this card accommodate the list or allow an accessible in-card expansion; do not silently omit names.
+- "חסרים" means the **gap from the currently highest-played team**, **not** proof that an encounter was scheduled or missed. The card should make that comparison apparent to avoid claiming missing scheduled events.
+- Do not compare against historic/inactive teams. Use a stable sort (greatest gap first, then team name), and stable team IDs as keys.
+- The current schema/implementation does **not yet provide authoritative two-team encounter participants or fully functioning official team standings**. Before reporting a real A26 number, rely on or implement a canonical association of both participating team IDs and competition-year assignment as part of the required feature work. Never fabricate counts, infer participants from a lone `team` field, treat absence of a working data source as genuine zero, or secretly count all system encounters instead. If authoritative encounter data is not yet available, display a clear unavailable/pending-data state.
+- Use grouped/aggregate database-side computations rather than fetching all tournament and player records into the browser. Keep the team-scoped judge KPIs as previously approved.
 
 **Presentation and implementation**:
 - Cards are concise, linkable to the relevant authorized management/team view, and use the existing CardSchool stat-card system. Respect keyboard/RTL/mobile and role restrictions.
-- For `A17`, show the total and an accessible text legend with the three counts; any mini stacked bar is supplementary, not the only representation.
+- In `A26`, show either the equal per-team count or the full lagging-team/gap list (never both modes at once). Show `A40` as one concise total with an all-time completed-tournaments scope.
 - All counts/rankings come from server-side count/group/summary queries or canonical derived competition results, not fetching entire Player/Team/Tournament collections just to calculate `.length`.
 - Reuse count and lifecycle semantics across lists, dashboards and soft-delete filters. Prefer one role-appropriate overview summary endpoint/shared query functions, avoiding repeated N+1 requests.
-- Current code treats inter-team encounter operations/official standings as future work; do not synthesize league positions. Accurate `A26` and `J2` depend on canonical encounter completion and current competition-year data. Preserve honest empty/unavailable states until that data exists.
+- The official inter-team encounter engine/team standings are still future work. Accurate `A26` and `J2` require authoritative completed-encounter participation and competition-year data; until then, show honest unavailable states rather than invented counts or rankings.
 - Preserve useful existing "nearest tournament" and team quick-operation context below the KPIs when applicable, without adding a fourth/seventh KPI.
 
 ## Player management table refinements — 2026.10.4
