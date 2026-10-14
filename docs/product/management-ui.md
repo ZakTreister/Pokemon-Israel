@@ -292,14 +292,14 @@ If a judge is assigned multiple teams, keep these three metrics scoped **per tea
 - Select **all currently active teams**, including those with **zero** eligible internal tournaments. Do not count inactive teams in the comparison, and do not allow an inactive team's count to establish the maximum.
 - "השנה" refers to the **current All Stars team competition year**, not lifetime internal-tournament totals. For now (until configurable competition-year start/end dates are implemented), apply the operational **September 1 through following August 31** year boundary in the `Asia/Jerusalem` calendar timezone to the tournament's `date`. Thus in October 2026, eligible events are dated 2026-09-01 through 2027-08-31; an older imported tournament does not count even if it was created/imported recently or has the current placeholder `competitionYear='stage-a-initial'` value. Do not auto-reset official rankings; this date boundary is for the dashboard statistic only.
 - `maximum = max(completedInternalCount for every active team)`. If **all counts are equal**, show that common number and `לכל נבחרת השנה` (including `0` when the source is queried successfully and none has any eligible tournaments). If no active teams exist, use a clear empty state rather than inventing a team count.
-- If **counts differ**, show **every active team below the maximum** together with its gap `maximum - teamCount` (e.g. `נבחרת ברק — חסרים 2`, `נבחרת אש — חסר 1`). List all lagging teams, including those with zero; sort by largest gap and then Hebrew team name. Explain the gap is relative to the most active team, not necessarily to scheduled/missed events.
+- If **counts differ**, display **the maximum as a single prominent number**, then **only** one line for each active team below the maximum, in the format `שם נבחרת — חסר 1` or `שם נבחרת — חסרים N`. Include zero-count teams; sort by largest gap and then Hebrew team name. Do **not** render an introductory comparison sentence, an explanatory/disclaimer paragraph, or other filler. The gap remains semantically relative to the leading team's internal-tournament count, not evidence of a missed scheduled meeting.
 - Keep the existing `equal` / `uneven` display and card location; use a real server-side grouped/count query to populate it, rather than the existing `unavailable` placeholder or fetching all tournament rows.
 - Continue to show `unavailable` only for an actual query/authoritative-data error, not simply because official `inter_team` infrastructure has not been built. Keep the judge's separate `J2` league ranking pending until official standings exist.
 - Add/update focused tests for internal-only counts, current-year boundary, historical backdated imports, soft deletion, active/inactive teams, zero-count teams, equal/uneven outcomes and exclusion of `inter_team` and `quarterly`.
 
 **Presentation and implementation**:
 - Cards are concise, linkable to the relevant authorized management/team view, and use the existing CardSchool stat-card system. Respect keyboard/RTL/mobile and role restrictions.
-- In `A26`, show either the equal per-team count or the full lagging-team/gap list (never both modes at once). Show `A40` as one concise total with an all-time completed-tournaments scope.
+- In `A26`, equal mode continues to show the shared count. Uneven mode shows the maximum count as a large number and every lagging-team/gap line directly beneath it, with no comparison-preface or disclaimer. The existing KPI card label is sufficient context. Show `A40` as one concise total with an all-time completed-tournaments scope.
 - All counts/rankings come from server-side count/group/summary queries or canonical derived competition results, not fetching entire Player/Team/Tournament collections just to calculate `.length`.
 - Reuse count and lifecycle semantics across lists, dashboards and soft-delete filters. Prefer one role-appropriate overview summary endpoint/shared query functions, avoiding repeated N+1 requests.
 - The official inter-team encounter engine/team standings are still future work. **They are not dependencies for `A26`.** Only the judge's `J2` league-position KPI remains pending official standings; do not synthesize it.
@@ -317,3 +317,14 @@ In **ניהול → שחקנים**:
 - ensure WCAG AA text contrast (at least 4.5:1 for normal header text), including RTL/mobile and hover/focus/sort states
 - prefer a shared DataTable/table-header primitive or reusable styling over repeating ad-hoc class changes across pages
 - retain existing table columns, sorting, filters and behavior except for the expressly removed **חשבון** column above
+
+
+## A26 KPI compact presentation refinement — 2026.10.6
+Keep the existing `team_internal` per-team current-year calculation from `2026.10.5` unchanged. An uneven result must display just the large maximum count and the team/gap lines. For example:
+
+```text
+2
+G-Chomps — חסר 1
+```
+
+Remove `בהשוואה לנבחרת עם הכי הרבה מפגשים: ...` and `הפער במספר המפגשים; אינו מצביע על מפגש שתוכנן או הוחמץ.` from the UI. Keep the label `מפגשי נבחרות השנה`, equal-count, empty and error states; no API calculation changes are required.
