@@ -144,6 +144,28 @@ The player page should use only appropriate public data already available in the
 Do not require child login for this page.
 Do not expose private/admin-only player data.
 
+## Public All Stars player-page composition — 2026.10.4
+
+Rework the public `/all-stars/players/:playerId` page into a coherent, image-first profile rather than the current scattered sequence of images, details and ranking.
+
+**Top media / identity area**
+- Give the player's portrait prominent placement at the top. Keep a graceful avatar/placeholder if there is no player photo.
+- Place the current team's logo/emblem in a balanced, clearly associated position in this top identity area (for example as a separate smaller team identity tile opposite the portrait). Keep the team logo visually secondary to the player's portrait and make the team identity navigate to the team's public page.
+- The public-player response already includes `team.logo`; reuse that existing value, with a clean fallback if unavailable. No new backend field or separate fetch should be needed.
+- Directly **under the player portrait**, display the player's **up to six** favorite Pokémon as **small icon-sized images** (not large standalone image cards). Each Pokémon image should be placed *inside or in front of* a compact **Poké Ball-styled circular frame** so the Pokémon remains recognizable and the Poké Ball outline/button motif is visibly clear.
+- Show only Pokémon actually configured; do not render six empty slots. Wrap or reduce spacing responsively without clipping on narrow screens. Reuse the existing central Pokémon-image URL derivation; no new stored image values.
+- Decorative Poké Ball framing should be built with lightweight CSS/reusable visual styling or an existing suitable asset; do not require an externally fetched new decorative image. Preserve accessible alt text/names for each Pokémon.
+
+**Content order below the top imagery**
+1. Player's full name as the page heading, team name/link, and key identity facts such as player number and city.
+2. Available age, tenure and optional short description, grouped semantically in a readable hierarchy.
+3. Team-specific competitive statistics/ranking (position, points, tournament count) and any awarded badges, keeping their existing meaning and display rules.
+4. **Personal deck image last**, in a final dedicated section after **all** profile details, ranking and badges. Omit this section entirely if no deck image exists.
+
+Keep ordinary textual information **between** the top player/team/Pokémon imagery and the final deck image. Avoid inserting text or badges after the deck. Do not duplicate player/team details, create a global All Stars individual ranking, expose date of birth, or change the public player authorization/data contract.
+
+Use CardSchool tokens and shared primitives; maintain RTL, mobile/tablet/desktop composition, proper alt text, readable text contrast, links and layout stability. Verify the actual visual hierarchy, including profiles with missing portrait/logo/Pokémon/deck.
+
 ## Creating team players from Players management
 When admin creates a **שחקן נבחרת** from the global **ניהול → שחקנים** page, the form must include a required **נבחרת** selector.
 
