@@ -605,7 +605,7 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 ---
 
-## Current version
+## Previous developed version
 
 **Version:** `2026.10.4`\
 **Status:** `DEVELOPED`\
@@ -677,3 +677,32 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 Responsive layout is verified through component hierarchy/classes and interaction assertions. No manual screenshots or click-through checklist were created.
 
 No PR was created. The link above opens GitHub's PR creation form; the final creation click is still required. The implementation SHA identifies the final code/test commit; the following documentation-only commit records completion metadata.
+
+---
+
+## Current version
+
+**Version:** `2026.10.5`  
+**Status:** `READY_FOR_DEVELOPMENT`  
+**Implementation PR:** Pending  
+**Implementation commit:** Pending
+
+### Scope
+
+#### 1. A26 overview indicator — count internal team tournaments instead of inter-team encounters
+- Keep the approved six admin dashboard KPIs and their 3+3 row ordering unchanged.
+- For `A26` (**מפגשי נבחרות השנה**), use **only completed, non-deleted `team_internal` tournaments** for each active team. Count one eligible internal tournament as one meeting for the referenced `Tournament.team`. Explicitly exclude all `inter_team` and `quarterly` tournaments.
+- Scope "השנה" by tournament event date to the current team competition-year window (September 1–August 31, using the `Asia/Jerusalem` calendar). The existing `stage-a-initial` competitionYear placeholder is not a valid year boundary and must not make historical imports count as current-year meetings.
+- Preserve the approved comparison UI: if all active teams have equal counts, show the common number; otherwise list every team below the maximum and its gap, sorted largest gap first. Teams with zero eligible meetings must appear in the comparison. A gap means fewer meetings than the current leader, not a missed scheduled fixture.
+- Use an efficient server-side grouped count query; reuse the existing overview response shape, presenter and cache/fetch flow as far as practical. A26 must no longer depend on unimplemented inter-team standings, two-team encounter associations, or official league ranking. The separate judge `J2` league rank stays unavailable until it has authoritative data.
+- Keep existing `J1`, `J2`, `J7`, `A1`, `A2`, `A3`, `A13` and `A40` behavior unchanged.
+
+### Detailed source of truth
+- `docs/product/management-ui.md` — corrected A26 source/type, year definition, matching and display rules
+- `docs/architecture/frontend-standards.md` — reusable and accessible UI, focused verification
+
+### Required verification and completion
+- Add/update focused tests verifying completed internal tournaments only, date/year boundary, historic imports, soft-deleted records, active/zero-count teams, equal/uneven comparison, and exclusion of `inter_team` and `quarterly`.
+- Follow the existing `AGENTS.md` verification workflow: targeted tests during development; full configured tests/lint/build at version completion.
+- Commit and push on `work`; mark `2026.10.5` `DEVELOPED` with actual verification results and known gaps.
+- Do not create a PR; return the direct `work` → `main` PR creation link.
