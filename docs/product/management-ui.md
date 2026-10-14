@@ -259,3 +259,17 @@ Management **טורנירים** uses real server-side pagination, matching the P
 - do not preload all tournaments
 
 For summary counters, use pagination `total` / count-only data instead of loading entity rows when the rows are not displayed.
+
+
+## Player management table refinements — 2026.10.4
+In **ניהול → שחקנים**:
+- render **עריכת שחקן** and **מחק שחקן** as compact icon-only contextual actions, using the shared button/icon system; keep accessible Hebrew names (`aria-label` and/or title/tooltip), keyboard focus, touch targets and the existing deletion confirmation/authorization
+- clicking either action must not activate clickable-row navigation
+- remove the **חשבון** column from the Players table; it currently shows the optional legacy `player.user.username` relationship, but children do not require login accounts in Stage A
+- removing this table column must **not** delete/migrate the optional legacy User linkage or alter backward compatibility/API semantics
+
+## Management table header contrast — 2026.10.4
+- replace the excessively pale header-row styling on management tables with a clearly differentiated background and readable foreground using existing CardSchool theme tokens
+- ensure WCAG AA text contrast (at least 4.5:1 for normal header text), including RTL/mobile and hover/focus/sort states
+- prefer a shared DataTable/table-header primitive or reusable styling over repeating ad-hoc class changes across pages
+- retain existing table columns, sorting, filters and behavior except for the expressly removed **חשבון** column above
