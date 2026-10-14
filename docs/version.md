@@ -636,9 +636,11 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 
 #### 4. Role-specific overview dashboard indicators
 - Judge: exactly three **team-scoped** indicators — `J1` active players, `J2` position in the official inter-team league, `J7` completed internal tournaments. Show separate sets for multiple assigned teams; do not fabricate league position when official inter-team standings do not yet exist.
-- Admin: exactly six **system-wide** indicators in two rows of three (responsive) — `A1` active teams, `A2` active team players, `A3` active club players, `A13` currently active tournaments, `A26` completed inter-team encounters in the official **current team competition year**, `A17` all-time tournament total broken into internal / inter-team / club.
-- `A26` counts one finished official encounter record once, not individual matches, and excludes soft-deleted records. Align with the official annual competition-year reset/key rather than Jan–Dec.
-- `A17` includes all non-deleted tournaments regardless of date/status and counts legacy null-type tournaments as club/quarterly; total equals the three type counts. Show breakdown as text and optionally a small stacked bar.
+- Admin: exactly six **system-wide** indicators in a fixed 3+3 dashboard layout (responsive):
+  - **Row 1:** `A1` active teams, `A2` active team players, `A26` completed official encounters **per active team** in the current competition year.
+  - **Row 2:** `A13` currently active tournaments, `A3` active club/quarterly players, **`A40` completed quarterly tournaments** (all time, non-deleted, including legacy type-null tournaments).
+- **Revised `A26`:** compute one completed encounter participation for each of its two competing teams, grouped by active team for the current official competition year. If **all active teams have the same count**, show this common number (`N לכל נבחרת`). If counts differ, list **each team below the maximum and its gap** (`max - count`), including teams on zero; label the difference as a comparison to the highest-played team, not necessarily an unscheduled/missed fixture. Exclude soft-deleted/unfinished encounters and past competition years. Do not infer both teams from the single existing tournament `team` field; unavailable canonical encounter participant data must produce an honest unavailable state, not fabricated results.
+- The former `A17` all-types breakdown is **not** one of the six selected indicators.
 - Use efficient server-side summaries/counts and canonical ranking/lifecycle semantics, not full entity list fetching. Preserve existing operational team cards and useful nearest-tournament panel below the KPIs.
 - See `docs/product/management-ui.md` for complete definitions, year/data availability constraints and responsive/accessibility requirements.
 
@@ -651,7 +653,7 @@ If PR creation is unavailable, return the direct GitHub compare/create-PR link a
 - check both Players-management and team-page entry points into the shared editor; verify regular/team forms, desktop/mobile layout and input sizes
 - check nested icon actions do not navigate and delete confirmation remains intact
 - check table header contrast across management screens
-- verify the three team-scoped judge KPIs and six system-wide admin KPIs, accurate period/soft-delete/type handling for A26/A17, and honest empty league-standing states
+- verify judge KPIs and the exact admin 3+3 row order, A26 equal-count and uneven-count/zero-participation team scenarios with competition-year/soft-delete semantics, completed-only all-time A40 including legacy quarterly records, and honest unavailable league-data states
 - verify public All Stars player page: small Poké Ball-framed Pokémon under portrait, team logo identity, readable details/ranking/badges, deck as final section and absent-field/mobile cases
 - during development run only directly relevant tests; once the version is complete run the full configured tests, lint and build per `AGENTS.md`
 - update this version to `DEVELOPED` with commit, actual test results and known gaps; do not create a PR, return the direct `work` → `main` PR creation link
