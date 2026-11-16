@@ -761,3 +761,30 @@ The implementation SHA identifies the final code/test commit. This following doc
 **Known implementation gaps:** none.
 
 Implemented directly on `main`; no feature branch or PR was created. The implementation SHA identifies the final code/test commit; the following documentation-only commit records completion metadata.
+
+
+---
+
+## Proposed version — historical national ranking import
+
+**Version:** `2026.11.1`  
+**Status:** `READY_FOR_DEVELOPMENT` (implementation draft awaiting full final verification)  
+**Draft implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/20  
+**Branch:** `feature/historical-national-rankings-2026-11`
+
+### Approved scope
+1. Import the actual national ranking spreadsheet as one cumulative points/participations baseline; no per-event historical records or fake tournaments.
+2. Preserve 337 players, 35 source-marked All-Stars and all source point/participation numbers; source rank is audit-only, calculated rank is canonical.
+3. Hide source-marked All-Stars by default. Checkbox `הצג שחקני All-Stars` includes them muted/grey with a visible label.
+4. Show place, name, points, participations; global search, column sort and server-side pagination (25 per page).
+5. Respect scoring cutoff and avoid duplicate historical scores; manually review identity links since Excel lacks city and unique player IDs.
+6. Treat the raw Excel/CSV as private deployment input; never commit children's full data to the public repository.
+
+### Verification and gating
+- Focused tests: **PASS** (`node --test server/tests/nationalRankings.test.js` — 5 tests).
+- CSV dry run: **PASS** (337 rows; 35 All-Stars; 6,054 points; 821 participations).
+- Full configured tests, UI checks, lint and build: **PENDING**.
+- Production Mongo import and identity reconciliation: **NOT RUN**; separate manual operator steps after DB backup and review.
+- Known source anomalies and detailed instructions: `docs/HISTORICAL_RANKINGS_IMPORT.md`.
+
+Mark as `DEVELOPED` only once full verification has passed and deployment/data-matching decisions are approved. No direct main push.
