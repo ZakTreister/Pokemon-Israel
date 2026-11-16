@@ -11,8 +11,6 @@ const historicalRankingSchema = new mongoose.Schema(
     points: { type: Number, required: true, min: 0 },
     tournaments: { type: Number, required: true, min: 0 },
     isAllStars: { type: Boolean, default: false },
-    sourceRow: { type: Number, required: true, min: 1 },
-    sourceRank: { type: Number, min: 1 },
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', default: null },
     legacyUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
