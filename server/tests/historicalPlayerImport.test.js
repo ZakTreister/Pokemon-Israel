@@ -37,3 +37,18 @@ test('existing linked Player survives a name change', () => {
     [{normalizedName:'שם ?',player:'p9'}]);
   assert.equal(item.player._id, 'p9');
 });
+
+test('reuses existing regular Player rather than creating a duplicate', () => {
+  const existingRegular = player('regular-17', 'שחקן', 'דוגמה', 'quarterly');
+  const [entry] = planHistoricalPlayers([row('שחקן דוגמה')], [existingRegular]);
+  assert.equal(entry.state, 'name-candidate');
+  assert.equal(entry.player._id, existingRegular._id);
+});
+
+test('takes exact firstName/lastName columns from split source CSV', () => {
+  const splitRow = { ...row('שם כפול משפחה'), firstName: 'שם כפול', lastName: 'משפחה' };
+  const [entry] = planHistoricalPlayers([splitRow], []);
+  assert.equal(entry.firstName, 'שם כפול');
+  assert.equal(entry.lastName, 'משפחה');
+  assert.equal(entry.reviewSuggested, true);
+});
