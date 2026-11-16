@@ -10,7 +10,14 @@ import {
 export const getNationalRankings = asyncHandler(async (req, res) => {
   const historical = await HistoricalRanking.find({ source: HISTORICAL_RANKING_SOURCE })
     .select('playerName points tournaments isAllStars player legacyUser')
+    .populate('player', 'firstName lastName')
     .lean();
+  // Display the canonical Player name after staff edits; preserve old source label in the snapshot.
+  for (const row of historical) {
+    if (!row.player) continue;
+    row.playerName = `${row.player.firstName} ${row.player.lastName}`.trim();
+    row.player = row.player._id;
+  }
   const hasHistoricalSnapshot = historical.length > 0;
   const query = {
     status: 'completed',
