@@ -31,24 +31,30 @@ if (apply && !args.includes('--approved'))
 
 const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').trimEnd().split(/\r?\n/);
 const actualColumns = lines.shift();
-const withSerials = actualColumns === 'sourceRow,sourceRank,playerName,points,tournaments,isAllStars';
-const minimal = actualColumns === 'playerName,points,tournaments,isAllStars';
-if (!withSerials && !minimal) throw new Error('Unexpected CSV columns');
+const splitColumns = actualColumns === 'firstName,lastName,points,tournaments,isAllStars';
+const legacyColumns = actualColumns === 'playerName,points,tournaments,isAllStars';
+if (!splitColumns && !legacyColumns)
+  throw new Error('Expected CSV headers: firstName,lastName,points,tournaments,isAllStars');
 const rows = lines.map((line, i) => {
+  // The source uses names without commas. Quote characters/commas are not valid inside
+  // firstName/lastName in this one-time private import format.
   const parts = line.split(',');
-  if (parts.length !== (withSerials ? 6 : 4)) throw new Error(`CSV row ${i + 2}: invalid columns`);
-  // Source row number and original ranking position are deliberately discarded.
-  const [playerName, points, tournaments, isAllStars] = withSerials ? parts.slice(2) : parts;
-  const name = playerName.trim();
+  if (parts.length !== (splitColumns ? 5 : 4))
+    throw new Error(`CSV row ${i + 2}: invalid columns`);
+  const [firstName, lastName, points, tournaments, isAllStars] = splitColumns
+    ? parts : [null, null, ...parts.slice(1)];
+  const playerName = (splitColumns ? `${firstName} ${lastName}` : parts[0]).trim().replace(/\s+/g, ' ');
   const row = {
     source: HISTORICAL_RANKING_SOURCE,
-    playerName: name,
-    normalizedName: normalizeRankingName(name),
+    playerName,
+    ...(splitColumns ? { firstName: firstName.trim(), lastName: lastName.trim() } : {}),
+    normalizedName: normalizeRankingName(playerName),
     points: Number(points),
     tournaments: Number(tournaments),
     isAllStars: isAllStars === 'true',
   };
-  if (!name || name.length > 200 || !row.normalizedName ||
+  if (!row.playerName || row.playerName.length > 200 || !row.normalizedName ||
+      (splitColumns && (!row.firstName || !row.lastName || row.firstName.length > 50 || row.lastName.length > 50)) ||
       !Number.isInteger(row.points) || row.points < 0 ||
       !Number.isInteger(row.tournaments) || row.tournaments < 0 ||
       !['true', 'false'].includes(isAllStars))
@@ -119,10 +125,15 @@ try {
   const reportFile = option('--report');
   if (reportFile) writeFileSync(reportFile, JSON.stringify(report, null, 2), 'utf8');
   console.log('DB identity preview:', JSON.stringify(proposed, null, 2));
-  if (blocked.length) {
+  const needsNameReview = plan.filter(x => x.reviewSuggested && !x.issue);
+  if (needsNameReview.length) {
+    console.error('Names awaiting verified first/last-name approval:');
+    for (const x of needsNameReview) console.error(`${x.row.playerName}: ${x.firstName} | ${x.lastName}`);
+  }
+  if (blocked.length || needsNameReview.length) {
     console.error('Blocking identities (up to 30 shown):');
     for (const x of blocked.slice(0, 30)) console.error(`${x.row.playerName}: ${x.issue}`);
-    throw new Error(`Refusing import: ${blocked.length} unresolved identities. Use private --review-file overrides.`);
+    throw new Error(`Refusing import: ${blocked.length} unresolved identities and ${needsNameReview.length} unreviewed split names. Use private --review-file overrides.`);
   }
   if (!apply) {
     console.log('Read-only DB inspection complete. Review private report before --apply --approved.');
