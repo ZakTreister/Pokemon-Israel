@@ -13,7 +13,7 @@ The sanitized private CSV for the current importer is `cardschool-historical-ran
 The November import creates/links canonical `Player` documents, not just independent leaderboard entries. Each `HistoricalRanking` stores immutable original aggregate points/participations and a link to its canonical `Player`. No fake `Tournament` documents or per-event history are created. The historical baseline is counted once and later regular-tournament results are added by canonical Player ID, only after the snapshot cutoff.
 
 For new club players:
-- `firstName` is provisionally the first whitespace-separated name token and `lastName` the remaining token(s); allow review-file overrides for compounds. **30** names have three or more tokens; the operator must review the proposed split. For instance, `דוד שמואל יעקובוביץ` may need a two-word first name. `ספיר ?` is unresolved and must be reviewed.
+- `firstName` is provisionally the first whitespace-separated name token and `lastName` the remaining token(s); allow review-file overrides for compounds. **30** names have three or more tokens; the operator must review the proposed split. For instance, `ילד שני משפחה` may need a two-word first name. `שם ?` is unresolved and must be reviewed.
 - The Player is created as `quarterly` with `city: ''`, `birthYear: null` and a private historical-import marker. Missing city is permitted **only for this historical-import cohort**, not ordinary manually created club players.
 - Admin can later edit first name, last name, city and optional integer **birth year** in `ניהול → שחקנים → עריכה`. Year-only values are not turned into fictitious January 1 birthdates. Existing All-Stars already have an optional exact-date profile field.
 
@@ -52,7 +52,7 @@ Compare proposed All-Stars matches against actual roster; review name splitting;
 
 ```json
 {
-  "דוד שמואל יעקובוביץ": { "firstName": "דוד שמואל", "lastName": "יעקובוביץ" },
+  "ילד שני משפחה": { "firstName": "ילד שני", "lastName": "משפחה" },
   "שחקן שדורש התאמה": { "playerId": "0123456789abcdef01234567" }
 }
 ```
