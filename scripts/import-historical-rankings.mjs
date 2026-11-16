@@ -86,7 +86,7 @@ try {
   // Archived Players are included in preflight so we never quietly clone an archived child.
   const [players, existing] = await Promise.all([
     Player.find().setOptions({ includeDeleted: true })
-      .select('_id firstName lastName playerType deletedAt historicalImportSource historicalNormalizedName')
+      .select('_id firstName lastName playerType user deletedAt historicalImportSource historicalNormalizedName')
       .lean(),
     HistoricalRanking.find({ source: HISTORICAL_RANKING_SOURCE }).lean(),
   ]);
@@ -155,9 +155,12 @@ try {
       const linked = historicalByName.get(row.normalizedName);
       if (linked?.player && String(linked.player) !== String(target._id))
         throw new Error(`Existing confirmed link differs for ${row.playerName}`);
+      if (linked?.legacyUser && target.user && String(linked.legacyUser) !== String(target.user))
+        throw new Error(`Conflicting User link for ${row.playerName}`);
+      const linkedUser = target.user || linked?.legacyUser || null;
       const result = await HistoricalRanking.updateOne(
         { source: HISTORICAL_RANKING_SOURCE, normalizedName: row.normalizedName },
-        { $setOnInsert: row, $set: { player: target._id } },
+        { $setOnInsert: row, $set: { player: target._id, ...(linkedUser ? { legacyUser: linkedUser } : {}) } },
         { upsert: true },
       );
       if (result.upsertedCount) newRankings++;
