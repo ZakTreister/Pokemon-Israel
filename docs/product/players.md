@@ -387,3 +387,12 @@ Apply these ordering and spacing requirements to the canonical Player edit dialo
 ## Public player visual corrections — 2026.10.6
 - Pokémon: exactly one unbroken horizontal row under the player portrait, up to six configured icon images in Poké Ball frames; both frame and icon shrink freely on narrow displays, no positive minimum dimensions, no horizontal scroll/overflow, and a maximum size is allowed.
 - Public player page deck section: show **דק נוכחי** (including heading/ARIA/alt); keep it last. Existing storage, uploaded image and underlying DTO stay unchanged.
+
+
+## Historical import profile exception — November 2026
+
+Regular/quarterly players imported from the national-ranking snapshot are canonical `Player` records, even when the source has no city or year of birth. Such records carry the import marker `historicalImportSource` and may keep `city: ''` until staff add it. Ordinary manually created regular players must still supply city.
+
+Admin's existing Player editor allows adjusting first/last name and city; for imported regular players, add an optional **שנת לידה** field. Persist a year-only integer `birthYear` (or null), not a fabricated exact date-of-birth. The year and import metadata are not shown on the public national leaderboard. Editing a Player's name must not detach the historic points; identity is a stable Player ID.
+
+The importer first checks the live canonical Player database. Reuse existing team/All-Stars and club Player records after review of unique matching candidates; stop on ambiguity, archival or unmatched source-marked All-Stars. Do not create new unassigned team players, change roster/team/player number, or overwrite existing profile data.
