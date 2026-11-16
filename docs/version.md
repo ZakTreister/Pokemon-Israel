@@ -773,15 +773,15 @@ Implemented directly on `main`; no feature branch or PR was created. The impleme
 **Branch:** `feature/historical-national-rankings-2026-11`
 
 ### Approved scope
-1. Import the actual national ranking spreadsheet as one cumulative points/participations baseline; no per-event historical records or fake tournaments.
+1. Import the owner-reviewed split-name CSV (`firstName,lastName,points,tournaments,isAllStars`) as a cumulative points/participations baseline; no per-event historical records or fake tournaments.
 2. Preserve 337 source rows, 35 source-marked All-Stars and all points/participations. Original serial and source rank are discarded; calculated rank is canonical.
 3. Hide source-marked All-Stars by default. Checkbox `הצג שחקני All-Stars` includes them muted/grey with a visible label.
 4. Show place, name, points, participations; global search, column sort and server-side pagination (25 per page).
-5. Respect scoring cutoff and avoid duplicate historical scores; inspect the live Player database and approve exact-name candidates, block ambiguous/archived/unmatched All-Stars, create canonical missing regular Players with city/year missing, and allow staff to complete them later.
+5. Respect scoring cutoff and avoid duplicate historical scores; inspect **all** existing regular AND All-Stars Players in the live DB before creating new Players, review compound first/last-name splits (private review required for unresolved names), block ambiguous/archived/unmatched All-Stars and unsafe legacy User-only identities, and create only truly missing regular Players with city/year missing.
 6. Treat the raw Excel/CSV as private deployment input; never commit children's full data to the public repository.
 
 ### Verification and gating
-- Focused tests: **PASS** (`node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — 10 tests).
+- Focused tests: **PASS** (`node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — 12 tests, including existing regular Player identity reuse and split CSV columns).
 - CSV dry run: **PASS** (337 rows; 35 All-Stars; 6,054 points; 821 participations).
 - Full configured tests, UI checks, lint and build: **PENDING**.
 - Production Mongo import and identity reconciliation: **NOT RUN**; separate manual operator steps after DB backup and review.
