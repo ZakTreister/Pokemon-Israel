@@ -36,7 +36,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
   res.json(
     await paginate(Player, query, req.query, (q) =>
       q
-        .select(req.user.role === 'judge' ? '-dateOfBirth' : '')
+        .select(req.user.role === 'judge' ? '-dateOfBirth -birthYear' : '')
         .populate('user', 'username name role')
         .sort({ firstName: 1, lastName: 1, _id: 1 }),
     ),
