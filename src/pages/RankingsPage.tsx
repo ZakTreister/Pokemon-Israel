@@ -34,6 +34,7 @@ export default function RankingsPage() {
     let active = true;
     setBusy(true);
     setError('');
+    setData(null);
     getNationalRankings({
       search: debouncedSearch,
       includeAllStars,
