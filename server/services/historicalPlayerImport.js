@@ -18,7 +18,11 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
   const assignments = new Set();
   return rows.map(row => {
     const override = review[row.playerName] || {};
-    const split = splitHistoricalPlayerName(row.playerName, override);
+    // CSV columns are the preferred proposed split; a private review override can correct them.
+    const split = splitHistoricalPlayerName(row.playerName, {
+      ...(row.firstName && row.lastName ? { firstName: row.firstName, lastName: row.lastName } : {}),
+      ...override,
+    });
     const previous = existingBySourceName.get(row.normalizedName);
     const expectedType = row.isAllStars ? 'team' : 'quarterly';
     const reviewedName = normalizeRankingName(`${split.firstName} ${split.lastName}`);
@@ -54,7 +58,7 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
       issue = 'Two historical rows resolve to the same Player';
     if (chosen) assignments.add(String(chosen._id));
     return { row, ...split, player: chosen || null, state: issue ? 'blocked' : state,
-      issue, reviewSuggested: split.reviewSuggested && state === 'create-quarterly' &&
-        !(override.firstName && override.lastName) };
+      issue, reviewSuggested: (split.reviewSuggested || /\?/.test(split.lastName)) &&
+        state === 'create-quarterly' && !(override.firstName && override.lastName) };
   });
 }
