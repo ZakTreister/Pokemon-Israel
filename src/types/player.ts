@@ -1,5 +1,7 @@
 export interface Player {
   joinedAt?: string;
+  birthYear?: number | null;
+  historicalImportSource?: string | null;
   pokemon?: string[];
   deckUploadId?: string | null;
   deckUrl?: string;
@@ -49,6 +51,7 @@ export interface CreateTeamPlayerInput {
 }
 
 export interface UpdatePlayerInput {
+  birthYear?: number | null;
   joinedAt?: string;
   pokemon?: string[];
   deckUploadId?: string | null;
