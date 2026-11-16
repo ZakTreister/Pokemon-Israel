@@ -39,6 +39,10 @@ const playerSchema = new mongoose.Schema(
       },
     },
     playerNumber: { type: String, trim: true, default: '' },
+    // A historical import can create a player before city is known.
+    historicalImportSource: { type: String, default: null },
+    // A year-only value is not an invented date of birth.
+    birthYear: { type: Number, default: null, min: 1900, max: new Date().getFullYear() },
     city: { type: String, trim: true, maxlength: 100, default: '' },
     playerType: {
       type: String,
@@ -103,6 +107,7 @@ playerSchema.index(
 playerSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
+    delete ret.historicalImportSource;
     if (doc.playerType === 'team') {
       ret.photoUrl = publicMediaUrl(doc.photoMedia);
       ret.deckUrl = publicMediaUrl(doc.deckMedia);
@@ -146,7 +151,7 @@ playerSchema.pre('validate', function (next) {
   this.normalizedFirstName = normalizeField(this.firstName);
   this.normalizedLastName = normalizeField(this.lastName);
   this.normalizedCity = normalizeField(this.city);
-  if (this.playerType === 'quarterly' && !this.city?.trim())
+  if (this.playerType === 'quarterly' && !this.city?.trim() && !this.historicalImportSource)
     this.invalidate('city', 'עיר היא שדה חובה');
   try {
     Object.assign(this, profileFields(this));
