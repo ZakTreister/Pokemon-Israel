@@ -458,3 +458,7 @@ During a version, Codex runs only tests/checks relevant to the feature batch bei
 If final verification exposes a failure, Codex iterates using the smallest failing subset and reruns the full suite only after that subset passes.
 
 Codex should avoid redundant test layers, unrelated refactors, repeated reading of irrelevant docs and tiny per-file commits.
+
+
+## 2026-11 — Historical cumulative national ranking baseline
+The national ranking spreadsheet provides 337 aggregate score/participation rows and 35 explicit All-Stars markers; it does not contain per-tournament results or cities/IDs. Import only an audited cumulative opening balance, never fictional tournaments. Keep post-snapshot scoring additive without double counting. Do not fabricate identities or merge children by name. Hide imported All-Stars rows by default; an opt-in checkbox shows them muted and labeled. Use genuine server-side search, global sorting and pagination.
