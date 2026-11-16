@@ -781,7 +781,7 @@ Implemented directly on `main`; no feature branch or PR was created. The impleme
 6. Treat the raw Excel/CSV as private deployment input; never commit children's full data to the public repository.
 
 ### Verification and gating
-- Focused tests: **PASS** (`node --test server/tests/nationalRankings.test.js` — 5 tests).
+- Focused tests: **PASS** (`node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — 10 tests).
 - CSV dry run: **PASS** (337 rows; 35 All-Stars; 6,054 points; 821 participations).
 - Full configured tests, UI checks, lint and build: **PENDING**.
 - Production Mongo import and identity reconciliation: **NOT RUN**; separate manual operator steps after DB backup and review.
