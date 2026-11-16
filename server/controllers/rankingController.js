@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import HistoricalRanking from '../models/historicalRankingModel.js';
+import Player from '../models/playerModel.js';
 import {
   buildNationalRanking,
   HISTORICAL_CUTOFF,
@@ -10,15 +11,19 @@ import {
 export const getNationalRankings = asyncHandler(async (req, res) => {
   const historical = await HistoricalRanking.find({ source: HISTORICAL_RANKING_SOURCE })
     .select('playerName points tournaments isAllStars player legacyUser')
-    .populate('player', 'firstName lastName')
     .lean();
-  // Display the canonical Player name after staff edits; preserve old source label in the snapshot.
-  for (const row of historical) {
-    if (!row.player) continue;
-    row.playerName = `${row.player.firstName} ${row.player.lastName}`.trim();
-    row.player = row.player._id;
+  // Never publish a partially applied historical import as the canonical baseline.
+  const hasHistoricalSnapshot = historical.length === 337 && historical.every(row => !!row.player);
+  if (!hasHistoricalSnapshot) historical.length = 0;
+  else {
+    const players = await Player.find({ _id: { $in: historical.map(row => row.player) } })
+      .setOptions({ includeDeleted: true })
+      .select('firstName lastName').lean();
+    const currentNames = new Map(players.map(player =>
+      [String(player._id), `${player.firstName} ${player.lastName}`.trim()]));
+    for (const row of historical)
+      row.playerName = currentNames.get(String(row.player)) || row.playerName;
   }
-  const hasHistoricalSnapshot = historical.length > 0;
   const query = {
     status: 'completed',
     type: { $in: [null, 'quarterly'] },
