@@ -1,52 +1,74 @@
-# National league — historical cumulative ranking import (November 2026)
+# Import the historical national ranking snapshot (November 2026)
 
-## Source and scope
+## What the source actually contains
 
-The owner supplied `טבלת הדירוג הישראלי פוקימון.xlsx` as **all tournament history available up to the 2026-11-16 import snapshot**. It is a cumulative leaderboard, **not** a tournament-by-tournament record.
+The owner supplied `טבלת הדירוג הישראלי פוקימון.xlsx` as one cumulative snapshot of all previous regular-tournament ranking results. There are **337 distinct names**, of which **35** are marked All-Stars, **6,054** total points and **821** counted participations. Individual tournament rounds/results, city, player identifiers, exact birthdates, year of birth, OMP, GWP and OGP **do not exist in the source**. Do not fabricate them.
 
-The original workbook has 338 nonempty rows, of which row 338 is a header accidentally placed at the bottom. Actual import rows: **337** distinct names, **35** marked `all-stars`, **302** others, **6,054** accumulated points, **821** accumulated participations. The available fields are original place, full name, total points, number of participations, and All-Stars flag. No individual tournament results, city, player ID, birth date, OMP/GWP/OGP, or historic best rank is available. Never invent any of those fields.
+The sanitized private CSV for the current importer is `cardschool-historical-rankings-2026-11.csv` with exactly four columns: `playerName,points,tournaments,isAllStars`. The importer still accepts the earlier six-column CSV but **ignores its source row number and source ranking position entirely**. Neither original serial nor imported row position is stored in MongoDB. Leaderboard positions are computed from points.
 
-Do **not** commit the real source Excel or converted CSV to the public repository. They contain children's names. The project owner retains the CSV locally, and the deployment operator supplies its path to the import command. The downloadable CSV is named `cardschool-historical-rankings-2026-11.csv`.
+**Never commit the real Excel/CSV or a matching review file to this public repository.** They contain children's names and/or internal IDs. The project owner/operator keeps all three files in private local storage.
 
-## Data integrity and review
+## Canonical Player records, names, and All-Stars
 
-- The 337 names are unique after trimming, collapsing spaces, and case folding. This does *not* establish that they match existing DB players uniquely; the spreadsheet has no city or national ID.
-- Three original placements appear out of score order: **איתם דובדבני** (29 points, source place 111), **אלעד הרכבי** (25 points, source place 149), **אושרי קאפח** (14 points, source place 189). Preserve their scores and original positions in audit metadata; calculate the displayed leaderboard rank from total points rather than trusting the source place.
-- The name **ספיר ?** includes an unresolved surname marker and needs a manual review. Do not guess a surname.
-- Historical All-Stars means the 35 rows explicitly flagged `all-stars` in the source. It does not create an overall cross-team All Stars competition.
-- Because the sheet gives no event dates, its totals are treated as a snapshot through 2026-11-16 (Israel local date). Only subsequently dated regular tournaments contribute additional points. Confirm the cutoff before applying to production if the spreadsheet's actual compilation date differs.
-- An imported ranking row is **not** automatically a Player record. Never fabricate a city, bypass Player validation, or join to an existing child by name alone. Future live tournament rows require a **staff-reviewed** `player` or `legacyUser` mapping in the HistoricalRanking database record to accumulate against that historical baseline. Until mapped, separate live and imported rows may appear for the same text name. This is a known follow-up.
+The November import creates/links canonical `Player` documents, not just independent leaderboard entries. Each `HistoricalRanking` stores immutable original aggregate points/participations and a link to its canonical `Player`. No fake `Tournament` documents or per-event history are created. The historical baseline is counted once and later regular-tournament results are added by canonical Player ID, only after the snapshot cutoff.
 
-## Architecture
+For new club players:
+- `firstName` is provisionally the first whitespace-separated name token and `lastName` the remaining token(s); allow review-file overrides for compounds. **30** names have three or more tokens; the operator must review the proposed split. For instance, `דוד שמואל יעקובוביץ` may need a two-word first name. `ספיר ?` is unresolved and must be reviewed.
+- The Player is created as `quarterly` with `city: ''`, `birthYear: null` and a private historical-import marker. Missing city is permitted **only for this historical-import cohort**, not ordinary manually created club players.
+- Admin can later edit first name, last name, city and optional integer **birth year** in `ניהול → שחקנים → עריכה`. Year-only values are not turned into fictitious January 1 birthdates. Existing All-Stars already have an optional exact-date profile field.
 
-- `HistoricalRanking`: one document per imported person containing points, participations, source name/place/row and imported All-Stars flag. Optional reviewed links to Player or legacy User. This is an explicit exception to the usual event-derived ranking rule, because the source has aggregate totals only.
-- `GET /api/rankings`: combines this historical baseline with non-deleted, completed regular tournaments **after** the snapshot cutoff; no invented tournament documents. Existing legacy tournament result handling remains for pre-import installations that have no baseline.
-- Apply All-Stars visibility **before** canonical rank computation, then text search, then server-side sorting and pagination. Shared-point ranks tie (1, 1, 3). When search narrows results, the player retains the canonical rank within the chosen All-Stars visibility cohort.
-- Request params: `includeAllStars=true|false` (default false), `search`, `page` (default 1), `pageSize` (default 25, maximum 100), `sort`, `descending`. Response: page rows plus `total`, `page`, `pageSize`, `totalPages`.
-- Public table: place, name, points, participations. No historical best-rank column. Search and pagination are server-side. Optional All-Stars rows are greyed and visibly tagged All-Stars. Display only the current page. Rows are not public child-profile links.
+For existing players:
+- The live DB preview proposes a match only when the **normalized full name is unique within the matching player type** and no contradictory/archived matches exist. This applies to both club and All-Stars players.
+- All-Stars must already be existing `team` Players, as requested. **Never auto-create a new All-Stars Player or change an existing player's team membership, number, city, photo, badges, deck, or tournament results.** A missing or ambiguous All-Stars match is an import blocker.
+- A player's name or status may have changed since the spreadsheet. Use an explicit reviewed `playerId` mapping in the private review JSON; the importer refuses ambiguous/archived identities rather than guessing. It accepts mismatched current name only when the mapping is explicit.
+- Name-based candidates are **not merged silently**. The operator must first run `--inspect`, review matches and name splits, and then explicitly pass `--approved` to run the import.
+- Existing Player profile data is not overwritten by historical snapshot contents; only a link to historic aggregate points/participations is added.
+- Rerunning import is idempotent and checks baseline totals for conflicts, so an interruption cannot silently double-count.
 
-## One-time deployment
+## Ranking behavior
 
-1. Back up the production MongoDB database. Confirm the intended snapshot cutoff and review the three misplaced original positions and unresolved name before running.
-2. Copy `cardschool-historical-rankings-2026-11.csv` from the project owner's download to a secure local path outside the public repository.
-3. Run a dry-run (does not connect to MongoDB):
+- Normal national rankings hide source-marked All-Stars. A checkbox `הצג שחקני All-Stars` includes them as muted rows with an All-Stars label. This does not create an overall All-Stars team-player league ranking.
+- The national ranking page has **server-side** search, global sort and pagination (default 25/page), independent of current table page state.
+- Canonical position comes from the cumulative points among the chosen cohort, and is calculated **before** search or pagination. Equal points share a position.
+- The baseline is treated as a snapshot through **2026-11-16** Israel time; only later completed regular tournaments contribute. Confirm the date before deployment; otherwise adjust the code/data contract deliberately.
+- Source names on the public leaderboard follow the canonical linked Player name, including subsequent edits. Historical points/participations remain unchanged unless the owner explicitly authorizes a correction.
+- The public ranking displays only place, name, cumulative points and counted participations. No old original ordinal/serial is stored or shown.
 
-   ```bash
-   node scripts/import-historical-rankings.mjs --file /secure/path/cardschool-historical-rankings-2026-11.csv
-   ```
+## Commands and precautions
 
-4. Verify summary: 337 rows, 35 All-Stars, 302 regular, 6,054 points, 821 participations; no duplicate normalized names.
-5. After deploying the code with valid `MONGODB_URI`, apply intentionally:
+First run an **offline CSV validation** (no database opened):
 
-   ```bash
-   node scripts/import-historical-rankings.mjs --file /secure/path/cardschool-historical-rankings-2026-11.csv --apply
-   ```
+```bash
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv
+```
 
-6. The upsert is idempotent, refuses to overwrite divergent historical totals, and never creates Player, User, or Tournament records. Verify `GET /api/rankings` returns 302 non-All-Stars by default and 337 with `includeAllStars=true` before counting post-cutoff results. Verify pagination, search, and marks on mobile.
-7. Staff can subsequently add reviewed `player` / `legacyUser` links to historical records as a separate identity reconciliation workflow. Do not let unresolved identity matching silently double count or overwrite existing player results.
+Before any write, back up production MongoDB. With `MONGODB_URI` configured, run **read-only DB identity inspection** and save the report **outside** the public repository:
 
-## Verification
+```bash
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --inspect --report /secure/identity-preview.json
+```
 
-Focused pure calculation tests: `node --test server/tests/nationalRankings.test.js`.
+Compare proposed All-Stars matches against actual roster; review name splitting; resolve ambiguous/archived/missing players. To correct a compound name or explicitly link a differently spelled/ambiguous existing person, prepare a private `/secure/review.json`, for example:
 
-Before merging, run configured full server tests, UI verification, lint and production build per `AGENTS.md`. This PR is a draft until those checks and production identity/cutoff review are completed.
+```json
+{
+  "דוד שמואל יעקובוביץ": { "firstName": "דוד שמואל", "lastName": "יעקובוביץ" },
+  "שחקן שדורש התאמה": { "playerId": "0123456789abcdef01234567" }
+}
+```
+
+Then repeat `--inspect` with `--review-file` until no blockers remain and the report has been reviewed. Only then run:
+
+```bash
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --apply --approved --review-file /secure/review.json
+```
+
+If there are no overrides, omit `--review-file`. `--approved` confirms that the operator reviewed identity candidates, name splits, the cutoff, and the DB backup; it is **not** a substitute for review. Do not store internal Player IDs in a public GitHub commit.
+
+After applying, verify counts, player management edits, All-Stars visibility, search, sorting, pagination and subsequent player-ID-linked scores. The first run can create up to 302 regular Player records, but the actual number depends on existing matches. All 35 All-Stars should link to existing Players or the script stops.
+
+## Verification status
+
+- Focused pure tests: `node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — passing in the workspace.
+- Offline CSV validation: passing for 337/35/6,054/821.
+- **Not done:** live DB `--inspect`/`--apply`; full repository tests, lint, TypeScript build, production deployment. Keep this PR draft until those checks and identity review are completed.
