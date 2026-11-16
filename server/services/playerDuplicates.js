@@ -15,8 +15,48 @@ export async function likelyPlayers(input, playerType) {
       .split(' ')
       .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
       .join('\\s+');
-  for (const key of ['firstName', 'lastName', 'city'])
-    query[key] = new RegExp(`^\\s*${literal(input[key] || '')}\\s*$`, 'i');
+  for (const key of ['firstName', 'lastName'])
+    query[key] = new RegExp(`^\\s*${literal(input[key] || '')}\\s*import Player, { normalizeField } from '../models/playerModel.js';
+export async function migratePlayerIdentityIndex() {
+  const indexes = await Player.collection.indexes();
+  for (const index of indexes)
+    if (index.unique && index.key.normalizedClub)
+      await Player.collection.dropIndex(index.name).catch((error) => {
+        if (error.code !== 27) throw error;
+      });
+}
+export async function likelyPlayers(input, playerType) {
+  const query = { playerType, deletedAt: null };
+  // Regex matches legacy names as well as new normalized records, without a migration prerequisite.
+  const literal = (value) =>
+    normalizeField(value)
+      .split(' ')
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('\\s+');
+, 'i');
+  const cityRegex = new RegExp(`^\\s*${literal(input.city || '')}\\s*import Player, { normalizeField } from '../models/playerModel.js';
+export async function migratePlayerIdentityIndex() {
+  const indexes = await Player.collection.indexes();
+  for (const index of indexes)
+    if (index.unique && index.key.normalizedClub)
+      await Player.collection.dropIndex(index.name).catch((error) => {
+        if (error.code !== 27) throw error;
+      });
+}
+export async function likelyPlayers(input, playerType) {
+  const query = { playerType, deletedAt: null };
+  // Regex matches legacy names as well as new normalized records, without a migration prerequisite.
+  const literal = (value) =>
+    normalizeField(value)
+      .split(' ')
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('\\s+');
+, 'i');
+  // Historical regular Players may have an unknown city. Warn instead of
+  // allowing staff to create a duplicate when entering a now-known city.
+  query.$or = playerType === 'quarterly' && (input.city || '').trim()
+    ? [{ city: cityRegex }, { city: '', historicalImportSource: { $ne: null } }]
+    : [{ city: cityRegex }];
   return Player.find(query)
     .select('firstName lastName city playerType team isActive')
     .sort({ _id: 1 });
