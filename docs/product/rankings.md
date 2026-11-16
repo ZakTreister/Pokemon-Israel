@@ -79,3 +79,14 @@ Do not couple this annual reset to badge Seasons.
 
 ## Seasons do not reset ranking
 Badge Seasons have no scoring reset semantics.
+
+
+## Historical regular ranking baseline (November 2026)
+
+The owner's historical Excel contains aggregate lifetime points and participation counts, not per-tournament results. This approved import is a one-time opening-balance exception to the event-derived ranking rule. Do not create fake tournaments, placements, event history or best-rank data.
+
+The imported ranking baseline is through **2026-11-16** local Israel date. Only later completed regular tournaments may add to it; earlier DB tournament results must not be double-counted. The source has no city or participant IDs, so link to canonical Player/User records only after staff identity review, never by exact name alone. Unmatched history may appear as a standalone ranking record rather than a fabricated Player.
+
+The default national ranking page **excludes imported All-Stars players**. A checkbox **הצג שחקני All-Stars** includes them as grey/muted rows marked **All-Stars**. This is not an overall cross-team All Stars competitive ranking. Ranking places are computed from descending cumulative points among the currently eligible cohort, with shared places on ties, *before* search or pagination. Search never renumbers the ranking.
+
+The table displays **מקום, שחקן, נקודות, השתתפויות**. Search, global column sorting and paging are server-side. Default page size **25**; show previous/next and current/total pages. Changing search, sorting or All-Stars visibility resets to page 1. Remain RTL and mobile-friendly.
