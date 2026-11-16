@@ -62,6 +62,20 @@ export default function PlayerEditDialog({
             onChange={(e) => setValue({ ...value, city: e.target.value })}
           />
         </label>
+        {!team && (
+          <label>
+            שנת לידה (אופציונלי)
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1900}
+              max={new Date().getFullYear()}
+              className="cs-player-input"
+              value={value.birthYear ?? ''}
+              onChange={(e) => setValue({ ...value, birthYear: e.target.value === '' ? null : Number(e.target.value) })}
+            />
+          </label>
+        )}
         {team && (
           <PlayerNumberField
             value={value.playerNumber}
