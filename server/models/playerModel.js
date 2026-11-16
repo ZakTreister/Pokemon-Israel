@@ -41,6 +41,7 @@ const playerSchema = new mongoose.Schema(
     playerNumber: { type: String, trim: true, default: '' },
     // A historical import can create a player before city is known.
     historicalImportSource: { type: String, default: null },
+    historicalNormalizedName: { type: String, default: null },
     // A year-only value is not an invented date of birth.
     birthYear: { type: Number, default: null, min: 1900, max: new Date().getFullYear() },
     city: { type: String, trim: true, maxlength: 100, default: '' },
@@ -87,6 +88,11 @@ const playerSchema = new mongoose.Schema(
   },
 );
 
+playerSchema.index(
+  { historicalImportSource: 1, historicalNormalizedName: 1 },
+  { unique: true, partialFilterExpression: { historicalNormalizedName: { $type: 'string' } } },
+);
+
 playerSchema.index({
   normalizedFirstName: 1,
   normalizedLastName: 1,
@@ -107,7 +113,7 @@ playerSchema.index(
 playerSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
-    delete ret.historicalImportSource;
+    delete ret.historicalNormalizedName;
     if (doc.playerType === 'team') {
       ret.photoUrl = publicMediaUrl(doc.photoMedia);
       ret.deckUrl = publicMediaUrl(doc.deckMedia);
