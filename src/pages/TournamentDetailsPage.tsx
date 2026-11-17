@@ -113,8 +113,7 @@ export default function TournamentDetailsPage() {
                 <div>
                   <h2 className="font-bold">הרשמה</h2>
                   <p>
-                    ההרשמה פתוחה עד{' '}
-                    {new Date(t.registrationDeadline).toLocaleString('he-IL')}.
+                    הרשמה פתוחה עד סוף יום הטורניר ({new Date(t.date).toLocaleDateString('he-IL')}).
                   </p>
                   {user ? (
                     <Button disabled={busy} onClick={() => void register()}>
