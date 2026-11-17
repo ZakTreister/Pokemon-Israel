@@ -8,9 +8,17 @@ export function splitHistoricalPlayerName(fullName, override = {}) {
     ? override.firstName.trim() : tokens[0] || '';
   const lastName = typeof override.lastName === 'string'
     ? override.lastName.trim() : tokens.slice(1).join(' ');
-  if (!firstName || !lastName || firstName.length > 50 || lastName.length > 50)
+  // The source may explicitly confirm an unknown surname (e.g. firstName only).
+  // Do not treat a blank surname as a confirmed value unless it is present in
+  // the reviewed split-name input; a blank inferred by parsing remains invalid.
+  const confirmedMissingSurname = Object.prototype.hasOwnProperty.call(override, 'lastName') &&
+    typeof override.lastName === 'string' && lastName === '' &&
+    normalizeRankingName(firstName) === normalizeRankingName(fullName);
+  if (!firstName || (!lastName && !confirmedMissingSurname) ||
+      firstName.length > 50 || lastName.length > 50)
     throw new Error(`Cannot split historical name: ${fullName}`);
-  return { firstName, lastName, reviewSuggested: tokens.length !== 2 || /\?/.test(fullName) };
+  return { firstName, lastName, reviewSuggested: !confirmedMissingSurname &&
+    (tokens.length !== 2 || /\?/.test(fullName)) };
 }
 
 export function planHistoricalPlayers(rows, players, existingHistorical = [], review = {}) {
@@ -20,7 +28,8 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
     const override = review[row.playerName] || {};
     // CSV columns are the preferred proposed split; a private review override can correct them.
     const split = splitHistoricalPlayerName(row.playerName, {
-      ...(row.firstName && row.lastName ? { firstName: row.firstName, lastName: row.lastName } : {}),
+      ...(typeof row.firstName === 'string' && typeof row.lastName === 'string'
+        ? { firstName: row.firstName, lastName: row.lastName } : {}),
       ...override,
     });
     const previous = existingBySourceName.get(row.normalizedName);
