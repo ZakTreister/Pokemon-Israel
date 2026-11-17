@@ -13,7 +13,7 @@ The current private split-name CSV is `cardschool-historical-rankings-split-2026
 The November import creates/links canonical `Player` documents, not just independent leaderboard entries. Each `HistoricalRanking` stores immutable original aggregate points/participations and a link to its canonical `Player`. No fake `Tournament` documents or per-event history are created. The historical baseline is counted once and later regular-tournament results are added by canonical Player ID, only after the snapshot cutoff.
 
 For new club players:
-- `firstName` and `lastName` are **explicit columns in the input CSV**. There are 30 three-token names plus one incomplete surname (`ספיר ?`). The owner must review uncertain proposed splits; for newly created regular Players with a three-token name or incomplete surname, a private review-file approval/override is required before apply. This is never silently inferred from the first whitespace token. For instance, `ילד שני משפחה` may need a two-word first name. Do not accept a literal `?` as a confirmed surname.
+- `firstName` and `lastName` are **explicit columns in the input CSV**. There are 30 three-token names plus one incomplete surname (an owner-confirmed first-name-only record). The owner must review uncertain proposed splits; for newly created regular Players with a three-token name or incomplete surname, a private review-file approval/override is required before apply. This is never silently inferred from the first whitespace token. For instance, `ילד שני משפחה` may need a two-word first name. Do not accept a literal `?` as a confirmed surname.
 - The Player is created as `quarterly` with `city: ''`, `birthYear: null` and a private historical-import marker. Missing city is permitted **only for this historical-import cohort**, not ordinary manually created club players.
 - Admin can later edit first name, last name, city and optional integer **birth year** in `ניהול → שחקנים → עריכה`. Year-only values are not turned into fictitious January 1 birthdates. Existing All-Stars already have an optional exact-date profile field.
 
@@ -74,7 +74,7 @@ After applying, verify counts, player management edits, All-Stars visibility, se
 - **Not done:** live DB `--inspect`/`--apply`; full repository tests, lint, TypeScript build, production deployment. Keep this PR draft until those checks and identity review are completed.
 
 ## Owner-confirmed missing surname exception
-The private split CSV contains one owner-confirmed name-only record: firstName `ספיר`, empty `lastName`, 1 point, 1 participation, regular player. Do not write `?` or an invented surname. The importer accepts a blank surname **only when explicitly present as an empty split CSV column**; unreviewed single-token legacy full names still fail validation. Imported canonical Players may retain blank surname, and staff can complete it later in the regular Player editor. Keep the source CSV private and preserve identical aggregate totals.
+The private split CSV contains one owner-confirmed name-only record: a verified regular record with a first name only and an empty `lastName`. Do not write `?` or an invented surname. The importer accepts a blank surname **only when explicitly present as an empty split CSV column**; unreviewed single-token legacy full names still fail validation. Imported canonical Players may retain blank surname, and staff can complete it later in the regular Player editor. Keep the source CSV private and preserve identical aggregate totals.
 
 ## Owner-approved split CSV (2026-11-17)
 
