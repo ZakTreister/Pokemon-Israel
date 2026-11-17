@@ -75,3 +75,11 @@ After applying, verify counts, player management edits, All-Stars visibility, se
 
 ## Owner-confirmed missing surname exception
 The private split CSV contains one owner-confirmed name-only record: firstName `ספיר`, empty `lastName`, 1 point, 1 participation, regular player. Do not write `?` or an invented surname. The importer accepts a blank surname **only when explicitly present as an empty split CSV column**; unreviewed single-token legacy full names still fail validation. Imported canonical Players may retain blank surname, and staff can complete it later in the regular Player editor. Keep the source CSV private and preserve identical aggregate totals.
+
+## Owner-approved split CSV (2026-11-17)
+
+The owner reviewed and approved all 21 queried first-name/last-name splits. The private canonical CSV is `cardschool-historical-rankings-approved-2026-11.csv`; use this file rather than earlier split candidates. Source totals remain unchanged: **337 entries, 35 All-Stars, 6,054 points, 821 participations**. The owner-approved answers changed 2 proposed splits; no original source ranking/serial is persisted.
+
+The private approval audit is `cardschool-name-splits-approved-2026-11.csv`: 21 explicitly approved complex splits, 9 clear compound surnames, and 1 confirmed empty surname. For the current importer, supply the corresponding **private** `cardschool-name-approvals-for-import-2026-11.json` via `--review-file` to suppress previously raised compound-name warnings; it contains only reviewed first/last-name overrides, not MongoDB Player IDs. Do not commit any of these private, child-identifying files to the public repo.
+
+**This resolves name splitting, not identity matching.** The live read-only `--inspect` report must still compare every row against both regular/quarterly and All-Stars/team Players, including archived records, and confirm uniqueness before `--apply`. Remaining real-database identity conflicts must be reviewed with explicit Player ID mappings and a fresh inspect run.
