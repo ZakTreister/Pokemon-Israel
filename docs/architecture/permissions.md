@@ -89,3 +89,13 @@ A judge calling an admin-only endpoint directly must receive an authorization fa
 Admin may soft-delete/archive players. Judge may not.
 
 Player deletion must preserve historical tournament/results integrity; do not hard-delete referenced historical Player records as part of the normal UI flow.
+
+
+## QR-intake exception (new)
+
+A judge or admin may use the guarded QR intake flow for an **active live internal-team tournament**:
+- review a supplied player ID or candidate identity, edit proposed details and choose an existing player or create a new record
+- add a player to the tournament's next-round participant set
+- explicitly confirm a global player-profile edit
+
+This QR-specific privilege is an intentional exception to the ordinary judge prohibition on player mutations. It must not grant access to the general Player management endpoints, team transfer/deletion or historical tournament editing. Judges still cannot mutate completed tournaments.
