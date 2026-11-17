@@ -46,7 +46,9 @@ export function buildNationalRanking(historicalRows, postImportTournamentRows, o
       ? linkedPlayers.get(id) || `player:${id}`
       : linkedUsers.get(id) || `user:${id}`;
     const row = totals.get(key) || {
-      playerId: key,
+      // Preserve the pre-import public identifier for ordinary event-only rows.
+      // The internal totals Map still distinguishes User and Player namespaces.
+      playerId: id,
       playerName: result.playerName || 'שחקן ללא שם',
       points: 0,
       tournaments: 0,
