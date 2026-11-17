@@ -251,7 +251,7 @@ export const registerForTournament = asyncHandler(async (req, res) => {
     user: req.user._id,
     registeredAt: Date.now(),
   });
-  tournament.currentParticipants = tournament.participants.length;
+  tournament.currentParticipants = tournament.participants.length + tournament.clubRegistrations.length;
 
   const updatedTournament = await tournament.save();
   
@@ -288,7 +288,7 @@ export const unregisterFromTournament = asyncHandler(async (req, res) => {
 
   // Remove the participant
   tournament.participants.splice(participantIndex, 1);
-  tournament.currentParticipants = tournament.participants.length;
+  tournament.currentParticipants = tournament.participants.length + tournament.clubRegistrations.length;
 
   const updatedTournament = await tournament.save();
   
@@ -357,7 +357,7 @@ export const addParticipant = asyncHandler(async (req, res) => {
     user: userId,
     registeredAt: Date.now(),
   });
-  tournament.currentParticipants = tournament.participants.length;
+  tournament.currentParticipants = tournament.participants.length + tournament.clubRegistrations.length;
 
   const updatedTournament = await tournament.save();
   
@@ -389,7 +389,7 @@ export const removeParticipant = asyncHandler(async (req, res) => {
 
   // Remove the participant
   tournament.participants.splice(participantIndex, 1);
-  tournament.currentParticipants = tournament.participants.length;
+  tournament.currentParticipants = tournament.participants.length + tournament.clubRegistrations.length;
 
   const updatedTournament = await tournament.save();
   
@@ -410,11 +410,21 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
     throw new Error('Tournament not found');
   }
 
-  // Validate that all players in results were tournament participants
-  const participantIds = tournament.participants.map(p => p.user.toString());
-  const resultsPlayerIds = req.body.results.map(r => r.player);
-  
-  const invalidPlayers = resultsPlayerIds.filter(id => !participantIds.includes(id));
+  // Club QR entrants use canonical Player IDs, while legacy registrations use User IDs.
+  if (!Array.isArray(req.body.results)) {
+    res.status(400);
+    throw new Error('Results must be a list');
+  }
+  const legacyIds = new Set(tournament.participants.map(p => String(p.user)));
+  const clubIds = new Set(tournament.clubRegistrations.map(p => String(p.player)));
+  const invalidPlayers = req.body.results.filter(row => {
+    if (!row || typeof row.player !== 'string') return true;
+    return row.playerModel === 'Player'
+      ? !clubIds.has(row.player)
+      : row.playerModel === undefined || row.playerModel === 'User'
+        ? !legacyIds.has(row.player)
+        : true;
+  });
   if (invalidPlayers.length > 0) {
     res.status(400);
     throw new Error('Results contain players who did not participate in the tournament');
@@ -430,6 +440,7 @@ export const submitTournamentResults = asyncHandler(async (req, res) => {
   // Update tournament with results and mark as completed
   // Map the results to include both tournament points and raw points
   tournament.results = req.body.results.map(result => ({
+    playerModel: result.playerModel === 'Player' ? 'Player' : 'User',
     player: result.player,
     playerName: result.playerName,
     position: result.position,
@@ -460,9 +471,10 @@ export const getTournamentResults = asyncHandler(async (req, res) => {
 
 export const getOwnRegistration = asyncHandler(async (req, res) => {
   if (!/^[a-f\d]{24}$/i.test(req.params.id)) { res.status(404); throw new Error('טורניר לא נמצא'); }
-  const tournament = await Tournament.findById(req.params.id).select('participants');
+  const tournament = await Tournament.findById(req.params.id).select('participants clubRegistrations');
   if (!tournament) { res.status(404); throw new Error('טורניר לא נמצא'); }
-  res.json({ registered: tournament.participants.some(p => String(p.user) === String(req.user._id)) });
+  res.json({ registered: tournament.participants.some(p => String(p.user) === String(req.user._id)) ||
+    (!!req.user.player && tournament.clubRegistrations.some(p => String(p.player) === String(req.user.player))) });
 });
 
 export const getTournamentSummary = asyncHandler(async (req, res) => {
