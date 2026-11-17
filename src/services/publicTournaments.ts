@@ -17,6 +17,8 @@ export interface PublicTournamentSummary {
   type: TournamentType;
   lifecycle: TournamentLifecycle;
   status: string;
+  engineVersion?: string | null;
+  phase?: string | null;
   currentParticipants: number;
   maxParticipants: number | null;
   registrationDeadline: string;
