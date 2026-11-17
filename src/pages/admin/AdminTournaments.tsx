@@ -246,16 +246,20 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   const getTournamentParticipants = () => {
     if (!selectedTournament) return [];
     
-    return selectedTournament.participants.map(participant => {
-      if (typeof participant.user === 'string') {
-        return { id: participant.user, name: participant.user };
-      } else {
-        return { 
-          id: participant.user._id || participant.user.id, 
-          name: participant.user.username 
+    return [
+      ...selectedTournament.participants.map(participant => {
+        if (typeof participant.user === 'string')
+          return { id: participant.user, name: participant.user, kind: 'User' as const };
+        return {
+          id: participant.user._id || participant.user.id,
+          name: participant.user.username,
+          kind: 'User' as const,
         };
-      }
-    });
+      }),
+      ...(selectedTournament.clubRegistrations || []).map(entry => ({
+        id: entry.player, name: entry.nameSnapshot, kind: 'Player' as const,
+      })),
+    ];
   };
 
   // Enhanced parsing function with improved points extraction and sorting
@@ -438,6 +442,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
 
         return {
           player: row.playerId,
+          playerModel: participant?.kind || 'User',
           playerName: playerName, // Include player name in results
           position: row.position,
           points: row.points, // Tournament ranking points (4, 3, 2, 1)
