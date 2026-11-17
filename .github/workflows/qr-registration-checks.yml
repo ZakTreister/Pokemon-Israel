@@ -1,0 +1,26 @@
+name: QR registration verification
+on:
+  push:
+    branches:
+      - feature/qr-tournament-registration
+  pull_request:
+    paths:
+      - 'server/**'
+      - 'src/**'
+      - 'package*.json'
+      - '.github/workflows/qr-registration-checks.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run test:stage-a
+      - run: npm run test:stage-a:ui
