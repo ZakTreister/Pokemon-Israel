@@ -62,6 +62,19 @@ async function loadClubPlayer(id) {
     fail(409, 'שחקן נבחרת אינו רשאי להירשם לטורניר חוגים', 'INVALID_PLAYER_TYPE');
   return player;
 }
+async function rejectMatchingTeamIdentity(fields) {
+  // A forged new-player QR must not bypass an existing team membership.
+  // Exact normalized name, optionally refined by city, requires staff resolution
+  // outside this registration flow rather than creating a second Player identity.
+  const match = await Player.exists({
+    playerType: 'team', isActive: true,
+    normalizedFirstName: normalizeField(fields.firstName),
+    normalizedLastName: normalizeField(fields.lastName),
+    ...(fields.city ? { normalizedCity: normalizeField(fields.city) } : {}),
+  });
+  if (match)
+    fail(409, 'קיים שחקן נבחרת בעל פרטים זהים. שחקני נבחרת אינם יכולים להירשם לטורנירי חוגים', 'TEAM_PLAYER_NOT_ELIGIBLE');
+}
 async function findSimilar(fields) {
   // Only regular club Players qualify; do not suggest All-Stars team players.
   const first = escapeRegExp(normalizeField(fields.firstName));
@@ -103,6 +116,7 @@ export const qrRegistrationPreview = asyncHandler(async (req, res) => {
 export const qrRegistrationDuplicates = asyncHandler(async (req, res) => {
   await loadClubTournament(req.params.id);
   const fields = parseFields(req.query);
+  await rejectMatchingTeamIdentity(fields);
   res.set('Cache-Control', 'no-store');
   res.json({ matches: await findSimilar(fields) });
 });
@@ -118,6 +132,7 @@ export const qrRegisterPlayer = asyncHandler(async (req, res) => {
   if (player && await alreadyRegistered(tournament, player))
     fail(409, 'השחקן כבר רשום לטורניר', 'ALREADY_REGISTERED');
   if (!player) {
+    await rejectMatchingTeamIdentity(fields);
     const matches = await findSimilar(fields);
     if (matches.length && req.body.allowDuplicate !== true)
       return res.status(409).json({
