@@ -49,7 +49,7 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
         if (!result.player) continue;
         tournamentRows.push({
           playerId: String(result.player),
-          playerKind: 'user',
+          playerKind: result.playerModel === 'Player' ? 'player' : 'user',
           playerName: result.playerName,
           points: result.points,
           position: result.position,
