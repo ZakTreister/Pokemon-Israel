@@ -396,3 +396,6 @@ Regular/quarterly players imported from the national-ranking snapshot are canoni
 Admin's existing Player editor allows adjusting first/last name and city; for imported regular players, add an optional **שנת לידה** field. Persist a year-only integer `birthYear` (or null), not a fabricated exact date-of-birth. The year and import metadata are not shown on the public national leaderboard. Editing a Player's name must not detach the historic points; identity is a stable Player ID.
 
 The importer first checks the live canonical Player database. Reuse existing team/All-Stars and club Player records after review of unique matching candidates; stop on ambiguity, archival or unmatched source-marked All-Stars. Do not create new unassigned team players, change roster/team/player number, or overwrite existing profile data.
+
+### Owner-confirmed missing surname in historical input
+A regular historical Player may have an empty `lastName` when the owner explicitly confirms the surname is unknown, rather than a placeholder `?`. This is restricted to records marked with the historical import source. Public display uses available names; future admin edits can fill the surname without changing the stable Player identity or lifetime scores. New manually created Player records continue to require surname.
