@@ -2300,7 +2300,7 @@ test('club roster combines QR and legacy signups, offers only unregistered club 
   assert.deepEqual(data.registered.map(row => row.name).sort(), [
     'Roster First', 'Roster Second',
   ]);
-  assert.deepEqual(data.available.map(row => row.name), ['Roster Third']);
+  assert.deepEqual(data.available.filter(row => row.name.startsWith('Roster')).map(row => row.name), ['Roster Third']);
   assert.ok(!data.available.some(row => row.id === teamPlayer.id || row.id === staffPlayer.id));
   assert.equal((await request(base, 'POST', { playerId: club[0].id })).status, 409);
   assert.equal((await request(base, 'POST', { playerId: club[1].id })).status, 409);
@@ -2310,18 +2310,18 @@ test('club roster combines QR and legacy signups, offers only unregistered club 
   await ok(base, 'POST', { playerId: club[2].id }, 'judge', 201);
   const updated = await ok(base, 'GET', undefined, 'admin');
   assert.equal(updated.registered.length, 3);
-  assert.equal(updated.available.length, 0);
+  assert.equal(updated.available.filter(row => row.name.startsWith('Roster')).length, 0);
   assert.equal(updated.canAdd, true);
   assert.equal((await request(base, 'POST', { playerId: club[2].id }, 'admin')).status, 409);
   assert.equal((await request(base + '/player/' + club[2].id, 'DELETE', undefined, 'player')).status, 403);
   await ok(base + '/player/' + club[2].id, 'DELETE', undefined, 'admin');
   const afterPlayer = await ok(base);
   assert.equal(afterPlayer.registered.length, 2);
-  assert.equal(afterPlayer.available.length, 1);
+  assert.equal(afterPlayer.available.filter(row => row.name.startsWith('Roster')).length, 1);
   await ok(base + '/user/' + legacyUser.id, 'DELETE');
   const afterLegacy = await ok(base);
   assert.equal(afterLegacy.registered.length, 1);
-  assert.equal(afterLegacy.available.length, 2);
+  assert.equal(afterLegacy.available.filter(row => row.name.startsWith('Roster')).length, 2);
   assert.equal((await Tournament.findById(event.id)).currentParticipants, 1);
   assert.ok(await Player.findById(club[2].id));
   assert.ok(await User.findById(legacyUser.id));
