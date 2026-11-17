@@ -57,17 +57,18 @@ async function loadClubPlayer(id) {
   if (!validId(id)) fail(400, 'מזהה שחקן אינו תקין');
   const player = await Player.findById(id);
   if (!player) fail(404, 'שחקן לא נמצא');
-  if (player.playerType !== 'quarterly' || !player.isActive)
-    fail(409, 'ניתן לרשום רק שחקן חוג פעיל', 'INVALID_PLAYER_TYPE');
+  if (!player.isActive)
+    fail(409, 'ניתן לרשום רק שחקן פעיל', 'INVALID_PLAYER');
   return player;
 }
 async function findSimilar(fields) {
-  // Search only regular/club Players. The bounded result set is reviewed by staff.
+  // Find canonical identities across player types; a team child may join a club event
+  // without being assigned to another team. Results remain linked to that Player.
   const first = escapeRegExp(normalizeField(fields.firstName));
   const last = escapeRegExp(normalizeField(fields.lastName));
   const prefix = value => value.slice(0, Math.min(3, value.length));
   const matches = await Player.find({
-    playerType: 'quarterly', isActive: true,
+    isActive: true,
     $or: [
       { normalizedFirstName: new RegExp('^' + first, 'i'), normalizedLastName: new RegExp('^' + last, 'i') },
       { normalizedFirstName: new RegExp('^' + prefix(first), 'i'), normalizedLastName: new RegExp('^' + prefix(last), 'i') },
