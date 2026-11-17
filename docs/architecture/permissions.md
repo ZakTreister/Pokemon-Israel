@@ -95,7 +95,7 @@ Player deletion must preserve historical tournament/results integrity; do not ha
 
 A judge or admin may use the guarded QR intake flow for an **upcoming regular/club tournament**:
 - review a supplied player ID or candidate identity, edit proposed details and choose an existing player or create a new record
-- register a canonical Player in the club tournament's registration list (newly created players are `quarterly`, and already-existing team Players may attend club events without any roster mutation)
+- register an eligible regular/club Player in the club tournament's registration list (newly created players are `quarterly`; team/All Stars players are never eligible)
 - explicitly confirm a global player-profile edit
 
 This QR-specific privilege is an intentional exception to the ordinary judge prohibition on player mutations. It must not grant access to the general Player management endpoints, team transfer/deletion, All Stars tournament participant changes or historical tournament editing. Judges still cannot mutate completed tournaments.
