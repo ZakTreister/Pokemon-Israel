@@ -332,7 +332,7 @@ export default function LegacyTournamentManagementPage() {
 
   return (
     <div className={`container py-8 md:py-12 ${isAdmin ? 'cs-workspace' : ''}`}>
-      {isAdmin && editingTournament && (
+      {isAdmin && clubTournament && editingTournament && (
         <ClubTournamentEditDialog
           tournament={activeTournament}
           onClose={() => setEditingTournament(false)}
@@ -350,7 +350,7 @@ export default function LegacyTournamentManagementPage() {
           <div className="border-b border-border pb-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
               <h1 className="text-3xl font-extrabold text-foreground">{activeTournament.title}</h1>
-              <Button variant="outline" onClick={() => setEditingTournament(true)}>עריכת טורניר</Button>
+              {clubTournament && <Button variant="outline" onClick={() => setEditingTournament(true)}>עריכת טורניר</Button>}
             </div>
             <p className="text-muted-foreground mb-4">{activeTournament.description}</p>
 
