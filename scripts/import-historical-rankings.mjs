@@ -72,6 +72,9 @@ const summary = {
   points: rows.reduce((sum, x) => sum + x.points, 0),
   participations: rows.reduce((sum, x) => sum + x.tournaments, 0),
 };
+// Guard the one-time approved opening balance against a silently altered CSV.
+if (summary.points !== 6054 || summary.participations !== 821)
+  throw new Error(`Historical snapshot totals differ: expected 6054 points and 821 participations, got ${summary.points}/${summary.participations}`);
 console.log('Source validation:', JSON.stringify(summary, null, 2));
 if (!apply && !inspect) {
   console.log('Offline dry-run complete. No DB connection was opened or changed. Run --inspect against MongoDB for actual matching.');
