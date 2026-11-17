@@ -2371,3 +2371,55 @@ test('unified club participant routes reject team tournaments and invalid player
   assert.equal((await request(path, 'GET', undefined, 'admin')).status, 409);
   assert.equal((await request(path, 'POST', { playerId: 'invalid' }, 'admin')).status, 409);
 });
+
+test('trial team players are reversible without losing historical tournament results', async () => {
+  const team = await ok('/teams', 'POST', { name: 'Trial members ' + randomUUID().slice(0, 8) }, 'admin', 201);
+  await ok(`/teams/${team.id}/players`, 'POST', {
+    players: [{ firstName: 'TrialBase', lastName: 'One' }, { firstName: 'TrialBase', lastName: 'Two' }],
+  }, 'admin', 201);
+  let t = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  const intake = { expectedRevision: t.revision, firstName: 'TrialGuest', lastName: 'Candidate', city: 'רחובות' };
+  assert.equal((await request(`/internal-tournaments/${t.id}/trial-players`, 'POST', intake, 'player')).status, 403);
+  const response = await ok(`/internal-tournaments/${t.id}/trial-players`, 'POST', intake, 'judge', 201);
+  t = response.tournament;
+  const trialId = response.player.id;
+  assert.ok(t.nextRoundParticipantIds.includes(trialId));
+  assert.equal((await Player.findById(trialId)).teamMembershipStatus, 'trial');
+  let members = await ok(`/teams/${team.id}`, 'GET', undefined, 'judge');
+  assert.ok(members.players.some(p => p.id === trialId && p.teamMembershipStatus === 'trial'));
+  const round = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', { expectedRevision: t.revision });
+  const match = round.rounds[0].matches.find(m => m.player2);
+  assert.equal((await request(`/teams/${team.id}/trials/${trialId}/resolve`, 'PUT',
+    { action: 'dismiss' }, 'judge')).status, 403);
+  assert.equal((await request(`/teams/${team.id}/trials/${trialId}/resolve`, 'PUT',
+    { action: 'dismiss' }, 'admin')).status, 409);
+  const scored = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`,
+    'PUT', { expectedResultRevision: match.resultRevision, result: { winner: 'player1', score1: 2, score2: 0 } });
+  await ok(`/internal-tournaments/${t.id}/close`, 'POST', { expectedRevision: scored.revision });
+  const before = await ok(`/all-stars/rankings?teamId=${team.id}`, 'GET', undefined, null);
+  assert.ok(before.rankings.some(row => row.playerId === trialId));
+  await ok(`/teams/${team.id}/trials/${trialId}/resolve`, 'PUT', { action: 'dismiss' }, 'admin');
+  members = await ok(`/teams/${team.id}`, 'GET', undefined, 'judge');
+  assert.ok(!members.players.some(p => p.id === trialId));
+  const after = await ok(`/all-stars/rankings?teamId=${team.id}`, 'GET', undefined, null);
+  assert.ok(!after.rankings.some(row => row.playerId === trialId));
+  const publicDetails = await ok(`/tournaments/${t.id}`, 'GET', undefined, null);
+  assert.ok(publicDetails.standings.some(row => row.player === trialId));
+  assert.ok(publicDetails.rounds[0].matches.some(row =>
+    row.player1Name === 'TrialGuest Candidate' || row.player2Name === 'TrialGuest Candidate'));
+  assert.equal((await Player.findById(trialId)).teamMembershipStatus, 'dismissed');
+  assert.equal((await Player.findById(trialId)).isActive, true);
+
+  let next = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  const trial2 = await ok(`/internal-tournaments/${next.id}/trial-players`,
+    'POST', { expectedRevision: next.revision, firstName: 'TrialPermanent', lastName: 'Member' }, 'judge', 201);
+  next = trial2.tournament;
+  const approved = await ok(`/teams/${team.id}/trials/${trial2.player.id}/resolve`,
+    'PUT', { action: 'confirm', playerNumber: 'guest-2026' }, 'admin');
+  assert.equal(approved.teamMembershipStatus, 'permanent');
+  assert.equal(approved.playerNumber, 'guest-2026');
+  assert.equal(String(approved.team), team.id);
+  assert.equal((await request(`/internal-tournaments/${next.id}/trial-players`, 'POST',
+    { expectedRevision: next.revision, playerId: approved.id }, 'judge')).status, 409);
+});
+

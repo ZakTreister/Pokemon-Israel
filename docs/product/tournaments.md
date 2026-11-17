@@ -548,3 +548,9 @@ This section supersedes the October 2026 HTTP-only public tournament decision fo
 - On desktop, the start/round-management action and the add-participant action share one responsive action row.
 - Live operators can edit **only the latest active round** via tap-to-swap players or swapping table numbers. The server validates one appearance per player, unique tables and preserving the exact participant set. Score-bearing matches changed by a reassignment require explicit confirmation; only affected scores are reset, with originals archived. Concurrent edits are revision-guarded.
 - This iteration applies to **team-internal** and **club/quarterly** tournaments. Inter-team encounters are not implemented and are out of scope.
+
+## November 2026 — club-only public Events and improved results
+
+The public **אירועים** list shows **club/quarterly tournaments only**, including legacy `type: null` club records. Apply the quarterly filter in the server-paginated request (before count/pagination), not after slicing the displayed rows. Remove the tournament-type picker from the public Events page. Staff management lists still offer all types. Internal All-Stars tournaments retain their existing direct public detail links and team history; their visibility is not affected by the public index restriction.
+
+During an active tournament, public matchups use touch-friendly, two-column (desktop) read-only cards inspired by round-management layout. Present table number, both player names, centrally aligned scores, clear winner/draw/BYE state and a round selector. Show the same visual cards for completed round history; do not expose any action to change a score or pairing. Preserve the existing anonymous read-only Socket.IO subscription only while the tournament is actually running.

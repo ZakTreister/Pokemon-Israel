@@ -276,8 +276,10 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
 });
 export const removePlayerFromTeam = asyncHandler(async (req, res) => {
   const output = await withRosterLocks([req.params.teamId], async () => {
-    const player = await Player.findOneAndUpdate({ _id: req.params.playerId, team: req.params.teamId, playerType: 'team' }, { $set: { team: null } }, { new: true });
-    if (!player) fail(404, 'השחקן אינו משויך לנבחרת');
+    const player = await Player.findOneAndUpdate({ _id: req.params.playerId, team: req.params.teamId,
+      playerType: 'team', teamMembershipStatus: { $ne: 'trial' } },
+      { $set: { team: null } }, { new: true });
+    if (!player) fail(409, 'השחקן אינו משויך לנבחרת, או שהוא שחקן ניסיון שיש להסדיר דרך פעולות שחקן ניסיון');
     return player;
   });
   res.json(output);

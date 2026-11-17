@@ -240,3 +240,13 @@ Architecture:
 The dialog should close after a successful save and refresh the calling surface's canonical team data.
 
 Roster/player assignment operations are not part of `TeamEditDialog`; keep them in their appropriate team-management context.
+
+## November 2026 — trial players for internal team tournaments
+
+An authorized tournament operator may add a **trial player** directly from the internal tournament's participant-management area before or during an open live tournament. The player may be a new canonical team-type Player (no child login and no initial player number required) or an existing unassigned team-type Player selected after a name search. Never silently transfer a Player from another team's roster or reuse a regular/quarterly Player identity. Check duplicates when creating a new Player.
+
+A trial is attached to the selected team with `teamMembershipStatus: trial`, and added to the upcoming/uncreated round's saved participant selection. Past rounds/results remain unchanged. Trial players are listed with a **שחקן ניסיון** marker and may appear in the team's live roster and ranking while their trial membership remains. Judges may add trial participants only through the scoped live-tournament route; permanent membership decisions are administrator-only.
+
+The administrator may **confirm** the trial into permanent team membership (requiring the approved player number) or **dismiss** it from the team, leaving the canonical Player active and unassigned, with a `dismissed` membership marker. Dismissals are blocked until the team's live internal tournament closes to avoid clashes with in-progress pairings. Dismissed players disappear from the current team roster and team ranking, but their Player record, historical matches, completed standings and tie-break evidence remain intact. Team ranking totals must only aggregate internal tournaments **belonging to the selected team**, never carry another team's past results across a transfer.
+
+Ordinary remove/unassign must not silently bypass the trial approval/dismissal flow; use the explicit trial-resolution route.

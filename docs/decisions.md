@@ -468,3 +468,9 @@ The national ranking spreadsheet provides 337 aggregate score/participation rows
 This decision overrides the October 2026 Socket.IO-only-for-management and public-HTTP-only rules **only while a tournament is running**, after its first round exists. Public spectators use a separate anonymous event-scoped subscription that carries identifiers only; public-safe matchups and standings are fetched via HTTP. Upcoming and completed tournament detail pages do not connect. Staff event channels remain role protected.
 
 The latest active round may be edited by staff for team-internal and club tournaments. Inter-team tournaments remain unimplemented and out of scope. If a reassignment impacts an entered score, explicit destructive confirmation is required, only impacted results are cleared, and original scores are retained in the audit archive.
+
+## 2026-11 — Club-only Events index and trial team membership
+
+Public **אירועים** is limited to club/quarterly tournaments, including legacy null-type records. This is a list filter, not a revocation of public access to internal-tournament links or history. Public live and completed matchup cards reuse round-management information architecture with read-only rendering.
+
+A trial team member is an explicitly marked Player belonging temporarily to a team. Intake may occur from a live internal tournament under judge/admin authorization; permanent confirmation or dismissal requires admin. Dismissal unassigns without deleting Player/tournament history and excludes the child from the team's current roster and computed internal ranking. Historical tournament results remain immutable. Team ranking is anchored to the tournament's team, rather than migrating results by a player's current team.
