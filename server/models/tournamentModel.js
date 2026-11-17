@@ -45,8 +45,10 @@ const tournamentSchema = new mongoose.Schema({
     required: true,
   },
   maxParticipants: {
+    // Club tournaments have no participant limit. Internal/team competitions retain theirs.
     type: Number,
-    required: true,
+    default: null,
+    required() { return this.type === 'team_internal' || this.type === 'inter_team'; },
   },
   currentParticipants: {
     type: Number,
