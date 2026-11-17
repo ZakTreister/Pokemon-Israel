@@ -3,6 +3,7 @@ import { subscribeTournament } from '../../services/tournamentLive';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { internalTournaments } from '../../services/internalTournaments';
+import { clubTournamentRounds } from '../../services/clubTournamentRounds';
 import teamsService from '../../features/teams/teamsService';
 import { requestError } from '../../utils/requestError';
 import type {
@@ -23,7 +24,9 @@ import {
 } from '../../features/tournaments/utils/participantPlan';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 
-export default function InternalTournamentPage() {
+export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team' | 'club' }) {
+  const club = mode === 'club';
+  const tournamentActions = club ? clubTournamentRounds : internalTournaments;
   const role = useAppSelector((state) => state.auth.user?.role);
   const judge = role === 'judge';
   const { id = '' } = useParams();
@@ -69,10 +72,10 @@ export default function InternalTournamentPage() {
     );
   }, []);
   const reload = useCallback(async () => {
-    const data = await internalTournaments.get(id);
+    const data = await tournamentActions.get(id);
     accept(data);
     return data;
-  }, [id, accept]);
+  }, [id, accept, tournamentActions]);
   useEffect(() => {
     let active = true;
     revisionRef.current = -1;
@@ -88,13 +91,15 @@ export default function InternalTournamentPage() {
     setRoster([]);
     setTournament(null);
     setError('');
-    internalTournaments
+    tournamentActions
       .get(id)
       .then(async (data) => {
         if (!active) return;
         accept(data);
-        const team = await teamsService.getTeam(data.team);
-        if (active) setRoster(team.players);
+        if (!club && data.team) {
+          const team = await teamsService.getTeam(data.team);
+          if (active) setRoster(team.players);
+        }
       })
       .catch((e) => {
         if (active) setError(requestError(e));
@@ -102,7 +107,7 @@ export default function InternalTournamentPage() {
     return () => {
       active = false;
     };
-  }, [id, accept]);
+  }, [id, accept, tournamentActions, club]);
   const live =
     !!tournament &&
     ['admin', 'judge'].includes(role || '') &&
@@ -123,7 +128,7 @@ export default function InternalTournamentPage() {
         return;
       }
       try {
-        const data = await internalTournaments.get(id);
+        const data = await tournamentActions.get(id);
         if (active) {
           accept(data);
           setSyncError('');
@@ -161,7 +166,7 @@ export default function InternalTournamentPage() {
   }, [id, accept, live]);
   const participantTeam = tournament?.team;
   useEffect(() => {
-    if (!participantsView || !participantTeam) return;
+    if (club || !participantsView || !participantTeam) return;
     let active = true;
     teamsService
       .getTeam(participantTeam)
@@ -174,7 +179,7 @@ export default function InternalTournamentPage() {
     return () => {
       active = false;
     };
-  }, [participantsView, participantTeam]);
+  }, [participantsView, participantTeam, club]);
   if (deleted)
     return (
       <div>
@@ -236,8 +241,10 @@ export default function InternalTournamentPage() {
               setError('');
               void reload()
                 .then(async (data) => {
-                  const team = await teamsService.getTeam(data.team);
-                  setRoster(team.players);
+                  if (!club && data.team) {
+                    const team = await teamsService.getTeam(data.team);
+                    setRoster(team.players);
+                  }
                 })
                 .catch((e) =>
                   setError(`לא הצלחנו לטעון את הטורניר. ${requestError(e)}`),
@@ -310,7 +317,7 @@ export default function InternalTournamentPage() {
       return 'cancelled' as const;
     const outcome = await mutate(
       () =>
-        internalTournaments.result(
+        tournamentActions.result(
           id,
           tournament.revision,
           round.number,
@@ -331,7 +338,7 @@ export default function InternalTournamentPage() {
   };
   const pair = () =>
     mutate(
-      () => internalTournaments.pair(id, tournament.revision),
+      () => tournamentActions.pair(id, tournament.revision),
       (data) => {
         setRoundNumber(data.rounds.length);
         setResultsView(false);
@@ -343,12 +350,14 @@ export default function InternalTournamentPage() {
       await showConfirm({
         title: 'סיום טורניר',
         message:
-          'התוצאות הסופיות יישמרו והניקוד יתווסף לדירוג All Stars. לאחר הסיום הטורניר אינו ניתן לעריכה.',
+          club
+            ? 'התוצאות הסופיות יישמרו והניקוד יתווסף לדירוג הארצי. לאחר הסיום לא ניתן לערוך סבבים.'
+            : 'התוצאות הסופיות יישמרו והניקוד יתווסף לדירוג All Stars. לאחר הסיום הטורניר אינו ניתן לעריכה.',
         confirmText: 'סיים טורניר',
       })
     )
       await mutate(
-        () => internalTournaments.close(id, tournament.revision),
+        () => tournamentActions.close(id, tournament.revision),
         () => setResultsView(true),
       );
   };
@@ -366,7 +375,7 @@ export default function InternalTournamentPage() {
       return;
     await mutate(
       () =>
-        internalTournaments.cancelRound(id, tournament.revision, round.number),
+        tournamentActions.cancelRound(id, tournament.revision, round.number),
       () => setResultsView(false),
     );
   };
@@ -375,12 +384,15 @@ export default function InternalTournamentPage() {
       <div className="flex flex-wrap gap-3 justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold">{tournament.title}</h2>
-          <Link
-            to={`/manage/teams/${tournament.team}`}
-            className="text-blue-500"
-          >
-            {tournament.teamNameSnapshot}
-          </Link>
+          {club ? (
+            <Link to={`/manage/tournaments/regular/${id}`} className="text-blue-500">
+              ← פרטי טורניר חוגים
+            </Link>
+          ) : (
+            <Link to={`/manage/teams/${tournament.team}`} className="text-blue-500">
+              {tournament.teamNameSnapshot}
+            </Link>
+          )}
           <p className="text-xs text-muted-foreground">
             {new Date(tournament.date).toLocaleDateString('he-IL')} ·{' '}
             {tournament.currentParticipants} משתתפים ·{' '}
@@ -521,7 +533,9 @@ export default function InternalTournamentPage() {
             הסיבוב הקיים אינם משתנים.
           </p>
           <ParticipantList
-            options={participantPlanOptions(tournament, roster)}
+            options={club
+              ? tournament.playerParticipants.map(p => ({ id: p.player, label: p.nameSnapshot }))
+              : participantPlanOptions(tournament, roster)}
             selected={selected}
             disabled={busy}
             onChange={changeSelection}
@@ -532,7 +546,7 @@ export default function InternalTournamentPage() {
               onClick={() =>
                 void mutate(
                   () =>
-                    internalTournaments.participants(
+                    tournamentActions.participants(
                       id,
                       planRevisionRef.current,
                       selected,
