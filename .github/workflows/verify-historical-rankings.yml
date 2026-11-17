@@ -44,6 +44,9 @@ jobs:
       - name: Lint
         if: success() || failure()
         run: npm run lint
+      - name: TypeScript typecheck
+        if: success() || failure()
+        run: npx tsc -b --pretty false
       - name: Build
         if: success() || failure()
         run: npm run build
