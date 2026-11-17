@@ -13,6 +13,7 @@ import { Tournament } from '../../types/tournament';
 import api from '../../services/api';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
+import { clubDateKey } from '../../../shared/tournamentDomain';
 
 interface StandingsRow {
   position: number;
@@ -30,7 +31,6 @@ interface TournamentFormData {
   image: string;
   isRecurring: boolean;
   lastTournamentDate: string;
-  maxParticipants?: number;
 }
 
 interface DeckSuggestion {
@@ -59,7 +59,6 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     location: '',
     isRecurring: false,
     lastTournamentDate: '',
-    maxParticipants: undefined
   });
 
   useEffect(() => {
@@ -89,20 +88,10 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       location: '',
       isRecurring: false,
       lastTournamentDate: '',
-      maxParticipants: undefined
-    });
+      });
   };
 
-  // Helper function to convert UTC date to local datetime-local format
-  const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString);
-    // Get the timezone offset in minutes and convert to milliseconds
-    const timezoneOffset = date.getTimezoneOffset() * 60000;
-    // Create a new date adjusted for timezone
-    const localDate = new Date(date.getTime() - timezoneOffset);
-    // Return in the format required by datetime-local input
-    return localDate.toISOString().slice(0, 16);
-  };
+  const formatDateForInput = (dateString: string) => clubDateKey(dateString);
 
   const handleCreateTournament = () => {
     setIsEditing(false);
@@ -115,7 +104,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     setIsEditing(true);
     setSelectedTournament(tournament);
     
-    // Format date for datetime-local input with proper timezone conversion
+    // Club tournaments use an Israel calendar date, never a time of day.
     const formattedDate = formatDateForInput(tournament.date);
     
     setFormData({
@@ -124,7 +113,6 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       image: tournament.image,
       isRecurring: tournament.isRecurring || false,
       lastTournamentDate: '',
-      maxParticipants: tournament.maxParticipants
     });
     setShowTournamentModal(true);
   };
@@ -150,7 +138,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
         const updateData = {
           date: formData.date,
           location: formData.location,
-          maxParticipants: formData.maxParticipants || 32
+          image: formData.image
         };
         
         await api.put(`/api/tournaments/${selectedTournament.id}`, updateData);
@@ -667,9 +655,9 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
         >
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">תאריך ושעה *</label>
+                <label className="block text-sm font-medium mb-1">תאריך *</label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   className="w-full px-3 py-2 border border-input rounded-md"
                   value={formData.date}
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -747,20 +735,6 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                   />
                 </div>
               )}
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">מספר משתתפים מקסימלי (אופציונלי)</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-input rounded-md"
-                  placeholder="32 (ברירת מחדל)"
-                  value={formData.maxParticipants || ''}
-                  onChange={(e) => setFormData({
-                    ...formData, 
-                    maxParticipants: e.target.value ? parseInt(e.target.value) : undefined
-                  })}
-                />
-              </div>
               
               <div className="flex justify-end gap-2 mt-6">
                 <Button
