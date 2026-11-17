@@ -4,7 +4,7 @@
 
 The owner supplied `טבלת הדירוג הישראלי פוקימון.xlsx` as one cumulative snapshot of all previous regular-tournament ranking results. There are **337 distinct names**, of which **35** are marked All-Stars, **6,054** total points and **821** counted participations. Individual tournament rounds/results, city, player identifiers, exact birthdates, year of birth, OMP, GWP and OGP **do not exist in the source**. Do not fabricate them.
 
-The current private split-name CSV is `cardschool-historical-rankings-split-2026-11.csv` with exactly five columns: `firstName,lastName,points,tournaments,isAllStars`. A legacy unsplit four-column CSV remains read-compatible, but **new imports should use the split-name format**. Neither original serial nor imported position is stored in MongoDB. Leaderboard positions are computed from points. A separate private `cardschool-names-for-review-2026-11.csv` records uncertain splits for the owner's review, and is not an import file.
+The final owner-approved private split-name CSV is `cardschool-historical-rankings-approved-2026-11.csv` with exactly five columns: `firstName,lastName,points,tournaments,isAllStars`. A legacy unsplit four-column CSV remains read-compatible, but **new imports should use the split-name format**. Neither original serial nor imported position is stored in MongoDB. Leaderboard positions are computed from points. The private `cardschool-name-approvals-for-import-2026-11.json` records the owner's approved compound-name splits, and must be passed to the preflight and import with `--review-file`. Do not commit it to GitHub.
 
 **Never commit the real Excel/CSV or a matching review file to this public repository.** They contain children's names and/or internal IDs. The project owner/operator keeps all three files in private local storage.
 
@@ -13,7 +13,7 @@ The current private split-name CSV is `cardschool-historical-rankings-split-2026
 The November import creates/links canonical `Player` documents, not just independent leaderboard entries. Each `HistoricalRanking` stores immutable original aggregate points/participations and a link to its canonical `Player`. No fake `Tournament` documents or per-event history are created. The historical baseline is counted once and later regular-tournament results are added by canonical Player ID, only after the snapshot cutoff.
 
 For new club players:
-- `firstName` and `lastName` are **explicit columns in the input CSV**. There are 30 three-token names plus one incomplete surname (an owner-confirmed first-name-only record). The owner must review uncertain proposed splits; for newly created regular Players with a three-token name or incomplete surname, a private review-file approval/override is required before apply. This is never silently inferred from the first whitespace token. For instance, `ילד שני משפחה` may need a two-word first name. Do not accept a literal `?` as a confirmed surname.
+- `firstName` and `lastName` are **explicit columns in the input CSV**. There were 30 three-token names and one owner-confirmed first-name-only record; the owner has completed the split-name review. Include the approved private review JSON when inspecting/importing. Any further change or unclear identity must be reviewed before apply. This is never silently inferred from the first whitespace token. For instance, `ילד שני משפחה` may need a two-word first name. Do not accept a literal `?` as a confirmed surname.
 - The Player is created as `quarterly` with `city: ''`, `birthYear: null` and a private historical-import marker. Missing city is permitted **only for this historical-import cohort**, not ordinary manually created club players.
 - Admin can later edit first name, last name, city and optional integer **birth year** in `ניהול → שחקנים → עריכה`. Year-only values are not turned into fictitious January 1 birthdates. Existing All-Stars already have an optional exact-date profile field.
 
@@ -45,7 +45,7 @@ node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical
 Before any write, back up production MongoDB. With `MONGODB_URI` configured, run **read-only DB identity inspection** and save the report **outside** the public repository:
 
 ```bash
-node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --inspect --report /secure/identity-preview.json
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --inspect --review-file /secure/cardschool-name-approvals-for-import-2026-11.json --report /secure/identity-preview.json
 ```
 
 Compare proposed All-Stars matches against actual roster; review name splitting; resolve ambiguous/archived/missing players. To correct a compound name or explicitly link a differently spelled/ambiguous existing person, prepare a private `/secure/review.json`, for example:
@@ -63,7 +63,7 @@ Then repeat `--inspect` with `--review-file` until no blockers remain and the re
 node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --apply --approved --review-file /secure/review.json
 ```
 
-If there are no overrides, omit `--review-file`. `--approved` confirms that the operator reviewed **both regular and All-Stars existing Player candidates**, name splits, the cutoff, and the DB backup; it is **not** a substitute for review. Do not store internal Player IDs in a public GitHub commit.
+For this dataset, always include the owner's approved split-name overrides in the effective private review file; combine them with any subsequent approved Player-ID mappings. `--approved` confirms that the operator reviewed **both regular and All-Stars existing Player candidates**, name splits, the cutoff, and the DB backup; it is **not** a substitute for review. Do not store internal Player IDs in a public GitHub commit.
 
 After applying, verify counts, player management edits, All-Stars visibility, search, sorting, pagination and subsequent player-ID-linked scores. The first run can create up to 302 regular Player records, but the actual number depends on existing matches. All 35 All-Stars should link to existing Players or the script stops.
 
@@ -81,6 +81,8 @@ The private split CSV contains one owner-confirmed name-only record: a verified 
 The owner reviewed and approved all 21 queried first-name/last-name splits. The private canonical CSV is `cardschool-historical-rankings-approved-2026-11.csv`; use this file rather than earlier split candidates. Source totals remain unchanged: **337 entries, 35 All-Stars, 6,054 points, 821 participations**. The owner-approved answers changed 2 proposed splits; no original source ranking/serial is persisted.
 
 The private approval audit is `cardschool-name-splits-approved-2026-11.csv`: 21 explicitly approved complex splits, 9 clear compound surnames, and 1 confirmed empty surname. For the current importer, supply the corresponding **private** `cardschool-name-approvals-for-import-2026-11.json` via `--review-file` to suppress previously raised compound-name warnings; it contains only reviewed first/last-name overrides, not MongoDB Player IDs. Do not commit any of these private, child-identifying files to the public repo.
+
+The read-only inspector also considers legacy player `User` accounts that have no corresponding `Player`, and refuses to create a new canonical player when that identity has not been reconciled. It checks bidirectional Player/User links and rejects conflicting or duplicate legacy User assignments. Existing name matches are candidates, not proof of identity.
 
 **This resolves name splitting, not identity matching.** The live read-only `--inspect` report must still compare every row against both regular/quarterly and All-Stars/team Players, including archived records, and confirm uniqueness before `--apply`. Remaining real-database identity conflicts must be reviewed with explicit Player ID mappings and a fresh inspect run.
 
