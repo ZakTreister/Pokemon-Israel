@@ -102,9 +102,11 @@ export default function ManageTournaments() {
                     <Link
                       to={
                         t.canManage
-                          ? t.engineVersion === 'swiss-v1'
-                            ? `/manage/tournaments/${t.id}`
-                            : `/manage/tournaments/regular/${t.id}`
+                          ? t.type === 'quarterly'
+                            ? `/manage/tournaments/regular/${t.id}`
+                            : t.engineVersion === 'swiss-v1'
+                              ? `/manage/tournaments/${t.id}`
+                              : `/manage/tournaments/regular/${t.id}`
                           : `/tournaments/${t.id}`
                       }
                     >
