@@ -9,7 +9,7 @@ This feature applies **only to regular/club tournaments** (`type: 'quarterly'` o
 - New player link: `?firstName=...&lastName=...&city=...&birthYear=...`
 - Existing club Player link: `?playerId=<24-character MongoDB ObjectId>`
 
-First name and last name are required. City and birth year are optional for QR intake; the normal admin creation form retains its existing city validation. Scanned data may be edited before confirmation. When an existing Player is edited, the UI explicitly confirms that global profile data will change.
+First name and last name are required. City and birth year are optional for QR intake; the normal admin creation form retains its existing city validation. Scanned data may be edited before confirmation. The browser automatically checks for similar active club Players as the form loads (and when identifying fields change) and presents matches only when found; there is no separate manual “check for similar players” action. When an existing Player is edited, the UI explicitly confirms that global profile data will change.
 
 Unauthenticated staff return to the same full local URL after login. The server enforces both the role and the tournament type.
 
@@ -19,7 +19,7 @@ New QR players are canonical `Player` documents with `playerType: 'quarterly'`, 
 
 `Tournament.clubRegistrations` stores references to regular Players, registration time, and a short name/city snapshot. The legacy `Tournament.participants` array continues to contain historical `User` registrations; it is not overwritten or filled with Player IDs. `currentParticipants` counts both sets.
 
-For legacy results, a `results[].playerModel` discriminator defaults to `User` for older data and uses `Player` for results attributed to QR club registrants. The regular tournament result-entry UI includes both sets. The national ranking aggregation identifies new Player-based results correctly, while existing legacy User-based results remain supported.
+For legacy results, a `results[].playerModel` discriminator defaults to `User` for older data and uses `Player` for results attributed to QR club registrants. The regular tournament result-entry UI includes both sets. The tournament management page renders one combined participant list with no QR-specific grouping. The national ranking aggregation identifies new Player-based results correctly, while existing legacy User-based results remain supported.
 
 `playerParticipants` and `nextRoundParticipantIds` belong to the live Swiss engine and are **never** modified by club QR registration. No permanent team roster is changed.
 
@@ -66,3 +66,14 @@ A started club event remains editable by Admins for its metadata through `/manag
 **Known migration boundary:** Legacy `User` registrations that have no linked canonical `Player` are not silently converted or omitted. Staff will receive a clear blocking message to reconcile those identities before starting. No child login is created automatically.
 
 The reusable Swiss engine uses 3/1/0 match scoring with OMP/GWP/OGP and persists round 1; all club final standings are sent to the regular national ranking, not the All Stars/team ranking.
+
+## Unified club participant management
+
+On both Admin and Judge club-tournament pages, the **single** participant list combines legacy `participants[].user` and `clubRegistrations[].player`, resolves legacy `User.player` / reverse `Player.user` identities where possible, and shows the canonical Player name. Legacy entries that cannot be matched to a Player are visibly flagged as needing reconciliation before Swiss start.
+
+- `GET /api/tournaments/:id/club-participants` returns the combined `registered` list and `available` club Players. The available list includes **only active `playerType: quarterly` Players** not already registered via either mechanism and excludes linked staff (admin/judge) accounts. Never use `/api/users` as a child picker.
+- `POST /api/tournaments/:id/club-participants` accepts only an existing eligible `Player` ID; it checks canonical duplicate identity and performs a revision-guarded append to `clubRegistrations`.
+- `DELETE /api/tournaments/:id/club-participants/:source/:registrationId` removes a registration from the correct historical backing array without deleting the Player or User identity; the visible list remains unified.
+- The list and add/remove controls are identical for Judges and Admins. Changes are prohibited once a club event has begun or registration closes. Staff accounts cannot register as club competitors through legacy endpoints.
+
+Tournament storage and legacy result compatibility remain intact; no migration is applied to prior registration records.
