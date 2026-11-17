@@ -15,7 +15,7 @@ export interface QrTournament {
   status: string;
   type: string;
   revision: number;
-  maxParticipants: number;
+  maxParticipants: number | null;
   currentParticipants: number;
 }
 export type QrFields = {
