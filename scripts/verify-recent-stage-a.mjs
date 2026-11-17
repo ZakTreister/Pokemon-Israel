@@ -271,7 +271,7 @@ try {
     } else {
       assert.ok(rendered.includes('תוצאת האירוע'));
       assert.ok(
-        rendered.includes(lifecycle === 'active' ? 'בתהליך' : 'תוצאות סופיות'),
+        rendered.includes(lifecycle === 'active' ? 'תוצאות נוכחיות' : 'דירוג סופי'),
       );
       assert.ok(rendered.includes('55.56%'));
     }

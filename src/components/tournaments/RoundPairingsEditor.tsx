@@ -50,8 +50,12 @@ export default function RoundPairingsEditor({ round, name, revision, disabled, o
       if (!first || !second) return previous;
       // Only player slots are selectable. Null (BYE) is never placed in player1.
       const value = first[selected.side];
-      first[selected.side] = second[slot.side] as string;
-      second[slot.side] = value;
+      const other = second[slot.side];
+      if (!value || !other) return previous;
+      if (selected.side === 'player1') first.player1 = other;
+      else first.player2 = other;
+      if (slot.side === 'player1') second.player1 = value;
+      else second.player2 = value;
       return next;
     });
     setSelected(null);

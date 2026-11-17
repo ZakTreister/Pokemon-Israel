@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
 import { publicTournaments, type PublicTournament } from '../services/publicTournaments';
 import { subscribePublicTournament } from '../services/tournamentLive';
@@ -16,6 +17,8 @@ export default function TournamentDetailsPage() {
       setTournament(data);
       setError('');
     } catch (caught) {
+      if (isAxiosError(caught) && caught.response?.status === 404)
+        setTournament(null);
       setError(requestError(caught));
     }
   }, [id]);
