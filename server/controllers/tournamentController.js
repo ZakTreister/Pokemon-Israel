@@ -245,7 +245,8 @@ export const registerForTournament = asyncHandler(async (req, res) => {
     throw new Error('Tournament not found');
   }
 
-  if (tournament.status !== 'upcoming') {
+  if (tournament.status !== 'upcoming' ||
+      (isClubTournament(tournament) && !clubRegistrationOpen(tournament))) {
     res.status(400);
     throw new Error('Tournament registration is closed');
   }
