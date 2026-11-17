@@ -805,7 +805,10 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 
 ## Version 2026.11.1 — public live tournament & pairing editing
 
-**Status:** `READY_FOR_DEVELOPMENT` (implementation proposed in review branch, pending automated/production verification)
+**Status:** `DEVELOPED` (awaiting human review and merge)
+**Implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/23
+**Implementation commit:** `7042e9fbd08532324cb92b82083fdeff107d8e1b`
+**Developed on:** `2026-11-17`
 
 **Scope:**
 - public detail page displays details only before the event, live matchups during round play, final standings after closing; remove self-registration
@@ -815,4 +818,4 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 - authorized latest-round pairing/table swaps for team-internal and club Swiss events only, safe revisions and score-clear confirmation
 - inter-team encounters excluded (not yet implemented)
 
-**Verification:** New targeted server tests in `server/tests/roundPairings.test.js`; not yet executed in this workspace. UI/build/lint verification and review required before marking `DEVELOPED`.
+**Verification:** GitHub Actions QR registration verification passed for implementation SHA `7042e9fbd08532324cb92b82083fdeff107d8e1b`: `npm run lint`, `npm run build`, `npm run test:stage-a` (including pairing/read-only Socket.IO integration tests) and `npm run test:stage-a:ui` all passed. **Known gaps:** None reported by these checks; live-browser/manual visual review is pending.
