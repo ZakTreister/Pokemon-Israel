@@ -21,7 +21,7 @@ export function splitHistoricalPlayerName(fullName, override = {}) {
     (tokens.length !== 2 || /\?/.test(fullName)) };
 }
 
-export function planHistoricalPlayers(rows, players, existingHistorical = [], review = {}) {
+export function planHistoricalPlayers(rows, players, existingHistorical = [], review = {}, legacyUsers = []) {
   const existingBySourceName = new Map(existingHistorical.map(row => [row.normalizedName, row]));
   const assignments = new Set();
   return rows.map(row => {
@@ -60,6 +60,20 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
       else if (matches.length > 1) issue = 'Multiple Players have the same name';
       else if (row.isAllStars) issue = 'All-Stars Player missing; never create an unassigned team player';
       else state = 'create-quarterly';
+    }
+    // A legacy player User may have historical/future tournament results but
+    // no canonical Player link. Creating a new Player blindly would split the
+    // child's identity and future regular scores into separate ranking rows.
+    const sameNameUsers = legacyUsers.filter(user =>
+      [row.normalizedName, reviewedName].includes(normalizeRankingName(user.name)));
+    const unlinkedUsers = sameNameUsers.filter(user =>
+      !players.some(p => String(p.user || '') === String(user._id) ||
+        (user.player && String(p._id) === String(user.player))));
+    if (!issue && unlinkedUsers.length) {
+      const confirmedUser = previous?.legacyUser || null;
+      if (!confirmedUser ||
+          unlinkedUsers.some(user => String(user._id) !== String(confirmedUser)))
+        issue = 'Matching legacy player User lacks a verified canonical Player link; review before import';
     }
     if (chosen && chosen.playerType !== expectedType && !override.playerId && !previous?.player)
       issue = 'Player type differs from historical All-Stars classification';
