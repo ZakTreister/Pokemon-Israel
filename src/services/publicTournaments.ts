@@ -18,7 +18,7 @@ export interface PublicTournamentSummary {
   lifecycle: TournamentLifecycle;
   status: string;
   currentParticipants: number;
-  maxParticipants: number;
+  maxParticipants: number | null;
   registrationDeadline: string;
   team: string | null;
   teamNameSnapshot: string;
