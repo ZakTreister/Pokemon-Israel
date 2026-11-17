@@ -76,7 +76,7 @@ export const getClubParticipants = asyncHandler(async (req, res) => {
   const staffUsers = await User.find({ role: { $in: ['admin', 'judge'] } })
     .select('_id player');
   const excludedUsers = new Set(staffUsers.map(user => String(user._id)));
-  const excludedPlayerIds = new Set(staffUsers.map(user => String(user.player)).filter(Boolean));
+  const excludedPlayerIds = new Set(staffUsers.map(user => user.player ? String(user.player) : null).filter(Boolean));
   const availablePlayers = await Player.find({
     playerType: 'quarterly', isActive: true,
     _id: { $nin: [...registeredPlayerIds, ...excludedPlayerIds] },
