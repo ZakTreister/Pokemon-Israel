@@ -2012,7 +2012,7 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal((await request(route, 'GET', undefined, null)).status, 401);
   assert.equal((await request(route, 'GET', undefined, 'player')).status, 403);
   assert.equal((await request(route, 'POST', {}, 'player')).status, 403);
-  assert.equal((await request(route + '?playerId=' + teamPlayer.id)).status, 409);
+  assert.equal((await ok(route + '?playerId=' + teamPlayer.id)).player.playerType, 'team');
   const preview = await ok(route, 'GET', undefined, 'judge');
   assert.equal(preview.tournament.type, 'quarterly');
   const fromId = await ok(route + '?playerId=' + existing.id);
@@ -2069,12 +2069,21 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal(loaded.clubRegistrations.length, 3);
   assert.equal(loaded.participants.length, 0);
   assert.equal(loaded.currentParticipants, 3);
+  const teamEntrant = await ok(route, 'POST', {
+    firstName: teamPlayer.firstName, lastName: teamPlayer.lastName, city: teamPlayer.city,
+    playerId: teamPlayer.id, expectedRevision: loaded.revision,
+  }, 'judge', 201);
+  assert.equal(teamEntrant.player.playerType, 'team');
+  loaded = await Tournament.findById(event.id);
+  assert.equal(loaded.clubRegistrations.length, 4);
+  assert.equal((await Player.findById(teamPlayer.id)).team, null);
+  assert.equal(loaded.playerParticipants.length, 0);
 
   assert.equal((await request(route, 'POST', {
     firstName: 'QrLater', lastName: 'Child', city: '', expectedRevision: 0,
   })).status, 409);
   const adminRead = await ok('/tournaments/management/legacy/' + event.id, 'GET', undefined, 'admin');
-  assert.equal(adminRead.clubRegistrations.length, 3);
+  assert.equal(adminRead.clubRegistrations.length, 4);
 
   const invalidResult = await request('/tournaments/' + event.id + '/results', 'POST', {
     results: [{ player: teamPlayer.id, playerModel: 'Player', playerName: 'Team Only', points: 4, position: 1 }],
