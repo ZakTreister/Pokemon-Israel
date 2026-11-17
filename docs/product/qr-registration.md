@@ -15,7 +15,7 @@ Unauthenticated staff return to the same full local URL after login. The server 
 
 ## Data model
 
-New QR players are canonical `Player` documents with `playerType: 'quarterly'`, `team: null`, and no child login. Existing active `team` Players **may join a club tournament** by their existing Player ID (or by staff choosing a duplicate suggestion), because the target *tournament* must be a club event. The flow never creates a team Player, assigns a child to an All Stars team, or changes permanent team membership.
+New QR players are canonical `Player` documents with `playerType: 'quarterly'`, `team: null`, and no child login. Existing `team` / All Stars players **cannot register for club tournaments**. This is enforced by server-side validation for `playerId`, by excluding team players from duplicate suggestions, and by rejecting exact matching team identities when a new club player is proposed. The flow never creates a team Player, assigns a child to an All Stars team, or changes permanent team membership.
 
 `Tournament.clubRegistrations` stores references to regular Players, registration time, and a short name/city snapshot. The legacy `Tournament.participants` array continues to contain historical `User` registrations; it is not overwritten or filled with Player IDs. `currentParticipants` counts both sets.
 
@@ -40,3 +40,11 @@ The operation rejects already registered Players and stale tournament revisions.
 - MongoDB standalone has no multi-document transaction: failed tournament CAS rolls back a just-created Player where possible. A process crash between documents can leave a partial write. Explicit reconciliation is required if a profile update partially fails.
 - For a new player with no city, `registrationSource: 'qr-club'` explicitly permits an incomplete city on the Player model. This does not relax ordinary manual club-player creation validation.
 - This feature does **not** generate QR image files or send the registration emails; it accepts links generated externally.
+
+## Club event creation and management
+
+Regular/club tournaments have **unlimited participants**. The creation form has no capacity field, and both QR and legacy User enrollment ignore any old `maxParticipants` caps for club tournaments. Team tournament participant limits remain unchanged.
+
+Club events are scheduled by **date only**, without event time. New and edited event dates are represented using an Israel calendar day (stored at UTC noon for stable display). Registration and lifecycle checks use calendar-day comparisons rather than times. The regular event detail page shows no hour.
+
+Admins can edit the event title, description, date, location and image directly on `/manage/tournaments/regular/:id`. Judges cannot edit tournament metadata.
