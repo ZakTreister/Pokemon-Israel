@@ -1992,3 +1992,59 @@ test('historical ordinary points for an All-Stars Player stay independent of tea
   const hidden = await ok('/rankings?search=Fixture0%20Child', 'GET', undefined, null);
   assert.equal(hidden.total, 0);
 });
+
+
+test('staff QR enrollment validates authorization, duplicate selection and tournament CAS', async () => {
+  const team = await ok('/teams', 'POST', { name: 'QR Test Team' }, 'admin', 201);
+  const players = await ok(`/teams/${team.id}/players`, 'POST', {
+    players: [
+      { firstName: 'QRFirst', lastName: 'Test', city: 'Haifa' },
+      { firstName: 'QRSecond', lastName: 'Test', city: 'Haifa' },
+    ],
+  }, 'admin', 201);
+  const tournament = await ok('/internal-tournaments', 'POST', { teamId: team.id }, 'judge', 201);
+  const route = `/tournaments/${tournament.id}/qr-registration`;
+  assert.equal((await request(route, 'GET', undefined, null)).status, 401);
+  assert.equal((await request(route, 'GET', undefined, 'player')).status, 403);
+  assert.equal((await request(route, 'POST', {}, 'player')).status, 403);
+  const preview = await ok(route, 'GET', undefined, 'judge');
+  assert.equal(preview.tournament.title, tournament.title);
+  const existing = await ok(route + '?playerId=' + players[0].id);
+  assert.equal(existing.player.firstName, 'QRFirst');
+  const duplicates = await ok(route + '/duplicates?firstName=QRFirst&lastName=Test&city=Haifa');
+  assert.ok(duplicates.matches.some(p => p.id === players[0].id));
+  const candidate = { firstName: 'QR New', lastName: 'Child', city: '', birthYear: 2015 };
+  const initial = await ok(route, 'GET');
+  const inserted = await ok(route, 'POST', {
+    ...candidate, expectedRevision: initial.tournament.revision,
+  }, 'judge', 201);
+  assert.equal(inserted.player.playerType, 'team');
+  assert.equal(inserted.player.birthYear, 2015);
+  let refreshed = await ok(`/internal-tournaments/${tournament.id}`);
+  assert.ok(refreshed.nextRoundParticipantIds.includes(inserted.player.id));
+  assert.equal(refreshed.playerParticipants.length, 3);
+  assert.equal((await request(route, 'POST', {
+    ...candidate, playerId: inserted.player.id, expectedRevision: refreshed.revision,
+  })).status, 409);
+  const similar = await request(route, 'POST', {
+    ...candidate, expectedRevision: refreshed.revision,
+  });
+  assert.equal(similar.status, 409);
+  assert.equal(similar.body.code, 'PLAYER_DUPLICATE');
+  const allowed = await ok(route, 'POST', {
+    ...candidate, allowDuplicate: true, expectedRevision: refreshed.revision,
+  }, 'admin', 201);
+  assert.notEqual(allowed.player.id, inserted.player.id);
+  refreshed = await ok(`/internal-tournaments/${tournament.id}`);
+  assert.equal(refreshed.playerParticipants.length, 4);
+  const stale = await request(route, 'POST', {
+    firstName: 'Another', lastName: 'Child', city: '', expectedRevision: 0,
+  });
+  assert.equal(stale.status, 409);
+  const legacy = await Tournament.create({
+    title: 'Old QR format', description: 'Legacy', date: new Date(),
+    location: 'Somewhere', maxParticipants: 10, registrationDeadline: new Date(),
+    image: '/old.png', status: 'upcoming',
+  });
+  assert.equal((await request(`/tournaments/${legacy.id}/qr-registration`)).status, 409);
+});
