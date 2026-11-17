@@ -59,7 +59,7 @@ export function usePlayerEditor(
             lastName,
             city,
             isActive,
-            birthYear,
+            ...(player.playerType === 'quarterly' ? { birthYear } : {}),
             ...(player.playerType === 'team'
               ? { ...profile, photoUploadId, deckUploadId }
               : {}),
