@@ -64,3 +64,20 @@ test('a confirmed first-name-only historical record retains blank lastName', () 
   assert.equal(entry.lastName, '');
   assert.equal(entry.reviewSuggested, false);
 });
+
+test('unlinked legacy player User matching a missing regular Player blocks creation', () => {
+  const source = row('שחקן דוגמה');
+  const legacyUsers = [{ _id: 'legacy-u1', name: 'שחקן דוגמה', player: null }];
+  const [entry] = planHistoricalPlayers([source], [], [], {}, legacyUsers);
+  assert.equal(entry.state, 'blocked');
+  assert.match(entry.issue, /legacy player User/);
+});
+
+test('verified Player / User linkage does not block a matched canonical Player', () => {
+  const source = row('שחקן דוגמה');
+  const existingPlayer = { ...player('existing-1', 'שחקן', 'דוגמה'), user: 'legacy-u1' };
+  const legacyUsers = [{ _id: 'legacy-u1', name: 'שחקן דוגמה', player: 'existing-1' }];
+  const [entry] = planHistoricalPlayers([source], [existingPlayer], [], {}, legacyUsers);
+  assert.equal(entry.state, 'name-candidate');
+  assert.equal(entry.player._id, 'existing-1');
+});
