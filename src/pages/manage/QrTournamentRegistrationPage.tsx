@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import Button from '../../components/ui/Button';
+import { useConfirm } from '../../components/ui/ConfirmProvider';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import {
   qrRegistration, type QrPlayer, type QrFields, type QrTournament,
@@ -15,6 +16,7 @@ const errorText = (error: unknown) =>
 
 export default function QrTournamentRegistrationPage() {
   const { tournamentId = '' } = useParams();
+  const { showConfirm } = useConfirm();
   const [params] = useSearchParams();
   const initialPlayerId = text(params.get('playerId'));
   const [tournament, setTournament] = useState<QrTournament | null>(null);
@@ -84,7 +86,7 @@ export default function QrTournamentRegistrationPage() {
         originalPlayer.lastName !== fields.lastName.trim() ||
         originalPlayer.city !== fields.city.trim() ||
         originalPlayer.birthYear !== parsed().birthYear));
-    if (existingEdited && !window.confirm('העדכון ישנה את פרטי השחקן בכל המערכת. להמשיך?')) return;
+    if (existingEdited && !await showConfirm({ title: 'עדכון שחקן קיים', message: 'הפרטים שתערוך יישמרו בפרופיל השחקן בכל המערכת. להמשיך?', confirmText: 'עדכן וצרף' })) return;
     setSaving(true);
     setError('');
     try {
