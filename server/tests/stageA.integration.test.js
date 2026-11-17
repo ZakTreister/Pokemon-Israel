@@ -543,8 +543,9 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     undefined,
     null,
   );
-  assert.equal(teamRank.rankings.length, 1);
-  assert.equal(teamRank.rankings[0].playerId, children[0].id);
+  // Transferring a player must never carry an old team's tournament score
+  // into the new team's current ranking. Historical original-event results stay.
+  assert.equal(teamRank.rankings.length, 0);
   // Reopening the database connection simulates a process restart without losing state.
   await mongoose.disconnect();
   await mongoose.connect(
