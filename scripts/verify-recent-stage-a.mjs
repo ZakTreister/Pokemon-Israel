@@ -211,6 +211,20 @@ try {
   assert.equal(renderer.root.findAllByType('article').length, 1);
   unmount();
 
+  const { default: PublicMatchCard } = await load('components/tournaments/PublicMatchCard.tsx');
+  await mount(el(PublicMatchCard, {
+    match: {
+      table: 4, player1Name: 'מענדל', player2Name: 'טוביה',
+      result: { winner: 'player1', score1: 2, score2: 1, drawnGames: 0 },
+    },
+  }));
+  assert.ok(text(renderer.toJSON()).includes('שולחן 4'));
+  assert.ok(text(renderer.toJSON()).includes('2–1'));
+  assert.ok(text(renderer.toJSON()).includes('מנצח'));
+  assert.equal(renderer.root.findAllByType('button').length, 0,
+    'public results must not allow any write action');
+  unmount();
+
   const { store } = await load('store/index.ts');
   const initial = store.getState();
   const fixture = {

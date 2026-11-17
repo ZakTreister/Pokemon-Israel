@@ -2424,3 +2424,27 @@ test('trial team players are reversible without losing historical tournament res
     { expectedRevision: next.revision, playerId: approved.id }, 'judge')).status, 409);
 });
 
+
+test('club-only public Events pagination includes legacy null types and excludes teams', async () => {
+  const key = 'club-filter-' + randomUUID().slice(0, 8);
+  const date = new Date(Date.now() + 86400000);
+  const base = {
+    description: 'public filter fixture', date, location: 'רחובות',
+    image: '/event.png', registrationDeadline: date,
+  };
+  await Tournament.create([
+    { ...base, title: key + ' regular', type: 'quarterly' },
+    { ...base, title: key + ' legacy', type: null },
+    { ...base, title: key + ' internal', type: 'team_internal', maxParticipants: 128 },
+  ]);
+  const all = await ok(`/tournaments?search=${key}&pageSize=10`, 'GET', undefined, null);
+  assert.equal(all.total, 3);
+  const first = await ok(`/tournaments?type=quarterly&search=${key}&pageSize=1&page=1`, 'GET', undefined, null);
+  const second = await ok(`/tournaments?type=quarterly&search=${key}&pageSize=1&page=2`, 'GET', undefined, null);
+  assert.equal(first.total, 2);
+  assert.equal(first.totalPages, 2);
+  assert.equal(second.total, 2);
+  assert.equal(second.items.length, 1);
+  assert.ok([...first.items, ...second.items].every(row => row.type === 'quarterly'));
+  assert.ok(![...first.items, ...second.items].some(row => row.title.endsWith('internal')));
+});
