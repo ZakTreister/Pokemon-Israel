@@ -790,3 +790,5 @@ Implemented directly on `main`; no feature branch or PR was created. The impleme
 Mark as `DEVELOPED` only once full verification has passed and deployment/data-matching decisions are approved. No direct main push.
 
 **2026-11-17 owner clarification:** private split CSV confirms `ספיר` is first name only with blank surname (1 point / 1 participation), not `?`; importer and regular-player editor must allow this historical exception without fabricating a surname. A regression test covers the exception. Production import still pending.
+
+**2026-11-17 name-review completion:** All 21 owner-questioned split-name records were approved. Only two provisional splits changed. The final private CSV contains 337 rows / 35 All-Stars / 6,054 points / 821 participations, with no Excel serial/rank. Private name-approval JSON supports import preflight; first/last-name review is complete. Read-only matching with both existing regular and team Players, full checks and production import remain pending.
