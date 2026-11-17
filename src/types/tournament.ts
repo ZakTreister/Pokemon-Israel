@@ -4,7 +4,7 @@ export interface Tournament {
   description: string;
   date: string;
   location: string;
-  maxParticipants: number;
+  maxParticipants: number | null;
   currentParticipants: number;
   format: string;
   entryFee: number;
