@@ -218,7 +218,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
     player.birthYear = year;
   }
 
-  if (player.playerType === 'quarterly' && !player.city?.trim() && !player.historicalImportSource)
+  if (player.playerType === 'quarterly' && !player.city?.trim() && !player.historicalImportSource && player.registrationSource !== 'qr-club')
     fail(400, 'עיר היא שדה חובה');
   // For team players, sync linked User.name when firstName/lastName changed
   let linkedUser = null;
