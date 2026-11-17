@@ -15,7 +15,7 @@ Unauthenticated staff return to the same full local URL after login. The server 
 
 ## Data model
 
-Club/regular players are canonical `Player` documents with `playerType: 'quarterly'`, `team: null`, and no child login. QR registration does not create or attach All Stars/team players.
+New QR players are canonical `Player` documents with `playerType: 'quarterly'`, `team: null`, and no child login. Existing active `team` Players **may join a club tournament** by their existing Player ID (or by staff choosing a duplicate suggestion), because the target *tournament* must be a club event. The flow never creates a team Player, assigns a child to an All Stars team, or changes permanent team membership.
 
 `Tournament.clubRegistrations` stores references to regular Players, registration time, and a short name/city snapshot. The legacy `Tournament.participants` array continues to contain historical `User` registrations; it is not overwritten or filled with Player IDs. `currentParticipants` counts both sets.
 
