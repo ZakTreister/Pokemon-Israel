@@ -1998,8 +1998,25 @@ test('historical ordinary points for an All-Stars Player stay independent of tea
 test('club-only QR flow registers Player records and keeps regular results linked to national rankings', async () => {
   const when = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
   const event = await ok('/tournaments', 'POST', {
-    date: when, location: 'QR Club Hall', type: 'quarterly', maxParticipants: 12,
+    date: when.slice(0, 10), location: 'QR Club Hall', type: 'quarterly',
+    maxParticipants: 1, // Obsolete incoming cap must not limit club registrations.
   }, 'admin', 201);
+  assert.equal(event.maxParticipants, null);
+  assert.ok(event.date.endsWith('T12:00:00.000Z'));
+  const day15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  assert.equal((await request('/tournaments/' + event.id, 'PUT', {
+    date: day15, location: 'Forbidden Edit',
+  }, 'judge')).status, 403);
+  const editedEvent = await ok('/tournaments/' + event.id, 'PUT', {
+    date: day15,
+    title: 'QR Club Tournament Edited',
+    description: 'Open to club players',
+    location: 'New QR Hall',
+  }, 'admin');
+  assert.equal(editedEvent.title, 'QR Club Tournament Edited');
+  assert.equal(editedEvent.location, 'New QR Hall');
+  assert.ok(editedEvent.date.endsWith(day15 + 'T12:00:00.000Z'));
+  assert.equal(editedEvent.maxParticipants, null);
   const route = '/tournaments/' + event.id + '/qr-registration';
   const existing = await ok('/players/quarterly', 'POST', {
     firstName: 'QrExisting', lastName: 'Club', city: 'Rehovot',
@@ -2012,7 +2029,12 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal((await request(route, 'GET', undefined, null)).status, 401);
   assert.equal((await request(route, 'GET', undefined, 'player')).status, 403);
   assert.equal((await request(route, 'POST', {}, 'player')).status, 403);
-  assert.equal((await ok(route + '?playerId=' + teamPlayer.id)).player.playerType, 'team');
+  const teamPreview = await request(route + '?playerId=' + teamPlayer.id);
+  assert.equal(teamPreview.status, 409);
+  assert.equal(teamPreview.body.code, 'INVALID_PLAYER_TYPE');
+  const teamNewLink = await request(route + '/duplicates?firstName=Team&lastName=Only&city=Jerusalem');
+  assert.equal(teamNewLink.status, 409);
+  assert.equal(teamNewLink.body.code, 'TEAM_PLAYER_NOT_ELIGIBLE');
   const preview = await ok(route, 'GET', undefined, 'judge');
   assert.equal(preview.tournament.type, 'quarterly');
   const fromId = await ok(route + '?playerId=' + existing.id);
@@ -2069,13 +2091,15 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal(loaded.clubRegistrations.length, 3);
   assert.equal(loaded.participants.length, 0);
   assert.equal(loaded.currentParticipants, 3);
-  const teamEntrant = await ok(route, 'POST', {
+  assert.ok(loaded.currentParticipants > 1); // No club participant limit.
+  const teamDenied = await request(route, 'POST', {
     firstName: teamPlayer.firstName, lastName: teamPlayer.lastName, city: teamPlayer.city,
     playerId: teamPlayer.id, expectedRevision: loaded.revision,
-  }, 'judge', 201);
-  assert.equal(teamEntrant.player.playerType, 'team');
+  }, 'judge');
+  assert.equal(teamDenied.status, 409);
+  assert.equal(teamDenied.body.code, 'INVALID_PLAYER_TYPE');
   loaded = await Tournament.findById(event.id);
-  assert.equal(loaded.clubRegistrations.length, 4);
+  assert.equal(loaded.clubRegistrations.length, 3);
   assert.equal((await Player.findById(teamPlayer.id)).team, null);
   assert.equal(loaded.playerParticipants.length, 0);
 
@@ -2083,7 +2107,7 @@ test('club-only QR flow registers Player records and keeps regular results linke
     firstName: 'QrLater', lastName: 'Child', city: '', expectedRevision: 0,
   })).status, 409);
   const adminRead = await ok('/tournaments/management/legacy/' + event.id, 'GET', undefined, 'admin');
-  assert.equal(adminRead.clubRegistrations.length, 4);
+  assert.equal(adminRead.clubRegistrations.length, 3);
 
   const invalidResult = await request('/tournaments/' + event.id + '/results', 'POST', {
     results: [{ player: new mongoose.Types.ObjectId().toString(), playerModel: 'Player', playerName: 'Unregistered', points: 4, position: 1 }],
