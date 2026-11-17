@@ -7,8 +7,11 @@ export interface TournamentFiltersValue {
 }
 export const tournamentTypes: Record<TournamentType, string>;
 export const tournamentStatuses: Record<TournamentLifecycle, string>;
+export function clubDateKey(value: string | Date): string;
+export function isClubTournament(t: { type?: string | null; engineVersion?: string | null }): boolean;
+export function clubRegistrationOpen(t: { type?: string | null; engineVersion?: string | null; date: string | Date; status?: string }, now?: Date): boolean;
 export function tournamentLifecycle(
-  t: { date: string | Date; status?: string; phase?: string | null },
+  t: { date: string | Date; status?: string; phase?: string | null; type?: string | null; engineVersion?: string | null },
   now?: Date,
 ): TournamentLifecycle;
 export function filterTournaments<
