@@ -443,14 +443,22 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     'admin',
     201,
   );
+  // A team-linked account must no longer be able to enter a club tournament.
+  assert.equal((await request(
+    `/tournaments/${regular.id}/register`, 'POST', {}, 'player'
+  )).status, 409);
+  const clubUser = await User.create({
+    name: 'Legacy Club User', username: 'legacy-qr-fixture',
+    password: randomBytes(24).toString('hex'), role: 'player',
+  });
+  tokens.clubPlayer = jwt.sign({ id: clubUser.id }, process.env.JWT_SECRET);
   const registered = await ok(
-    `/tournaments/${regular.id}/register`,
-    'POST',
-    {},
-    'player',
+    `/tournaments/${regular.id}/register`, 'POST', {}, 'clubPlayer',
   );
   assert.equal(registered.currentParticipants, 1);
-  assert.deepEqual(await ok(`/tournaments/${regular.id}/register`, 'GET', undefined, 'player'), {registered:true});
+  assert.deepEqual(await ok(
+    `/tournaments/${regular.id}/register`, 'GET', undefined, 'clubPlayer'
+  ), {registered:true});
   await ok(
     `/tournaments/${regular.id}`,
     'PUT',
@@ -463,8 +471,8 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     {
       results: [
         {
-          player: linkedUser.id,
-          playerName: 'Renamed Linked',
+          player: clubUser.id,
+          playerName: 'Legacy Club User',
           position: 1,
           points: 4,
           rawPoints: 9,
@@ -481,7 +489,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   );
   assert.equal(regularResults[0].points, 4);
   assert.equal(regularResults[0].player, 'legacy-0');
-  assert.equal(regularResults[0].playerName, 'Renamed Linked');
+  assert.equal(regularResults[0].playerName, 'Legacy Club User');
   let ranks = await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null);
   assert.equal(ranks.rankings.length, 4);
   assert.equal(
