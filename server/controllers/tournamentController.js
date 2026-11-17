@@ -3,7 +3,33 @@ import { publicTournament } from '../services/publicTournament.js';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import User from '../models/userModel.js';
+import Player from '../models/playerModel.js';
+import { clubDateKey, clubRegistrationOpen, isClubTournament } from '../../shared/tournamentDomain.js';
 import { v4 as uuidv4 } from 'uuid';
+
+
+// A regular/club event is a calendar day. Store it at UTC noon so Israel
+// renders the intended day even around DST transitions; no event time is implied.
+function calendarInput(value) {
+  if (typeof value !== 'string') {
+    const error = new Error('יש לבחור תאריך תקין');
+    error.statusCode = 400;
+    throw error;
+  }
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? value
+    : (Number.isFinite(new Date(value).getTime()) ? clubDateKey(value) : '');
+  const date = new Date(normalized + 'T12:00:00.000Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized) ||
+      Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalized) {
+    const error = new Error('יש לבחור תאריך תקין');
+    error.statusCode = 400;
+    throw error;
+  }
+  return normalized;
+}
+const clubEventDay = day => new Date(day + 'T12:00:00.000Z');
+const clubEndDay = day => new Date(day + 'T23:59:59.999Z');
 
 // @desc    Get all tournaments
 // @route   GET /api/tournaments
@@ -65,122 +91,124 @@ export const getLegacyManagedTournament = asyncHandler(async (req, res) => {
 // @route   POST /api/tournaments
 // @access  Private/Admin
 export const createTournament = asyncHandler(async (req, res) => {
-  const { 
-    date, 
-    location, 
-    isRecurring, 
-    lastTournamentDate, 
-    maxParticipants = 32 
-  } = req.body;
-
-  // Validate required fields
-  if (!date || !location) {
+  const { date, location, isRecurring = false, lastTournamentDate } = req.body;
+  if (typeof location !== 'string' || !location.trim() || !date) {
     res.status(400);
-    throw new Error('Date and location are required');
+    throw new Error('תאריך ומיקום הם שדות חובה');
   }
-
+  const type = req.body.type || 'quarterly';
+  if (!['quarterly', 'inter_team'].includes(type)) {
+    res.status(400);
+    throw new Error('סוג טורניר לא חוקי; טורניר נבחרת פותחים מעמוד הנבחרת');
+  }
+  const club = type === 'quarterly';
+  const firstDay = club ? calendarInput(date) : null;
+  const tournamentDate = club ? clubEventDay(firstDay) : new Date(date);
+  if (Number.isNaN(tournamentDate.getTime())) {
+    res.status(400);
+    throw new Error('תאריך לא תקין');
+  }
   if (isRecurring && !lastTournamentDate) {
     res.status(400);
-    throw new Error('Last tournament date is required for recurring tournaments');
+    throw new Error('יש לבחור תאריך אחרון לטורניר שבועי');
   }
-
-  const tournamentDate = new Date(date);
-  const registrationDeadline = new Date(tournamentDate); // Deadline = tournament start time
-
-  // Base tournament data
+  const lastDay = isRecurring && club ? calendarInput(lastTournamentDate) : null;
+  const lastDate = isRecurring ? (club ? clubEventDay(lastDay) : new Date(lastTournamentDate)) : null;
+  if (isRecurring && (Number.isNaN(lastDate.getTime()) || lastDate < tournamentDate)) {
+    res.status(400);
+    throw new Error('התאריך האחרון חייב להיות בתאריך הטורניר הראשון או אחריו');
+  }
   const baseTournamentData = {
-    title: `טורניר פוקימון - ${location}`,
-    description: `טורניר פוקימון ב${location}`,
-    location,
-    maxParticipants,
-    registrationDeadline,
+    title: `טורניר פוקימון - ${location.trim()}`,
+    description: `טורניר פוקימון ב${location.trim()}`,
+    location: location.trim(),
+    type,
+    // A club event has no participant limit. Preserve legacy caps for other event types.
+    maxParticipants: club ? null : (req.body.maxParticipants ?? 32),
+    registrationDeadline: club ? clubEndDay(firstDay) : new Date(tournamentDate),
     image: req.body.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
-    isRecurring,
+    isRecurring: Boolean(isRecurring),
   };
-
-  // Optional new fields — not required for backward compatibility
-  if (req.body.type === 'team_internal') {
-    res.status(400); throw new Error('Create internal team tournaments from the team page');
-  }
-  if (req.body.type) {
-    const validTypes = ['team_internal', 'inter_team', 'quarterly'];
-    if (!validTypes.includes(req.body.type)) {
-      res.status(400);
-      throw new Error('Invalid tournament type');
-    }
-    baseTournamentData.type = req.body.type;
-  }
-
-
-  const createdTournaments = [];
-
   if (isRecurring) {
-    // Generate a unique series ID for all tournaments in this recurring series
     const seriesId = uuidv4();
-    const lastDate = new Date(lastTournamentDate);
+    const createdTournaments = [];
     let currentDate = new Date(tournamentDate);
     let weekNumber = 1;
-
-    // Create tournaments for each week until the last tournament date
     while (currentDate <= lastDate) {
-      const weeklyTournament = new Tournament({
+      const day = currentDate.toISOString().slice(0, 10);
+      const saved = await Tournament.create({
         ...baseTournamentData,
-        title: `טורניר פוקימון שבועי - ${location} (שבוע ${weekNumber})`,
-        description: `טורניר פוקימון שבועי ב${location} - שבוע ${weekNumber}`,
+        title: `טורניר פוקימון שבועי - ${location.trim()} (שבוע ${weekNumber})`,
+        description: `טורניר פוקימון שבועי ב${location.trim()} - שבוע ${weekNumber}`,
         date: new Date(currentDate),
-        registrationDeadline: new Date(currentDate), // Registration closes when tournament starts
+        registrationDeadline: club ? clubEndDay(day) : new Date(currentDate),
         seriesId,
       });
-
-      const savedTournament = await weeklyTournament.save();
-      createdTournaments.push(savedTournament);
-
-      // Move to next week
-      currentDate.setDate(currentDate.getDate() + 7);
+      createdTournaments.push(saved);
+      currentDate.setUTCDate(currentDate.getUTCDate() + 7);
       weekNumber++;
     }
-
-    res.status(201).json({
+    return res.status(201).json({
       message: `Created ${createdTournaments.length} recurring tournaments`,
       tournaments: createdTournaments,
       seriesId,
     });
-  } else {
-    // Create single tournament
-    const tournament = new Tournament({
-      ...baseTournamentData,
-      date: tournamentDate,
-    });
-
-    const createdTournament = await tournament.save();
-    createdTournaments.push(createdTournament);
-
-    res.status(201).json(createdTournament);
   }
+  return res.status(201).json(await Tournament.create({
+    ...baseTournamentData,
+    date: tournamentDate,
+  }));
 });
 
 // @desc    Update a tournament
 // @route   PUT /api/tournaments/:id
 // @access  Private/Admin
 export const updateTournament = asyncHandler(async (req, res) => {
-  const tournament = await Tournament.findOne({ _id: req.params.id, engineVersion: { $ne: 'swiss-v1' } });
-
-  if (tournament) {
-    tournament.title = req.body.title || tournament.title;
-    tournament.description = req.body.description || tournament.description;
-    tournament.date = req.body.date || tournament.date;
-    tournament.location = req.body.location || tournament.location;
-    tournament.maxParticipants = req.body.maxParticipants || tournament.maxParticipants;
-    tournament.registrationDeadline = req.body.registrationDeadline || tournament.registrationDeadline;
-    tournament.image = req.body.image || tournament.image;
-    tournament.status = req.body.status || tournament.status;
-
-    const updatedTournament = await tournament.save();
-    res.json(updatedTournament);
-  } else {
+  const tournament = await Tournament.findOne({
+    _id: req.params.id,
+    engineVersion: { $ne: 'swiss-v1' },
+  });
+  if (!tournament) {
     res.status(404);
     throw new Error('Tournament not found');
   }
+  const club = isClubTournament(tournament);
+  if (req.body.date !== undefined) {
+    if (club) {
+      const day = calendarInput(req.body.date);
+      tournament.date = clubEventDay(day);
+      tournament.registrationDeadline = clubEndDay(day);
+    } else {
+      const value = new Date(req.body.date);
+      if (Number.isNaN(value.getTime())) {
+        res.status(400);
+        throw new Error('תאריך לא תקין');
+      }
+      tournament.date = value;
+    }
+  }
+  for (const key of ['title', 'description', 'location']) {
+    if (req.body[key] === undefined) continue;
+    if (typeof req.body[key] !== 'string' || !req.body[key].trim()) {
+      res.status(400);
+      throw new Error('יש להזין פרטים תקינים');
+    }
+    tournament[key] = req.body[key].trim();
+  }
+  if (req.body.image !== undefined) {
+    if (typeof req.body.image !== 'string') {
+      res.status(400);
+      throw new Error('קישור תמונה לא תקין');
+    }
+    if (req.body.image.trim()) tournament.image = req.body.image.trim();
+  }
+  // Existing team/encounter behavior remains unchanged. Club events are unlimited.
+  if (club) tournament.maxParticipants = null;
+  else if (req.body.maxParticipants !== undefined)
+    tournament.maxParticipants = req.body.maxParticipants;
+  if (req.body.status !== undefined) tournament.status = req.body.status;
+  const saved = await tournament.save();
+  res.json(saved);
 });
 
 // @desc    Get tournaments by series
@@ -192,6 +220,19 @@ export const getTournamentsBySeries = asyncHandler(async (req, res) => {
     .sort({ date: 1 });
   res.json(tournaments.map(t => publicTournament(t)));
 });
+
+
+// A team/All-Stars Player is not eligible for regular club tournaments.
+async function preventTeamPlayerClubRegistration(userId, linkedId, tournament, res) {
+  if (!isClubTournament(tournament)) return;
+  const player = linkedId
+    ? await Player.findById(linkedId)
+    : await Player.findOne({ user: userId });
+  if (player?.playerType === 'team') {
+    res.status(409);
+    throw new Error('שחקן נבחרת אינו יכול להירשם לטורניר חוגים');
+  }
+}
 
 // @desc    Register for tournament
 // @route   POST /api/tournaments/:id/register
@@ -209,10 +250,12 @@ export const registerForTournament = asyncHandler(async (req, res) => {
     throw new Error('Tournament registration is closed');
   }
 
-  if (tournament.currentParticipants >= tournament.maxParticipants) {
+  if (!isClubTournament(tournament) && tournament.currentParticipants >= tournament.maxParticipants) {
     res.status(400);
     throw new Error('Tournament is full');
   }
+
+  await preventTeamPlayerClubRegistration(req.user._id, req.user.player, tournament, res);
 
   // A linked Player already enrolled via club QR cannot be enrolled again as a User.
   if (req.user.player && tournament.clubRegistrations.some(
@@ -323,6 +366,7 @@ export const addParticipant = asyncHandler(async (req, res) => {
     throw new Error('User ID is required');
   }
   const registrant = await User.findById(userId).select('player');
+  await preventTeamPlayerClubRegistration(userId, registrant?.player, tournament, res);
   if (registrant?.player && tournament.clubRegistrations.some(
     (entry) => String(entry.player) === String(registrant.player)
   )) {
@@ -330,7 +374,7 @@ export const addParticipant = asyncHandler(async (req, res) => {
     throw new Error('Already registered for this tournament');
   }
 
-  if (tournament.currentParticipants >= tournament.maxParticipants) {
+  if (!isClubTournament(tournament) && tournament.currentParticipants >= tournament.maxParticipants) {
     res.status(400);
     throw new Error('Tournament is full');
   }
