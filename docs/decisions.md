@@ -462,3 +462,9 @@ Codex should avoid redundant test layers, unrelated refactors, repeated reading 
 
 ## 2026-11 — Historical cumulative national ranking baseline
 The national ranking spreadsheet provides 337 aggregate score/participation rows and 35 explicit All-Stars markers; it does not contain per-tournament results or cities/IDs. Import only an audited cumulative opening balance, never fictional tournaments. Keep post-snapshot scoring additive without double counting. Create canonical Player records only for unmatched regular players, with city and birth year unknown; link existing regular/All-Stars Player records after a reviewed DB match preview without overwriting profiles. Block ambiguous/archived matches and unmatched All-Stars. Never store Excel original serial/rank. New Players' first/last name, city and year-only birth year remain editable in management. Hide imported All-Stars rows by default; an opt-in checkbox shows them muted and labeled. Use genuine server-side search, global sorting and pagination.
+
+## 2026-11 — Running public Swiss events subscribe to Socket.IO
+
+This decision overrides the October 2026 Socket.IO-only-for-management and public-HTTP-only rules **only while a tournament is running**, after its first round exists. Public spectators use a separate anonymous event-scoped subscription that carries identifiers only; public-safe matchups and standings are fetched via HTTP. Upcoming and completed tournament detail pages do not connect. Staff event channels remain role protected.
+
+The latest active round may be edited by staff for team-internal and club tournaments. Inter-team tournaments remain unimplemented and out of scope. If a reassignment impacts an entered score, explicit destructive confirmation is required, only impacted results are cleared, and original scores are retained in the audit archive.

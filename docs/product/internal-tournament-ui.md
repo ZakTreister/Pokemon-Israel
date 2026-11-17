@@ -240,3 +240,9 @@ Preserve:
 - standings and round progression behavior
 
 Do not rebuild the tournament engine for this UI task.
+
+## November 2026 — editing current-round pairings
+
+From the active round screen, show **עריכת צימודים** to an authorized operator only on the latest round. In editing mode, tap a player then another player (including the owner of a BYE) to swap them between seats. Allow swapping complete table numbers using a select per table. Never allow a null/BYE to occupy player1, duplicate a player, or introduce a player not present in this round. Save/Cancel controls are explicit.
+
+If a touched match already has a recorded score, ask for confirmation before saving. Preserve untouched results. Clear only scores whose competitors changed and archive the old round snapshot for audit. Use the existing server tournament revision for an atomic update; stale editors must cancel and load the new round. Use the same component for internal team and club rounds only. There is no inter-team implementation.

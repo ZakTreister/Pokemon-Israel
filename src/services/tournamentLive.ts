@@ -28,3 +28,20 @@ export function subscribeTournament(
     socket.disconnect();
   };
 }
+
+/** Live public updates; intentionally does not send a staff authentication token. */
+export function subscribePublicTournament(id: string, changed: () => void) {
+  const socket = io(api.defaults.baseURL, { reconnection: true });
+  socket.on('connect', () => {
+    socket.emit('tournament:public:subscribe', id, (response: { ok: boolean }) => {
+      if (response.ok) changed();
+    });
+  });
+  socket.on('tournament:public:updated', (event: { id: string }) => {
+    if (event.id === id) changed();
+  });
+  return () => {
+    socket.emit('tournament:public:unsubscribe', id);
+    socket.disconnect();
+  };
+}

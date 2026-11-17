@@ -1,5 +1,5 @@
 import express from 'express';
-import { cancelLatestRound } from '../controllers/internalTournamentController.js';
+import { cancelLatestRound, editRoundPairings } from '../controllers/internalTournamentController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { createInternalTournament, getInternalTournaments, getInternalTournament, changeInternalParticipants, pairRound, enterMatchResult, closeInternalTournament, createHistoricalInternal } from '../controllers/internalTournamentController.js';
 const router = express.Router();
@@ -11,6 +11,7 @@ router.get('/:id', getInternalTournament);
 router.put('/:id/participants', changeInternalParticipants);
 router.post('/:id/rounds', pairRound);
 router.delete('/:id/rounds/:roundNumber', cancelLatestRound);
+router.put('/:id/rounds/:roundNumber/pairings', editRoundPairings);
 router.put('/:id/rounds/:roundNumber/matches/:matchId', enterMatchResult);
 router.post('/:id/close', closeInternalTournament);
 export default router;

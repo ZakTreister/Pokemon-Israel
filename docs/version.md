@@ -800,3 +800,22 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 **2026-11-17 score-domain clarification:** the source Excel totals are always ordinary tournament points, including all 35 All-Stars players. Do not mix them with existing internal `team_internal` scores or `inter_team` standings. A shared canonical Player identity may have independent ordinary lifetime and internal All-Stars competition-year scores. Added an explicit regular-tournament query and passing unit + MongoDB integration regression checks.
 
 **Last verified implementation SHA:** `996c2e0dafd4e9be51eace0053f6c9d90fca92dc`. The subsequent changes to this section and the runbook are documentation-only. No live MongoDB connection or production writes were performed.
+
+---
+
+## Version 2026.11.1 — public live tournament & pairing editing
+
+**Status:** `DEVELOPED` (awaiting human review and merge)
+**Implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/23
+**Implementation commit:** `7042e9fbd08532324cb92b82083fdeff107d8e1b`
+**Developed on:** `2026-11-17`
+
+**Scope:**
+- public detail page displays details only before the event, live matchups during round play, final standings after closing; remove self-registration
+- anonymous tournament-scoped Socket.IO while running only
+- QR success navigates to managed club page
+- align start and add-participant actions on desktop
+- authorized latest-round pairing/table swaps for team-internal and club Swiss events only, safe revisions and score-clear confirmation
+- inter-team encounters excluded (not yet implemented)
+
+**Verification:** GitHub Actions QR registration verification passed for implementation SHA `7042e9fbd08532324cb92b82083fdeff107d8e1b`: `npm run lint`, `npm run build`, `npm run test:stage-a` (including pairing/read-only Socket.IO integration tests) and `npm run test:stage-a:ui` all passed. **Known gaps:** None reported by these checks; live-browser/manual visual review is pending.

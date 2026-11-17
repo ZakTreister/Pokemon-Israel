@@ -718,6 +718,13 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
     auth: { token: tokens.admin },
     autoConnect: false,
   });
+  const spectator = connectSocket(origin, {
+    autoConnect: false,
+    reconnection: false,
+  });
+  const subscribePublic = id => new Promise((resolve, reject) =>
+    spectator.timeout(5000).emit('tournament:public:subscribe', id,
+      (error, result) => error ? reject(error) : resolve(result)));
   const denied = connectSocket(origin, {
     auth: { token: tokens.player },
     autoConnect: false,
@@ -730,10 +737,16 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
     const ready = Promise.all([
       socketEvent(judge, 'connect'),
       socketEvent(admin, 'connect'),
+      socketEvent(spectator, 'connect'),
     ]);
     judge.connect();
     admin.connect();
+    spectator.connect();
     await ready;
+    assert.equal((await subscribe(spectator, t.id)).ok, false,
+      'anonymous spectators must never enter management channels');
+    assert.equal((await subscribePublic(t.id)).ok, false,
+      'pre-round tournaments must not accept public live subscriptions');
     assert.equal((await subscribe(judge, 'not-a-tournament')).ok, false);
     assert.equal((await subscribe(judge, t.id)).ok, true);
     assert.equal((await subscribe(admin, t.id)).ok, true);
@@ -748,6 +761,9 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       assert.equal(event.id, t.id);
       assert.equal(event.revision, t.revision);
     }
+    assert.equal((await subscribePublic(t.id)).ok, true,
+      'anonymous public subscription is available after round one only');
+    const publicUpdate = socketEvent(spectator, 'tournament:public:updated');
     let changed = socketEvent(judge, 'tournament:updated');
     t = await ok(
       `/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`,
@@ -759,6 +775,8 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       'admin',
     );
     assert.equal((await changed).revision, t.revision);
+    assert.deepEqual(await publicUpdate, { id: t.id },
+      'public notifications must expose no internal revisions or write metadata');
     t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {
       expectedRevision: t.revision,
     });
@@ -817,6 +835,7 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       0,
     );
   } finally {
+    spectator.disconnect();
     judge.disconnect();
     admin.disconnect();
     denied.disconnect();
@@ -1229,7 +1248,13 @@ test('public Events and details expose all types and only each tournament standi
   assert.equal(active.standings.length, 2);
   assert.equal(active.standings[0].points, 3);
   assert.ok(active.standings.every(s => players.some(p => p.id === s.player)));
-  const forbidden = /"(?:teacher|createdBy|staff|revision|resultRevision|enteredBy|deletedAt|deletedBy|invalidatedRounds|audit|participants|playerParticipants|rounds|canManage)"\s*:/;
+  assert.equal(active.rounds.length, 1);
+  assert.equal(active.rounds[0].matches.length, 1);
+  assert.ok(active.rounds[0].matches[0].player1Name);
+  assert.ok(active.rounds[0].matches[0].player2Name);
+  assert.deepEqual(Object.keys(active.rounds[0].matches[0]).sort(),
+    ['player1Name', 'player2Name', 'result', 'table']);
+  const forbidden = /"(?:teacher|createdBy|staff|revision|resultRevision|enteredBy|deletedAt|deletedBy|invalidatedRounds|audit|participants|playerParticipants|canManage)"\s*:/;
   assert.ok(!forbidden.test(JSON.stringify(active)));
   t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {expectedRevision:t.revision});
   const completed = await ok(`/tournaments/${t.id}`, 'GET', undefined, null);

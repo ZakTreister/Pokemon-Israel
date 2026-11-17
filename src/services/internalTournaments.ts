@@ -79,6 +79,12 @@ export const internalTournaments = {
         { expectedRevision, expectedResultRevision, result, invalidateLaterRounds },
       )
     ).data,
+  editPairings: async (id: string, roundNumber: number, expectedRevision: number,
+    matches: { matchId: string; table: number; player1: string; player2: string | null }[],
+    clearResults: boolean) =>
+    (await api.put<InternalTournament>(`/api/internal-tournaments/${id}/rounds/${roundNumber}/pairings`, {
+      expectedRevision, matches, clearResults,
+    })).data,
   close: async (id: string, expectedRevision: number) =>
     (
       await api.post<InternalTournament>(

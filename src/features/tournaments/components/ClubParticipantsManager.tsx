@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Search, UserMinus, UserPlus } from 'lucide-react';
 import api from '../../../services/api';
 import { requestError } from '../../../utils/requestError';
@@ -32,9 +32,11 @@ export interface ClubParticipantsResponse {
 export default function ClubParticipantsManager({
   tournamentId,
   onChanged,
+  startAction,
 }: {
   tournamentId: string;
   onChanged?: () => void;
+  startAction?: ReactNode;
 }) {
   const { showConfirm } = useConfirm();
   const { showToast } = useToast();
@@ -117,7 +119,8 @@ export default function ClubParticipantsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center gap-3">
+        {startAction}
         {data?.canAdd && (
           <Button onClick={() => { setSearch(''); setShowPicker(true); }}>
             <UserPlus size={16} className="ml-1" /> הוסף משתתף
