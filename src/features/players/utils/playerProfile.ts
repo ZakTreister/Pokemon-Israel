@@ -20,7 +20,8 @@ const dateOnly = z.string().refine(
 );
 export const playerEditSchema = z.object({
   firstName: z.string().trim().min(1, 'שם פרטי הוא חובה').max(50),
-  lastName: z.string().trim().min(1, 'שם משפחה הוא חובה').max(50),
+  // The editor checks surname-required per Player; imported records may lack it.
+  lastName: z.string().trim().max(50),
   city: z.string().trim().max(100),
   birthYear: z.number().int().min(1900).max(new Date().getFullYear()).nullable(),
   isActive: z.boolean(),
