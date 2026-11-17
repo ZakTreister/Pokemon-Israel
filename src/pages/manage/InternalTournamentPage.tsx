@@ -16,6 +16,7 @@ import Button from '../../components/ui/Button';
 import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
 import RoundPairingsEditor from '../../components/tournaments/RoundPairingsEditor';
+import TrialPlayerDialog from '../../components/tournaments/TrialPlayerDialog';
 import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
 import ParticipantList from '../../features/tournaments/components/ParticipantList';
 import {
@@ -43,6 +44,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
   const canonicalRef = useRef<InternalTournament | null>(null);
   const [resultsView, setResultsView] = useState(false);
   const [pairingsView, setPairingsView] = useState(false);
+  const [trialDialog, setTrialDialog] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [syncError, setSyncError] = useState('');
@@ -87,6 +89,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
     canonicalRef.current = null;
     setParticipantsView(false);
     setPairingsView(false);
+    setTrialDialog(false);
     setDeleted(false);
     setSaveFailed(false);
     setFailedMatches([]);
@@ -384,6 +387,17 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
   };
   return (
     <div className="space-y-3 sm:space-y-5">
+      {trialDialog && !club && !readOnly && <TrialPlayerDialog
+        tournamentId={id}
+        revision={tournament.revision}
+        onClose={() => setTrialDialog(false)}
+        onAdded={async data => {
+          accept(data);
+          resetSelection(data);
+          const team = await teamsService.getTeam(data.team);
+          setRoster(team.players);
+        }}
+      />}
       <div className="flex flex-wrap gap-3 justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold">{tournament.title}</h2>
@@ -536,6 +550,13 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
             הבחירה קובעת מי ישחק בסיבוב הבא שטרם נוצר. המשחקים והתוצאות של
             הסיבוב הקיים אינם משתנים.
           </p>
+          {!club && <div>
+            <Button contextual variant="outline"
+              disabled={busy || pendingResults > 0 || participantsChanged}
+              onClick={() => setTrialDialog(true)}>
+              הוסף שחקן ניסיון
+            </Button>
+          </div>}
           <ParticipantList
             options={club
               ? tournament.playerParticipants.map(p => ({ id: p.player, label: p.nameSnapshot }))

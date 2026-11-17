@@ -35,6 +35,13 @@ export const internalTournaments = {
       throw error;
     }
   },
+  trialCandidates: async (id: string, search: string) =>
+    (await api.get<{ id: string; firstName: string; lastName: string; city: string }[]>(
+      `/api/internal-tournaments/${id}/trial-candidates`, { params: { search } })).data,
+  addTrial: async (id: string, expectedRevision: number,
+    candidate: { playerId: string } | { firstName: string; lastName: string; city: string }) =>
+    (await api.post<{ tournament: InternalTournament; player: { id: string; firstName: string; lastName: string } }>(
+      `/api/internal-tournaments/${id}/trial-players`, { expectedRevision, ...candidate })).data,
   cancelRound: async (
     id: string,
     expectedRevision: number,
