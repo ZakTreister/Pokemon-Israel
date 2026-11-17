@@ -9,6 +9,10 @@ import {
 } from '../../services/qrRegistration';
 
 const text = (value: string | null) => (value || '').trim();
+const validFields = (fields: { firstName: string; lastName: string; birthYear: string }) =>
+  fields.firstName.trim().length > 0 && fields.lastName.trim().length > 0 &&
+      (!fields.birthYear || (/^\d{4}$/.test(fields.birthYear) &&
+        Number(fields.birthYear) >= 1900 && Number(fields.birthYear) <= new Date().getFullYear()));
 const errorText = (error: unknown) =>
   isAxiosError<{ message?: string }>(error)
     ? error.response?.data?.message || 'הפעולה נכשלה. נסו שוב.'
@@ -26,7 +30,7 @@ export default function QrTournamentRegistrationPage() {
   const [selectedPlayerId, setSelectedPlayerId] = useState(initialPlayerId);
   const [originalPlayer, setOriginalPlayer] = useState<QrPlayer | null>(null);
   const [matches, setMatches] = useState<QrPlayer[]>([]);
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(Boolean(initialPlayerId));
   const [duplicateCreationApproved, setDuplicateCreationApproved] = useState(false);
   const [newPlayerDraft, setNewPlayerDraft] = useState(fields);
   const [checking, setChecking] = useState(false);
@@ -62,30 +66,52 @@ export default function QrTournamentRegistrationPage() {
     firstName: fields.firstName.trim(), lastName: fields.lastName.trim(),
     city: fields.city.trim(), birthYear: fields.birthYear ? Number(fields.birthYear) : null,
   });
-  const valid = () => fields.firstName.trim().length > 0 && fields.lastName.trim().length > 0 &&
-    (!fields.birthYear || (/^\d{4}$/.test(fields.birthYear) &&
-      Number(fields.birthYear) >= 1900 && Number(fields.birthYear) <= new Date().getFullYear()));
+  const valid = () => validFields(fields);
 
-  const findDuplicates = async () => {
-    setNewPlayerDraft(fields);
-    setDuplicateCreationApproved(false);
+  // Check for existing club players when the link opens and after editing the
+  // details. Ignore stale requests if the operator changes the fields meanwhile.
+  useEffect(() => {
+    if (loading || saving || success || selectedPlayerId) return;
+    if (!validFields(fields)) {
+      setChecked(false);
+      setChecking(false);
+      setMatches([]);
+      return;
+    }
+    let active = true;
+    setChecked(false);
     setChecking(true);
-    setError('');
-    try {
-      const found = await qrRegistration.duplicates(tournamentId, parsed());
-      setMatches(found);
-      setChecked(true);
-    } catch (e) { setError(errorText(e)); }
-    finally { setChecking(false); }
-  };
+    const timer = window.setTimeout(() => {
+      const criteria: QrFields = {
+        firstName: fields.firstName.trim(), lastName: fields.lastName.trim(),
+        city: fields.city.trim(),
+        birthYear: fields.birthYear ? Number(fields.birthYear) : null,
+      };
+      void qrRegistration.duplicates(tournamentId, criteria)
+        .then(found => {
+          if (!active) return;
+          setMatches(found);
+          setNewPlayerDraft(fields);
+          setChecked(true);
+        })
+        .catch(e => {
+          if (!active) return;
+          setError(errorText(e));
+          // The server still enforces duplicate detection on submission.
+          setChecked(true);
+        })
+        .finally(() => { if (active) setChecking(false); });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [tournamentId, fields, loading, selectedPlayerId, saving, success]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!tournament || !valid() || saving) return;
-    if (!selectedPlayerId && !checked) {
-      await findDuplicates();
-      return;
-    }
+    if (!selectedPlayerId && !checked) return;
     if (!selectedPlayerId && matches.length > 0 && !duplicateCreationApproved) {
       setError('יש לבחור שחקן קיים או לאשר במפורש יצירת שחקן חדש.');
       return;
@@ -148,7 +174,7 @@ export default function QrTournamentRegistrationPage() {
             {field('שנת לידה (רשות)', 'birthYear')}
             {originalPlayer && <p className="text-sm text-muted-foreground">שחקן קיים: עריכת פרטיו תשנה את הפרופיל הכללי.</p>}
             {selectedPlayerId && <p className="text-sm">מזהה השחקן שנבחר: {selectedPlayerId}</p>}
-            {!selectedPlayerId && checked && matches.length > 0 && <fieldset className="space-y-2 rounded-lg border p-3">
+            {checked && matches.length > 0 && <fieldset className="space-y-2 rounded-lg border p-3">
               <legend className="font-bold">נמצאו שחקנים דומים. בחר שחקן קיים או צור חדש.</legend>
               {matches.map(player => <label className="flex items-center gap-2" key={player.id}>
                 <input type="radio" name="player" checked={selectedPlayerId === player.id}
@@ -174,9 +200,8 @@ export default function QrTournamentRegistrationPage() {
               </label>
             </fieldset>}
             {error && <p role="alert" className="text-destructive text-sm">{error}</p>}
-            <Button className="w-full" type="submit" disabled={!valid() || checking || saving || (checked && matches.length > 0 && !selectedPlayerId && !duplicateCreationApproved)}>
-              {saving ? 'שומר...' : checking ? 'בודק שחקנים...' :
-                !selectedPlayerId && !checked ? 'בדיקת שחקנים דומים' : 'אישור וצירוף לטורניר'}
+            <Button className="w-full" type="submit" disabled={!valid() || checking || saving || (!selectedPlayerId && !checked) || (checked && matches.length > 0 && !selectedPlayerId && !duplicateCreationApproved)}>
+              {saving ? 'שומר...' : checking ? 'מחפש התאמות...' : 'אישור וצירוף לטורניר'}
             </Button>
           </form>}
         </CardContent>

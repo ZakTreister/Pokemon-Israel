@@ -2260,3 +2260,89 @@ test('starting a club tournament rejects unlinked users and team players without
   assert.equal(unchanged.engineVersion, null);
   assert.equal(unchanged.rounds.length, 0);
 });
+
+
+test('club roster combines QR and legacy signups, offers only unregistered club Players, and supports staff edits', async () => {
+  const event = await ok('/tournaments', 'POST', {
+    date: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+    location: 'Unified Club Roster', type: 'quarterly',
+  }, 'admin', 201);
+  const base = '/tournaments/' + event.id + '/club-participants';
+  const club = await Player.create([
+    { firstName: 'Roster', lastName: 'First', city: 'Rehovot', playerType: 'quarterly' },
+    { firstName: 'Roster', lastName: 'Second', city: 'Jerusalem', playerType: 'quarterly' },
+    { firstName: 'Roster', lastName: 'Third', city: 'Tel Aviv', playerType: 'quarterly' },
+  ]);
+  const teamPlayer = await Player.create({
+    firstName: 'Roster', lastName: 'Team', city: 'Rehovot', playerType: 'team',
+  });
+  const staffPlayer = await Player.create({
+    firstName: 'Roster', lastName: 'Staff', city: 'Rehovot', playerType: 'quarterly',
+    user: staffIds.judge,
+  });
+  const legacyUser = await User.create({
+    name: 'Legacy Child', username: 'unified-legacy-child',
+    password: randomBytes(24).toString('hex'), role: 'player', player: club[1]._id,
+  });
+  await Tournament.findByIdAndUpdate(event.id, {
+    $set: {
+      participants: [{ user: legacyUser._id, registeredAt: new Date() }],
+      clubRegistrations: [{
+        player: club[0]._id, nameSnapshot: 'Roster First', registeredAt: new Date(),
+      }],
+      currentParticipants: 2,
+    },
+  });
+  assert.equal((await request(base, 'GET', undefined, null)).status, 401);
+  assert.equal((await request(base, 'GET', undefined, 'player')).status, 403);
+  const data = await ok(base, 'GET', undefined, 'judge');
+  assert.equal(data.registered.length, 2);
+  assert.deepEqual(data.registered.map(row => row.name).sort(), [
+    'Roster First', 'Roster Second',
+  ]);
+  assert.deepEqual(data.available.filter(row => row.name.startsWith('Roster')).map(row => row.name), ['Roster Third']);
+  assert.ok(!data.available.some(row => row.id === teamPlayer.id || row.id === staffPlayer.id));
+  assert.equal((await request(base, 'POST', { playerId: club[0].id })).status, 409);
+  assert.equal((await request(base, 'POST', { playerId: club[1].id })).status, 409);
+  assert.equal((await request(base, 'POST', { playerId: teamPlayer.id })).status, 409);
+  assert.equal((await request(base, 'POST', { playerId: staffPlayer.id })).status, 409);
+  assert.equal((await request(base, 'POST', { playerId: club[2].id }, 'player')).status, 403);
+  await ok(base, 'POST', { playerId: club[2].id }, 'judge', 201);
+  const updated = await ok(base, 'GET', undefined, 'admin');
+  assert.equal(updated.registered.length, 3);
+  assert.equal(updated.available.filter(row => row.name.startsWith('Roster')).length, 0);
+  assert.equal(updated.canAdd, true);
+  assert.equal((await request(base, 'POST', { playerId: club[2].id }, 'admin')).status, 409);
+  assert.equal((await request(base + '/player/' + club[2].id, 'DELETE', undefined, 'player')).status, 403);
+  await ok(base + '/player/' + club[2].id, 'DELETE', undefined, 'admin');
+  const afterPlayer = await ok(base);
+  assert.equal(afterPlayer.registered.length, 2);
+  assert.equal(afterPlayer.available.filter(row => row.name.startsWith('Roster')).length, 1);
+  await ok(base + '/user/' + legacyUser.id, 'DELETE');
+  const afterLegacy = await ok(base);
+  assert.equal(afterLegacy.registered.length, 1);
+  assert.equal(afterLegacy.available.filter(row => row.name.startsWith('Roster')).length, 2);
+  assert.equal((await Tournament.findById(event.id)).currentParticipants, 1);
+  assert.ok(await Player.findById(club[2].id));
+  assert.ok(await User.findById(legacyUser.id));
+
+  const startedPlayer = await ok(base, 'POST', { playerId: club[2].id }, 'admin', 201);
+  assert.ok(startedPlayer);
+  await ok('/tournaments/' + event.id + '/start', 'POST', {}, 'judge', 201);
+  assert.equal((await request(base, 'POST', { playerId: club[1].id }, 'admin')).status, 409);
+  assert.equal((await request(base + '/player/' + club[0].id, 'DELETE', undefined, 'admin')).status, 409);
+  const running = await ok(base);
+  assert.equal(running.canAdd, false);
+  assert.equal(running.available.length, 0);
+});
+
+test('unified club participant routes reject team tournaments and invalid player IDs', async () => {
+  const teamEvent = await Tournament.create({
+    title: 'Team Event', description: 'Team only', date: new Date(),
+    registrationDeadline: new Date(), location: 'Team hall', image: '/team.png',
+    type: 'inter_team', maxParticipants: 4, status: 'upcoming',
+  });
+  const path = '/tournaments/' + teamEvent.id + '/club-participants';
+  assert.equal((await request(path, 'GET', undefined, 'admin')).status, 409);
+  assert.equal((await request(path, 'POST', { playerId: 'invalid' }, 'admin')).status, 409);
+});

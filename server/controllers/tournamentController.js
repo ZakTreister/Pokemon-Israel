@@ -251,6 +251,10 @@ export const registerForTournament = asyncHandler(async (req, res) => {
     throw new Error('Tournament not found');
   }
 
+  if (isClubTournament(tournament) && req.user.role !== 'player') {
+    res.status(403);
+    throw new Error('שופטים ומנהלים אינם משתתפים בטורנירי חוגים');
+  }
   if (tournament.status !== 'upcoming' ||
       (isClubTournament(tournament) && !clubRegistrationOpen(tournament))) {
     res.status(400);
@@ -368,6 +372,10 @@ export const addParticipant = asyncHandler(async (req, res) => {
     throw new Error('Tournament not found');
   }
 
+  if (isClubTournament(tournament)) {
+    res.status(400);
+    throw new Error('הוספת משתתפים לטורניר חוגים מתבצעת מתוך רשימת שחקני החוגים');
+  }
   if (!userId) {
     res.status(400);
     throw new Error('User ID is required');
@@ -442,6 +450,10 @@ export const removeParticipant = asyncHandler(async (req, res) => {
   if (!tournament) {
     res.status(404);
     throw new Error('Tournament not found');
+  }
+  if (isClubTournament(tournament)) {
+    res.status(400);
+    throw new Error('הסרת משתתפי חוגים מתבצעת מתוך רשימת השחקנים המאוחדת');
   }
 
   const participantIndex = tournament.participants.findIndex(

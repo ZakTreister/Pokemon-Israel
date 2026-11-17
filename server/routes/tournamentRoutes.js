@@ -1,5 +1,6 @@
 import express from 'express';
 import { startClubTournament } from '../controllers/clubTournamentRoundsController.js';
+import { getClubParticipants, addClubParticipant, removeClubParticipant } from '../controllers/clubParticipantsController.js';
 import {
   getInternalTournament, changeInternalParticipants, pairRound,
   cancelLatestRound, enterMatchResult, closeInternalTournament,
@@ -46,6 +47,9 @@ router.get(
 router.get('/summary', getTournamentSummary);
 const clubRoundScope = (req, res, next) => { req.clubSwiss = true; next(); };
 const staff = [protect, authorize('admin', 'judge')];
+router.get('/:id/club-participants', ...staff, getClubParticipants);
+router.post('/:id/club-participants', ...staff, addClubParticipant);
+router.delete('/:id/club-participants/:source/:registrationId', ...staff, removeClubParticipant);
 router.post('/:id/start', ...staff, startClubTournament);
 router.get('/:id/round-management', ...staff, clubRoundScope, getInternalTournament);
 router.put('/:id/round-management/participants', ...staff, clubRoundScope, changeInternalParticipants);
