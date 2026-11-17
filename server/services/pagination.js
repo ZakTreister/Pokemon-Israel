@@ -1,3 +1,4 @@
+import { clubDateKey } from '../../shared/tournamentDomain.js';
 export const escapeSearch = (value = '') =>
   String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export async function paginate(Model, query, params, configure = (q) => q) {
@@ -30,21 +31,39 @@ export function tournamentQuery(params, now = new Date()) {
   if (params.status === 'completed') clauses.push(completed);
   if (['active', 'upcoming'].includes(params.status)) {
     clauses.push({ $nor: completed.$or });
-    clauses.push(
-      params.status === 'active'
-        ? {
-            $or: [
-              { phase: 'running' },
-              { phase: { $nin: ['running', 'setup'] }, date: { $lte: now } },
+    const active = params.status === 'active';
+    const previousNonClub = active
+      ? { $or: [
+          { phase: 'running' },
+          { phase: { $nin: ['running', 'setup'] }, date: { $lte: now } },
+        ] }
+      : { $or: [
+          { phase: 'setup' },
+          { phase: { $nin: ['running', 'setup'] }, date: { $gt: now } },
+        ] };
+    // All club events are date-only. A same-day event must not switch from
+    // upcoming to active merely because the synthetic stored hour has passed.
+    const clubSelector = {
+      type: { $in: [null, 'quarterly'] },
+      engineVersion: { $ne: 'swiss-v1' },
+    };
+    clauses.push({ $or: [
+      {
+        $and: [
+          clubSelector,
+          { $expr: {
+            [active ? '$lt' : '$gte']: [
+              { $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: 'Asia/Jerusalem' } },
+              clubDateKey(now),
             ],
-          }
-        : {
-            $or: [
-              { phase: 'setup' },
-              { phase: { $nin: ['running', 'setup'] }, date: { $gt: now } },
-            ],
-          },
-    );
+          } },
+        ],
+      },
+      { $and: [
+        { $nor: [clubSelector] },
+        previousNonClub,
+      ] },
+    ] });
   }
   if (params.search?.trim()) {
     const regex = new RegExp(escapeSearch(params.search.trim()), 'i');
