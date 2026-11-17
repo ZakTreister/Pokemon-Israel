@@ -1,4 +1,5 @@
 import express from 'express';
+import { resolveTrialPlayer } from '../controllers/trialPlayerController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
   getTeams, getOverview,
@@ -31,5 +32,6 @@ router.post('/', protect, authorize('admin'), createTeam);
 router.put('/:id', protect, authorize('admin'), updateTeam);
 router.put('/:teamId/players/:playerId', protect, authorize('admin'), assignPlayerToTeam);
 router.delete('/:teamId/players/:playerId', protect, authorize('admin'), removePlayerFromTeam);
+router.put('/:teamId/trials/:playerId/resolve', protect, authorize('admin'), resolveTrialPlayer);
 
 export default router;

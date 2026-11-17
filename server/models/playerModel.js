@@ -68,6 +68,13 @@ const playerSchema = new mongoose.Schema(
       ref: 'Team',
       default: null,
     },
+    // Trial memberships remain explicit until an administrator approves or
+    // dismisses them. Legacy records are permanent by default.
+    teamMembershipStatus: {
+      type: String,
+      enum: ['permanent', 'trial', 'dismissed'],
+      default: 'permanent',
+    },
     // Normalized fields for likely-duplicate detection.
     // Case-insensitive, whitespace-collapsed identity matching.
     normalizedFirstName: {

@@ -54,6 +54,8 @@ const removePlayer = async (
 };
 
 const teamsService = {
+  resolveTrial: async (teamId: string, playerId: string, action: 'confirm' | 'dismiss', playerNumber?: string) =>
+    (await api.put(`/api/teams/${teamId}/trials/${playerId}/resolve`, { action, playerNumber })).data,
   createPlayers: async (
     teamId: string,
     players: Omit<CreateTeamPlayerInput, 'teamId'>[],

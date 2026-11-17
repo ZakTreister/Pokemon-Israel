@@ -819,3 +819,20 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 - inter-team encounters excluded (not yet implemented)
 
 **Verification:** GitHub Actions QR registration verification passed for implementation SHA `7042e9fbd08532324cb92b82083fdeff107d8e1b`: `npm run lint`, `npm run build`, `npm run test:stage-a` (including pairing/read-only Socket.IO integration tests) and `npm run test:stage-a:ui` all passed. **Known gaps:** None reported by these checks; live-browser/manual visual review is pending.
+
+---
+
+## Version 2026.11.2 — Public matchup clarity, trial Players and club-only Events
+
+**Status:** `DEVELOPED` (awaiting human PR review/merge)
+**Implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/24
+
+**Scope:**
+- responsive public read-only matchup scorecards and round selection, with clear table and winner information
+- public Events lists club/quarterly tournaments only, using the server's paginated type filter
+- live internal team tournament can attach a new or existing unassigned trial team Player, without login and without changing prior rounds
+- admins can confirm permanent team membership or dismiss after live tournament closure
+- trial dismissal keeps historical tournament results intact but hides the former trial player from the team's roster and ongoing ranking
+- team ranking only accumulates the chosen team's internal tournament results
+
+**Verification:** GitHub Actions passed for implementation commit `3bc62d24e6806097c29231e93e93192b6cd48697`: full `npm run lint`, `npm run build`, `npm run test:stage-a`, `npm run test:stage-a:ui`, and the independent historical-ranking workflow's TypeScript regression comparison to `main`. Regression coverage includes trial admission/confirmation/dismissal preserving tournament history, club-only paginated Events, and read-only matchup cards. **Known gaps:** production/live-browser visual acceptance has not been performed; keep PR for owner review.

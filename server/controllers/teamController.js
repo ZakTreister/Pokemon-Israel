@@ -191,7 +191,7 @@ export const getManageablePlayers = asyncHandler(async (req, res) => {
     await Player.find({ playerType: 'team' })
       .populate('team', 'name logo isActive')
       .select(
-        `firstName lastName city playerNumber playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
+        `firstName lastName city playerNumber teamMembershipStatus playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
       )
       .sort({ firstName: 1, lastName: 1 }),
   );
@@ -207,7 +207,7 @@ export const getTeam = asyncHandler(async (req, res) => {
     isActive: true,
   })
     .select(
-      `firstName lastName city playerNumber playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
+      `firstName lastName city playerNumber teamMembershipStatus playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
     )
     .sort({ firstName: 1, lastName: 1 });
   const open = await Tournament.findOne({
@@ -268,7 +268,7 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
     const team = await Team.findById(req.params.teamId);
     if (!team?.isActive) fail(400, 'ניתן לשייך שחקן רק לנבחרת פעילה');
     if (player.playerType !== 'team' || !player.isActive) fail(400, 'ניתן לשייך רק שחקן נבחרת פעיל');
-    const updated = await Player.findOneAndUpdate({ _id: player._id, team: player.team, isActive: true, playerType: 'team' }, { $set: { team: team._id } }, { new: true }).populate('team', 'name isActive');
+    const updated = await Player.findOneAndUpdate({ _id: player._id, team: player.team, isActive: true, playerType: 'team' }, { $set: { team: team._id, teamMembershipStatus: 'permanent' } }, { new: true }).populate('team', 'name isActive');
     if (!updated) fail(409, 'שיוך השחקן השתנה. נא לרענן');
     return updated;
   });
@@ -276,8 +276,10 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
 });
 export const removePlayerFromTeam = asyncHandler(async (req, res) => {
   const output = await withRosterLocks([req.params.teamId], async () => {
-    const player = await Player.findOneAndUpdate({ _id: req.params.playerId, team: req.params.teamId, playerType: 'team' }, { $set: { team: null } }, { new: true });
-    if (!player) fail(404, 'השחקן אינו משויך לנבחרת');
+    const player = await Player.findOneAndUpdate({ _id: req.params.playerId, team: req.params.teamId,
+      playerType: 'team', teamMembershipStatus: { $ne: 'trial' } },
+      { $set: { team: null } }, { new: true });
+    if (!player) fail(409, 'השחקן אינו משויך לנבחרת, או שהוא שחקן ניסיון שיש להסדיר דרך פעולות שחקן ניסיון');
     return player;
   });
   res.json(output);

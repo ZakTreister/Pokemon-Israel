@@ -1,4 +1,5 @@
 import express from 'express';
+import { trialPlayerCandidates, addTrialPlayer } from '../controllers/trialPlayerController.js';
 import { cancelLatestRound, editRoundPairings } from '../controllers/internalTournamentController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { createInternalTournament, getInternalTournaments, getInternalTournament, changeInternalParticipants, pairRound, enterMatchResult, closeInternalTournament, createHistoricalInternal } from '../controllers/internalTournamentController.js';
@@ -8,6 +9,8 @@ router.get('/', getInternalTournaments);
 router.post('/', createInternalTournament);
 router.post('/historical', authorize('admin'), createHistoricalInternal);
 router.get('/:id', getInternalTournament);
+router.get('/:id/trial-candidates', trialPlayerCandidates);
+router.post('/:id/trial-players', addTrialPlayer);
 router.put('/:id/participants', changeInternalParticipants);
 router.post('/:id/rounds', pairRound);
 router.delete('/:id/rounds/:roundNumber', cancelLatestRound);

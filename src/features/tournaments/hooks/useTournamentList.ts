@@ -25,7 +25,7 @@ export function useTournamentList(management = false) {
     api
       .get<PageResult<TournamentEntry>>(
         management ? '/api/tournaments/management' : '/api/tournaments',
-        { params: { ...filters, page } },
+        { params: { ...filters, type: management ? filters.type : 'quarterly', page } },
       )
       .then((response) => {
         if (active) {

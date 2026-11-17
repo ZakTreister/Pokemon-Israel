@@ -99,3 +99,14 @@ A judge or admin may use the guarded QR intake flow for an **upcoming regular/cl
 - explicitly confirm a global player-profile edit
 
 This QR-specific privilege is an intentional exception to the ordinary judge prohibition on player mutations. It must not grant access to the general Player management endpoints, team transfer/deletion, All Stars tournament participant changes or historical tournament editing. Judges still cannot mutate completed tournaments.
+
+## November 2026 — trial-player intake exception
+
+| Trial membership action | Admin | Judge |
+| --- | --- | --- |
+| Search eligible unassigned team-type Players for a live internal tournament | Yes | Yes |
+| Create or attach a trial Player to an open live internal tournament | Yes | Yes, only through the bounded tournament-specific intake endpoint |
+| Promote a trial player to permanent team member | Yes | No |
+| Dismiss a trial player from a team after the active tournament closes | Yes | No |
+
+The trial intake endpoint validates team identity, tournament lifecycle and expected revision, applies roster locking and never permits transfer from another team. It is **not** a general-purpose Player creation/assignment permission for judges.

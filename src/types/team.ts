@@ -44,6 +44,7 @@ export interface TeamRosterPlayer {
   photoUrl?: string;
   photoMedia?: import('../services/media').StoredMedia | null;
   playerNumber?: string;
+  teamMembershipStatus?: 'permanent' | 'trial' | 'dismissed';
   id: string;
   firstName: string;
   lastName: string;

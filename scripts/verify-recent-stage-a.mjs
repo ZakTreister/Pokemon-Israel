@@ -192,26 +192,37 @@ try {
   });
   const { default: Events } = await load('pages/TournamentsPage.tsx');
   await mount(router(el(Events), '/tournaments'));
-  assert.equal(renderer.root.findAllByType('article').length, 3);
+  // The public Events index now restricts to club tournaments in the request,
+  // before server pagination. Team/internal event links remain directly usable.
+  assert.equal(renderer.root.findAllByType('article').length, 1);
+  assert.ok(text(renderer.toJSON()).includes('אירוע 0'));
+  assert.ok(!text(renderer.toJSON()).includes('אירוע 1'));
   const selects = renderer.root.findAllByType('select');
+  assert.equal(selects.length, 1, 'public event type filter is hidden');
   await act(async () => {
     selects[0].props.onChange({ target: { value: 'active' } });
     await flush();
   });
+  assert.equal(renderer.root.findAllByType('article').length, 0);
   await act(async () => {
-    renderer.root
-      .findAllByType('select')[1]
-      .props.onChange({ target: { value: 'team_internal' } });
-    await flush();
-  });
-  await act(async () => {
-    renderer.root
-      .findByType('input')
-      .props.onChange({ target: { value: 'כחולים' } });
+    selects[0].props.onChange({ target: { value: '' } });
     await flush();
   });
   assert.equal(renderer.root.findAllByType('article').length, 1);
-  assert.ok(text(renderer.toJSON()).includes('אירוע 1'));
+  unmount();
+
+  const { default: PublicMatchCard } = await load('components/tournaments/PublicMatchCard.tsx');
+  await mount(el(PublicMatchCard, {
+    match: {
+      table: 4, player1Name: 'מענדל', player2Name: 'טוביה',
+      result: { winner: 'player1', score1: 2, score2: 1, drawnGames: 0 },
+    },
+  }));
+  assert.ok(text(renderer.toJSON()).includes('שולחן 4'));
+  assert.ok(text(renderer.toJSON()).includes('2–1'));
+  assert.ok(text(renderer.toJSON()).includes('מנצח'));
+  assert.equal(renderer.root.findAllByType('button').length, 0,
+    'public results must not allow any write action');
   unmount();
 
   const { store } = await load('store/index.ts');
