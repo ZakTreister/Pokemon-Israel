@@ -788,3 +788,5 @@ Implemented directly on `main`; no feature branch or PR was created. The impleme
 - Known source anomalies and detailed instructions: `docs/HISTORICAL_RANKINGS_IMPORT.md`.
 
 Mark as `DEVELOPED` only once full verification has passed and deployment/data-matching decisions are approved. No direct main push.
+
+**2026-11-17 owner clarification:** private split CSV confirms `ספיר` is first name only with blank surname (1 point / 1 participation), not `?`; importer and regular-player editor must allow this historical exception without fabricating a surname. A regression test covers the exception. Production import still pending.
