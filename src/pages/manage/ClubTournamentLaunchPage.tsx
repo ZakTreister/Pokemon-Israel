@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { publicTournaments, type PublicTournament } from '../../services/publicTournaments';
 import { requestError } from '../../utils/requestError';
 import ClubTournamentStartAction from '../../features/tournaments/components/ClubTournamentStartAction';
+import ClubParticipantsManager from '../../features/tournaments/components/ClubParticipantsManager';
 export default function ClubTournamentLaunchPage() {
   const { id = '' } = useParams();
   const [tournament, setTournament] = useState<PublicTournament | null>(null);
@@ -30,6 +31,8 @@ export default function ClubTournamentLaunchPage() {
         <p>{new Date(tournament.date).toLocaleDateString('he-IL')} · {tournament.location}</p>
         <p>{tournament.currentParticipants} שחקנים רשומים</p>
         <ClubTournamentStartAction tournament={tournament} />
+        <ClubParticipantsManager tournamentId={id}
+          onChanged={() => { void publicTournaments.get(id).then(setTournament); }} />
       </>}
     </div>
   );
