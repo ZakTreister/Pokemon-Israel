@@ -9,6 +9,10 @@ import {
 } from '../../services/qrRegistration';
 
 const text = (value: string | null) => (value || '').trim();
+const validFields = (fields: { firstName: string; lastName: string; birthYear: string }) =>
+  fields.firstName.trim().length > 0 && fields.lastName.trim().length > 0 &&
+      (!fields.birthYear || (/^\d{4}$/.test(fields.birthYear) &&
+        Number(fields.birthYear) >= 1900 && Number(fields.birthYear) <= new Date().getFullYear()));
 const errorText = (error: unknown) =>
   isAxiosError<{ message?: string }>(error)
     ? error.response?.data?.message || 'הפעולה נכשלה. נסו שוב.'
@@ -62,15 +66,13 @@ export default function QrTournamentRegistrationPage() {
     firstName: fields.firstName.trim(), lastName: fields.lastName.trim(),
     city: fields.city.trim(), birthYear: fields.birthYear ? Number(fields.birthYear) : null,
   });
-  const valid = () => fields.firstName.trim().length > 0 && fields.lastName.trim().length > 0 &&
-    (!fields.birthYear || (/^\d{4}$/.test(fields.birthYear) &&
-      Number(fields.birthYear) >= 1900 && Number(fields.birthYear) <= new Date().getFullYear()));
+  const valid = () => validFields(fields);
 
   // Check for existing club players when the link opens and after editing the
   // details. Ignore stale requests if the operator changes the fields meanwhile.
   useEffect(() => {
     if (loading || saving || success || selectedPlayerId) return;
-    if (!valid()) {
+    if (!validFields(fields)) {
       setChecked(false);
       setChecking(false);
       setMatches([]);
@@ -104,10 +106,7 @@ export default function QrTournamentRegistrationPage() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [
-    tournamentId, fields.firstName, fields.lastName, fields.city,
-    fields.birthYear, loading, selectedPlayerId, saving, success,
-  ]);
+  }, [tournamentId, fields, loading, selectedPlayerId, saving, success]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
