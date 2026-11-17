@@ -72,3 +72,6 @@ After applying, verify counts, player management edits, All-Stars visibility, se
 - Focused pure tests: `node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — 12 passing in the workspace, including existing regular Player reuse and explicit split columns.
 - Offline CSV validation: passing for 337/35/6,054/821.
 - **Not done:** live DB `--inspect`/`--apply`; full repository tests, lint, TypeScript build, production deployment. Keep this PR draft until those checks and identity review are completed.
+
+## Owner-confirmed missing surname exception
+The private split CSV contains one owner-confirmed name-only record: firstName `ספיר`, empty `lastName`, 1 point, 1 participation, regular player. Do not write `?` or an invented surname. The importer accepts a blank surname **only when explicitly present as an empty split CSV column**; unreviewed single-token legacy full names still fail validation. Imported canonical Players may retain blank surname, and staff can complete it later in the regular Player editor. Keep the source CSV private and preserve identical aggregate totals.
