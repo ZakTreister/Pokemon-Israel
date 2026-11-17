@@ -52,3 +52,15 @@ test('takes exact firstName/lastName columns from split source CSV', () => {
   assert.equal(entry.lastName, 'משפחה');
   assert.equal(entry.reviewSuggested, true);
 });
+
+test('a confirmed first-name-only historical record retains blank lastName', () => {
+  assert.throws(() => splitHistoricalPlayerName('שם'), /Cannot split historical name/);
+  assert.deepEqual(splitHistoricalPlayerName('שם', { firstName: 'שם', lastName: '' }),
+    { firstName: 'שם', lastName: '', reviewSuggested: false });
+  const sourceRow = { ...row('שם'), firstName: 'שם', lastName: '' };
+  const [entry] = planHistoricalPlayers([sourceRow], []);
+  assert.equal(entry.state, 'create-quarterly');
+  assert.equal(entry.firstName, 'שם');
+  assert.equal(entry.lastName, '');
+  assert.equal(entry.reviewSuggested, false);
+});
