@@ -23,6 +23,7 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
       lifecycle: tournamentLifecycle(t),
       canManage:
         req.user.role === 'admin' ||
+        (['quarterly', null].includes(t.type) && t.status !== 'completed') ||
         (t.engineVersion === 'swiss-v1' &&
           t.source === 'live' &&
           ['setup', 'running'].includes(t.phase) &&
