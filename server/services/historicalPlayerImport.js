@@ -37,6 +37,7 @@ export function historicalLegacyUserIds(player, legacyUsers = [], previousLegacy
 export function planHistoricalPlayers(rows, players, existingHistorical = [], review = {}, legacyUsers = []) {
   const existingBySourceName = new Map(existingHistorical.map(row => [row.normalizedName, row]));
   const assignments = new Set();
+  const legacyAssignments = new Set();
   return rows.map(row => {
     const override = review[row.playerName] || {};
     // CSV columns are the preferred proposed split; a private review override can correct them.
@@ -90,11 +91,15 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
     }
     if (chosen && chosen.playerType !== expectedType && !override.playerId && !previous?.player)
       issue = 'Player type differs from historical All-Stars classification';
-    if (chosen && historicalLegacyUserIds(chosen, legacyUsers, previous?.legacyUser).length > 1)
+    const legacyIds = historicalLegacyUserIds(chosen, legacyUsers, previous?.legacyUser);
+    if (chosen && legacyIds.length > 1)
       issue = 'Conflicting canonical Player to legacy User links; manual reconciliation required';
     if (chosen && assignments.has(String(chosen._id)))
       issue = 'Two historical rows resolve to the same Player';
+    if (legacyIds.length === 1 && legacyAssignments.has(legacyIds[0]))
+      issue = 'Two historical rows resolve to the same legacy User';
     if (chosen) assignments.add(String(chosen._id));
+    if (legacyIds.length === 1) legacyAssignments.add(legacyIds[0]);
     return { row, ...split, player: chosen || null, state: issue ? 'blocked' : state,
       issue, reviewSuggested: (split.reviewSuggested || /\?/.test(split.lastName)) &&
         state === 'create-quarterly' && !(override.firstName && override.lastName) };
