@@ -88,7 +88,8 @@ export const startClubTournament = asyncHandler(async (req, res) => {
       rounds: [round],
       currentParticipants: ids.length,
     },
-    $inc: { revision: 1 },
+    // Also invalidate in-flight legacy .save() calls using Mongoose __v.
+    $inc: { revision: 1, __v: 1 },
   }, { new: true, runValidators: true });
   if (!updated)
     fail(409, 'הטורניר או המשתתפים השתנו במקביל. רעננו את הרשימה ונסו שוב', 'STALE_REVISION');
