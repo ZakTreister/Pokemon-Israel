@@ -54,7 +54,7 @@ const rows = lines.map((line, i) => {
     isAllStars: isAllStars === 'true',
   };
   if (!row.playerName || row.playerName.length > 200 || !row.normalizedName ||
-      (splitColumns && (!row.firstName || !row.lastName || row.firstName.length > 50 || row.lastName.length > 50)) ||
+      (splitColumns && (!row.firstName || row.firstName.length > 50 || row.lastName.length > 50)) ||
       !Number.isInteger(row.points) || row.points < 0 ||
       !Number.isInteger(row.tournaments) || row.tournaments < 0 ||
       !['true', 'false'].includes(isAllStars))
