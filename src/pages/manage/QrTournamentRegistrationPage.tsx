@@ -148,7 +148,7 @@ export default function QrTournamentRegistrationPage() {
                     setFields({ firstName: player.firstName, lastName: player.lastName,
                       city: player.city, birthYear: player.birthYear?.toString() || '' });
                   }} />
-                <span>{player.firstName} {player.lastName} · {player.city} · {player.birthYear || 'שנה לא ידועה'}</span>
+                <span>{player.firstName} {player.lastName} · {player.playerType === 'team' ? 'שחקן נבחרת' : 'שחקן חוג'} · {player.city} · {player.birthYear || 'שנה לא ידועה'}</span>
               </label>)}
               <label className="flex items-center gap-2">
                 <input type="radio" name="player" checked={!selectedPlayerId}
