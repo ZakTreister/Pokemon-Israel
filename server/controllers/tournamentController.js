@@ -75,7 +75,10 @@ export const getLegacyManagedTournaments = asyncHandler(async (req, res) => {
 export const getLegacyManagedTournament = asyncHandler(async (req, res) => {
   const t = await Tournament.findOne({
     _id: req.params.id,
-    engineVersion: { $ne: 'swiss-v1' },
+    $or: [
+      { engineVersion: { $ne: 'swiss-v1' } },
+      { type: 'quarterly' },
+    ],
   })
     .populate('participants.user', 'username')
     // Result IDs can be either legacy Users or canonical Players; keep IDs unpopulated.
