@@ -23,6 +23,7 @@ import AdminDecks from '../admin/AdminDecks';
 import AdminPlayers from '../admin/AdminPlayers';
 import TeamPage from '../TeamPage';
 import InternalTournamentPage from './InternalTournamentPage';
+import ClubTournamentLaunchPage from './ClubTournamentLaunchPage';
 import InternalTournamentsPage from './InternalTournamentsPage';
 import HistoricalTournamentPage from './HistoricalTournamentPage';
 export function LegacyAdminRedirect() {
@@ -225,12 +226,10 @@ export default function ManageDashboardPage() {
                 path="seasons"
                 element={<Navigate replace to="/manage/badges" />}
               />
+              <Route path="tournaments/regular/:id/rounds" element={<InternalTournamentPage mode="club" />} />
+              <Route path="tournaments/regular/:id" element={admin ? <LegacyTournamentManagementPage /> : <ClubTournamentLaunchPage />} />
               {admin && (
                 <>
-                  <Route
-                    path="tournaments/regular/:id"
-                    element={<LegacyTournamentManagementPage />}
-                  />
                   <Route
                     path="tournaments/regular/*"
                     element={<AdminTournaments embeddedCreate />}
