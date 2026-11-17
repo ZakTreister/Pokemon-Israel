@@ -2223,7 +2223,7 @@ test('judge starts only a club event and reuses Swiss round workflow without tou
   assert.equal(closed.finalStandings.length, 3);
   assert.equal((await request(url + '/round-management/rounds', 'POST', {
     expectedRevision: closed.revision,
-  })).status, 409);
+  }, 'admin')).status, 409);
 });
 
 test('starting a club tournament rejects unlinked users and team players without altering registration', async () => {
