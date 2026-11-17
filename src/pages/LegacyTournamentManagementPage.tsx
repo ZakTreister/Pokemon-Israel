@@ -1,4 +1,5 @@
 import type { RequestError } from '../types/api';
+import { requestError } from '../utils/requestError';
 import type { Tournament } from '../types/tournament';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
