@@ -37,6 +37,8 @@ export function publicTournament(t, detail = false) {
     type,
     lifecycle,
     status: t.status,
+    engineVersion: t.engineVersion || null,
+    phase: t.phase || null,
     currentParticipants: t.currentParticipants,
     maxParticipants: type === 'quarterly' ? null : t.maxParticipants,
     registrationDeadline: t.registrationDeadline,
