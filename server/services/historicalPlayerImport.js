@@ -21,6 +21,19 @@ export function splitHistoricalPlayerName(fullName, override = {}) {
     (tokens.length !== 2 || /\?/.test(fullName)) };
 }
 
+// A one-to-one Player/User relationship can be stored on either side in
+// older records. Inspect both directions before linking ordinary results.
+export function historicalLegacyUserIds(player, legacyUsers = [], previousLegacyUser = null) {
+  if (!player?._id) return [];
+  const byPlayer = legacyUsers.filter(u =>
+    u.player && String(u.player) === String(player._id)).map(u => String(u._id));
+  return [...new Set([
+    ...(player.user ? [String(player.user)] : []),
+    ...byPlayer,
+    ...(previousLegacyUser ? [String(previousLegacyUser)] : []),
+  ])];
+}
+
 export function planHistoricalPlayers(rows, players, existingHistorical = [], review = {}, legacyUsers = []) {
   const existingBySourceName = new Map(existingHistorical.map(row => [row.normalizedName, row]));
   const assignments = new Set();
@@ -77,6 +90,8 @@ export function planHistoricalPlayers(rows, players, existingHistorical = [], re
     }
     if (chosen && chosen.playerType !== expectedType && !override.playerId && !previous?.player)
       issue = 'Player type differs from historical All-Stars classification';
+    if (chosen && historicalLegacyUserIds(chosen, legacyUsers, previous?.legacyUser).length > 1)
+      issue = 'Conflicting canonical Player to legacy User links; manual reconciliation required';
     if (chosen && assignments.has(String(chosen._id)))
       issue = 'Two historical rows resolve to the same Player';
     if (chosen) assignments.add(String(chosen._id));
