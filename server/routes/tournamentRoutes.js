@@ -1,4 +1,5 @@
 import express from 'express';
+import { qrRegistrationPreview, qrRegistrationDuplicates, qrRegisterPlayer } from '../controllers/qrRegistrationController.js';
 import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
   getTournaments,
@@ -38,6 +39,9 @@ router.get(
 );
 
 router.get('/summary', getTournamentSummary);
+router.get('/:id/qr-registration', protect, authorize('admin', 'judge'), qrRegistrationPreview);
+router.get('/:id/qr-registration/duplicates', protect, authorize('admin', 'judge'), qrRegistrationDuplicates);
+router.post('/:id/qr-registration', protect, authorize('admin', 'judge'), qrRegisterPlayer);
 router.route('/').get(getTournaments).post(protect, admin, createTournament);
 
 router
