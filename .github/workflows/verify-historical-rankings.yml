@@ -63,7 +63,15 @@ jobs:
           cat "$RUNNER_TEMP/baseline-ts-errors.txt"
           echo 'TypeScript diagnostics in PR:'
           cat "$RUNNER_TEMP/current-ts-errors.txt"
-          diff -u "$RUNNER_TEMP/baseline-ts-errors.txt" "$RUNNER_TEMP/current-ts-errors.txt"
+          # A PR is allowed to FIX pre-existing TypeScript errors. Reject only
+          # diagnostics that are new relative to main.
+          comm -13 "$RUNNER_TEMP/baseline-ts-errors.txt" "$RUNNER_TEMP/current-ts-errors.txt" > "$RUNNER_TEMP/new-ts-errors.txt"
+          if [ -s "$RUNNER_TEMP/new-ts-errors.txt" ]; then
+            echo 'New TypeScript diagnostics introduced by this PR:'
+            cat "$RUNNER_TEMP/new-ts-errors.txt"
+            exit 1
+          fi
+          echo 'No new TypeScript diagnostics (existing errors may have been fixed).'
       - name: Build
         if: success() || failure()
         run: npm run build
