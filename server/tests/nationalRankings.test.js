@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildNationalRanking, normalizeRankingName } from '../services/nationalRankings.js';
+import { buildNationalRanking, normalizeRankingName, regularTournamentFilter, HISTORICAL_CUTOFF } from '../services/nationalRankings.js';
 
 const history = [
   { _id: 'a', playerName: 'שחקן א', points: 103, tournaments: 7, isAllStars: true },
@@ -53,4 +53,25 @@ test('equal points share position and later positions skip ranks', () => {
     { _id: '3', playerName: 'ג', points: 8, tournaments: 1 },
   ], []);
   assert.deepEqual(result.rankings.map(r => r.position), [1,1,3]);
+});
+test('national ranking query accepts only regular tournaments, not All-Stars team events', () => {
+  const before = regularTournamentFilter();
+  const after = regularTournamentFilter(true);
+  assert.deepEqual(before, { status: 'completed', type: { $in: [null, 'quarterly'] } });
+  assert.deepEqual(after, { status: 'completed', type: { $in: [null, 'quarterly'] },
+    date: { $gt: HISTORICAL_CUTOFF } });
+  assert.equal(before.type.$in.includes('team_internal'), false);
+  assert.equal(before.type.$in.includes('inter_team'), false);
+});
+
+test('an existing All-Stars Player accumulates ordinary imported and new regular points only', () => {
+  const playerId = 'team-player-1';
+  const row = { _id: 'regular-baseline-1', player: playerId, playerName: 'שחקן נבחרת',
+    points: 24, tournaments: 6, isAllStars: true };
+  const futureRegular = { playerId, playerKind: 'player', points: 5, position: 2 };
+  const regular = buildNationalRanking([row], [futureRegular], { includeAllStars: true });
+  assert.equal(regular.rankings[0].points, 29);
+  assert.equal(regular.rankings[0].tournaments, 7);
+  assert.equal(regular.rankings[0].isAllStars, true);
+  assert.equal(buildNationalRanking([row], [futureRegular]).total, 0);
 });
