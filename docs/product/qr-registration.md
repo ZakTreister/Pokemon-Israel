@@ -48,3 +48,21 @@ Regular/club tournaments have **unlimited participants**. The creation form has 
 Club events are scheduled by **date only**, without event time. New and edited event dates are represented using an Israel calendar day (stored at UTC noon for stable display). Registration and lifecycle checks use calendar-day comparisons rather than times. The regular event detail page shows no hour.
 
 Admins can edit the event title, description, date, location and image directly on `/manage/tournaments/regular/:id`. Judges cannot edit tournament metadata.
+
+## Starting a club tournament (staff)
+
+The club/tournament management view offers **התחל טורניר** to logged-in Judges and Admins. A single server-side atomic transition:
+
+1. Reads canonical `clubRegistrations[].player` IDs, plus any legacy registered `User.player` links.
+2. Refuses to start if any legacy User lacks a linked Player, any Player belongs to an All Stars team, any canonical identity is duplicated, or fewer than two eligible club Players are registered.
+3. Shuffles eligible Players using the shared Swiss `generatePairings` service, creates round 1 including a randomized bye if necessary, and persists that round exactly once with a tournament-revision compare-and-set.
+4. Switches the event's engine to `swiss-v1`, `phase: running`, `source: live`. Closes both QR and legacy registration paths. Previous team tournament data is never consulted or modified.
+5. Navigates to `/manage/tournaments/regular/:id/rounds`, reusing the complete existing Swiss rounds UI with a club-specific API adapter. Judges/Admins may enter results, create later rounds, cancel the latest, manage next-round participants, and close the tournament.
+
+The internal-team endpoints are still restricted to `type: team_internal`. Club round endpoints are separately scoped to `type: quarterly`; they cannot be used to alter a team event.
+
+A started club event remains editable by Admins for its metadata through `/manage/tournaments/regular/:id`; modifying round outcomes is done through the rounds UI.
+
+**Known migration boundary:** Legacy `User` registrations that have no linked canonical `Player` are not silently converted or omitted. Staff will receive a clear blocking message to reconcile those identities before starting. No child login is created automatically.
+
+The reusable Swiss engine uses 3/1/0 match scoring with OMP/GWP/OGP and persists round 1; all club final standings are sent to the regular national ranking, not the All Stars/team ranking.
