@@ -39,13 +39,13 @@ For existing players:
 First run an **offline CSV validation** (no database opened):
 
 ```bash
-node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-approved-2026-11.csv
 ```
 
 Before any write, back up production MongoDB. With `MONGODB_URI` configured, run **read-only DB identity inspection** and save the report **outside** the public repository:
 
 ```bash
-node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --inspect --review-file /secure/cardschool-name-approvals-for-import-2026-11.json --report /secure/identity-preview.json
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-approved-2026-11.csv --inspect --review-file /secure/cardschool-name-approvals-for-import-2026-11.json --report /secure/identity-preview.json
 ```
 
 Compare proposed All-Stars matches against actual roster; review name splitting; resolve ambiguous/archived/missing players. To correct a compound name or explicitly link a differently spelled/ambiguous existing person, prepare a private `/secure/review.json`, for example:
@@ -60,7 +60,7 @@ Compare proposed All-Stars matches against actual roster; review name splitting;
 Then repeat `--inspect` with `--review-file` until no blockers remain and the report has been reviewed. Only then run:
 
 ```bash
-node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-2026-11.csv --apply --approved --review-file /secure/review.json
+node scripts/import-historical-rankings.mjs --file /secure/cardschool-historical-rankings-approved-2026-11.csv --apply --approved --review-file /secure/review.json
 ```
 
 For this dataset, always include the owner's approved split-name overrides in the effective private review file; combine them with any subsequent approved Player-ID mappings. `--approved` confirms that the operator reviewed **both regular and All-Stars existing Player candidates**, name splits, the cutoff, and the DB backup; it is **not** a substitute for review. Do not store internal Player IDs in a public GitHub commit.
