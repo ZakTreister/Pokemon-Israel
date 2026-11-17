@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { splitHistoricalPlayerName, planHistoricalPlayers } from '../services/historicalPlayerImport.js';
+import { splitHistoricalPlayerName, planHistoricalPlayers, historicalLegacyUserIds } from '../services/historicalPlayerImport.js';
 import { HISTORICAL_RANKING_SOURCE } from '../services/nationalRankings.js';
 const row = (name, isAllStars = false) => ({ source: HISTORICAL_RANKING_SOURCE,
   normalizedName: name, playerName: name, points: 10, tournaments: 2, isAllStars });
@@ -80,4 +80,20 @@ test('verified Player / User linkage does not block a matched canonical Player',
   const [entry] = planHistoricalPlayers([source], [existingPlayer], [], {}, legacyUsers);
   assert.equal(entry.state, 'name-candidate');
   assert.equal(entry.player._id, 'existing-1');
+});
+
+test('legacy User-to-Player link is retained even if Player.user is null', () => {
+  const p = player('canonical-player-id', 'שחקן', 'דוגמה');
+  const users = [{ _id: 'user-id', player: 'canonical-player-id', name: 'שחקן דוגמה' }];
+  assert.deepEqual(historicalLegacyUserIds(p, users), ['user-id']);
+  const [entry] = planHistoricalPlayers([row('שחקן דוגמה')], [p], [], {}, users);
+  assert.equal(entry.state, 'name-candidate');
+});
+
+test('conflicting legacy User references block historical player reconciliation', () => {
+  const p = { ...player('canonical-player-id', 'שחקן', 'דוגמה'), user: 'user-a' };
+  const users = [{ _id: 'user-b', player: p._id, name: 'שחקן דוגמה' }];
+  const [entry] = planHistoricalPlayers([row('שחקן דוגמה')], [p], [], {}, users);
+  assert.equal(entry.state, 'blocked');
+  assert.match(entry.issue, /Conflicting canonical Player/);
 });
