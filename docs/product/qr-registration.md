@@ -1,35 +1,42 @@
-# QR registration for live internal tournaments
+# Club tournament QR registration
 
-Route: `/tournaments/:tournamentId/register` (judge/admin only).
+This feature applies **only to regular/club tournaments** (`type: 'quarterly'` or the legacy equivalent `type: null`). It is **not** for All Stars team-internal events (`team_internal`) or inter-team encounters (`inter_team`).
 
-Accepted links:
-- New player: `?firstName=...&lastName=...&city=...&birthYear=...`
-- Existing player: `?playerId=<MongoDB ObjectId>`
+## QR route and access
 
-First/last name are required for new players; city and birth year are optional. The URL parser decodes them via standard URLSearchParams. A staff member may edit every field before approval.
+`/tournaments/:tournamentId/register` — authenticated Judge or Admin.
 
-Authentication redirects to the existing login screen with the full local return path and query string, then restores the registration route. Backend enforcement is via `protect` and `authorize('admin','judge')`.
+- New player link: `?firstName=...&lastName=...&city=...&birthYear=...`
+- Existing club Player link: `?playerId=<24-character MongoDB ObjectId>`
 
-Endpoints:
-- `GET /api/tournaments/:id/qr-registration?playerId=...`: private tournament summary and optional existing player
-- `GET /api/tournaments/:id/qr-registration/duplicates?firstName=...&lastName=...&city=...`: candidate roster matches
-- `POST /api/tournaments/:id/qr-registration`: confirm with `firstName,lastName,city,birthYear,playerId?,allowDuplicate?,updateExisting?,expectedRevision`
+First name and last name are required. City and birth year are optional for QR intake; the normal admin creation form retains its existing city validation. Scanned data may be edited before confirmation. When an existing Player is edited, the UI explicitly confirms that global profile data will change.
 
-The operation uses Player references and updates both the tournament's historical participant union and next-round participant list (using revision CAS). A player already in history but excluded from the next round can rejoin. No created rounds or standings are rewritten. It does not create a login for the child.
+Unauthenticated staff return to the same full local URL after login. The server enforces both the role and the tournament type.
 
-**Important current limitation:** legacy tournaments store User participants, not Player participants. To prevent corrupting legacy records, QR registration currently accepts only live `swiss-v1` internal-team tournaments. It rejects completed, historical, inter-team, quarterly and legacy tournaments. Supporting other types requires a separate enrollment model/migration.
+## Data model
 
-For internal tournaments, player creation adds a team Player linked to the tournament's team; this is an **explicit QR-intake exception** to the normal judge restriction on player administration. Existing player profile changes are global and require explicit confirmation.
+Club/regular players are canonical `Player` documents with `playerType: 'quarterly'`, `team: null`, and no child login. QR registration does not create or attach All Stars/team players.
 
-Identifiers in existing DB records are 24-hex MongoDB ObjectIds. They are not generic UUIDs. The QR itself only needs to encode the URL and is not generated here.
+`Tournament.clubRegistrations` stores references to regular Players, registration time, and a short name/city snapshot. The legacy `Tournament.participants` array continues to contain historical `User` registrations; it is not overwritten or filled with Player IDs. `currentParticipants` counts both sets.
 
-Security:
-- Never rely on the QR payload as authorization.
-- Do not capture full child-data URLs in analytics or server logs.
-- Exact date of birth is neither needed nor transmitted.
-- A stale tournament revision is rejected.
-- Potential duplicates are shown for staff review, never merged automatically.
+For legacy results, a `results[].playerModel` discriminator defaults to `User` for older data and uses `Player` for results attributed to QR club registrants. The regular tournament result-entry UI includes both sets. The national ranking aggregation identifies new Player-based results correctly, while existing legacy User-based results remain supported.
 
-**Deployment caution:** MongoDB standalone deployments do not support multi-document transactions. New-player creation is rolled back when tournament CAS fails, but a process crash between writes can still leave an incomplete enrollment. Full atomicity needs a replica-set transaction or a durable enrollment workflow.
+`playerParticipants` and `nextRoundParticipantIds` belong to the live Swiss engine and are **never** modified by club QR registration. No permanent team roster is changed.
 
-**Review before broader release:** Updating an existing team Player that is linked to a User account may require linked User.name synchronization; test and reconcile that profile flow before permitting such edits at scale.
+## Protected APIs
+
+- `GET /api/tournaments/:id/qr-registration?playerId=...` — club tournament preview, optionally with existing club Player
+- `GET /api/tournaments/:id/qr-registration/duplicates?firstName=...&lastName=...&city=...` — bounded club-only identity suggestions
+- `POST /api/tournaments/:id/qr-registration` — create/select/update Player and enroll after explicit confirmation, with `expectedRevision` guard
+
+The operation rejects already registered Players and stale tournament revisions. Similar names require choosing an existing Player or explicitly authorizing a new record. It never silently merges records.
+
+## Privacy and operational caveats
+
+- Never log full QR URLs containing children’s names or years of birth.
+- No national ID, photo or date of birth is requested.
+- No app account is created for a child.
+- The backend distinguishes roles and tournament types; a URL alone does not authorize registration.
+- MongoDB standalone has no multi-document transaction: failed tournament CAS rolls back a just-created Player where possible. A process crash between documents can leave a partial write. Explicit reconciliation is required if a profile update partially fails.
+- For a new player with no city, `registrationSource: 'qr-club'` explicitly permits an incomplete city on the Player model. This does not relax ordinary manual club-player creation validation.
+- This feature does **not** generate QR image files or send the registration emails; it accepts links generated externally.
