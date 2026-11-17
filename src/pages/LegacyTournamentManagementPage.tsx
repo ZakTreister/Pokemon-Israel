@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Calendar, MapPin, User, Clock, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
+import { Calendar, MapPin, User, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import type { Deck } from '../types/deck';
@@ -12,6 +12,8 @@ import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../components/ui/ConfirmProvider';
+import ClubTournamentEditDialog from '../features/tournaments/components/ClubTournamentEditDialog';
+import { clubDateKey, clubRegistrationOpen, isClubTournament } from '../../shared/tournamentDomain';
 
 interface AvailableUser {
   id: string;
@@ -30,6 +32,7 @@ export default function LegacyTournamentManagementPage() {
   const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
+  const [editingTournament, setEditingTournament] = useState(false);
 
   // Add user modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -314,36 +317,49 @@ export default function LegacyTournamentManagementPage() {
     );
   }
 
-  const isFull = activeTournament.currentParticipants >= activeTournament.maxParticipants;
-  const isRegistrationClosed = new Date(activeTournament.registrationDeadline) < new Date();
+  const clubTournament = isClubTournament(activeTournament);
+  const isFull = !clubTournament && activeTournament.maxParticipants != null &&
+    activeTournament.currentParticipants >= activeTournament.maxParticipants;
+  const isRegistrationClosed = clubTournament
+    ? !clubRegistrationOpen(activeTournament)
+    : new Date(activeTournament.registrationDeadline) < new Date();
   const userRegistered = isUserRegistered();
-  const isPastTournament = new Date(activeTournament.date) < new Date();
+  const isPastTournament = activeTournament.status === 'completed' ||
+    (clubTournament
+      ? clubDateKey(activeTournament.date) < clubDateKey(new Date())
+      : new Date(activeTournament.date) < new Date());
   const hasResults = activeTournament.results && activeTournament.results.length > 0;
 
   return (
     <div className={`container py-8 md:py-12 ${isAdmin ? 'cs-workspace' : ''}`}>
+      {isAdmin && editingTournament && (
+        <ClubTournamentEditDialog
+          tournament={activeTournament}
+          onClose={() => setEditingTournament(false)}
+          onSaved={() => {
+            setEditingTournament(false);
+            if (id) void dispatch(fetchTournamentById(id));
+            showToast('הטורניר עודכן בהצלחה', 'success');
+          }}
+        />
+      )}
       {/* Admin View - No Banner */}
       {isAdmin ? (
         <div className="space-y-8">
           {/* Tournament Header */}
           <div className="border-b border-border pb-6">
-            <h1 className="text-3xl font-extrabold text-foreground mb-2">{activeTournament.title}</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <h1 className="text-3xl font-extrabold text-foreground">{activeTournament.title}</h1>
+              <Button variant="outline" onClick={() => setEditingTournament(true)}>עריכת טורניר</Button>
+            </div>
             <p className="text-muted-foreground mb-4">{activeTournament.description}</p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">תאריך</p>
                   <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">שעה</p>
-                  <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               </div>
 
@@ -359,7 +375,7 @@ export default function LegacyTournamentManagementPage() {
                 <User className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">משתתפים</p>
-                  <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                  <p className="font-bold text-foreground">{activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}</p>
                 </div>
               </div>
             </div>
@@ -593,7 +609,7 @@ export default function LegacyTournamentManagementPage() {
               <h2 className="text-2xl font-extrabold text-foreground mb-4">פרטי הטורניר</h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">{activeTournament.description}</p>
 
-              <div className="grid grid-cols-2 gap-3.5 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 mb-6">
                 <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Calendar className="h-5 w-5 text-blue-500" />
@@ -601,16 +617,6 @@ export default function LegacyTournamentManagementPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">תאריך</p>
                     <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
-                  </div>
-                </div>
-
-                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">שעה</p>
-                    <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
 
@@ -630,7 +636,7 @@ export default function LegacyTournamentManagementPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">משתתפים</p>
-                    <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                    <p className="font-bold text-foreground">{activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}</p>
                   </div>
                 </div>
               </div>
@@ -780,7 +786,7 @@ export default function LegacyTournamentManagementPage() {
                   <div className="flex justify-between items-center py-2 border-b border-border">
                     <span className="text-muted-foreground">משתתפים</span>
                     <span className="font-medium">
-                      {activeTournament.currentParticipants} / {activeTournament.maxParticipants}
+                      {activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}
                     </span>
                   </div>
 
