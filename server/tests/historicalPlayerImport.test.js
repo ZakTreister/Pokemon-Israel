@@ -97,3 +97,15 @@ test('conflicting legacy User references block historical player reconciliation'
   assert.equal(entry.state, 'blocked');
   assert.match(entry.issue, /Conflicting canonical Player/);
 });
+
+test('one legacy User cannot own two independent historical score rows', () => {
+  const people = [
+    { ...player('player-a', 'ראשון', 'בדיקה'), user: 'same-user' },
+    { ...player('player-b', 'שני', 'בדיקה'), user: 'same-user' },
+  ];
+  const plan = planHistoricalPlayers(
+    [row('ראשון בדיקה'), row('שני בדיקה')], people);
+  assert.equal(plan[0].issue, null);
+  assert.equal(plan[1].state, 'blocked');
+  assert.match(plan[1].issue, /same legacy User/);
+});
