@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Tournament from '../models/tournamentModel.js';
 import Player, { normalizeField } from '../models/playerModel.js';
+import User from '../models/userModel.js';
 import { notifyTournament } from '../services/tournamentLive.js';
 
 const validId = (id) => typeof id === 'string' && mongoose.isValidObjectId(id) && /^[0-9a-f]{24}$/i.test(id);
@@ -169,12 +170,30 @@ export const qrRegisterPlayer = asyncHandler(async (req, res) => {
   // Editing a previously existing Player is a deliberate global-profile edit.
   // Do not alter a linked account silently. A failure is surfaced, not hidden.
   if (edited) {
+    const before = {
+      firstName: player.firstName, lastName: player.lastName,
+      city: player.city, birthYear: player.birthYear,
+    };
+    const linkedUser = player.user ? await User.findById(player.user) : null;
+    const beforeUserName = linkedUser?.name;
     try {
       Object.assign(player, input);
       await player.save();
+      if (linkedUser && (before.firstName !== input.firstName || before.lastName !== input.lastName)) {
+        linkedUser.name = input.firstName + ' ' + input.lastName;
+        await linkedUser.save();
+      }
     } catch (error) {
-      // Participant append is preserved to avoid deleting historical state
-      // under a concurrent tournament edit; report partial completion clearly.
+      try {
+        Object.assign(player, before);
+        await player.save();
+        if (linkedUser && linkedUser.name !== beforeUserName) {
+          linkedUser.name = beforeUserName;
+          await linkedUser.save();
+        }
+      } catch (rollbackError) {
+        fail(500, 'השחקן צורף אך עדכון הפרופיל נכשל וגם השחזור נכשל. נדרשת בדיקת מנהל');
+      }
       fail(409, 'השחקן צורף, אך עדכון הפרטים נכשל. בדקו את פרופיל השחקן');
     }
   }
