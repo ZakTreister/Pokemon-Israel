@@ -124,7 +124,7 @@ export default function QrTournamentRegistrationPage() {
   return (
     <div className="cs-workspace container py-8 max-w-xl" dir="rtl">
       <Card>
-        <CardHeader><CardTitle>רישום שחקן לטורניר</CardTitle>
+        <CardHeader><CardTitle>רישום שחקן חוג לטורניר</CardTitle>
           <p className="text-muted-foreground">{tournament.title}</p>
         </CardHeader>
         <CardContent>
