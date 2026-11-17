@@ -112,13 +112,15 @@ export default function TeamMembersTable({
             label: 'שם מלא',
             value: (row) => `${row.firstName} ${row.lastName}`,
             render: (row) => (
-              <Link
-                className="text-blue-500 font-bold"
-                to={`/all-stars/players/${row.id}`}
-              >
-                {row.firstName} {row.lastName}
-              </Link>
-              {row.teamMembershipStatus === 'trial' && <span className="ms-2 text-xs rounded bg-amber-100 px-2 py-1 text-amber-900">שחקן ניסיון</span>}
+              <>
+                <Link
+                  className="text-blue-500 font-bold"
+                  to={`/all-stars/players/${row.id}`}
+                >
+                  {row.firstName} {row.lastName}
+                </Link>
+                {row.teamMembershipStatus === 'trial' && <span className="ms-2 text-xs rounded bg-amber-100 px-2 py-1 text-amber-900">שחקן ניסיון</span>}
+              </>
             ),
           },
           { key: 'city', label: 'עיר', value: (row) => row.city },

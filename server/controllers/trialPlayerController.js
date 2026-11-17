@@ -4,7 +4,7 @@ import Team from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import { withRosterLocks } from '../services/rosterLock.js';
 import { likelyPlayers } from '../services/playerDuplicates.js';
-import { normalizePlayerNumber } from '../services/playerNumber.js';
+import { playerNumber as normalizePlayerNumber } from '../services/playerNumber.js';
 import { notifyTournament } from '../services/tournamentLive.js';
 import { serialize, ENGINE } from './internalTournamentController.js';
 
