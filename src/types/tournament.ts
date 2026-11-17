@@ -9,6 +9,8 @@ export interface Tournament {
   format: string;
   entryFee: number;
   status: 'upcoming' | 'completed';
+  engineVersion?: string | null;
+  phase?: 'setup' | 'running' | 'completed' | null;
   prizePool: string;
   registrationDeadline: string;
   image: string;
