@@ -6,12 +6,14 @@ import {
 export default function TournamentFilters({
   value,
   onChange,
+  hideType = false,
 }: {
   value: TournamentFiltersValue;
   onChange: (value: TournamentFiltersValue) => void;
+  hideType?: boolean;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className={`grid gap-3 ${hideType ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
       <label>
         חיפוש טורנירים
         <input
@@ -37,7 +39,7 @@ export default function TournamentFilters({
           ))}
         </select>
       </label>
-      <label>
+      {!hideType && <label>
         סוג טורניר
         <select
           aria-label="סוג טורניר"
@@ -52,7 +54,7 @@ export default function TournamentFilters({
             </option>
           ))}
         </select>
-      </label>
+      </label>}
     </div>
   );
 }

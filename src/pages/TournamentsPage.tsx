@@ -15,10 +15,10 @@ export default function TournamentsPage() {
       <PageHero
         title="אירועים"
         highlightWord="אירועים"
-        subtitle="כל הטורנירים של הליגה — אירועים קרובים, בתהליך ותוצאות סופיות"
+        subtitle="טורנירי החוגים — אירועים קרובים, צימודים ותוצאות סופיות"
       />
       <div className="container py-12 space-y-6">
-        <TournamentFilters value={filters} onChange={setFilters} />
+        <TournamentFilters value={filters} onChange={setFilters} hideType />
         {error && <p role="alert">{error}</p>}
         {list.loading && !error ? (
           <p role="status">טוען טורנירים...</p>
