@@ -166,7 +166,10 @@ export const createTournament = asyncHandler(async (req, res) => {
 export const updateTournament = asyncHandler(async (req, res) => {
   const tournament = await Tournament.findOne({
     _id: req.params.id,
-    engineVersion: { $ne: 'swiss-v1' },
+    $or: [
+      { engineVersion: { $ne: 'swiss-v1' } },
+      { type: 'quarterly' },
+    ],
   });
   if (!tournament) {
     res.status(404);
