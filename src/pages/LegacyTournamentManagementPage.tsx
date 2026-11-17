@@ -13,6 +13,7 @@ import api from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../components/ui/ConfirmProvider';
 import ClubTournamentEditDialog from '../features/tournaments/components/ClubTournamentEditDialog';
+import ClubTournamentStartAction from '../features/tournaments/components/ClubTournamentStartAction';
 import { clubDateKey, clubRegistrationOpen, isClubTournament } from '../../shared/tournamentDomain';
 
 interface AvailableUser {
@@ -381,6 +382,7 @@ export default function LegacyTournamentManagementPage() {
             </div>
           </div>
 
+          {clubTournament && <ClubTournamentStartAction tournament={activeTournament} />}
           {/* Add Participant Button */}
           {!isFull && (
             <div className="flex justify-end">
