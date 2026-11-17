@@ -93,9 +93,9 @@ Player deletion must preserve historical tournament/results integrity; do not ha
 
 ## QR-intake exception (new)
 
-A judge or admin may use the guarded QR intake flow for an **active live internal-team tournament**:
+A judge or admin may use the guarded QR intake flow for an **upcoming regular/club tournament**:
 - review a supplied player ID or candidate identity, edit proposed details and choose an existing player or create a new record
-- add a player to the tournament's next-round participant set
+- register a canonical regular/club Player in the tournament's club registration list
 - explicitly confirm a global player-profile edit
 
-This QR-specific privilege is an intentional exception to the ordinary judge prohibition on player mutations. It must not grant access to the general Player management endpoints, team transfer/deletion or historical tournament editing. Judges still cannot mutate completed tournaments.
+This QR-specific privilege is an intentional exception to the ordinary judge prohibition on player mutations. It must not grant access to the general Player management endpoints, team transfer/deletion, All Stars tournament participant changes or historical tournament editing. Judges still cannot mutate completed tournaments.
