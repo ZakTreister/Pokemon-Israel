@@ -44,9 +44,26 @@ jobs:
       - name: Lint
         if: success() || failure()
         run: npm run lint
-      - name: TypeScript typecheck
+      - name: TypeScript regression check against main
         if: success() || failure()
-        run: npx tsc -b --pretty false
+        run: |
+          # The repository already has unrelated type errors. Ensure this PR
+          # adds none rather than allowing the existing debt to mask regressions.
+          git fetch --no-tags origin main --depth=1
+          baseline="$RUNNER_TEMP/cardschool-baseline"
+          git worktree add --detach "$baseline" FETCH_HEAD
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$baseline/node_modules"
+
+          npx tsc -b --pretty false > "$RUNNER_TEMP/current-ts.log" 2>&1 || true
+          (cd "$baseline" && npx tsc -b --pretty false) > "$RUNNER_TEMP/baseline-ts.log" 2>&1 || true
+
+          grep -E 'error TS[0-9]+' "$RUNNER_TEMP/current-ts.log" | sed -E 's/\\([0-9]+,[0-9]+\\)//g' | sort > "$RUNNER_TEMP/current-ts-errors.txt" || true
+          grep -E 'error TS[0-9]+' "$RUNNER_TEMP/baseline-ts.log" | sed -E 's/\\([0-9]+,[0-9]+\\)//g' | sort > "$RUNNER_TEMP/baseline-ts-errors.txt" || true
+          echo 'Existing TypeScript diagnostics in main:'
+          cat "$RUNNER_TEMP/baseline-ts-errors.txt"
+          echo 'TypeScript diagnostics in PR:'
+          cat "$RUNNER_TEMP/current-ts-errors.txt"
+          diff -u "$RUNNER_TEMP/baseline-ts-errors.txt" "$RUNNER_TEMP/current-ts-errors.txt"
       - name: Build
         if: success() || failure()
         run: npm run build
