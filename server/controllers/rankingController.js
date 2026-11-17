@@ -6,6 +6,7 @@ import {
   buildNationalRanking,
   HISTORICAL_CUTOFF,
   HISTORICAL_RANKING_SOURCE,
+  regularTournamentFilter,
 } from '../services/nationalRankings.js';
 
 export const getNationalRankings = asyncHandler(async (req, res) => {
@@ -24,12 +25,9 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
     for (const row of historical)
       row.playerName = currentNames.get(String(row.player)) || row.playerName;
   }
-  const query = {
-    status: 'completed',
-    type: { $in: [null, 'quarterly'] },
-    // Only post-snapshot tournaments accumulate on top of imported totals.
-    ...(hasHistoricalSnapshot ? { date: { $gt: HISTORICAL_CUTOFF } } : {}),
-  };
+  // Only completed regular tournaments affect this ranking. Team-internal
+  // and inter-team scores remain exclusively in their own competitions.
+  const query = regularTournamentFilter(hasHistoricalSnapshot);
   const tournaments = await Tournament.find(query)
     .select('results finalStandings engineVersion type')
     .lean();
