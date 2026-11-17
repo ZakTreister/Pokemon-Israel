@@ -1229,7 +1229,13 @@ test('public Events and details expose all types and only each tournament standi
   assert.equal(active.standings.length, 2);
   assert.equal(active.standings[0].points, 3);
   assert.ok(active.standings.every(s => players.some(p => p.id === s.player)));
-  const forbidden = /"(?:teacher|createdBy|staff|revision|resultRevision|enteredBy|deletedAt|deletedBy|invalidatedRounds|audit|participants|playerParticipants|rounds|canManage)"\s*:/;
+  assert.equal(active.rounds.length, 1);
+  assert.equal(active.rounds[0].matches.length, 1);
+  assert.ok(active.rounds[0].matches[0].player1Name);
+  assert.ok(active.rounds[0].matches[0].player2Name);
+  assert.deepEqual(Object.keys(active.rounds[0].matches[0]).sort(),
+    ['player1Name', 'player2Name', 'result', 'table']);
+  const forbidden = /"(?:teacher|createdBy|staff|revision|resultRevision|enteredBy|deletedAt|deletedBy|invalidatedRounds|audit|participants|playerParticipants|canManage)"\s*:/;
   assert.ok(!forbidden.test(JSON.stringify(active)));
   t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {expectedRevision:t.revision});
   const completed = await ok(`/tournaments/${t.id}`, 'GET', undefined, null);

@@ -42,8 +42,8 @@ test('renumbering tables keeps saved scores and match identities', () => {
 test('forbids duplicated players and missing matches', () => {
   assert.throws(() => planRoundPairingEdit(base, [
     { matchId: m1, table: 1, player1: a, player2: a }, request[1],
-  ]), { code: 'INVALID_PAIRINGS' });
-  assert.throws(() => planRoundPairingEdit(base, [request[0], request[0]]),
+  ], true), { code: 'INVALID_PAIRINGS' });
+  assert.throws(() => planRoundPairingEdit(base, [request[0], request[0]], true),
     { code: 'INVALID_PAIRINGS' });
 });
 
