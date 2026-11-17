@@ -214,6 +214,14 @@ export const registerForTournament = asyncHandler(async (req, res) => {
     throw new Error('Tournament is full');
   }
 
+  // A linked Player already enrolled via club QR cannot be enrolled again as a User.
+  if (req.user.player && tournament.clubRegistrations.some(
+    (entry) => String(entry.player) === String(req.user.player)
+  )) {
+    res.status(409);
+    throw new Error('Already registered for this tournament');
+  }
+
   const alreadyRegistered = tournament.participants.find(
     (p) => p.user.toString() === req.user._id.toString()
   );
@@ -313,6 +321,13 @@ export const addParticipant = asyncHandler(async (req, res) => {
   if (!userId) {
     res.status(400);
     throw new Error('User ID is required');
+  }
+  const registrant = await User.findById(userId).select('player');
+  if (registrant?.player && tournament.clubRegistrations.some(
+    (entry) => String(entry.player) === String(registrant.player)
+  )) {
+    res.status(409);
+    throw new Error('Already registered for this tournament');
   }
 
   if (tournament.currentParticipants >= tournament.maxParticipants) {
