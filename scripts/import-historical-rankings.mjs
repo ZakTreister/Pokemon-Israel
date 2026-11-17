@@ -89,15 +89,17 @@ await import('dotenv/config');
 if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is required for a live match preview or apply');
 const { default: mongoose } = await import('mongoose');
 const { default: Player } = await import('../server/models/playerModel.js');
+const { default: User } = await import('../server/models/userModel.js');
 const { default: HistoricalRanking } = await import('../server/models/historicalRankingModel.js');
 await mongoose.connect(process.env.MONGODB_URI);
 try {
   // Archived Players are included in preflight so we never quietly clone an archived child.
-  const [players, existing] = await Promise.all([
+  const [players, existing, legacyUsers] = await Promise.all([
     Player.find().setOptions({ includeDeleted: true })
       .select('_id firstName lastName playerType user deletedAt historicalImportSource historicalNormalizedName')
       .lean(),
     HistoricalRanking.find({ source: HISTORICAL_RANKING_SOURCE }).lean(),
+    User.find({ role: 'player' }).select('_id name player').lean(),
   ]);
   const historicalByName = new Map(existing.map(x => [x.normalizedName, x]));
   if (existing.some(x => !uniqueNames.has(x.normalizedName)))
@@ -108,7 +110,7 @@ try {
         prev.tournaments !== row.tournaments || prev.isAllStars !== row.isAllStars))
       throw new Error(`Historical baseline for ${row.playerName} differs; manual migration required`);
   }
-  const plan = planHistoricalPlayers(rows, players, existing, review);
+  const plan = planHistoricalPlayers(rows, players, existing, review, legacyUsers);
   const blocked = plan.filter(x => x.issue);
   const proposed = {
     ...summary,
