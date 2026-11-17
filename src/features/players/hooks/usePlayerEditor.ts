@@ -39,6 +39,10 @@ export function usePlayerEditor(
       setError(parsed.error.issues[0].message);
       return;
     }
+    if (!parsed.data.lastName && !player.historicalImportSource) {
+      setError('שם משפחה הוא חובה');
+      return;
+    }
     if (player.playerType === 'quarterly' && !parsed.data.city && !player.historicalImportSource) {
       setError('עיר היא חובה');
       return;
