@@ -1,4 +1,5 @@
 import { notifyTournament } from '../services/tournamentLive.js';
+import { planRoundPairingEdit } from '../services/roundPairings.js';
 import asyncHandler from "express-async-handler";
 import Tournament from "../models/tournamentModel.js";
 import Team from "../models/teamModel.js";
@@ -263,6 +264,35 @@ export const pairRound = asyncHandler(async (req, res) => {
     }),
   );
 });
+export const editRoundPairings = asyncHandler(async (req, res) => {
+  const tournament = await load(req);
+  revision(req, tournament);
+  if (tournament.source !== 'live' || tournament.phase !== 'running' ||
+      tournament.status === 'completed')
+    fail(409, 'ניתן לערוך צימודים רק בטורניר חי');
+  const latest = tournament.rounds.at(-1);
+  if (!latest || latest.number !== Number(req.params.roundNumber))
+    fail(409, 'ניתן לערוך רק את הסבב האחרון');
+  const snapshot = latest.toObject();
+  let plan;
+  try {
+    plan = planRoundPairingEdit(snapshot, req.body.matches, req.body.clearResults === true);
+  } catch (error) {
+    fail(error.code === 'RESULTS_REQUIRE_CLEAR' ? 409 : 400, error.message, error.code);
+  }
+  if (!plan.changed) return res.json(serialize(tournament));
+  const rounds = tournament.rounds.map(round => round.toObject());
+  rounds[rounds.length - 1] = { ...snapshot, matches: plan.matches };
+  const invalidatedRounds = tournament.invalidatedRounds.map(entry => entry.toObject());
+  if (plan.clearedResults)
+    invalidatedRounds.push({
+      invalidatedAt: new Date(), invalidatedBy: req.user._id,
+      reason: `Pairing edit to round ${latest.number}; cleared ${plan.clearedResults} result(s)`,
+      rounds: [snapshot],
+    });
+  return res.json(await commit(req, { rounds, invalidatedRounds }));
+});
+
 export const cancelLatestRound = asyncHandler(async (req, res) => {
   const tournament = await load(req);
   revision(req, tournament);

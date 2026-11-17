@@ -23,6 +23,12 @@ export const clubTournamentRounds = {
     (await api.put<InternalTournament>(`${root(id)}/rounds/${round}/matches/${match}`, {
       expectedRevision, expectedResultRevision, result, invalidateLaterRounds,
     })).data,
+  editPairings: async (id: string, roundNumber: number, expectedRevision: number,
+    matches: { matchId: string; table: number; player1: string; player2: string | null }[],
+    clearResults: boolean) =>
+    (await api.put<InternalTournament>(root(id) + `/rounds/${roundNumber}/pairings`, {
+      expectedRevision, matches, clearResults,
+    })).data,
   close: async (id: string, expectedRevision: number) =>
     (await api.post<InternalTournament>(root(id) + '/close', { expectedRevision })).data,
 };

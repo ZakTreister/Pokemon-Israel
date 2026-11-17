@@ -3,7 +3,7 @@ import { startClubTournament } from '../controllers/clubTournamentRoundsControll
 import { getClubParticipants, addClubParticipant, removeClubParticipant } from '../controllers/clubParticipantsController.js';
 import {
   getInternalTournament, changeInternalParticipants, pairRound,
-  cancelLatestRound, enterMatchResult, closeInternalTournament,
+  cancelLatestRound, editRoundPairings, enterMatchResult, closeInternalTournament,
 } from '../controllers/internalTournamentController.js';
 import { qrRegistrationPreview, qrRegistrationDuplicates, qrRegisterPlayer } from '../controllers/qrRegistrationController.js';
 import { protect, admin, authorize } from '../middleware/authMiddleware.js';
@@ -55,6 +55,7 @@ router.get('/:id/round-management', ...staff, clubRoundScope, getInternalTournam
 router.put('/:id/round-management/participants', ...staff, clubRoundScope, changeInternalParticipants);
 router.post('/:id/round-management/rounds', ...staff, clubRoundScope, pairRound);
 router.delete('/:id/round-management/rounds/:roundNumber', ...staff, clubRoundScope, cancelLatestRound);
+router.put('/:id/round-management/rounds/:roundNumber/pairings', ...staff, clubRoundScope, editRoundPairings);
 router.put('/:id/round-management/rounds/:roundNumber/matches/:matchId', ...staff, clubRoundScope, enterMatchResult);
 router.post('/:id/round-management/close', ...staff, clubRoundScope, closeInternalTournament);
 
