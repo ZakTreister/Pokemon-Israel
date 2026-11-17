@@ -48,7 +48,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const getPlayer = asyncHandler(async (req, res) => {
   const player = await Player.findById(req.params.id)
-    .select(req.user.role === 'judge' ? '-dateOfBirth' : '')
+    .select(req.user.role === 'judge' ? '-dateOfBirth -birthYear' : '')
     .populate('user', 'username name role');
 
   if (player && req.user.role === 'judge' && player.playerType !== 'team') {
