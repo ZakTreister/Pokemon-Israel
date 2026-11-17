@@ -50,6 +50,7 @@ export default function PlayerEditDialog({
         <PlayerNameFields
           firstName={value.firstName}
           lastName={value.lastName}
+          lastNameOptional={!!player.historicalImportSource}
           onChange={(field, text) =>
             setValue((current) => ({ ...current, [field]: text }))
           }
