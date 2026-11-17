@@ -27,6 +27,8 @@ export default function QrTournamentRegistrationPage() {
   const [originalPlayer, setOriginalPlayer] = useState<QrPlayer | null>(null);
   const [matches, setMatches] = useState<QrPlayer[]>([]);
   const [checked, setChecked] = useState(false);
+  const [duplicateCreationApproved, setDuplicateCreationApproved] = useState(false);
+  const [newPlayerDraft, setNewPlayerDraft] = useState(fields);
   const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,6 +54,7 @@ export default function QrTournamentRegistrationPage() {
   const change = (key: keyof typeof fields, value: string) => {
     setFields(previous => ({ ...previous, [key]: value }));
     setChecked(false);
+    setDuplicateCreationApproved(false);
     setMatches([]);
     setError('');
   };
@@ -64,6 +67,8 @@ export default function QrTournamentRegistrationPage() {
       Number(fields.birthYear) >= 1900 && Number(fields.birthYear) <= new Date().getFullYear()));
 
   const findDuplicates = async () => {
+    setNewPlayerDraft(fields);
+    setDuplicateCreationApproved(false);
     setChecking(true);
     setError('');
     try {
@@ -81,6 +86,10 @@ export default function QrTournamentRegistrationPage() {
       await findDuplicates();
       return;
     }
+    if (!selectedPlayerId && matches.length > 0 && !duplicateCreationApproved) {
+      setError('יש לבחור שחקן קיים או לאשר במפורש יצירת שחקן חדש.');
+      return;
+    }
     const existingEdited = Boolean(originalPlayer && selectedPlayerId === originalPlayer.id &&
       (originalPlayer.firstName !== fields.firstName.trim() ||
         originalPlayer.lastName !== fields.lastName.trim() ||
@@ -92,7 +101,7 @@ export default function QrTournamentRegistrationPage() {
     try {
       const result = await qrRegistration.submit(tournamentId, {
         ...parsed(), playerId: selectedPlayerId || undefined,
-        allowDuplicate: checked && !selectedPlayerId,
+        allowDuplicate: duplicateCreationApproved && !selectedPlayerId,
         updateExisting: existingEdited,
         expectedRevision: tournament.revision,
       });
@@ -102,6 +111,7 @@ export default function QrTournamentRegistrationPage() {
       if (isAxiosError<{ code?: string; matches?: QrPlayer[] }>(e) &&
         e.response?.data.code === 'PLAYER_DUPLICATE') {
         setMatches(e.response.data.matches || []);
+        setDuplicateCreationApproved(false);
         setChecked(true);
       }
       setError(errorText(e));
@@ -144,6 +154,7 @@ export default function QrTournamentRegistrationPage() {
                 <input type="radio" name="player" checked={selectedPlayerId === player.id}
                   onChange={() => {
                     setSelectedPlayerId(player.id);
+                    setDuplicateCreationApproved(false);
                     setOriginalPlayer(player);
                     setFields({ firstName: player.firstName, lastName: player.lastName,
                       city: player.city, birthYear: player.birthYear?.toString() || '' });
@@ -151,13 +162,19 @@ export default function QrTournamentRegistrationPage() {
                 <span>{player.firstName} {player.lastName} · {player.playerType === 'team' ? 'שחקן נבחרת' : 'שחקן חוג'} · {player.city} · {player.birthYear || 'שנה לא ידועה'}</span>
               </label>)}
               <label className="flex items-center gap-2">
-                <input type="radio" name="player" checked={!selectedPlayerId}
-                  onChange={() => { setSelectedPlayerId(''); setOriginalPlayer(null); }} />
+                <input type="radio" name="player" checked={!selectedPlayerId && duplicateCreationApproved}
+                  onChange={() => {
+                    setSelectedPlayerId('');
+                    setOriginalPlayer(null);
+                    setFields(newPlayerDraft);
+                    setDuplicateCreationApproved(true);
+                    setError('');
+                  }} />
                 <span>יצירת שחקן חדש בכל זאת</span>
               </label>
             </fieldset>}
             {error && <p role="alert" className="text-destructive text-sm">{error}</p>}
-            <Button className="w-full" type="submit" disabled={!valid() || checking || saving}>
+            <Button className="w-full" type="submit" disabled={!valid() || checking || saving || (checked && matches.length > 0 && !selectedPlayerId && !duplicateCreationApproved)}>
               {saving ? 'שומר...' : checking ? 'בודק שחקנים...' :
                 !selectedPlayerId && !checked ? 'בדיקת שחקנים דומים' : 'אישור וצירוף לטורניר'}
             </Button>
