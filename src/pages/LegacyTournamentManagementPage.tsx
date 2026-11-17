@@ -1,4 +1,5 @@
 import type { RequestError } from '../types/api';
+import type { Tournament } from '../types/tournament';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
@@ -29,7 +30,8 @@ export default function LegacyTournamentManagementPage() {
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
-  const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
+  const { activeTournament: publicTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
+  const [managedTournament, setManagedTournament] = useState<Tournament | null>(null);
   const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
@@ -44,6 +46,22 @@ export default function LegacyTournamentManagementPage() {
   const [addingUser, setAddingUser] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
+  // Public tournament responses deliberately omit child/registration details.
+  // The management page must load the authorized full DTO instead.
+  const activeTournament = isAdmin ? managedTournament : publicTournament;
+  useEffect(() => {
+    if (!id || !isAdmin) return;
+    let active = true;
+    setManagedTournament(null);
+    api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)
+      .then(({ data }) => {
+        if (active) setManagedTournament(data);
+      })
+      .catch(e => {
+        if (active) showToast(requestError(e), 'error');
+      });
+    return () => { active = false; };
+  }, [id, isAdmin]);
 
   useEffect(() => {
     if (id) {
@@ -339,7 +357,11 @@ export default function LegacyTournamentManagementPage() {
           onClose={() => setEditingTournament(false)}
           onSaved={() => {
             setEditingTournament(false);
-            if (id) void dispatch(fetchTournamentById(id));
+            if (id) {
+              void dispatch(fetchTournamentById(id));
+              void api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)
+                .then(({ data }) => setManagedTournament(data));
+            }
             showToast('הטורניר עודכן בהצלחה', 'success');
           }}
         />
