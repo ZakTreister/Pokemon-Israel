@@ -26,7 +26,17 @@ export interface PublicTournamentSummary {
   teamNameSnapshot: string;
   canRegister: boolean;
 }
+export interface PublicTournamentRound {
+  number: number;
+  matches: {
+    table: number;
+    player1Name: string;
+    player2Name: string | null;
+    result: { winner: 'player1' | 'player2' | 'draw' | 'bye'; score1: number; score2: number; drawnGames: number } | null;
+  }[];
+}
 export interface PublicTournament extends PublicTournamentSummary {
+  rounds: PublicTournamentRound[];
   standings: (Standing & { deck?: Deck | null })[];
   teamPlayers: boolean;
 }

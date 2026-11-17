@@ -52,6 +52,23 @@ export function publicTournament(t, detail = false) {
         : legacyResults(t),
   };
   if (detail) {
+    // Explicit public projection: do not expose player IDs, staff identities,
+    // raw match documents, revisions or operational metadata.
+    const names = new Map((t.playerParticipants || []).map(row => [String(row.player), row.nameSnapshot]));
+    data.rounds = t.engineVersion === 'swiss-v1' && t.phase !== 'setup'
+      ? (t.rounds || []).map(round => ({
+          number: round.number,
+          matches: round.matches.map(match => ({
+            table: match.table,
+            player1Name: names.get(String(match.player1)) || 'שחקן',
+            player2Name: match.player2 ? names.get(String(match.player2)) || 'שחקן' : null,
+            result: match.result ? {
+              winner: match.result.winner, score1: match.result.score1,
+              score2: match.result.score2, drawnGames: match.result.drawnGames || 0,
+            } : null,
+          })),
+        }))
+      : [];
     data.standings =
       lifecycle === 'upcoming'
         ? []

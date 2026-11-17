@@ -262,7 +262,6 @@ export default function LegacyTournamentManagementPage() {
             </div>
           </div>
 
-          {clubTournament && <ClubTournamentStartAction tournament={activeTournament} />}
 
           {/* Tournament Results */}
           {hasResults && (
@@ -388,6 +387,7 @@ export default function LegacyTournamentManagementPage() {
 
           {clubTournament && id && (
             <ClubParticipantsManager
+              startAction={<ClubTournamentStartAction tournament={activeTournament} />}
               tournamentId={id}
               onChanged={() => {
                 void api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)

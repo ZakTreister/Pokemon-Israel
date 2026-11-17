@@ -30,8 +30,8 @@ export default function ClubTournamentLaunchPage() {
         <h2 className="text-2xl font-bold">{tournament.title}</h2>
         <p>{new Date(tournament.date).toLocaleDateString('he-IL')} · {tournament.location}</p>
         <p>{tournament.currentParticipants} שחקנים רשומים</p>
-        <ClubTournamentStartAction tournament={tournament} />
         <ClubParticipantsManager tournamentId={id}
+          startAction={<ClubTournamentStartAction tournament={tournament} />}
           onChanged={() => { void publicTournaments.get(id).then(setTournament); }} />
       </>}
     </div>

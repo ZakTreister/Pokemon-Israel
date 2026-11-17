@@ -166,7 +166,7 @@ export default function QrTournamentRegistrationPage() {
         <CardContent>
           {success ? <div role="status" className="space-y-4">
             <p className="text-success font-bold">{success}</p>
-            <Link className="text-blue-500 underline" to={`/tournaments/${tournamentId}`}>מעבר לטורניר</Link>
+            <Link className="text-blue-500 underline" to={`/manage/tournaments/regular/${tournamentId}`}>מעבר לניהול הטורניר</Link>
           </div> : <form onSubmit={submit} className="space-y-4">
             {field('שם פרטי', 'firstName', true)}
             {field('שם משפחה', 'lastName', true)}
