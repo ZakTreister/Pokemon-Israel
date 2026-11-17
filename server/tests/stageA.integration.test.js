@@ -2086,7 +2086,7 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal(adminRead.clubRegistrations.length, 4);
 
   const invalidResult = await request('/tournaments/' + event.id + '/results', 'POST', {
-    results: [{ player: teamPlayer.id, playerModel: 'Player', playerName: 'Team Only', points: 4, position: 1 }],
+    results: [{ player: new mongoose.Types.ObjectId().toString(), playerModel: 'Player', playerName: 'Unregistered', points: 4, position: 1 }],
   }, 'admin');
   assert.equal(invalidResult.status, 400);
 
