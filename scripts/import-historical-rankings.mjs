@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 import { HISTORICAL_RANKING_SOURCE, normalizeRankingName } from '../server/services/nationalRankings.js';
-import { planHistoricalPlayers } from '../server/services/historicalPlayerImport.js';
+import { planHistoricalPlayers, historicalLegacyUserIds } from '../server/services/historicalPlayerImport.js';
 
 const args = process.argv.slice(2);
 const option = (name) => {
@@ -173,7 +173,10 @@ try {
         throw new Error(`Existing confirmed link differs for ${row.playerName}`);
       if (linked?.legacyUser && target.user && String(linked.legacyUser) !== String(target.user))
         throw new Error(`Conflicting User link for ${row.playerName}`);
-      const linkedUser = target.user || linked?.legacyUser || null;
+      const legacyIds = historicalLegacyUserIds(target, legacyUsers, linked?.legacyUser);
+      if (legacyIds.length > 1)
+        throw new Error(`Conflicting User links for ${row.playerName}`);
+      const linkedUser = legacyIds[0] || null;
       const result = await HistoricalRanking.updateOne(
         { source: HISTORICAL_RANKING_SOURCE, normalizedName: row.normalizedName },
         { $setOnInsert: row, $set: { player: target._id, ...(linkedUser ? { legacyUser: linkedUser } : {}) } },
