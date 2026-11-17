@@ -3,6 +3,14 @@ export const HISTORICAL_RANKING_SOURCE = 'national-league-through-2026-11-16';
 // on or before that date must not be counted again.
 export const HISTORICAL_CUTOFF = new Date('2026-11-16T21:59:59.999Z');
 
+// Explicit competition boundary: national ranking must never aggregate
+// team-internal or inter-team tournaments, even when a Player has both scores.
+export const regularTournamentFilter = (hasHistoricalSnapshot = false) => ({
+  status: 'completed',
+  type: { $in: [null, 'quarterly'] },
+  ...(hasHistoricalSnapshot ? { date: { $gt: HISTORICAL_CUTOFF } } : {}),
+});
+
 export const normalizeRankingName = (value = '') =>
   String(value).normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('he');
 
