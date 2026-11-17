@@ -50,6 +50,7 @@ export default function PlayerEditDialog({
         <PlayerNameFields
           firstName={value.firstName}
           lastName={value.lastName}
+          lastNameOptional={!!player.historicalImportSource}
           onChange={(field, text) =>
             setValue((current) => ({ ...current, [field]: text }))
           }
@@ -62,6 +63,20 @@ export default function PlayerEditDialog({
             onChange={(e) => setValue({ ...value, city: e.target.value })}
           />
         </label>
+        {!team && (
+          <label>
+            שנת לידה (אופציונלי)
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1900}
+              max={new Date().getFullYear()}
+              className="cs-player-input"
+              value={value.birthYear ?? ''}
+              onChange={(e) => setValue({ ...value, birthYear: e.target.value === '' ? null : Number(e.target.value) })}
+            />
+          </label>
+        )}
         {team && (
           <PlayerNumberField
             value={value.playerNumber}

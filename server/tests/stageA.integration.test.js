@@ -1944,3 +1944,51 @@ test('2026.10.5 A26 groups completed internal meetings by event date, including 
  } finally {Tournament.aggregate=aggregate;}
 
 });
+
+test('historical ordinary points for an All-Stars Player stay independent of team points', async () => {
+  const { HISTORICAL_RANKING_SOURCE, normalizeRankingName } = await import('../services/nationalRankings.js');
+  const { default: HistoricalRanking } = await import('../models/historicalRankingModel.js');
+  // Synthetic identities only. These fixtures never enter the production DB.
+  const seed = Array.from({ length: 337 }, (_, i) => {
+    const playerName = `Fixture${i} Child`;
+    return {
+      firstName: `Fixture${i}`, lastName: 'Child', city: '',
+      playerType: i < 35 ? 'team' : 'quarterly',
+      isActive: true, user: null,
+      historicalImportSource: HISTORICAL_RANKING_SOURCE,
+      historicalNormalizedName: normalizeRankingName(playerName),
+    };
+  });
+  const players = await Player.insertMany(seed);
+  await HistoricalRanking.insertMany(players.map((player, index) => {
+    const playerName = `${player.firstName} ${player.lastName}`;
+    return {
+      source: HISTORICAL_RANKING_SOURCE,
+      normalizedName: normalizeRankingName(playerName),
+      playerName, points: 24, tournaments: 6, isAllStars: index < 35,
+      player: player._id,
+    };
+  }));
+  const teamPlayer = players[0];
+  const event = {
+    title: 'Synthetic scoring boundary', description: 'Fixture', location: 'Test location',
+    maxParticipants: 20, registrationDeadline: new Date('2026-11-17'),
+    image: '/fixture.png', status: 'completed', engineVersion: 'swiss-v1',
+  };
+  const standings = (points) => [{
+    player: teamPlayer._id, playerName: 'Fixture0 Child', position: 1, points,
+  }];
+  await Tournament.insertMany([
+    { ...event, type: 'quarterly', date: new Date('2026-11-17'), finalStandings: standings(5) },
+    { ...event, type: 'team_internal', date: new Date('2026-11-17'), finalStandings: standings(100) },
+    { ...event, type: 'inter_team', date: new Date('2026-11-17'), finalStandings: standings(90) },
+    { ...event, type: 'quarterly', date: new Date('2026-11-15'), finalStandings: standings(12) },
+  ]);
+  const visible = await ok('/rankings?includeAllStars=true&search=Fixture0%20Child', 'GET', undefined, null);
+  assert.equal(visible.total, 1);
+  assert.equal(visible.rankings[0].points, 29);
+  assert.equal(visible.rankings[0].tournaments, 7);
+  assert.equal(visible.rankings[0].isAllStars, true);
+  const hidden = await ok('/rankings?search=Fixture0%20Child', 'GET', undefined, null);
+  assert.equal(hidden.total, 0);
+});

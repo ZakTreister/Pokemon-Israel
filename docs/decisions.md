@@ -458,3 +458,7 @@ During a version, Codex runs only tests/checks relevant to the feature batch bei
 If final verification exposes a failure, Codex iterates using the smallest failing subset and reruns the full suite only after that subset passes.
 
 Codex should avoid redundant test layers, unrelated refactors, repeated reading of irrelevant docs and tiny per-file commits.
+
+
+## 2026-11 — Historical cumulative national ranking baseline
+The national ranking spreadsheet provides 337 aggregate score/participation rows and 35 explicit All-Stars markers; it does not contain per-tournament results or cities/IDs. Import only an audited cumulative opening balance, never fictional tournaments. Keep post-snapshot scoring additive without double counting. Create canonical Player records only for unmatched regular players, with city and birth year unknown; link existing regular/All-Stars Player records after a reviewed DB match preview without overwriting profiles. Block ambiguous/archived matches and unmatched All-Stars. Never store Excel original serial/rank. New Players' first/last name, city and year-only birth year remain editable in management. Hide imported All-Stars rows by default; an opt-in checkbox shows them muted and labeled. Use genuine server-side search, global sorting and pagination.

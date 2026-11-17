@@ -36,7 +36,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
   res.json(
     await paginate(Player, query, req.query, (q) =>
       q
-        .select(req.user.role === 'judge' ? '-dateOfBirth' : '')
+        .select(req.user.role === 'judge' ? '-dateOfBirth -birthYear' : '')
         .populate('user', 'username name role')
         .sort({ firstName: 1, lastName: 1, _id: 1 }),
     ),
@@ -48,7 +48,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const getPlayer = asyncHandler(async (req, res) => {
   const player = await Player.findById(req.params.id)
-    .select(req.user.role === 'judge' ? '-dateOfBirth' : '')
+    .select(req.user.role === 'judge' ? '-dateOfBirth -birthYear' : '')
     .populate('user', 'username name role');
 
   if (player && req.user.role === 'judge' && player.playerType !== 'team') {
@@ -147,7 +147,7 @@ export const createTeamPlayer = asyncHandler(async (req, res) => {
 // @route   PUT /api/players/:id
 // @access  Private/Admin
 export const updatePlayer = asyncHandler(async (req, res) => {
-  const { firstName, lastName, city, isActive, playerNumber } = req.body;
+  const { firstName, lastName, city, isActive, playerNumber, birthYear } = req.body;
 
   const player = await Player.findById(req.params.id);
   if (player && req.user.role === 'judge' && player.playerType !== 'team') {
@@ -193,6 +193,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   const originalFirstName = player.firstName;
   const originalLastName = player.lastName;
   const originalCity = player.city;
+  const originalBirthYear = player.birthYear;
   const originalNumber = player.playerNumber;
   const originalIsActive = player.isActive;
   const originalNormFirst = player.normalizedFirstName;
@@ -210,8 +211,14 @@ export const updatePlayer = asyncHandler(async (req, res) => {
   if (player.playerType === 'team' && playerNumber !== undefined)
     player.playerNumber = normalizePlayerNumber(playerNumber);
   if (isActive !== undefined) player.isActive = isActive;
+  if (birthYear !== undefined) {
+    const year = birthYear === null || birthYear === '' ? null : Number(birthYear);
+    if (year !== null && (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear()))
+      fail(400, 'שנת לידה לא תקינה');
+    player.birthYear = year;
+  }
 
-  if (player.playerType === 'quarterly' && !player.city?.trim())
+  if (player.playerType === 'quarterly' && !player.city?.trim() && !player.historicalImportSource)
     fail(400, 'עיר היא שדה חובה');
   // For team players, sync linked User.name when firstName/lastName changed
   let linkedUser = null;
@@ -260,6 +267,7 @@ export const updatePlayer = asyncHandler(async (req, res) => {
         player.firstName = originalFirstName;
         player.lastName = originalLastName;
         player.city = originalCity;
+        player.birthYear = originalBirthYear;
         player.playerNumber = originalNumber;
         player.isActive = originalIsActive;
         player.normalizedFirstName = originalNormFirst;

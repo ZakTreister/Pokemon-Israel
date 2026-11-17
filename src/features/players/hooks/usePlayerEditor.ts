@@ -14,6 +14,7 @@ export function usePlayerEditor(
     firstName: player.firstName,
     lastName: player.lastName,
     city: player.city || '',
+    birthYear: player.birthYear ?? null,
     playerNumber: player.playerNumber || '',
     description: player.description || '',
     dateOfBirth: player.dateOfBirth || '',
@@ -38,14 +39,18 @@ export function usePlayerEditor(
       setError(parsed.error.issues[0].message);
       return;
     }
-    if (player.playerType === 'quarterly' && !parsed.data.city) {
+    if (!parsed.data.lastName && !player.historicalImportSource) {
+      setError('שם משפחה הוא חובה');
+      return;
+    }
+    if (player.playerType === 'quarterly' && !parsed.data.city && !player.historicalImportSource) {
       setError('עיר היא חובה');
       return;
     }
     setSaving(true);
     setError('');
     try {
-      const { firstName, lastName, city, isActive, ...profile } = parsed.data;
+      const { firstName, lastName, city, isActive, birthYear, ...profile } = parsed.data;
       await dispatch(
         updatePlayer({
           id: player.id,
@@ -54,6 +59,7 @@ export function usePlayerEditor(
             lastName,
             city,
             isActive,
+            ...(player.playerType === 'quarterly' ? { birthYear } : {}),
             ...(player.playerType === 'team'
               ? { ...profile, photoUploadId, deckUploadId }
               : {}),

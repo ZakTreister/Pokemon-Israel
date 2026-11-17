@@ -79,3 +79,17 @@ Do not couple this annual reset to badge Seasons.
 
 ## Seasons do not reset ranking
 Badge Seasons have no scoring reset semantics.
+
+
+## Historical regular ranking baseline (November 2026)
+
+The owner's historical Excel contains aggregate lifetime points and participation counts, not per-tournament results. This approved import is a one-time opening-balance exception to the event-derived ranking rule. Do not create fake tournaments, placements, event history or best-rank data.
+
+The imported ranking baseline is through **2026-11-16** local Israel date. Only later completed regular tournaments may add to it; earlier DB tournament results must not be double-counted. The source has no city or participant IDs. Import creates canonical regular Players with missing city flagged as historical-import records, and links existing Players (especially existing All-Stars team players) only after review of a live identity-matching report. Never guess ambiguous identities or recreate an existing All-Stars player. Imported `HistoricalRanking` records link to canonical Players for future scores.
+
+The default national ranking page **excludes imported All-Stars players**. A checkbox **הצג שחקני All-Stars** includes them as grey/muted rows marked **All-Stars**. This is not an overall cross-team All Stars competitive ranking. Ranking places are computed from descending cumulative points among the currently eligible cohort, with shared places on ties, *before* search or pagination. Search never renumbers the ranking. Imported historical source row numbers/ranking positions are discarded and not persisted.
+
+The table displays **מקום, שחקן, נקודות, השתתפויות**. Search, global column sorting and paging are server-side. Default page size **25**; show previous/next and current/total pages. Changing search, sorting or All-Stars visibility resets to page 1. Remain RTL and mobile-friendly.
+
+### Strict scoring separation for an All-Stars Player who also competes in regular tournaments (2026-11-17)
+Player identity is shared; **competitive score is not**. The import CSV's historical points and participations are *regular/quarterly tournament* totals even when `isAllStars=true`. They belong exclusively to the national **regular** ranking baseline. Existing and future team-internal `team_internal` scores remain part of the **within-team All-Stars ranking** and must not be added to the national regular score. Inter-team `inter_team` competition has its own team standings and also must not flow into national player scores. New regular tournaments add to the same ordinary baseline by Player ID, regardless of whether the player belongs to All-Stars. The All-Stars visibility checkbox only controls whether these **regular points** are shown on the national ranking; it never shows or imports internal team points. National regular ranking is lifetime; internal team ranking follows its independent competition-year semantics.

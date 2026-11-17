@@ -16,10 +16,12 @@ const playerSchema = new mongoose.Schema(
     },
     lastName: {
       type: String,
-      required: [true, 'Last name is required'],
+      // An approved legacy ranking row may genuinely lack a surname.
+      // Manual player creation still requires one.
+      required() { return !this.historicalImportSource; },
       trim: true,
-      minlength: [1, 'Last name must be at least 1 character long'],
       maxlength: [50, 'Last name cannot exceed 50 characters'],
+      default: '',
     },
     photoMedia: { type: mediaSchema, default: null },
     description: { type: String, trim: true, maxlength: 500, default: '' },
@@ -39,6 +41,11 @@ const playerSchema = new mongoose.Schema(
       },
     },
     playerNumber: { type: String, trim: true, default: '' },
+    // A historical import can create a player before city is known.
+    historicalImportSource: { type: String, default: null },
+    historicalNormalizedName: { type: String, default: null },
+    // A year-only value is not an invented date of birth.
+    birthYear: { type: Number, default: null, min: 1900, max: new Date().getFullYear() },
     city: { type: String, trim: true, maxlength: 100, default: '' },
     playerType: {
       type: String,
@@ -83,6 +90,11 @@ const playerSchema = new mongoose.Schema(
   },
 );
 
+playerSchema.index(
+  { historicalImportSource: 1, historicalNormalizedName: 1 },
+  { unique: true, partialFilterExpression: { historicalNormalizedName: { $type: 'string' } } },
+);
+
 playerSchema.index({
   normalizedFirstName: 1,
   normalizedLastName: 1,
@@ -103,6 +115,7 @@ playerSchema.index(
 playerSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
+    delete ret.historicalNormalizedName;
     if (doc.playerType === 'team') {
       ret.photoUrl = publicMediaUrl(doc.photoMedia);
       ret.deckUrl = publicMediaUrl(doc.deckMedia);
@@ -146,7 +159,7 @@ playerSchema.pre('validate', function (next) {
   this.normalizedFirstName = normalizeField(this.firstName);
   this.normalizedLastName = normalizeField(this.lastName);
   this.normalizedCity = normalizeField(this.city);
-  if (this.playerType === 'quarterly' && !this.city?.trim())
+  if (this.playerType === 'quarterly' && !this.city?.trim() && !this.historicalImportSource)
     this.invalidate('city', 'עיר היא שדה חובה');
   try {
     Object.assign(this, profileFields(this));

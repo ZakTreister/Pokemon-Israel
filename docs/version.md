@@ -761,3 +761,42 @@ The implementation SHA identifies the final code/test commit. This following doc
 **Known implementation gaps:** none.
 
 Implemented directly on `main`; no feature branch or PR was created. The implementation SHA identifies the final code/test commit; the following documentation-only commit records completion metadata.
+
+
+---
+
+## Proposed version — historical national ranking import
+
+**Version:** `2026.11.1`  
+**Status:** `DEVELOPED` — code verified and PR ready for review/merge; historical production data import is a separate gated operation  
+**Implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/20  
+**Branch:** `feature/historical-national-rankings-2026-11`
+
+### Approved scope
+1. Import the owner-reviewed split-name CSV (`firstName,lastName,points,tournaments,isAllStars`) as a cumulative points/participations baseline; no per-event historical records or fake tournaments.
+2. Preserve 337 source rows, 35 source-marked All-Stars and all points/participations. Original serial and source rank are discarded; calculated rank is canonical.
+3. Hide source-marked All-Stars by default. Checkbox `הצג שחקני All-Stars` includes them muted/grey with a visible label.
+4. Show place, name, points, participations; global search, column sort and server-side pagination (25 per page).
+5. Respect scoring cutoff and avoid duplicate historical scores; inspect **all** existing regular AND All-Stars Players in the live DB before creating new Players, review compound first/last-name splits (private review required for unresolved names), block ambiguous/archived/unmatched All-Stars and unsafe legacy User-only identities, and create only truly missing regular Players with city/year missing.
+6. Treat the raw Excel/CSV as private deployment input; never commit children's full data to the public repository.
+
+### Verification, merge readiness and import gating
+- Full server test suite: **PASS — 60/60** including MongoDB-backed Stage A integration and historical regular-vs-All-Stars separation.
+- CSV dry run: **PASS** (337 rows; 35 All-Stars; 6,054 points; 821 participations).
+- Full configured UI verification: **PASS** (all configured scripts).
+- ESLint: **PASS**, 0 errors and 4 existing warnings.
+- Production Vite build: **PASS**.
+- TypeScript regression comparison to `main`: **PASS** — no new diagnostics; the repository retains existing unrelated TypeScript errors also present on `main`.
+- GitHub Actions successful verification: https://github.com/ZakTreister/Pokemon-Israel/actions/runs/44053638459
+- Production Mongo import and identity reconciliation: **NOT RUN**; separate manual operator steps after DB backup and review.
+- Known source anomalies and detailed instructions: `docs/HISTORICAL_RANKINGS_IMPORT.md`.
+
+Code is verified for PR review and merge; **do not run historical import yet**. Production MongoDB read-only identity inspection, owner verification of source cutoff and DB backup remain mandatory before any import. The merge does not execute the importer. No direct main push.
+
+**2026-11-17 owner clarification:** private split CSV confirms one owner-reviewed regular child has a first name only and a blank surname, not `?`; importer and regular-player editor must allow this historical exception without fabricating a surname. A regression test covers the exception. Production import still pending.
+
+**2026-11-17 name-review completion:** All 21 owner-questioned split-name records were approved. Only two provisional splits changed. The final private CSV contains 337 rows / 35 All-Stars / 6,054 points / 821 participations, with no Excel serial/rank. Private name-approval JSON supports import preflight; first/last-name review is complete. Read-only matching with the live DB and production import remain pending; full automated checks passed.
+
+**2026-11-17 score-domain clarification:** the source Excel totals are always ordinary tournament points, including all 35 All-Stars players. Do not mix them with existing internal `team_internal` scores or `inter_team` standings. A shared canonical Player identity may have independent ordinary lifetime and internal All-Stars competition-year scores. Added an explicit regular-tournament query and passing unit + MongoDB integration regression checks.
+
+**Last verified implementation SHA:** `996c2e0dafd4e9be51eace0053f6c9d90fca92dc`. The subsequent changes to this section and the runbook are documentation-only. No live MongoDB connection or production writes were performed.

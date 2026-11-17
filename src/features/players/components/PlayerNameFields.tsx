@@ -5,12 +5,14 @@ interface PlayerNameFieldsProps {
   firstName: string;
   lastName: string;
   onChange: (field: 'firstName' | 'lastName', value: string) => void;
+  lastNameOptional?: boolean;
 }
 
 export default function PlayerNameFields({
   firstName,
   lastName,
   onChange,
+  lastNameOptional = false,
 }: PlayerNameFieldsProps) {
   const id = useId();
   return (
@@ -24,7 +26,7 @@ export default function PlayerNameFields({
           onChange={(e) => onChange('firstName', e.target.value)}
         />
       </FormField>
-      <FormField label="שם משפחה *" htmlFor={`${id}-last`}>
+      <FormField label={lastNameOptional ? "שם משפחה (ניתן להשלים בהמשך)" : "שם משפחה *"} htmlFor={`${id}-last`}>
         <input
           id={`${id}-last`}
           type="text"
