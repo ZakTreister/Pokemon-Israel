@@ -69,9 +69,9 @@ After applying, verify counts, player management edits, All-Stars visibility, se
 
 ## Verification status
 
-- Focused pure tests: `node --test server/tests/nationalRankings.test.js server/tests/historicalPlayerImport.test.js` — 12 passing in the workspace, including existing regular Player reuse and explicit split columns.
-- Offline CSV validation: passing for 337/35/6,054/821.
-- **Not done:** live DB `--inspect`/`--apply`; full repository tests, lint, TypeScript build, production deployment. Keep this PR draft until those checks and identity review are completed.
+- Full GitHub Actions CI for code SHA `996c2e0dafd4e9be51eace0053f6c9d90fca92dc`: **PASS** — 60 server tests, all configured UI verification scripts, ESLint (0 errors, 4 pre-existing warnings), and production Vite build. No TypeScript diagnostics were introduced compared with `main`; existing baseline diagnostics remain. See https://github.com/ZakTreister/Pokemon-Israel/actions/runs/44053638459.
+- Owner-approved private CSV verified for 337 rows / 35 All-Stars / 6,054 points / 821 participations. Import script validates all four totals before DB access.
+- **Not done / not part of the code merge:** live production DB `--inspect`/`--apply`, manual resolution of actual Player/User matches, verifying the historical source cutoff with the owner, MongoDB backup and production data import. The importer is CLI-only and no source CSV with child names is committed.
 
 ## Owner-confirmed missing surname exception
 The private split CSV contains one owner-confirmed name-only record: a verified regular record with a first name only and an empty `lastName`. Do not write `?` or an invented surname. The importer accepts a blank surname **only when explicitly present as an empty split CSV column**; unreviewed single-token legacy full names still fail validation. Imported canonical Players may retain blank surname, and staff can complete it later in the regular Player editor. Keep the source CSV private and preserve identical aggregate totals.
