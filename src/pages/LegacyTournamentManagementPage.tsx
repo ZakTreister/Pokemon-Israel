@@ -32,6 +32,8 @@ export default function LegacyTournamentManagementPage() {
   const { showConfirm } = useConfirm();
   const { activeTournament: publicTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
   const [managedTournament, setManagedTournament] = useState<Tournament | null>(null);
+  const [managedLoading, setManagedLoading] = useState(false);
+  const [managedError, setManagedError] = useState('');
   const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
@@ -53,13 +55,16 @@ export default function LegacyTournamentManagementPage() {
     if (!id || !isAdmin) return;
     let active = true;
     setManagedTournament(null);
+    setManagedLoading(true);
+    setManagedError('');
     api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)
       .then(({ data }) => {
         if (active) setManagedTournament(data);
       })
       .catch(e => {
-        if (active) showToast(requestError(e), 'error');
-      });
+        if (active) setManagedError(requestError(e));
+      })
+      .finally(() => { if (active) setManagedLoading(false); });
     return () => { active = false; };
   }, [id, isAdmin]);
 
@@ -310,7 +315,7 @@ export default function LegacyTournamentManagementPage() {
     return `${result.position}-${result.playerName || 'unknown'}-${index}`;
   };
 
-  if (isLoading) {
+  if (isLoading || (isAdmin && managedLoading)) {
     return (
       <div className="container py-16">
         <div className="flex justify-center items-center min-h-[50vh]">
@@ -324,7 +329,7 @@ export default function LegacyTournamentManagementPage() {
     return (
       <div className="container py-16">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold text-foreground mb-4">טורניר לא נמצא</h1>
+          <h1 className="text-2xl font-extrabold text-foreground mb-4">{managedError || 'טורניר לא נמצא'}</h1>
           <p className="text-muted-foreground mb-6">
             הטורניר המבוקש לא נמצא במערכת.
           </p>
