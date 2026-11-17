@@ -505,11 +505,11 @@ export default function LegacyTournamentManagementPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                <span>רשימת משתתפים ({activeTournament.participants.length})</span>
+                <span>רשימת משתתפים ({activeTournament.participants.length + (activeTournament.clubRegistrations?.length || 0)})</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-                  {activeTournament.participants.length === 0 ? (
+                  {activeTournament.participants.length === 0 && !activeTournament.clubRegistrations?.length ? (
                     <div className="text-center py-8 text-muted-foreground">
                       אין משתתפים רשומים עדיין
                     </div>
@@ -547,6 +547,18 @@ export default function LegacyTournamentManagementPage() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                  {!!activeTournament.clubRegistrations?.length && (
+                    <div className="mt-4 space-y-2">
+                      <h3 className="font-bold">שחקני חוגים שנרשמו באמצעות QR</h3>
+                      {activeTournament.clubRegistrations.map((entry) => (
+                        <div key={entry.player} className="rounded-lg border border-border p-3">
+                          <span className="font-medium">{entry.nameSnapshot}</span>
+                          {entry.citySnapshot && <span className="text-sm text-muted-foreground"> · {entry.citySnapshot}</span>}
+                          <p className="text-xs text-muted-foreground">נרשם: {new Date(entry.registeredAt).toLocaleDateString('he-IL')}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
             </CardContent>
