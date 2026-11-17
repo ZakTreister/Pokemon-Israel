@@ -57,6 +57,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   const [formData, setFormData] = useState<TournamentFormData>({
     date: '',
     location: '',
+    image: '',
     isRecurring: false,
     lastTournamentDate: '',
   });
@@ -86,9 +87,10 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     setFormData({
       date: '',
       location: '',
+      image: '',
       isRecurring: false,
       lastTournamentDate: '',
-      });
+    });
   };
 
   const formatDateForInput = (dateString: string) => clubDateKey(dateString);
