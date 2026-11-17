@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import Tournament from '../models/tournamentModel.js';
 
-const validId = value => typeof value === 'string' && /^[a-f\\d]{24}$/i.test(value);
+const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 const staffRoom = id => `internal-tournament:${id}`;
 const publicRoom = id => `public-tournament:${id}`;
 

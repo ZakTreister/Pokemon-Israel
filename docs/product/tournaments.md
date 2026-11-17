@@ -535,3 +535,16 @@ The exact transport shape may be `countOnly=true`, a dedicated count endpoint, o
 - authorization/filter semantics are identical to the corresponding list
 - the database performs a count query rather than materializing the entire collection
 - callers do not depend on hidden full-list fetches just to display a number
+
+## November 2026 — public tournament live view and pairing overrides
+
+This section supersedes the October 2026 HTTP-only public tournament decision for a **genuinely running** Swiss tournament.
+
+- Before the first round exists, the public details page shows the event image and ordinary details only; logged-in self-registration is removed.
+- After the first round has been created and while the tournament is running, the public details page displays round/table matchups, entered scores and BYEs. Subscribe to the tournament-scoped, **anonymous public Socket.IO channel** only during this interval. The channel emits only the tournament identifier; the browser refetches the public-safe DTO using HTTP.
+- When the tournament closes, show final standings and optional round history, immediately stop the socket subscription. Visiting a completed tournament uses HTTP only.
+- Staff management Socket.IO authorization remains unchanged. Public subscribers must not receive staff events, raw match documents, audit trails or private player identifiers.
+- The QR registration success link opens the canonical managed club tournament route, not public details.
+- On desktop, the start/round-management action and the add-participant action share one responsive action row.
+- Live operators can edit **only the latest active round** via tap-to-swap players or swapping table numbers. The server validates one appearance per player, unique tables and preserving the exact participant set. Score-bearing matches changed by a reassignment require explicit confirmation; only affected scores are reset, with originals archived. Concurrent edits are revision-guarded.
+- This iteration applies to **team-internal** and **club/quarterly** tournaments. Inter-team encounters are not implemented and are out of scope.

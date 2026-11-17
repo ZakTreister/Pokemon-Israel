@@ -800,3 +800,19 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 **2026-11-17 score-domain clarification:** the source Excel totals are always ordinary tournament points, including all 35 All-Stars players. Do not mix them with existing internal `team_internal` scores or `inter_team` standings. A shared canonical Player identity may have independent ordinary lifetime and internal All-Stars competition-year scores. Added an explicit regular-tournament query and passing unit + MongoDB integration regression checks.
 
 **Last verified implementation SHA:** `996c2e0dafd4e9be51eace0053f6c9d90fca92dc`. The subsequent changes to this section and the runbook are documentation-only. No live MongoDB connection or production writes were performed.
+
+---
+
+## Version 2026.11.1 — public live tournament & pairing editing
+
+**Status:** `READY_FOR_DEVELOPMENT` (implementation proposed in review branch, pending automated/production verification)
+
+**Scope:**
+- public detail page displays details only before the event, live matchups during round play, final standings after closing; remove self-registration
+- anonymous tournament-scoped Socket.IO while running only
+- QR success navigates to managed club page
+- align start and add-participant actions on desktop
+- authorized latest-round pairing/table swaps for team-internal and club Swiss events only, safe revisions and score-clear confirmation
+- inter-team encounters excluded (not yet implemented)
+
+**Verification:** New targeted server tests in `server/tests/roundPairings.test.js`; not yet executed in this workspace. UI/build/lint verification and review required before marking `DEVELOPED`.

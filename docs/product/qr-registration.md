@@ -77,3 +77,7 @@ On both Admin and Judge club-tournament pages, the **single** participant list c
 - The list and add/remove controls are identical for Judges and Admins. Changes are prohibited once a club event has begun or registration closes. Staff accounts cannot register as club competitors through legacy endpoints.
 
 Tournament storage and legacy result compatibility remain intact; no migration is applied to prior registration records.
+
+## November 2026 — navigation following success
+
+After an authorized operator completes QR intake, the **מעבר לניהול הטורניר** link navigates to `/manage/tournaments/regular/:id` (not the public detail page). Existing staff routing and server authorization continue to govern access.
