@@ -1,4 +1,9 @@
 import express from 'express';
+import { startClubTournament } from '../controllers/clubTournamentRoundsController.js';
+import {
+  getInternalTournament, changeInternalParticipants, pairRound,
+  cancelLatestRound, enterMatchResult, closeInternalTournament,
+} from '../controllers/internalTournamentController.js';
 import { qrRegistrationPreview, qrRegistrationDuplicates, qrRegisterPlayer } from '../controllers/qrRegistrationController.js';
 import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
@@ -39,6 +44,16 @@ router.get(
 );
 
 router.get('/summary', getTournamentSummary);
+const clubRoundScope = (req, res, next) => { req.clubSwiss = true; next(); };
+const staff = [protect, authorize('admin', 'judge')];
+router.post('/:id/start', ...staff, startClubTournament);
+router.get('/:id/round-management', ...staff, clubRoundScope, getInternalTournament);
+router.put('/:id/round-management/participants', ...staff, clubRoundScope, changeInternalParticipants);
+router.post('/:id/round-management/rounds', ...staff, clubRoundScope, pairRound);
+router.delete('/:id/round-management/rounds/:roundNumber', ...staff, clubRoundScope, cancelLatestRound);
+router.put('/:id/round-management/rounds/:roundNumber/matches/:matchId', ...staff, clubRoundScope, enterMatchResult);
+router.post('/:id/round-management/close', ...staff, clubRoundScope, closeInternalTournament);
+
 router.get('/:id/qr-registration', protect, authorize('admin', 'judge'), qrRegistrationPreview);
 router.get('/:id/qr-registration/duplicates', protect, authorize('admin', 'judge'), qrRegistrationDuplicates);
 router.post('/:id/qr-registration', protect, authorize('admin', 'judge'), qrRegisterPlayer);
