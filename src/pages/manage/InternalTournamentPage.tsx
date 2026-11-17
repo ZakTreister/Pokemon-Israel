@@ -15,6 +15,7 @@ import type { TeamRosterPlayer } from '../../types/team';
 import Button from '../../components/ui/Button';
 import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
+import RoundPairingsEditor from '../../components/tournaments/RoundPairingsEditor';
 import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
 import ParticipantList from '../../features/tournaments/components/ParticipantList';
 import {
@@ -41,6 +42,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
   const planSelectionRef = useRef<string[]>([]);
   const canonicalRef = useRef<InternalTournament | null>(null);
   const [resultsView, setResultsView] = useState(false);
+  const [pairingsView, setPairingsView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [syncError, setSyncError] = useState('');
@@ -84,6 +86,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
     planSelectionRef.current = [];
     canonicalRef.current = null;
     setParticipantsView(false);
+    setPairingsView(false);
     setDeleted(false);
     setSaveFailed(false);
     setFailedMatches([]);
@@ -428,6 +431,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
                 onChange={(e) => {
                   setRoundNumber(Number(e.target.value));
                   setResultsView(false);
+                  setPairingsView(false);
                 }}
               >
                 {tournament.rounds.map((r) => (
@@ -449,7 +453,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
                 saveFailed ||
                 failedMatches.length > 0
               }
-              onClick={() => setResultsView(!resultsView)}
+              onClick={() => { setResultsView(!resultsView); setPairingsView(false); }}
             >
               {resultsView ? 'חזור למשחקים' : 'טבלה'}
             </Button>
@@ -596,7 +600,30 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
           </p>
         </>
       )}
-      {round && !resultsView && (
+      {round && !resultsView && !readOnly && round.number === tournament.rounds.length && tournament.phase === 'running' && (
+        <div className="flex justify-start">
+          <Button variant="outline" disabled={busy || pendingResults > 0 || saveFailed || failedMatches.length > 0}
+            onClick={() => setPairingsView(value => !value)}>
+            {pairingsView ? 'חזור לניהול תוצאות' : 'עריכת צימודים'}
+          </Button>
+        </div>
+      )}
+      {round && !resultsView && pairingsView && (
+        <RoundPairingsEditor
+          key={round.number}
+          round={round}
+          name={name}
+          revision={tournament.revision}
+          disabled={busy || pendingResults > 0}
+          onCancel={() => setPairingsView(false)}
+          onSave={(matches, clearResults, expectedRevision) =>
+            mutate(
+              () => tournamentActions.editPairings(id, round.number, expectedRevision, matches, clearResults),
+              () => { setPairingsView(false); setFailedMatches([]); },
+            )}
+        />
+      )}
+      {round && !resultsView && !pairingsView && (
         <div className="grid gap-3 xl:grid-cols-2">
           {round.matches.map((match) => (
             <MatchEditor
@@ -618,7 +645,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
           ))}
         </div>
       )}
-      {!readOnly && tournament.phase === 'running' && (
+      {!readOnly && !pairingsView && tournament.phase === 'running' && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
           <Button
             variant="cta"
