@@ -30,7 +30,7 @@ const snapshot = (player) => ({
   nameSnapshot: `${player.firstName} ${player.lastName}`,
   citySnapshot: player.city || "",
 });
-const serialize = (tournament) => ({
+export const serialize = (tournament) => ({
   ...tournament.toJSON(),
   nextRoundParticipantIds: (tournament.nextRoundParticipantIds ?? tournament.playerParticipants.map(p => p.player)).map(String),
   standings:
@@ -489,6 +489,7 @@ export async function allStarsRankingData(teamId) {
     phase: "completed",
     status: "completed",
     competitionYear: COMPETITION_YEAR,
+    team: teamId,
   }).select("finalStandings");
   const totals = new Map();
   for (const tournament of tournaments)

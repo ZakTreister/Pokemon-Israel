@@ -191,7 +191,7 @@ export const getManageablePlayers = asyncHandler(async (req, res) => {
     await Player.find({ playerType: 'team' })
       .populate('team', 'name logo isActive')
       .select(
-        `firstName lastName city playerNumber playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
+        `firstName lastName city playerNumber teamMembershipStatus playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
       )
       .sort({ firstName: 1, lastName: 1 }),
   );
@@ -207,7 +207,7 @@ export const getTeam = asyncHandler(async (req, res) => {
     isActive: true,
   })
     .select(
-      `firstName lastName city playerNumber playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
+      `firstName lastName city playerNumber teamMembershipStatus playerType isActive team description photoMedia joinedAt deckMedia pokemon ${req.user.role === 'admin' ? 'dateOfBirth' : ''}`,
     )
     .sort({ firstName: 1, lastName: 1 });
   const open = await Tournament.findOne({
@@ -268,7 +268,7 @@ export const assignPlayerToTeam = asyncHandler(async (req, res) => {
     const team = await Team.findById(req.params.teamId);
     if (!team?.isActive) fail(400, 'ניתן לשייך שחקן רק לנבחרת פעילה');
     if (player.playerType !== 'team' || !player.isActive) fail(400, 'ניתן לשייך רק שחקן נבחרת פעיל');
-    const updated = await Player.findOneAndUpdate({ _id: player._id, team: player.team, isActive: true, playerType: 'team' }, { $set: { team: team._id } }, { new: true }).populate('team', 'name isActive');
+    const updated = await Player.findOneAndUpdate({ _id: player._id, team: player.team, isActive: true, playerType: 'team' }, { $set: { team: team._id, teamMembershipStatus: 'permanent' } }, { new: true }).populate('team', 'name isActive');
     if (!updated) fail(409, 'שיוך השחקן השתנה. נא לרענן');
     return updated;
   });
