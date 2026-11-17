@@ -6,7 +6,7 @@ export interface QrPlayer {
   lastName: string;
   city: string;
   birthYear: number | null;
-  playerType: 'team' | 'quarterly';
+  playerType: 'quarterly';
 }
 export interface QrTournament {
   id: string;
