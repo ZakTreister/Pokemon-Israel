@@ -52,7 +52,7 @@ export const getLegacyManagedTournament = asyncHandler(async (req, res) => {
     engineVersion: { $ne: 'swiss-v1' },
   })
     .populate('participants.user', 'username')
-    .populate('results.player', 'username')
+    // Result IDs can be either legacy Users or canonical Players; keep IDs unpopulated.
     .populate('results.deck', deckFields);
   if (!t) {
     res.status(404);
