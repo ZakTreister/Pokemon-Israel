@@ -4,15 +4,18 @@ export interface Tournament {
   description: string;
   date: string;
   location: string;
-  maxParticipants: number;
+  maxParticipants: number | null;
   currentParticipants: number;
   format: string;
   entryFee: number;
   status: 'upcoming' | 'completed';
+  engineVersion?: string | null;
+  phase?: 'setup' | 'running' | 'completed' | null;
   prizePool: string;
   registrationDeadline: string;
   image: string;
   participants: TournamentParticipant[];
+  clubRegistrations?: ClubTournamentRegistration[];
   seriesId?: string; // For recurring tournaments
   isRecurring: boolean;
   type?: 'team_internal' | 'inter_team' | 'quarterly' | null;
@@ -24,5 +27,11 @@ export interface TournamentParticipant {
     _id: string;
     username: string;
   } | string;
+  registeredAt: string;
+}
+export interface ClubTournamentRegistration {
+  player: string;
+  nameSnapshot: string;
+  citySnapshot?: string;
   registeredAt: string;
 }

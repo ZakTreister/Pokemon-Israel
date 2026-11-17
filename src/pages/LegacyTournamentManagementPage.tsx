@@ -1,10 +1,12 @@
 import type { RequestError } from '../types/api';
+import { requestError } from '../utils/requestError';
+import type { Tournament } from '../types/tournament';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchTournamentById, registerForTournament, unregisterFromTournament, clearError } from '../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../features/decks/decksSlice';
-import { Calendar, MapPin, User, Clock, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
+import { Calendar, MapPin, User, UserMinus, UserPlus, Search, Trophy, Medal, Award } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import type { Deck } from '../types/deck';
@@ -12,6 +14,9 @@ import { TournamentParticipant } from '../types/tournament';
 import api from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
 import { useConfirm } from '../components/ui/ConfirmProvider';
+import ClubTournamentEditDialog from '../features/tournaments/components/ClubTournamentEditDialog';
+import ClubTournamentStartAction from '../features/tournaments/components/ClubTournamentStartAction';
+import { clubDateKey, clubRegistrationOpen, isClubTournament } from '../../shared/tournamentDomain';
 
 interface AvailableUser {
   id: string;
@@ -26,10 +31,14 @@ export default function LegacyTournamentManagementPage() {
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
-  const { activeTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
+  const { activeTournament: publicTournament, isLoading, error } = useAppSelector((state) => state.tournaments);
+  const [managedTournament, setManagedTournament] = useState<Tournament | null>(null);
+  const [managedLoading, setManagedLoading] = useState(false);
+  const [managedError, setManagedError] = useState('');
   const { decks } = useAppSelector((state) => state.decks);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [removingParticipant, setRemovingParticipant] = useState<string | null>(null);
+  const [editingTournament, setEditingTournament] = useState(false);
 
   // Add user modal states
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -40,6 +49,25 @@ export default function LegacyTournamentManagementPage() {
   const [addingUser, setAddingUser] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
+  // Public tournament responses deliberately omit child/registration details.
+  // The management page must load the authorized full DTO instead.
+  const activeTournament = isAdmin ? managedTournament : publicTournament;
+  useEffect(() => {
+    if (!id || !isAdmin) return;
+    let active = true;
+    setManagedTournament(null);
+    setManagedLoading(true);
+    setManagedError('');
+    api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)
+      .then(({ data }) => {
+        if (active) setManagedTournament(data);
+      })
+      .catch(e => {
+        if (active) setManagedError(requestError(e));
+      })
+      .finally(() => { if (active) setManagedLoading(false); });
+    return () => { active = false; };
+  }, [id, isAdmin]);
 
   useEffect(() => {
     if (id) {
@@ -288,7 +316,7 @@ export default function LegacyTournamentManagementPage() {
     return `${result.position}-${result.playerName || 'unknown'}-${index}`;
   };
 
-  if (isLoading) {
+  if (isLoading || (isAdmin && managedLoading)) {
     return (
       <div className="container py-16">
         <div className="flex justify-center items-center min-h-[50vh]">
@@ -302,7 +330,7 @@ export default function LegacyTournamentManagementPage() {
     return (
       <div className="container py-16">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold text-foreground mb-4">טורניר לא נמצא</h1>
+          <h1 className="text-2xl font-extrabold text-foreground mb-4">{managedError || 'טורניר לא נמצא'}</h1>
           <p className="text-muted-foreground mb-6">
             הטורניר המבוקש לא נמצא במערכת.
           </p>
@@ -314,36 +342,53 @@ export default function LegacyTournamentManagementPage() {
     );
   }
 
-  const isFull = activeTournament.currentParticipants >= activeTournament.maxParticipants;
-  const isRegistrationClosed = new Date(activeTournament.registrationDeadline) < new Date();
+  const clubTournament = isClubTournament(activeTournament);
+  const isFull = !clubTournament && activeTournament.maxParticipants != null &&
+    activeTournament.currentParticipants >= activeTournament.maxParticipants;
+  const isRegistrationClosed = clubTournament
+    ? !clubRegistrationOpen(activeTournament)
+    : new Date(activeTournament.registrationDeadline) < new Date();
   const userRegistered = isUserRegistered();
-  const isPastTournament = new Date(activeTournament.date) < new Date();
+  const isPastTournament = activeTournament.status === 'completed' ||
+    (clubTournament
+      ? clubDateKey(activeTournament.date) < clubDateKey(new Date())
+      : new Date(activeTournament.date) < new Date());
   const hasResults = activeTournament.results && activeTournament.results.length > 0;
 
   return (
     <div className={`container py-8 md:py-12 ${isAdmin ? 'cs-workspace' : ''}`}>
+      {isAdmin && clubTournament && editingTournament && (
+        <ClubTournamentEditDialog
+          tournament={activeTournament}
+          onClose={() => setEditingTournament(false)}
+          onSaved={() => {
+            setEditingTournament(false);
+            if (id) {
+              void dispatch(fetchTournamentById(id));
+              void api.get<Tournament>(`/api/tournaments/management/legacy/${id}`)
+                .then(({ data }) => setManagedTournament(data));
+            }
+            showToast('הטורניר עודכן בהצלחה', 'success');
+          }}
+        />
+      )}
       {/* Admin View - No Banner */}
       {isAdmin ? (
         <div className="space-y-8">
           {/* Tournament Header */}
           <div className="border-b border-border pb-6">
-            <h1 className="text-3xl font-extrabold text-foreground mb-2">{activeTournament.title}</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <h1 className="text-3xl font-extrabold text-foreground">{activeTournament.title}</h1>
+              {clubTournament && <Button variant="outline" onClick={() => setEditingTournament(true)}>עריכת טורניר</Button>}
+            </div>
             <p className="text-muted-foreground mb-4">{activeTournament.description}</p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">תאריך</p>
                   <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">שעה</p>
-                  <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               </div>
 
@@ -359,12 +404,13 @@ export default function LegacyTournamentManagementPage() {
                 <User className="h-5 w-5 text-blue-500" />
                 <div>
                   <p className="text-sm text-muted-foreground">משתתפים</p>
-                  <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                  <p className="font-bold text-foreground">{activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}</p>
                 </div>
               </div>
             </div>
           </div>
 
+          {clubTournament && <ClubTournamentStartAction tournament={activeTournament} />}
           {/* Add Participant Button */}
           {!isFull && (
             <div className="flex justify-end">
@@ -505,11 +551,11 @@ export default function LegacyTournamentManagementPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                <span>רשימת משתתפים ({activeTournament.participants.length})</span>
+                <span>רשימת משתתפים ({activeTournament.participants.length + (activeTournament.clubRegistrations?.length || 0)})</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-                  {activeTournament.participants.length === 0 ? (
+                  {activeTournament.participants.length === 0 && !activeTournament.clubRegistrations?.length ? (
                     <div className="text-center py-8 text-muted-foreground">
                       אין משתתפים רשומים עדיין
                     </div>
@@ -549,6 +595,18 @@ export default function LegacyTournamentManagementPage() {
                       })}
                     </div>
                   )}
+                  {!!activeTournament.clubRegistrations?.length && (
+                    <div className="mt-4 space-y-2">
+                      <h3 className="font-bold">שחקני חוגים שנרשמו באמצעות QR</h3>
+                      {activeTournament.clubRegistrations.map((entry) => (
+                        <div key={entry.player} className="rounded-lg border border-border p-3">
+                          <span className="font-medium">{entry.nameSnapshot}</span>
+                          {entry.citySnapshot && <span className="text-sm text-muted-foreground"> · {entry.citySnapshot}</span>}
+                          <p className="text-xs text-muted-foreground">נרשם: {new Date(entry.registeredAt).toLocaleDateString('he-IL')}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
             </CardContent>
           </Card>
         </div>
@@ -581,7 +639,7 @@ export default function LegacyTournamentManagementPage() {
               <h2 className="text-2xl font-extrabold text-foreground mb-4">פרטי הטורניר</h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">{activeTournament.description}</p>
 
-              <div className="grid grid-cols-2 gap-3.5 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 mb-6">
                 <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Calendar className="h-5 w-5 text-blue-500" />
@@ -589,16 +647,6 @@ export default function LegacyTournamentManagementPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">תאריך</p>
                     <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleDateString('he-IL')}</p>
-                  </div>
-                </div>
-
-                <div className="cs-stat relative flex min-w-0 flex-col items-start gap-3 p-4 rounded-md bg-card shadow-panel border border-border sm:flex-row">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">שעה</p>
-                    <p className="font-bold text-foreground">{new Date(activeTournament.date).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
 
@@ -618,7 +666,7 @@ export default function LegacyTournamentManagementPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">משתתפים</p>
-                    <p className="font-bold text-foreground">{activeTournament.currentParticipants} / {activeTournament.maxParticipants}</p>
+                    <p className="font-bold text-foreground">{activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}</p>
                   </div>
                 </div>
               </div>
@@ -768,7 +816,7 @@ export default function LegacyTournamentManagementPage() {
                   <div className="flex justify-between items-center py-2 border-b border-border">
                     <span className="text-muted-foreground">משתתפים</span>
                     <span className="font-medium">
-                      {activeTournament.currentParticipants} / {activeTournament.maxParticipants}
+                      {activeTournament.currentParticipants}{!clubTournament && ` / ${activeTournament.maxParticipants}`}
                     </span>
                   </div>
 

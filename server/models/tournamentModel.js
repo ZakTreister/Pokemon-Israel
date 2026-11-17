@@ -45,8 +45,10 @@ const tournamentSchema = new mongoose.Schema({
     required: true,
   },
   maxParticipants: {
+    // Club tournaments have no participant limit. Internal/team competitions retain theirs.
     type: Number,
-    required: true,
+    default: null,
+    required() { return this.type === 'team_internal' || this.type === 'inter_team'; },
   },
   currentParticipants: {
     type: Number,
@@ -98,6 +100,14 @@ const tournamentSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   closedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, closedAt: Date,
   nextRoundParticipantIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }], default: undefined },
+  // Club/quarterly QR registrations reference canonical Player records,
+  // without creating child login accounts or changing any team roster.
+  clubRegistrations: [{
+    player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
+    nameSnapshot: { type: String, required: true },
+    citySnapshot: String,
+    registeredAt: { type: Date, default: Date.now },
+  }],
   playerParticipants: [{
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
     nameSnapshot: { type: String, required: true }, citySnapshot: String,
@@ -116,9 +126,11 @@ const tournamentSchema = new mongoose.Schema({
     },
   }],
   results: [{
+    // Legacy rows default to User; newer club QR registrations reference Player.
+    playerModel: { type: String, enum: ['User', 'Player'], default: 'User' },
     player: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      refPath: 'playerModel',
     },
     playerName: {
       type: String,

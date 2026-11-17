@@ -42,6 +42,7 @@ async function load(req) {
   const tournament = await Tournament.findOne({
     _id: req.params.id,
     engineVersion: ENGINE,
+    type: req.clubSwiss ? "quarterly" : "team_internal",
   });
   if (!tournament) fail(404, "טורניר לא נמצא");
   return tournament;
@@ -77,6 +78,7 @@ async function commit(req, updates) {
     {
       _id: req.params.id,
       engineVersion: ENGINE,
+      type: req.clubSwiss ? "quarterly" : "team_internal",
       revision: req.body.expectedRevision,
       phase: { $ne: "completed" },
     },
@@ -182,6 +184,28 @@ export const changeInternalParticipants = asyncHandler(async (req, res) => {
   revision(req, tournament);
   if (tournament.source !== "live" || !["setup", "running"].includes(tournament.phase))
     fail(409, "ניתן לשנות משתתפים בטורניר חי בלבד");
+  if (req.clubSwiss) {
+    const { playerIds } = req.body;
+    if (!Array.isArray(playerIds) || playerIds.length < 2 ||
+        !playerIds.every(validId) || new Set(playerIds).size !== playerIds.length)
+      fail(400, "יש לבחור לפחות שני שחקני חוגים ייחודיים");
+    // A registered club player may be omitted from NEXT round, but only
+    // registered eligible Players can be added to it.
+    const registered = new Set([
+      ...tournament.clubRegistrations.map(p => String(p.player)),
+      ...tournament.playerParticipants.map(p => String(p.player)),
+    ]);
+    if (playerIds.some(id => !registered.has(id)))
+      fail(400, "ניתן לבחור רק שחקנים הרשומים לטורניר");
+    const players = await Player.find({
+      _id: { $in: playerIds }, playerType: "quarterly", isActive: true,
+    });
+    if (players.length !== playerIds.length)
+      fail(400, "ניתן לבחור רק שחקני חוגים פעילים");
+    return res.json(await commit(req, {
+      nextRoundParticipantIds: playerIds,
+    }));
+  }
   const { playerIds } = req.body;
   if (
     !Array.isArray(playerIds) ||
@@ -292,7 +316,9 @@ export const enterMatchResult = asyncHandler(async (req, res) => {
     if (!Number.isInteger(expected) || expected < 0) fail(400, "יש לשלוח את גרסת התוצאה");
     const resultPath = `rounds.${roundIndex}.matches.${round.matches.indexOf(match)}`;
     const updated = await Tournament.findOneAndUpdate({
-      _id: tournament._id, engineVersion: ENGINE, phase: 'running', status: 'upcoming',
+      _id: tournament._id, engineVersion: ENGINE,
+      type: req.clubSwiss ? "quarterly" : "team_internal",
+      phase: 'running', status: 'upcoming',
       [`rounds.${roundIndex}._id`]: round._id,
       [`rounds.${roundIndex + 1}`]: { $exists: false },
       [`${resultPath}._id`]: match._id,

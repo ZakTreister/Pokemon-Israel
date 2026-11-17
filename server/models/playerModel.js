@@ -47,6 +47,8 @@ const playerSchema = new mongoose.Schema(
     // A year-only value is not an invented date of birth.
     birthYear: { type: Number, default: null, min: 1900, max: new Date().getFullYear() },
     city: { type: String, trim: true, maxlength: 100, default: '' },
+    // An optional-city club QR intake can create an incomplete canonical profile.
+    registrationSource: { type: String, enum: ['qr-club'], default: null },
     playerType: {
       type: String,
       enum: ['team', 'quarterly'],
@@ -159,7 +161,7 @@ playerSchema.pre('validate', function (next) {
   this.normalizedFirstName = normalizeField(this.firstName);
   this.normalizedLastName = normalizeField(this.lastName);
   this.normalizedCity = normalizeField(this.city);
-  if (this.playerType === 'quarterly' && !this.city?.trim() && !this.historicalImportSource)
+  if (this.playerType === 'quarterly' && !this.city?.trim() && !this.historicalImportSource && this.registrationSource !== 'qr-club')
     this.invalidate('city', 'עיר היא שדה חובה');
   try {
     Object.assign(this, profileFields(this));

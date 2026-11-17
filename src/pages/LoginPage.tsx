@@ -36,8 +36,9 @@ export default function LoginPage() {
     const resultAction = await dispatch(login(data));
 
     if (login.fulfilled.match(resultAction)) {
-      const from = location.state?.from || '/';
-      navigate(from);
+      const from = location.state?.from;
+      // Only restore local app paths, never an external redirect.
+      navigate(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.includes('\\\\') ? from : '/', { replace: true });
     }
   };
 

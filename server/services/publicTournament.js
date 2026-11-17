@@ -1,4 +1,4 @@
-import { tournamentLifecycle } from '../../shared/tournamentDomain.js';
+import { tournamentLifecycle, clubRegistrationOpen } from '../../shared/tournamentDomain.js';
 import { calculateStandings } from './swiss.js';
 const percentage = (value) =>
   typeof value === 'number' ? (value > 1 ? value / 100 : value) : null;
@@ -37,15 +37,14 @@ export function publicTournament(t, detail = false) {
     type,
     lifecycle,
     status: t.status,
+    engineVersion: t.engineVersion || null,
+    phase: t.phase || null,
     currentParticipants: t.currentParticipants,
-    maxParticipants: t.maxParticipants,
+    maxParticipants: type === 'quarterly' ? null : t.maxParticipants,
     registrationDeadline: t.registrationDeadline,
     team: t.team ? String(t.team) : null,
     teamNameSnapshot: t.teamNameSnapshot || '',
-    canRegister:
-      type === 'quarterly' &&
-      lifecycle === 'upcoming' &&
-      t.registrationDeadline > new Date(),
+    canRegister: clubRegistrationOpen(t),
     // Legacy public deck statistics use public result fields; never User references.
     results:
       t.engineVersion === 'swiss-v1' || lifecycle === 'upcoming'

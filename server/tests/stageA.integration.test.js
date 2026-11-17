@@ -443,14 +443,22 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     'admin',
     201,
   );
+  // A team-linked account must no longer be able to enter a club tournament.
+  assert.equal((await request(
+    `/tournaments/${regular.id}/register`, 'POST', {}, 'player'
+  )).status, 409);
+  const clubUser = await User.create({
+    name: 'Legacy Club User', username: 'legacy-qr-fixture',
+    password: randomBytes(24).toString('hex'), role: 'player',
+  });
+  tokens.clubPlayer = jwt.sign({ id: clubUser.id }, process.env.JWT_SECRET);
   const registered = await ok(
-    `/tournaments/${regular.id}/register`,
-    'POST',
-    {},
-    'player',
+    `/tournaments/${regular.id}/register`, 'POST', {}, 'clubPlayer',
   );
   assert.equal(registered.currentParticipants, 1);
-  assert.deepEqual(await ok(`/tournaments/${regular.id}/register`, 'GET', undefined, 'player'), {registered:true});
+  assert.deepEqual(await ok(
+    `/tournaments/${regular.id}/register`, 'GET', undefined, 'clubPlayer'
+  ), {registered:true});
   await ok(
     `/tournaments/${regular.id}`,
     'PUT',
@@ -463,8 +471,8 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
     {
       results: [
         {
-          player: linkedUser.id,
-          playerName: 'Renamed Linked',
+          player: clubUser.id,
+          playerName: 'Legacy Club User',
           position: 1,
           points: 4,
           rawPoints: 9,
@@ -481,7 +489,7 @@ test('complete Stage A workflow on standalone Mongo with compatibility and concu
   );
   assert.equal(regularResults[0].points, 4);
   assert.equal(regularResults[0].player, 'legacy-0');
-  assert.equal(regularResults[0].playerName, 'Renamed Linked');
+  assert.equal(regularResults[0].playerName, 'Legacy Club User');
   let ranks = await ok(`/all-stars/rankings?teamId=${team.id}`,  'GET', undefined, null);
   assert.equal(ranks.rankings.length, 4);
   assert.equal(
@@ -1991,4 +1999,264 @@ test('historical ordinary points for an All-Stars Player stay independent of tea
   assert.equal(visible.rankings[0].isAllStars, true);
   const hidden = await ok('/rankings?search=Fixture0%20Child', 'GET', undefined, null);
   assert.equal(hidden.total, 0);
+});
+
+
+
+test('club-only QR flow registers Player records and keeps regular results linked to national rankings', async () => {
+  const when = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const event = await ok('/tournaments', 'POST', {
+    date: when.slice(0, 10), location: 'QR Club Hall', type: 'quarterly',
+    maxParticipants: 1, // Obsolete incoming cap must not limit club registrations.
+  }, 'admin', 201);
+  assert.equal(event.maxParticipants, null);
+  assert.ok(event.date.endsWith('T12:00:00.000Z'));
+  const day15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  assert.equal((await request('/tournaments/' + event.id, 'PUT', {
+    date: day15, location: 'Forbidden Edit',
+  }, 'judge')).status, 403);
+  const editedEvent = await ok('/tournaments/' + event.id, 'PUT', {
+    date: day15,
+    title: 'QR Club Tournament Edited',
+    description: 'Open to club players',
+    location: 'New QR Hall',
+  }, 'admin');
+  assert.equal(editedEvent.title, 'QR Club Tournament Edited');
+  assert.equal(editedEvent.location, 'New QR Hall');
+  assert.ok(editedEvent.date.endsWith(day15 + 'T12:00:00.000Z'));
+  assert.equal(editedEvent.maxParticipants, null);
+  const route = '/tournaments/' + event.id + '/qr-registration';
+  const existing = await ok('/players/quarterly', 'POST', {
+    firstName: 'QrExisting', lastName: 'Club', city: 'Rehovot',
+  }, 'admin', 201);
+  const teamPlayer = await Player.create({
+    firstName: 'Team', lastName: 'Only', city: 'Jerusalem',
+    playerType: 'team', isActive: true,
+  });
+
+  assert.equal((await request(route, 'GET', undefined, null)).status, 401);
+  assert.equal((await request(route, 'GET', undefined, 'player')).status, 403);
+  assert.equal((await request(route, 'POST', {}, 'player')).status, 403);
+  const teamPreview = await request(route + '?playerId=' + teamPlayer.id);
+  assert.equal(teamPreview.status, 409);
+  assert.equal(teamPreview.body.code, 'INVALID_PLAYER_TYPE');
+  const teamNewLink = await request(route + '/duplicates?firstName=Team&lastName=Only&city=Jerusalem');
+  assert.equal(teamNewLink.status, 409);
+  assert.equal(teamNewLink.body.code, 'TEAM_PLAYER_NOT_ELIGIBLE');
+  const preview = await ok(route, 'GET', undefined, 'judge');
+  assert.equal(preview.tournament.type, 'quarterly');
+  const fromId = await ok(route + '?playerId=' + existing.id);
+  assert.equal(fromId.player.firstName, 'QrExisting');
+  const matches = await ok(route + '/duplicates?firstName=QrExisting&lastName=Club&city=Rehovot');
+  assert.ok(matches.matches.some(p => p.id === existing.id));
+
+  const fields = {
+    firstName: 'QrFresh', lastName: 'Participant', city: '', birthYear: 2015,
+  };
+  const created = await ok(route, 'POST', {
+    ...fields, expectedRevision: preview.tournament.revision,
+  }, 'judge', 201);
+  assert.equal(created.created, true);
+  assert.equal(created.player.playerType, 'quarterly');
+  assert.equal(created.player.birthYear, 2015);
+  assert.equal(created.player.city, '');
+  assert.equal(String((await Player.findById(created.player.id)).team), 'null');
+  let loaded = await Tournament.findById(event.id);
+  assert.equal(loaded.currentParticipants, 1);
+  assert.equal(loaded.clubRegistrations.length, 1);
+  assert.equal(String(loaded.clubRegistrations[0].player), created.player.id);
+  assert.equal(loaded.playerParticipants.length, 0);
+  assert.equal(loaded.nextRoundParticipantIds, undefined);
+  assert.equal((await request(route, 'POST', {
+    ...fields, playerId: created.player.id, expectedRevision: loaded.revision,
+  })).body.code, 'ALREADY_REGISTERED');
+
+  const duplicate = await request(route, 'POST', {
+    ...fields, expectedRevision: loaded.revision,
+  });
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.body.code, 'PLAYER_DUPLICATE');
+  assert.equal((await Player.find({ firstName: 'QrFresh' })).length, 1);
+  const intentionallyDistinct = await ok(route, 'POST', {
+    ...fields, allowDuplicate: true, expectedRevision: loaded.revision,
+  }, 'admin', 201);
+  assert.notEqual(intentionallyDistinct.player.id, created.player.id);
+  loaded = await Tournament.findById(event.id);
+  assert.equal(loaded.clubRegistrations.length, 2);
+
+  assert.equal((await request(route, 'POST', {
+    firstName: 'QrExistingUpdated', lastName: 'Club', city: 'Tel Aviv', birthYear: 2014,
+    playerId: existing.id, expectedRevision: loaded.revision,
+  })).status, 409); // Editing an existing profile requires explicit consent.
+
+  const edited = await ok(route, 'POST', {
+    firstName: 'QrExistingUpdated', lastName: 'Club', city: 'Tel Aviv', birthYear: 2014,
+    playerId: existing.id, updateExisting: true, expectedRevision: loaded.revision,
+  }, 'judge', 201);
+  assert.equal(edited.player.firstName, 'QrExistingUpdated');
+  assert.equal((await Player.findById(existing.id)).birthYear, 2014);
+  loaded = await Tournament.findById(event.id);
+  assert.equal(loaded.clubRegistrations.length, 3);
+  assert.equal(loaded.participants.length, 0);
+  assert.equal(loaded.currentParticipants, 3);
+  assert.ok(loaded.currentParticipants > 1); // No club participant limit.
+  const teamDenied = await request(route, 'POST', {
+    firstName: teamPlayer.firstName, lastName: teamPlayer.lastName, city: teamPlayer.city,
+    playerId: teamPlayer.id, expectedRevision: loaded.revision,
+  }, 'judge');
+  assert.equal(teamDenied.status, 409);
+  assert.equal(teamDenied.body.code, 'INVALID_PLAYER_TYPE');
+  loaded = await Tournament.findById(event.id);
+  assert.equal(loaded.clubRegistrations.length, 3);
+  assert.equal((await Player.findById(teamPlayer.id)).team, null);
+  assert.equal(loaded.playerParticipants.length, 0);
+
+  assert.equal((await request(route, 'POST', {
+    firstName: 'QrLater', lastName: 'Child', city: '', expectedRevision: 0,
+  })).status, 409);
+  const adminRead = await ok('/tournaments/management/legacy/' + event.id, 'GET', undefined, 'admin');
+  assert.equal(adminRead.clubRegistrations.length, 3);
+
+  const invalidResult = await request('/tournaments/' + event.id + '/results', 'POST', {
+    results: [{ player: new mongoose.Types.ObjectId().toString(), playerModel: 'Player', playerName: 'Unregistered', points: 4, position: 1 }],
+  }, 'admin');
+  assert.equal(invalidResult.status, 400);
+
+  const results = await ok('/tournaments/' + event.id + '/results', 'POST', {
+    results: [
+      { player: created.player.id, playerModel: 'Player', playerName: 'QrFresh Participant', position: 1, points: 4, rawPoints: 9 },
+      { player: existing.id, playerModel: 'Player', playerName: 'QrExistingUpdated Club', position: 2, points: 3, rawPoints: 6 },
+    ],
+  }, 'admin');
+  assert.equal(results.status, 'completed');
+  assert.equal(results.results[0].playerModel, 'Player');
+  const managed = await ok('/tournaments/management/legacy/' + event.id, 'GET', undefined, 'admin');
+  assert.equal(String(managed.results[0].player), created.player.id);
+  const national = await ok('/rankings?search=QrFresh', 'GET', undefined, null);
+  assert.ok(national.rankings.some(row => row.playerName === 'QrFresh Participant' && row.points >= 4));
+
+  const noTeam = await Tournament.create({
+    title: 'not for clubs', description: 'Test', date: new Date(),
+    location: 'Hall', image: '/test.png', maxParticipants: 10,
+    registrationDeadline: new Date(), type: 'team_internal',
+  });
+  assert.equal((await request('/tournaments/' + noTeam.id + '/qr-registration')).status, 409);
+  assert.equal((await request(route)).status, 409); // Completed tournament.
+});
+
+
+test('judge starts only a club event and reuses Swiss round workflow without touching teams', async () => {
+  const date = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
+  const tournament = await ok('/tournaments', 'POST', {
+    date, location: 'Swiss Club', type: 'quarterly',
+  }, 'admin', 201);
+  const url = '/tournaments/' + tournament.id;
+  assert.equal((await request(url + '/start', 'POST', {}, null)).status, 401);
+  assert.equal((await request(url + '/start', 'POST', {}, 'player')).status, 403);
+  assert.equal((await request(url + '/start', 'POST', {}, 'judge')).status, 409);
+
+  const names = ['PairAlpha', 'PairBeta', 'PairGamma'];
+  const players = await Player.create(names.map(firstName => ({
+    firstName, lastName: 'ClubRounds', city: 'Rehovot',
+    playerType: 'quarterly', isActive: true,
+  })));
+  await Tournament.findByIdAndUpdate(tournament.id, {
+    $set: {
+      clubRegistrations: players.map(p => ({
+        player: p._id, nameSnapshot: p.firstName + ' ' + p.lastName,
+      })),
+      currentParticipants: players.length,
+    },
+  });
+
+  const started = await ok(url + '/start', 'POST', {}, 'judge', 201);
+  assert.equal(started.id, tournament.id);
+  assert.equal(started.roundNumber, 1);
+  const snapshot = await ok(url + '/round-management', 'GET', undefined, 'judge');
+  assert.equal(snapshot.phase, 'running');
+  assert.equal(snapshot.rounds.length, 1);
+  assert.equal(snapshot.playerParticipants.length, 3);
+  assert.equal(snapshot.rounds[0].matches.length, 2);
+  assert.equal(snapshot.rounds[0].matches.filter(m => !m.player2).length, 1);
+  assert.deepEqual(
+    snapshot.rounds[0].matches.flatMap(m => [m.player1, ...(m.player2 ? [m.player2] : [])]).sort(),
+    players.map(p => p.id).sort(),
+  );
+  assert.equal((await request(url + '/start', 'POST', {}, 'admin')).status, 409);
+  assert.equal((await request('/internal-tournaments/' + tournament.id, 'GET')).status, 404);
+  assert.equal((await request(url + '/qr-registration', 'GET')).status, 409);
+  assert.equal((await request(url + '/register', 'POST', {}, 'player')).status, 404);
+
+  const paired = snapshot.rounds[0].matches.find(m => m.player2);
+  assert.equal((await request(
+    url + '/round-management/rounds', 'POST',
+    { expectedRevision: snapshot.revision }, 'judge'
+  )).status, 400);
+  const recorded = await ok(
+    url + '/round-management/rounds/1/matches/' + paired._id,
+    'PUT', {
+      expectedRevision: snapshot.revision,
+      expectedResultRevision: 0,
+      result: { winner: 'player1', score1: 2, score2: 0, drawnGames: 0 },
+    }, 'judge',
+  );
+  assert.equal(recorded.rounds[0].matches.find(m => m._id === paired._id).result.winner, 'player1');
+  const roundTwo = await ok(url + '/round-management/rounds', 'POST', {
+    expectedRevision: recorded.revision,
+  }, 'admin');
+  assert.equal(roundTwo.rounds.length, 2);
+  assert.equal(roundTwo.phase, 'running');
+  assert.equal((await Tournament.findById(tournament.id)).type, 'quarterly');
+  assert.equal((await Tournament.findById(tournament.id)).team, null);
+  assert.equal((await request(url + '/round-management/rounds/2', 'DELETE', {
+    expectedRevision: roundTwo.revision,
+  }, 'player')).status, 403);
+
+  const cancelled = await ok(url + '/round-management/rounds/2', 'DELETE', {
+    expectedRevision: roundTwo.revision,
+  }, 'judge');
+  assert.equal(cancelled.rounds.length, 1);
+  const closed = await ok(url + '/round-management/close', 'POST', {
+    expectedRevision: cancelled.revision,
+  }, 'judge');
+  assert.equal(closed.status, 'completed');
+  assert.equal(closed.finalStandings.length, 3);
+  assert.equal((await request(url + '/round-management/rounds', 'POST', {
+    expectedRevision: closed.revision,
+  }, 'admin')).status, 409);
+});
+
+test('starting a club tournament rejects unlinked users and team players without altering registration', async () => {
+  const event = await ok('/tournaments', 'POST', {
+    date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    location: 'Mixed Registration',
+  }, 'admin', 201);
+  const old = await User.create({
+    name: 'Unlinked Player', username: 'unlinked-club-player',
+    password: randomBytes(24).toString('hex'), role: 'player',
+  });
+  const teamPlayer = await Player.create({
+    firstName: 'Forbidden', lastName: 'Team', city: 'Tel Aviv',
+    playerType: 'team', isActive: true,
+  });
+  await Tournament.findByIdAndUpdate(event.id, {
+    $set: { participants: [{ user: old._id }], clubRegistrations: [
+      { player: teamPlayer._id, nameSnapshot: 'Forbidden Team' },
+    ], currentParticipants: 2 },
+  });
+  const path = '/tournaments/' + event.id;
+  const unlinked = await request(path + '/start', 'POST', {}, 'judge');
+  assert.equal(unlinked.status, 409);
+  assert.equal(unlinked.body.code, 'UNLINKED_PARTICIPANTS');
+  const clubPlayer = await Player.create({
+    firstName: 'Linked', lastName: 'Club', city: 'Rehovot',
+    playerType: 'quarterly', isActive: true,
+  });
+  await User.findByIdAndUpdate(old.id, { $set: { player: clubPlayer._id } });
+  const invalid = await request(path + '/start', 'POST', {}, 'judge');
+  assert.equal(invalid.status, 409);
+  assert.equal(invalid.body.code, 'INELIGIBLE_PLAYERS');
+  const unchanged = await Tournament.findById(event.id);
+  assert.equal(unchanged.engineVersion, null);
+  assert.equal(unchanged.rounds.length, 0);
 });
