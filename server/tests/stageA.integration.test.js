@@ -2099,7 +2099,7 @@ test('club-only QR flow registers Player records and keeps regular results linke
   assert.equal(results.status, 'completed');
   assert.equal(results.results[0].playerModel, 'Player');
   const managed = await ok('/tournaments/management/legacy/' + event.id, 'GET', undefined, 'admin');
-  assert.equal(String(managed.results[0].player.id), created.player.id);
+  assert.equal(String(managed.results[0].player), created.player.id);
   const national = await ok('/rankings?search=QrFresh', 'GET', undefined, null);
   assert.ok(national.rankings.some(row => row.playerName === 'QrFresh Participant' && row.points >= 4));
 
