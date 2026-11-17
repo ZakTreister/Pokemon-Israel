@@ -22,6 +22,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import StaffRoute from './components/auth/StaffRoute';
+import QrRegistrationRoute from './components/auth/QrRegistrationRoute';
+import QrTournamentRegistrationPage from './pages/manage/QrTournamentRegistrationPage';
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import ManageDashboardPage from './pages/manage/ManageDashboardPage';
@@ -62,6 +64,10 @@ function App() {
             <Route path="/admin/*" element={<LegacyAdminRedirect />} />
           </Route>
           
+          <Route element={<QrRegistrationRoute />}>
+            <Route path="/tournaments/:tournamentId/register" element={<QrTournamentRegistrationPage />} />
+          </Route>
+
           <Route element={<StaffRoute />}>
             <Route path="/manage/*" element={<ManageDashboardPage />} />
           </Route>
