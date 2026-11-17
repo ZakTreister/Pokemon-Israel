@@ -4,6 +4,7 @@ import Tournament from '../models/tournamentModel.js';
 import Player, { normalizeField } from '../models/playerModel.js';
 import User from '../models/userModel.js';
 import { notifyTournament } from '../services/tournamentLive.js';
+import { clubRegistrationOpen } from '../../shared/tournamentDomain.js';
 
 const validId = (value) =>
   typeof value === 'string' && /^[a-f0-9]{24}$/i.test(value) && mongoose.isValidObjectId(value);
@@ -49,26 +50,25 @@ async function loadClubTournament(id) {
   if ((tournament.type !== 'quarterly' && tournament.type !== null) ||
       tournament.engineVersion === 'swiss-v1')
     fail(409, 'רישום QR מיועד לטורנירי חוגים בלבד', 'UNSUPPORTED_TOURNAMENT');
-  if (tournament.status !== 'upcoming')
-    fail(409, 'לא ניתן לרשום שחקנים לטורניר שהסתיים', 'REGISTRATION_CLOSED');
+  if (!clubRegistrationOpen(tournament))
+    fail(409, 'רישום לטורניר חוגים זמין עד סוף יום הטורניר', 'REGISTRATION_CLOSED');
   return tournament;
 }
 async function loadClubPlayer(id) {
   if (!validId(id)) fail(400, 'מזהה שחקן אינו תקין');
   const player = await Player.findById(id);
   if (!player) fail(404, 'שחקן לא נמצא');
-  if (!player.isActive)
-    fail(409, 'ניתן לרשום רק שחקן פעיל', 'INVALID_PLAYER');
+  if (player.playerType !== 'quarterly' || !player.isActive)
+    fail(409, 'שחקן נבחרת אינו רשאי להירשם לטורניר חוגים', 'INVALID_PLAYER_TYPE');
   return player;
 }
 async function findSimilar(fields) {
-  // Find canonical identities across player types; a team child may join a club event
-  // without being assigned to another team. Results remain linked to that Player.
+  // Only regular club Players qualify; do not suggest All-Stars team players.
   const first = escapeRegExp(normalizeField(fields.firstName));
   const last = escapeRegExp(normalizeField(fields.lastName));
   const prefix = value => value.slice(0, Math.min(3, value.length));
   const matches = await Player.find({
-    isActive: true,
+    playerType: 'quarterly', isActive: true,
     $or: [
       { normalizedFirstName: new RegExp('^' + first, 'i'), normalizedLastName: new RegExp('^' + last, 'i') },
       { normalizedFirstName: new RegExp('^' + prefix(first), 'i'), normalizedLastName: new RegExp('^' + prefix(last), 'i') },
@@ -124,9 +124,6 @@ export const qrRegisterPlayer = asyncHandler(async (req, res) => {
         code: 'PLAYER_DUPLICATE', message: 'נמצאו שחקנים בעלי שמות דומים', matches,
       });
   }
-  if (tournament.currentParticipants >= tournament.maxParticipants)
-    fail(409, 'הטורניר מלא', 'TOURNAMENT_FULL');
-
   const changed = player && ['firstName', 'lastName', 'city', 'birthYear']
     .some(key => (player[key] ?? null) !== (fields[key] ?? null));
   if (changed && req.body.updateExisting !== true)
@@ -151,7 +148,6 @@ export const qrRegisterPlayer = asyncHandler(async (req, res) => {
       engineVersion: { $ne: 'swiss-v1' },
       status: 'upcoming', revision: tournament.revision,
       'clubRegistrations.player': { $ne: player._id },
-      $expr: { $lt: ['$currentParticipants', '$maxParticipants'] },
     }, {
       $push: {
         clubRegistrations: {
@@ -168,7 +164,7 @@ export const qrRegisterPlayer = asyncHandler(async (req, res) => {
   }
   if (!updated) {
     if (created) await Player.deleteOne({ _id: player._id });
-    fail(409, 'הרישום לא בוצע: הטורניר השתנה, התמלא או שהשחקן כבר צורף', 'STALE_REVISION');
+    fail(409, 'הרישום לא בוצע: הטורניר השתנה או שהשחקן כבר צורף', 'STALE_REVISION');
   }
 
   if (changed) {
