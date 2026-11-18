@@ -104,7 +104,9 @@ export default function ManageTournaments() {
                     <Link
                       to={
                         t.canManage
-                          ? t.type === 'quarterly'
+                          ? t.type === 'inter_team' && t.engineVersion === 'swiss-v1'
+                            ? `/manage/inter-team/${t.id}`
+                            : t.type === 'quarterly'
                             ? `/manage/tournaments/regular/${t.id}`
                             : t.engineVersion === 'swiss-v1'
                               ? `/manage/tournaments/${t.id}`
