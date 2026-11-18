@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import teamsService from '../../features/teams/teamsService';
+import type { TeamRosterPlayer } from '../../types/team';
 import { subscribeTournament } from '../../services/tournamentLive';
 import { requestError } from '../../utils/requestError';
 import Button from '../../components/ui/Button';
@@ -19,11 +21,20 @@ export default function InterTeamManagePage(){
  const {id=''}=useParams();
  const [data,setData]=useState<Meeting|null>(null);
  const [selected,setSelected]=useState<string[]>([]);
+ const [rosters,setRosters]=useState<Record<string,TeamRosterPlayer[]>>({});
  const [draft,setDraft]=useState<Match[]>([]);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
  const reload=useCallback(async()=>{const response=await api.get<Meeting>(`/api/inter-team/${id}`);setData(response.data);setSelected((response.data.nextRoundParticipantIds||[]).map(getId));},[id]);
  useEffect(()=>{void reload().catch(e=>setError(requestError(e)));},[reload]);
+ useEffect(()=>{
+   if (!data?.interTeamSides?.length) return;
+   let active=true;
+   Promise.all(data.interTeamSides.map(async side=>[getId(side.team),(await teamsService.getTeam(getId(side.team))).players] as const))
+     .then(rows=>{if(active)setRosters(Object.fromEntries(rows));})
+     .catch(e=>{if(active)setError(requestError(e));});
+   return()=>{active=false;};
+ },[data?.id]);
  useEffect(()=>{if(!data||data.phase==='completed')return;
    return subscribeTournament(id,()=>void reload().catch(e=>setError(requestError(e))),()=>{});
  },[id,data?.phase,reload]);
@@ -57,9 +68,9 @@ export default function InterTeamManagePage(){
      <div className="grid md:grid-cols-2 gap-4">
        {sides.map(team=><div key={getId(team.team)} className="space-y-2">
          <h4 className="font-bold">{team.nameSnapshot}</h4>
-         {data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=><label key={getId(p.player)} className="flex gap-2 items-center">
-           <input type="checkbox" checked={selected.includes(getId(p.player))} onChange={e=>setSelected(current=>e.target.checked?[...current,getId(p.player)]:current.filter(x=>x!==getId(p.player)))}/>
-           {p.nameSnapshot}
+         {(rosters[getId(team.team)]||data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=>({id:getId(p.player),firstName:p.nameSnapshot,lastName:''}))).filter(p=>p.isActive!==false&&p.teamMembershipStatus!=='dismissed').map(p=><label key={p.id} className="flex gap-2 items-center">
+           <input type="checkbox" checked={selected.includes(p.id)} onChange={e=>setSelected(current=>e.target.checked?[...current,p.id]:current.filter(x=>x!==p.id))}/>
+           {p.firstName} {p.lastName}
          </label>)}
        </div>)}
      </div>
