@@ -23,7 +23,19 @@ const matchSchema = new mongoose.Schema({
     default: null,
   },
 });
-const roundSchema = new mongoose.Schema({ number: Number, createdAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, benchPlayerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }], matches: [matchSchema] });
+const roundSchema = new mongoose.Schema({
+  number: Number,
+  createdAt: Date,
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  benchPlayerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }],
+  // Audit trail for deliberate departures from automatic bench rotation.
+  manualBenchOverride: {
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: Date,
+    repeatedPlayerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }],
+  },
+  matches: [matchSchema],
+});
 
 const tournamentSchema = new mongoose.Schema({
   deletedAt: { type: Date, default: null },
