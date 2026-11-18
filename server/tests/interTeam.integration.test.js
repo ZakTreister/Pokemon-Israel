@@ -29,7 +29,11 @@ async function request(path, method = 'GET', body, role = 'judge') {
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return { status: response.status, body: await response.json() };
+  const raw = await response.text();
+  let body;
+  try { body = JSON.parse(raw); }
+  catch { body = { message: raw }; }
+  return { status: response.status, body };
 }
 async function ok(path, method = 'GET', body, role = 'judge', status = 200) {
   const result = await request(path, method, body, role);
