@@ -8,7 +8,6 @@ import { SWISS_POLICY, calculateStandings, validateScore } from '../services/swi
 import { planInterTeamRound, validateInterTeamPairings } from '../services/interTeamPairings.js';
 import { notifyTournament } from '../services/tournamentLive.js';
 import { calculateInterTeamScore } from '../services/interTeamScore.js';
-import { publicInterTeamMeeting } from '../services/publicInterTeam.js';
 
 const router = express.Router();
 const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
@@ -40,11 +39,6 @@ const snapshot = player => ({
   nameSnapshot:`${player.firstName} ${player.lastName}`, citySnapshot:player.city || '',
 });
 
-router.get('/public/:id', asyncHandler(async(req,res)=>{
-  const doc=await get(req.params.id);
-  if (doc.phase === 'setup') fail(404,'המפגש עדיין לא פורסם');
-  res.json(publicInterTeamMeeting(doc));
-}));
 router.use(protect,authorize('admin','judge'));
 router.get('/',asyncHandler(async(req,res)=>{
   const rows=await Tournament.find({type:'inter_team',engineVersion:'swiss-v1'})
