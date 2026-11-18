@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../../services/api';
 import teamsService from '../../features/teams/teamsService';
 import type { TeamRosterPlayer } from '../../types/team';
@@ -154,10 +154,17 @@ export default function InterTeamManagePage(){
      setPairingsError('');
    }
  };
+ const pairingActions = (position: 'top' | 'bottom') => (
+   <div className="flex flex-wrap items-center gap-2" aria-label={position==='top'?'סיום עריכת צימודים — למעלה':'סיום עריכת צימודים — למטה'}>
+     {pairingsBaseRevision!==data.revision&&<p role="alert" className="basis-full text-sm text-amber-700">הסבב עודכן ממכשיר אחר. בטל ופתח מחדש את העריכה.</p>}
+     {pairingsError&&<p role="alert" className="basis-full text-sm text-destructive">{pairingsError}</p>}
+     <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision} onClick={()=>void savePairings()}>שמור צימודים</Button>
+     <Button variant="outline" disabled={busy} onClick={cancelPairingsEdit}>ביטול</Button>
+   </div>
+ );
  return <section className="space-y-5" dir="rtl">
    <header className="flex flex-wrap items-center justify-between gap-3">
      <div><h2 className="text-2xl font-extrabold">{data.title}</h2><p>{data.phase==='completed'?'הסתיים':data.phase==='running'?'🔴 LIVE':'בהכנה'}</p></div>
-     {data.phase !== "setup" ? <Button asChild variant="outline"><Link to={`/inter-team/${id}`}>צפייה בלייב</Link></Button> : <p className="text-sm text-muted-foreground">הצפייה תיפתח לאחר הגרלת הסבב הראשון.</p>}
    </header>
    {error&&<p role="alert" className="text-destructive">{error}</p>}
    <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
@@ -200,6 +207,7 @@ export default function InterTeamManagePage(){
          <Button variant="outline" disabled={busy} onClick={startPairingsEdit}>עריכת צימודים</Button>}
      </div>
      {pairingsEditing&&<p className="text-sm text-muted-foreground">החלף שחקנים בין שולחנות, ואז שמור את הצימודים או בטל את העריכה.</p>}
+     {pairingsEditing&&pairingActions('top')}
      {draft.map((m,i)=><article key={m._id} className="border rounded-lg p-3 space-y-2">
        <p className="font-bold">שולחן {m.table}</p>
        {pairingsEditing&&<div className="grid grid-cols-2 gap-2">
@@ -240,12 +248,7 @@ export default function InterTeamManagePage(){
          </div>
        ):<p className="text-sm text-muted-foreground">אין שחקנים בספסל בסבב זה.</p>}
      </div>
-     {pairingsEditing&&<div className="flex flex-wrap items-center gap-2">
-       {pairingsBaseRevision!==data.revision&&<p role="alert" className="basis-full text-sm text-amber-700">הסבב עודכן ממכשיר אחר. בטל ופתח מחדש את העריכה.</p>}
-       {pairingsError&&<p role="alert" className="basis-full text-sm text-destructive">{pairingsError}</p>}
-       <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision} onClick={()=>void savePairings()}>שמור צימודים</Button>
-       <Button variant="outline" disabled={busy} onClick={cancelPairingsEdit}>ביטול</Button>
-     </div>}
+     {pairingsEditing&&pairingActions('bottom')}
    </section>}
    {data.phase!=='completed'&&<div className="border-t pt-4 flex flex-wrap justify-end gap-2">
      <Button disabled={busy||rosterDirty||participantsEditing||pairingsEditing||!roundComplete}

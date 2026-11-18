@@ -27,7 +27,6 @@ import QrTournamentRegistrationPage from './pages/manage/QrTournamentRegistratio
 import { ToastProvider } from './components/ui/ToastProvider';
 import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import ManageDashboardPage from './pages/manage/ManageDashboardPage';
-import InterTeamPublicPage from './pages/InterTeamPublicPage';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -45,7 +44,6 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tournaments" element={<TournamentsPage />} />
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
-          <Route path="/inter-team/:id" element={<InterTeamPublicPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
           <Route path="/deck-stats" element={<DeckStatsPage />} />
           <Route path="/teams/:id" element={<TeamPage />} />

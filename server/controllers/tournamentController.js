@@ -57,7 +57,11 @@ export const getTournamentById = asyncHandler(async (req, res) => {
     'results.deck',
     deckFields,
   );
-  if (!tournament) {
+  // Public live tournament pages are exclusive to club events. Inter-team
+  // meetings are staff-only, and active internal-team rounds are not public.
+  if (!tournament ||
+      (tournament.type === 'inter_team' && ['setup', 'running'].includes(tournament.phase)) ||
+      (tournament.type === 'team_internal' && tournament.phase === 'running')) {
     res.status(404);
     throw new Error('Tournament not found');
   }

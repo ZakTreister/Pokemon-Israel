@@ -40,7 +40,7 @@ export default function TournamentDetailsPage() {
 
   // Only a genuinely running Swiss event gets a public socket. A finished
   // event (or a merely past-dated upcoming event) uses HTTP only.
-  const live = t?.engineVersion === 'swiss-v1' &&
+  const live = t?.type === 'quarterly' && t.engineVersion === 'swiss-v1' &&
     t.phase === 'running' && t.lifecycle === 'active';
   useEffect(() => {
     if (!live) return;

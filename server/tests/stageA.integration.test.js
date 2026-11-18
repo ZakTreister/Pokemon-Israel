@@ -5,7 +5,7 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { io as connectSocket } from 'socket.io-client';
-import { configureTournamentLive } from '../services/tournamentLive.js';
+import { configureTournamentLive, notifyTournament } from '../services/tournamentLive.js';
 import seasonRoutes from '../routes/seasonRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import mediaRoutes from '../routes/mediaRoutes.js';
@@ -758,13 +758,33 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
     t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', {
       expectedRevision: t.revision,
     });
+    assert.equal((await request(`/tournaments/${t.id}`, 'GET', undefined, null)).status, 404,
+      'a live internal-team tournament must not expose a public results page');
     for (const event of await updates) {
       assert.equal(event.id, t.id);
       assert.equal(event.revision, t.revision);
     }
-    assert.equal((await subscribePublic(t.id)).ok, true,
-      'anonymous public subscription is available after round one only');
+    assert.equal((await subscribePublic(t.id)).ok, false,
+      'team internal tournaments never allow public live subscriptions');
+    const clubLive = await Tournament.create({
+      title: 'Live club event',
+      description: 'Club-only spectator test',
+      date: new Date(),
+      location: 'Test venue',
+      registrationDeadline: new Date(),
+      image: '/pokemon_kids_logo.png',
+      type: 'quarterly',
+      engineVersion: 'swiss-v1',
+      source: 'live',
+      phase: 'running',
+      status: 'upcoming',
+    });
+    assert.equal((await subscribePublic(clubLive.id)).ok, true,
+      'club tournaments remain available to anonymous live spectators');
     const publicUpdate = socketEvent(spectator, 'tournament:public:updated');
+    notifyTournament({ app: { get: () => live } }, clubLive);
+    assert.deepEqual(await publicUpdate, { id: clubLive.id },
+      'only club live notifications reach public viewers');
     let changed = socketEvent(judge, 'tournament:updated');
     t = await ok(
       `/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`,
@@ -776,8 +796,6 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       'admin',
     );
     assert.equal((await changed).revision, t.revision);
-    assert.deepEqual(await publicUpdate, { id: t.id },
-      'public notifications must expose no internal revisions or write metadata');
     t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {
       expectedRevision: t.revision,
     });
@@ -1234,7 +1252,7 @@ test('team teachers are eligible, private, admin assigned and limited to assigne
   assert.equal((await User.findById(staffIds.judge)).role, 'judge');
 });
 
-test('public Events and details expose all types and only each tournament standings', async () => {
+test('public tournament details hide live team rounds but preserve completed results', async () => {
   const team = await ok('/teams', 'POST', { name: 'Public event team' }, 'admin', 201);
   const players = await ok(`/teams/${team.id}/players`, 'POST', { players: ['A','B'].map(firstName => ({firstName,lastName:'Public'})) }, 'admin', 201);
   let t = await ok('/internal-tournaments', 'POST', {teamId:team.id}, 'judge', 201);
@@ -1244,23 +1262,17 @@ test('public Events and details expose all types and only each tournament standi
   t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', {expectedRevision:t.revision});
   const match = t.rounds[0].matches[0];
   t = await ok(`/internal-tournaments/${t.id}/rounds/1/matches/${match._id}`, 'PUT', {expectedResultRevision:match.resultRevision, result:{winner:'player1', score1:2,score2:0}});
-  const active = await ok(`/tournaments/${t.id}`, 'GET', undefined, null);
-  assert.equal(active.lifecycle, 'active');
-  assert.equal(active.standings.length, 2);
-  assert.equal(active.standings[0].points, 3);
-  assert.ok(active.standings.every(s => players.some(p => p.id === s.player)));
-  assert.equal(active.rounds.length, 1);
-  assert.equal(active.rounds[0].matches.length, 1);
-  assert.ok(active.rounds[0].matches[0].player1Name);
-  assert.ok(active.rounds[0].matches[0].player2Name);
-  assert.deepEqual(Object.keys(active.rounds[0].matches[0]).sort(),
-    ['player1Name', 'player2Name', 'result', 'table']);
+  // The live staff match is no longer accessible through public tournament details.
+  assert.equal((await request(`/tournaments/${t.id}`, 'GET', undefined, null)).status, 404);
+  assert.equal(t.standings.length, 2);
+  assert.equal(t.standings[0].points, 3);
   const forbidden = /"(?:teacher|createdBy|staff|revision|resultRevision|enteredBy|deletedAt|deletedBy|invalidatedRounds|audit|participants|playerParticipants|canManage)"\s*:/;
-  assert.ok(!forbidden.test(JSON.stringify(active)));
   t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {expectedRevision:t.revision});
   const completed = await ok(`/tournaments/${t.id}`, 'GET', undefined, null);
   assert.equal(completed.lifecycle, 'completed');
-  assert.deepEqual(completed.standings, active.standings);
+  assert.equal(completed.standings.length, 2);
+  assert.equal(completed.standings[0].points, 3);
+  assert.ok(completed.standings.every(row => players.some(player => player.id === row.player)));
   assert.deepEqual(await ok(`/tournaments/${t.id}/results`, 'GET', undefined, null), completed.standings);
   const inter = await Tournament.create({ title:'Inter-team public',description:'Public',location:'Club',image:'/event.png',date:new Date(Date.now()+86400000),registrationDeadline:new Date(),maxParticipants:16,type:'inter_team' });
   const {items:list} = await ok('/tournaments?pageSize=100', 'GET', undefined, null);
