@@ -11,6 +11,7 @@ import User from '../models/userModel.js';
 import Team from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import Tournament from '../models/tournamentModel.js';
+import '../models/deckModel.js'; // Required by generic tournament result population
 import interTeamRoutes from '../routes/interTeamRoutes.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { configureTournamentLive } from '../services/tournamentLive.js';
