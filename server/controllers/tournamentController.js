@@ -57,7 +57,9 @@ export const getTournamentById = asyncHandler(async (req, res) => {
     'results.deck',
     deckFields,
   );
-  if (!tournament) {
+  // Inter-team meetings have a staff-only interface, never a public live
+  // tournament page (including the generic tournament-details endpoint).
+  if (!tournament || tournament.type === 'inter_team') {
     res.status(404);
     throw new Error('Tournament not found');
   }
