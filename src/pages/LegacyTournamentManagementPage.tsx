@@ -157,7 +157,7 @@ export default function LegacyTournamentManagementPage() {
   };
 
   // Helper function to get unique key for results
-  const getResultKey = (result: { player?: string | { _id?: string; id?: string }; position: number; playerName?: string }, index: number) => {
+  const getResultKey = (result: { player?: string | { _id?: string; id?: string } | null; position: number; playerName?: string }, index: number) => {
     // Try to get player ID first
     if (typeof result.player === 'string') {
       return result.player;
