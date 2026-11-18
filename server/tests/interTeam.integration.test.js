@@ -200,6 +200,8 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   assert.equal(done.status,'completed');
   assert.equal(done.teamScore[1].matchWins,3);
   assert.equal((await request(`/${created.id}/rounds`,'POST',{expectedRevision:done.revision})).status,409);
-  assert.equal((await fetch(`${origin}/api/tournaments/${created.id}`)).status,404);
+  const completedPublic = await fetch(`${origin}/api/tournaments/${created.id}`);
+  assert.equal(completedPublic.status, 200, 'completed results can remain public without live viewing');
+  assert.equal((await completedPublic.json()).lifecycle,'completed');
   assert.equal((await request(`/${created.id}`,'GET',undefined,'judge')).body.phase,'completed');
 });
