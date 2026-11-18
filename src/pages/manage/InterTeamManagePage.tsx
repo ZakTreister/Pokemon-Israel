@@ -231,10 +231,14 @@ export default function InterTeamManagePage(){
      </div>
      {pairingsEditing&&<p className="text-sm text-muted-foreground">אפשר להחליף שחקנים בין שולחנות. {isAdmin?'ניתן גם לבחור שחקן מהספסל, ואז השחקן שהוחלף יעבור לספסל.':'רק מנהל יכול לשנות את הספסל.'}</p>}
      {pairingsEditing&&pairingActions('top')}
-     {draft.map((m,i)=><article key={m._id} className="border rounded-lg p-3 space-y-2">
-       <p className="font-bold">שולחן {m.table}</p>
-       {pairingsEditing&&<div className="grid grid-cols-2 gap-2">
-         {([0,1] as const).map(slot=><select key={slot} disabled={busy||pairingsBaseRevision!==data.revision} className="rounded-md border p-2 bg-background"
+     {/* MatchEditor already supplies a standalone table card. Keep one card
+         per table, using the same responsive grid as regular tournaments. */}
+     <div className="grid min-w-0 gap-3 xl:grid-cols-2">
+       {draft.map((m,i)=><div key={m._id} className="min-w-0 space-y-2">
+         {pairingsEditing&&<div className="min-w-0 rounded-lg border bg-muted/40 p-3 space-y-2">
+           <p className="text-sm font-bold">שולחן {m.table} · עריכת צימודים</p>
+           <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+         {([0,1] as const).map(slot=><select key={slot} disabled={busy||pairingsBaseRevision!==data.revision} className="min-w-0 w-full min-h-11 rounded-md border p-2 bg-background"
            aria-label={`שחקן ${slot+1} בשולחן ${m.table}`}
            value={slot===0?m.player1:m.player2}
            onChange={e=>swapPlayer(i,slot===0?'player1':'player2',e.target.value)}>
@@ -243,8 +247,9 @@ export default function InterTeamManagePage(){
              .filter((pid,j,a)=>a.indexOf(pid)===j)
              .map(pid=><option key={pid} value={pid}>{name(pid)}{draftBench.includes(pid)?' (ספסל)':''}</option>)}
          </select>)}
-       </div>}
-       <MatchEditor
+           </div>
+         </div>}
+         <MatchEditor
          match={{...m, result:m.result??null}}
          name={name}
          disabled={busy||pairingsEditing}
@@ -264,7 +269,8 @@ export default function InterTeamManagePage(){
            finally{setBusy(false);}
          }}
        />
-     </article>)}
+       </div>)}
+     </div>
      <div className="rounded-lg border border-dashed p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
        <h4 className="font-bold">ספסל</h4>
        {benchGroups.length?benchGroups.map(group=>

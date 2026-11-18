@@ -88,7 +88,11 @@ export default function ManageDashboardPage() {
     .filter(Boolean)
     .slice(0, 3)
     .join('/');
+  const interTeamOperation = /^\/manage\/inter-team\/[^/]+\/?$/.test(location.pathname);
+  // Individual tournament workspaces are not wrapped in the dashboard card:
+  // their match cards need the available width, as in regular round management.
   const tournamentOperation =
+    interTeamOperation ||
     /^\/manage\/tournaments\/(?!regular(?:\/|$))[^/]+\/?$/.test(
       location.pathname,
     );
@@ -108,7 +112,9 @@ export default function ManageDashboardPage() {
           </h1>
           {tournamentOperation && (
             <Button asChild variant="outline">
-              <Link to="/manage/tournaments">→ חזרה לטורנירים</Link>
+              <Link to={interTeamOperation ? '/manage' : '/manage/tournaments'}>
+                {interTeamOperation ? '→ חזרה לדשבורד' : '→ חזרה לטורנירים'}
+              </Link>
             </Button>
           )}
           <Button
