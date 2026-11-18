@@ -16,7 +16,7 @@ export default function InterTeamLaunch({ label = 'מפגש נבחרות' }: { l
   useEffect(()=>{
     if (!open) return;
     let active=true;
-    teamsService.getMyTeams().then(rows=>{if(active)setTeams(rows.filter(t=>t.isActive));})
+    teamsService.getTeams().then(rows=>{if(active)setTeams(rows.filter(t=>t.isActive));})
       .catch(e=>{if(active)setError(requestError(e));});
     return()=>{active=false;};
   },[open]);
