@@ -1,4 +1,6 @@
 import TeacherTeams from './TeacherTeams';
+import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
+import InterTeamManagePage from './InterTeamManagePage';
 import LegacyTournamentManagementPage from '../LegacyTournamentManagementPage';
 import { useState } from 'react';
 import {
@@ -187,12 +189,14 @@ export default function ManageDashboardPage() {
                 index
                 element={
                   <>
+                    <div className="mb-5"><InterTeamLaunch /></div>
                     {admin && <AdminOverview />}
                     <TeacherTeams />
                   </>
                 }
               />
               <Route path="teams" element={<ManageTeams />} />
+              <Route path="inter-team/:id" element={<InterTeamManagePage />} />
               <Route path="teams/:id" element={<TeamPage />} />
               <Route
                 path="teams/:teamId/history"
