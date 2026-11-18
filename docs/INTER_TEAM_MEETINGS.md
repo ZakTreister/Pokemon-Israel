@@ -22,7 +22,7 @@
 - `PUT /api/inter-team/:id/rounds/:number/pairings` — override current round before results.
 - `PUT /api/inter-team/:id/rounds/:number/matches/:matchId` — enter a valid match score.
 - `POST /api/inter-team/:id/close` — finish after all results.
-- There is **no public inter-team endpoint**. `GET /api/tournaments/:id` also returns 404 for inter-team meetings.
+- There is **no public inter-team live endpoint**. During setup/running, `GET /api/tournaments/:id` returns 404 for inter-team meetings. Completed results remain available through the generic historical public tournament detail when appropriate.
 
 All staff mutations except initial creation require `expectedRevision` for collision detection.
 
@@ -30,7 +30,7 @@ All staff mutations except initial creation require `expectedRevision` for colli
 1. Start a meeting with two active teams of equal sizes; generate a round, score each game, then generate the next.
 2. Repeat with unequal rosters, including a team with one more and another with four more. Verify the bench rotates before repeating and awards zero points.
 3. Try to swap two players across matches. Verify the move preserves opposite-team opponents and identical participant counts.
-4. Verify an anonymous viewer cannot retrieve the inter-team meeting through either `/api/inter-team/public/:id` or the generic `/api/tournaments/:id`, and cannot subscribe to its public Socket.IO room; confirm a judge can subscribe to the authenticated staff room.
+4. Verify an anonymous viewer cannot retrieve a running inter-team meeting through either `/api/inter-team/public/:id` or the generic `/api/tournaments/:id`, and cannot subscribe to its public Socket.IO room; confirm a judge can subscribe to the authenticated staff room. Completed historical results may be publicly available.
 5. Add a newly rostered team player before round two; remove a previously active player from the next round. Verify existing scores are untouched.
 6. Use two judges with an outdated revision. Ensure the second write fails with 409 and must be refreshed.
 7. Verify LIVE pins appear only for running competitions, that the public live viewer works for club tournaments, and that inter-team meetings stay off the club-only events page.
