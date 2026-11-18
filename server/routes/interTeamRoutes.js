@@ -42,6 +42,7 @@ const snapshot = player => ({
 
 router.get('/public/:id', asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
+  if (doc.phase === 'setup') fail(404,'המפגש עדיין לא פורסם');
   res.json(publicInterTeamMeeting(doc));
 }));
 router.use(protect,authorize('admin','judge'));
