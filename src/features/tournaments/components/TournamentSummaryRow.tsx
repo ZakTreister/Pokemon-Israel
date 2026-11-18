@@ -10,6 +10,7 @@ export interface TournamentSummary {
   date: string;
   type: TournamentType;
   lifecycle: TournamentLifecycle;
+  phase?: string | null;
   location?: string;
   teamNameSnapshot?: string;
   currentParticipants?: number;
@@ -24,7 +25,7 @@ export default function TournamentSummaryRow({
   return (
     <article className="border rounded-lg p-4 flex flex-wrap gap-3 items-center justify-between">
       <div className="min-w-0">
-        <h3 className="font-bold break-words">{t.title}</h3>
+        <h3 className="font-bold break-words flex items-center gap-2">{t.phase === "running" && <span className="inline-flex h-3 w-3 rounded-full bg-red-600 animate-pulse" aria-label="LIVE" title="LIVE" />} {t.title}</h3>
         <p className="text-sm text-muted-foreground">
           {tournamentTypes[t.type]} · {tournamentStatuses[t.lifecycle]} ·{' '}
           {new Date(t.date).toLocaleDateString('he-IL')}

@@ -9,6 +9,7 @@ import { useAppSelector } from '../../hooks/redux';
 import { requestError } from '../../utils/requestError';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import Button from '../../components/ui/Button';
+import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
 interface Entry {
   id: string;
   title: string;
@@ -59,6 +60,7 @@ export default function ManageTournaments() {
     <div className="space-y-5">
       <h2 className="text-2xl font-bold">טורנירים</h2>
       <div className="flex flex-wrap gap-3">
+        <InterTeamLaunch />
         {user?.role === 'admin' && (
           <Button asChild>
             <Link to="/manage/tournaments/regular">צור טורניר חוגים</Link>
@@ -102,12 +104,16 @@ export default function ManageTournaments() {
                     <Link
                       to={
                         t.canManage
-                          ? t.type === 'quarterly'
+                          ? t.type === 'inter_team' && t.engineVersion === 'swiss-v1'
+                            ? `/manage/inter-team/${t.id}`
+                            : t.type === 'quarterly'
                             ? `/manage/tournaments/regular/${t.id}`
                             : t.engineVersion === 'swiss-v1'
                               ? `/manage/tournaments/${t.id}`
                               : `/manage/tournaments/regular/${t.id}`
-                          : `/tournaments/${t.id}`
+                          : t.type === 'inter_team' && t.engineVersion === 'swiss-v1'
+                            ? `/inter-team/${t.id}`
+                            : `/tournaments/${t.id}`
                       }
                     >
                       {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}

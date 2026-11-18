@@ -7,6 +7,7 @@ import {
 } from '../../features/teams/teamsSlice';
 import teamsService from '../../features/teams/teamsService';
 import OperationalTeamCard from '../../features/teams/components/OperationalTeamCard';
+import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
 import ImageUpload from '../../components/ui/ImageUpload';
 import Button from '../../components/ui/Button';
 import { useToast } from '../../components/ui/ToastProvider';
@@ -61,6 +62,7 @@ export default function ManageTeams() {
     <div className="space-y-4">
       <header className="flex justify-between items-center gap-3">
         <h2 className="text-2xl font-bold">ניהול נבחרות</h2>
+        <InterTeamLaunch />
         {admin && !open && (
           <Button onClick={() => setOpen(true)}>נבחרת חדשה</Button>
         )}

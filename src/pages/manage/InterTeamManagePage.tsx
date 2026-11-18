@@ -1,0 +1,166 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import api from '../../services/api';
+import teamsService from '../../features/teams/teamsService';
+import type { TeamRosterPlayer } from '../../types/team';
+import { subscribeTournament } from '../../services/tournamentLive';
+import { requestError } from '../../utils/requestError';
+import Button from '../../components/ui/Button';
+import MatchEditor from '../../components/MatchEditor';
+import type { MatchResult } from '../../types/internalTournament';
+
+interface Participant {player:string;team:string;nameSnapshot:string}
+interface Match { _id:string; table:number;player1:string;player2:string; result:MatchResult|null; resultRevision?:number }
+interface Round {number:number;benchPlayerIds:string[];matches:Match[]}
+interface Meeting {
+ id:string;title:string;phase:string;status:string;revision:number;
+ interTeamSides:{team:string;nameSnapshot:string;logoSnapshot:string}[];
+ playerParticipants:Participant[];nextRoundParticipantIds:string[];
+ rounds:Round[]; standings:{player:string;points:number;position:number}[];
+ teamScore:{team:string;matchWins:number;matchDraws:number;gameWins:number}[];
+}
+const getId=(v:string|{_id:string}|null|undefined):string=>v==null?'':typeof v==='string'?v:v._id;
+export default function InterTeamManagePage(){
+ const {id=''}=useParams();
+ const [data,setData]=useState<Meeting|null>(null);
+ const revisionRef=useRef(-1);
+ const rosterDirtyRef=useRef(false);
+ const [selected,setSelected]=useState<string[]>([]);
+ const [rosters,setRosters]=useState<Record<string,TeamRosterPlayer[]>>({});
+ const [draft,setDraft]=useState<Match[]>([]);
+ const [error,setError]=useState('');
+ const [busy,setBusy]=useState(false);
+ const accept=useCallback((incoming:Meeting)=>{
+   if(incoming.revision<revisionRef.current)return;
+   revisionRef.current=incoming.revision;
+   setData(incoming);
+   if(!rosterDirtyRef.current)
+     setSelected((incoming.nextRoundParticipantIds||[]).map(getId));
+ },[]);
+ const reload=useCallback(async()=>{
+   const response=await api.get<Meeting>(`/api/inter-team/${id}`);
+   accept(response.data);
+ },[id,accept]);
+ useEffect(()=>{
+   revisionRef.current=-1;
+   rosterDirtyRef.current=false;
+   void reload().catch(e=>setError(requestError(e)));
+ },[reload]);
+ useEffect(()=>{
+   if (!data?.interTeamSides?.length) return;
+   let active=true;
+   Promise.all(data.interTeamSides.map(async side=>[getId(side.team),(await teamsService.getTeam(getId(side.team))).players] as const))
+     .then(rows=>{if(active)setRosters(Object.fromEntries(rows));})
+     .catch(e=>{if(active)setError(requestError(e));});
+   return()=>{active=false;};
+ },[data?.id]);
+ useEffect(()=>{if(!data||data.phase==='completed')return;
+   return subscribeTournament(id,()=>void reload().catch(e=>setError(requestError(e))),()=>{});
+ },[id,data?.phase,reload]);
+ const round=data?.rounds.at(-1);
+ useEffect(()=>{setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);},[data?.revision]);
+ const byId=useMemo(()=>new Map(data?.playerParticipants.map(p=>[getId(p.player),p])||[]),[data]);
+ const name=(id:string|null)=>id?byId.get(getId(id))?.nameSnapshot??'לא ידוע':'—';
+ const sides=data?.interTeamSides??[];
+ const side=(id:string)=>byId.get(getId(id))?.team;
+ const swapPlayer=(matchIndex:number,field:'player1'|'player2',newPlayer:string)=>{
+   setDraft(previous=>{
+     const current=previous[matchIndex][field];
+     if(current===newPlayer)return previous;
+     return previous.map((match,index)=>{
+       if(index===matchIndex)return {...match,[field]:newPlayer};
+       if(match[field]===newPlayer)return {...match,[field]:current};
+       return match;
+     });
+   });
+ };
+ const save=async(path:string,body:object={})=>{
+   if(!data||busy)return;setBusy(true);setError('');
+   try{const response=await api.post<Meeting>(path,{...body,expectedRevision:data.revision});accept(response.data);}
+   catch(e){setError(requestError(e));}finally{setBusy(false);}
+ };
+ const update=async(path:string,body:object)=>{
+   if(!data||busy)return;setBusy(true);setError('');
+   try{const response=await api.put<Meeting>(path,{...body,expectedRevision:data.revision});if(path.endsWith('/participants'))rosterDirtyRef.current=false;accept(response.data);}
+   catch(e){setError(requestError(e));}finally{setBusy(false);}
+ };
+ if(!data)return <p role="status">{error||'טוען מפגש…'}</p>;
+ const canEdit=data.phase!=='completed'&&!round?.matches.some(m=>m.result);
+ const rosterDirty=selected.length!==(data.nextRoundParticipantIds??[]).length ||
+   selected.some(value=>!(data.nextRoundParticipantIds??[]).map(getId).includes(value));
+ const pairingDirty=draft.some(m=>{
+   const original=round?.matches.find(row=>row._id===m._id);
+   return original && (getId(original.player1)!==m.player1 || getId(original.player2)!==m.player2);
+ });
+ return <section className="space-y-5" dir="rtl">
+   <header className="flex flex-wrap items-center justify-between gap-3">
+     <div><h2 className="text-2xl font-extrabold">{data.title}</h2><p>{data.phase==='completed'?'הסתיים':data.phase==='running'?'🔴 LIVE':'בהכנה'}</p></div>
+     {data.phase !== "setup" ? <Button asChild variant="outline"><Link to={`/inter-team/${id}`}>צפייה בלייב</Link></Button> : <p className="text-sm text-muted-foreground">הצפייה תיפתח לאחר הגרלת הסבב הראשון.</p>}
+   </header>
+   {error&&<p role="alert" className="text-destructive">{error}</p>}
+   <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
+     const result=data.teamScore.find(row=>getId(row.team)===getId(team.team));
+     return <div key={getId(team.team)} className="rounded-xl border p-3 text-center">
+       <img src={team.logoSnapshot||'/pokemon_kids_logo.png'} alt="" className="mx-auto h-14 w-14 object-contain"/>
+       <strong>{team.nameSnapshot}</strong>
+       <p className="text-xl font-extrabold">{result?.matchWins??0} ניצחונות</p>
+       <p className="text-xs">{result?.matchDraws??0} תיקו · {result?.gameWins??0} ניצחונות במשחקונים</p>
+     </div>;
+   })}</div>
+   {data.phase!=='completed'&&<section className="border rounded-lg p-4 space-y-3">
+     <h3 className="font-bold">משתתפים בסבב הבא</h3>
+     <p className="text-sm text-muted-foreground">שינוי המשתתפים משפיע רק על הסבבים הבאים. התוצאות הקודמות נשמרות.</p>
+     <div className="grid md:grid-cols-2 gap-4">
+       {sides.map(team=><div key={getId(team.team)} className="space-y-2">
+         <h4 className="font-bold">{team.nameSnapshot}</h4>
+         {(rosters[getId(team.team)]||data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=>({id:getId(p.player),firstName:p.nameSnapshot,lastName:''} as TeamRosterPlayer))).filter(p=>p.isActive!==false&&p.teamMembershipStatus!=='dismissed').map(p=><label key={p.id} className="flex gap-2 items-center">
+           <input type="checkbox" checked={selected.includes(p.id)} onChange={e=>{rosterDirtyRef.current=true;setSelected(current=>e.target.checked?[...current,p.id]:current.filter(x=>x!==p.id));}}/>
+           {p.firstName} {p.lastName}
+         </label>)}
+       </div>)}
+     </div>
+     <Button variant="outline" disabled={busy} onClick={()=>void update(`/api/inter-team/${id}/participants`,{playerIds:selected})}>שמור הרכב לסבב הבא</Button>
+     {rosterDirty && <p role="status" className="text-sm text-amber-700">יש לשמור את שינויי ההרכב לפני הגרלת הסבב.</p>}
+     <Button disabled={busy||rosterDirty} onClick={()=>void save(`/api/inter-team/${id}/rounds`)}>הגרל סבב חדש</Button>
+   </section>}
+   {round&&<section className="space-y-3">
+     <h3 className="text-xl font-bold">סבב {round.number}</h3>
+     <p className="text-sm">בספסל: {round.benchPlayerIds.length?round.benchPlayerIds.map(name).join(' · '):'אין'}</p>
+     <p className="text-sm text-muted-foreground">ניתן להחליף שחקנים בין השולחנות לפני הזנת התוצאות.</p>
+     {draft.map((m,i)=><article key={m._id} className="border rounded-lg p-3 space-y-2">
+       <p className="font-bold">שולחן {m.table}</p>
+       <div className="grid grid-cols-2 gap-2">
+         {[0,1].map(slot=><select key={slot} disabled={!canEdit} className="rounded-md border p-2 bg-background"
+           value={slot===0?m.player1:m.player2}
+           onChange={e=>swapPlayer(i,slot===0?'player1':'player2',e.target.value)}>
+           {draft.flatMap(row=>[row.player1,row.player2]).filter(pid=>getId(side(pid)??'')===getId(sides[slot]?.team??'')).filter((pid,j,a)=>a.indexOf(pid)===j).map(pid=><option key={pid} value={pid}>{name(pid)}</option>)}
+         </select>)}
+       </div>
+       <MatchEditor
+         match={{...m, result:m.result??null}}
+         name={name}
+         disabled={busy||pairingDirty}
+         readOnly={data.phase==='completed'}
+         discard={async()=>{await reload();}}
+         revision={data.revision}
+         save={async(result,expectedRevision)=>{
+           if (busy) return 'failed';
+           setBusy(true);setError('');
+           try{
+             const response=await api.put<Meeting>(`/api/inter-team/${id}/rounds/${round.number}/matches/${m._id}`,{
+               result,expectedRevision,
+             });
+             accept(response.data);
+             return 'saved';
+           }catch(e){setError(requestError(e));return 'failed';}
+           finally{setBusy(false);}
+         }}
+       />
+     </article>)}
+     {canEdit&&<Button variant="outline" disabled={busy} onClick={()=>void update(`/api/inter-team/${id}/rounds/${round.number}/pairings`,{
+       matches:draft.map(m=>({matchId:m._id,table:m.table,player1:m.player1,player2:m.player2}))
+     })}>שמור צימודים ידניים</Button>}
+   </section>}
+   {data.phase!=='completed'&&round&&<Button disabled={busy} onClick={()=>void save(`/api/inter-team/${id}/close`)}>סיים מפגש</Button>}
+ </section>;
+}

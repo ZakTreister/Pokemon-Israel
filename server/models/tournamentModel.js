@@ -23,7 +23,7 @@ const matchSchema = new mongoose.Schema({
     default: null,
   },
 });
-const roundSchema = new mongoose.Schema({ number: Number, createdAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, matches: [matchSchema] });
+const roundSchema = new mongoose.Schema({ number: Number, createdAt: Date, createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, benchPlayerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Player' }], matches: [matchSchema] });
 
 const tournamentSchema = new mongoose.Schema({
   deletedAt: { type: Date, default: null },
@@ -93,6 +93,7 @@ const tournamentSchema = new mongoose.Schema({
   scoringPolicy: String,
   team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
   teamNameSnapshot: String, teamLogoSnapshot: String,
+  interTeamSides: [{ team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team' }, nameSnapshot: String, logoSnapshot: String }],
   competitionYear: { type: String, default: null },
   phase: { type: String, enum: ['setup', 'running', 'completed'], default: null },
   source: { type: String, enum: ['live', 'historical'], default: null },
@@ -110,6 +111,7 @@ const tournamentSchema = new mongoose.Schema({
   }],
   playerParticipants: [{
     player: { type: mongoose.Schema.Types.ObjectId, ref: 'Player', required: true },
+    team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
     nameSnapshot: { type: String, required: true }, citySnapshot: String,
   }],
   rounds: [roundSchema],
