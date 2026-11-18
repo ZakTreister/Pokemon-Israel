@@ -7,14 +7,15 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 import { SWISS_POLICY, calculateStandings, validateScore } from '../services/swiss.js';
 import { planInterTeamRound, validateInterTeamPairings } from '../services/interTeamPairings.js';
 import { notifyTournament } from '../services/tournamentLive.js';
+import { calculateInterTeamScore } from '../services/interTeamScore.js';
 
 const router = express.Router();
 const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 const fail = (code, message) => { const error = new Error(message); error.statusCode = code; throw error; };
-const matchId = match => String(match._id);
 const serial = doc => ({
   ...doc.toJSON(),
   standings: calculateStandings(doc.playerParticipants, doc.rounds),
+  teamScore: calculateInterTeamScore(doc),
 });
 const get = async id => {
   if (!validId(id)) fail(404, 'המפגש לא נמצא');
@@ -48,6 +49,7 @@ router.get('/public/:id', asyncHandler(async(req,res)=>{
       id:m.id,table:m.table,player1:m.player1,player2:m.player2,result:m.result,
     }))})),
     standings:calculateStandings(doc.playerParticipants,doc.rounds),
+    teamScore:calculateInterTeamScore(doc),
   });
 }));
 router.use(protect,authorize('admin','judge'));
@@ -65,6 +67,7 @@ router.post('/',asyncHandler(async(req,res)=>{
   const players=await Player.find({team:{$in:teamIds},playerType:'team',isActive:true,
     teamMembershipStatus:{$ne:'dismissed'}}).sort({firstName:1,lastName:1,_id:1});
   if (teamIds.some(id=>!players.some(p=>String(p.team)===id))) fail(400,'לכל נבחרת נדרש שחקן פעיל');
+  if (players.length > 128) fail(400,'ניתן לפתוח מפגש עם עד 128 משתתפים');
   const ordered=teamIds.map(id=>teams.find(t=>String(t._id)===id));
   const now=new Date();
   const doc=await Tournament.create({
@@ -138,11 +141,14 @@ router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
 router.put('/:id/rounds/:number/matches/:matchId',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
   const rounds=doc.rounds.map(r=>r.toObject());
-  const round=rounds.find(r=>r.number===Number(req.params.number));
-  const match=round?.matches.find(m=>String(m._id)===req.params.matchId);
+  const round=rounds.at(-1);
+  if (!round || round.number!==Number(req.params.number) || doc.phase!=='running')
+    fail(409,'ניתן לערוך תוצאות רק בסבב הפעיל האחרון');
+  const match=round.matches.find(m=>String(m._id)===req.params.matchId);
   if (!match||!match.player2) fail(404,'משחק לא נמצא');
   let result;
   try {result=validateScore(req.body.result);} catch(error){fail(400,error.message);}
+  match.resultRevision=(match.resultRevision||0)+1;
   match.result={...result,enteredBy:req.user._id,enteredAt:new Date()};
   res.json(await save(req,doc,{rounds,phase:'running'}));
 }));
