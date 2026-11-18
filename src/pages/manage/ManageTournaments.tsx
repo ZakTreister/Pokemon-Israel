@@ -84,7 +84,7 @@ export default function ManageTournaments() {
           </details>
         )}
       </div>
-      <TournamentFilters value={filters} onChange={setFilters} />
+      <TournamentFilters value={filters} onChange={setFilters} buttonMode />
       {(error || list.error) && (
         <p role="alert" className="text-destructive">
           {error || list.error}
@@ -112,7 +112,7 @@ export default function ManageTournaments() {
                               ? `/manage/tournaments/${t.id}`
                               : `/manage/tournaments/regular/${t.id}`
                           : t.type === 'inter_team' && t.engineVersion === 'swiss-v1'
-                            ? `/inter-team/${t.id}`
+                            ? `/manage/inter-team/${t.id}`
                             : `/tournaments/${t.id}`
                       }
                     >
