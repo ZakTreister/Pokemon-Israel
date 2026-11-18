@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAppSelector } from '../../hooks/redux';
 import api from '../../services/api';
 import teamsService from '../../features/teams/teamsService';
 import type { TeamRosterPlayer } from '../../types/team';
@@ -22,12 +23,16 @@ interface Meeting {
 const getId=(v:string|{_id:string}|null|undefined):string=>v==null?'':typeof v==='string'?v:v._id;
 export default function InterTeamManagePage(){
  const {id=''}=useParams();
+ const {user}=useAppSelector(state=>state.auth);
+ const isAdmin=user?.role==='admin';
  const [data,setData]=useState<Meeting|null>(null);
  const revisionRef=useRef(-1);
  const rosterDirtyRef=useRef(false);
  const [selected,setSelected]=useState<string[]>([]);
  const [rosters,setRosters]=useState<Record<string,TeamRosterPlayer[]>>({});
  const [draft,setDraft]=useState<Match[]>([]);
+ const [draftBench,setDraftBench]=useState<string[]>([]);
+ const [approveRepeatBench,setApproveRepeatBench]=useState(false);
  const [participantsEditing,setParticipantsEditing]=useState(false);
  const [pairingsEditing,setPairingsEditing]=useState(false);
  const [pairingsBaseRevision,setPairingsBaseRevision]=useState<number|null>(null);
@@ -65,23 +70,37 @@ export default function InterTeamManagePage(){
  useEffect(()=>{
    // Preserve an open manual edit during unrelated live updates. A stale edit
    // cannot be saved until the operator cancels and reloads the round.
-   if (!pairingsEditing)
+   if (!pairingsEditing){
      setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);
+     setDraftBench(round?.benchPlayerIds.map(getId)??[]);
+   }
  },[data?.revision,pairingsEditing]);
  const byId=useMemo(()=>new Map(data?.playerParticipants.map(p=>[getId(p.player),p])||[]),[data]);
  const name=(id:string|null)=>id?byId.get(getId(id))?.nameSnapshot??'לא ידוע':'—';
  const sides=data?.interTeamSides??[];
  const side=(id:string)=>byId.get(getId(id))?.team;
  const swapPlayer=(matchIndex:number,field:'player1'|'player2',newPlayer:string)=>{
-   setDraft(previous=>{
-     const current=previous[matchIndex][field];
-     if(current===newPlayer)return previous;
-     return previous.map((match,index)=>{
-       if(index===matchIndex)return {...match,[field]:newPlayer};
-       if(match[field]===newPlayer)return {...match,[field]:current};
-       return match;
-     });
-   });
+   const current=draft[matchIndex]?.[field];
+   if(!current||current===newPlayer||side(current)!==side(newPlayer))return;
+   const benchIndex=draftBench.indexOf(newPlayer);
+   if(benchIndex!==-1){
+     if(!isAdmin)return;
+     // The player leaving the table takes the newly activated player's bench
+     // place. This keeps the complete round roster and all tables unchanged.
+     setDraft(previous=>previous.map((match,index)=>
+       index===matchIndex?{...match,[field]:newPlayer}:match));
+     setDraftBench(previous=>previous.map(id=>id===newPlayer?current:id));
+     setApproveRepeatBench(false);
+     return;
+   }
+   const otherIndex=draft.findIndex(match=>match.player1===newPlayer||match.player2===newPlayer);
+   if(otherIndex<0||otherIndex===matchIndex)return;
+   const otherField=draft[otherIndex].player1===newPlayer?'player1':'player2';
+   setDraft(previous=>previous.map((match,index)=>{
+     if(index===matchIndex)return {...match,[field]:newPlayer};
+     if(index===otherIndex)return {...match,[otherField]:current};
+     return match;
+   }));
  };
  const save=async(path:string,body:object={})=>{
    if(!data||busy)return;setBusy(true);setError('');
@@ -105,14 +124,21 @@ export default function InterTeamManagePage(){
  const canEdit=data.phase!=='completed'&&!round?.matches.some(m=>m.result);
  const rosterDirty=selected.length!==(data.nextRoundParticipantIds??[]).length ||
    selected.some(value=>!(data.nextRoundParticipantIds??[]).map(getId).includes(value));
- const pairingDirty=draft.some(m=>{
+ const originalBench=round?.benchPlayerIds.map(getId)??[];
+ const benchChanged=[...draftBench].sort().join('|')!==[...originalBench].sort().join('|');
+ const pairingDirty=benchChanged||draft.some(m=>{
    const original=round?.matches.find(row=>row._id===m._id);
    return original && (getId(original.player1)!==m.player1 || getId(original.player2)!==m.player2);
  });
+ const previousBench=new Set(data.rounds.slice(0,-1).flatMap(r=>r.benchPlayerIds.map(getId)));
+ const repeatedBenchPlayers=benchChanged?draftBench.filter(player=>
+   !originalBench.includes(player)&&previousBench.has(player)):[];
+ const repeatApprovalNeeded=repeatedBenchPlayers.length>0;
  const roundComplete=!round || round.matches.every(match=>Boolean(match.result));
  const benchGroups=sides.map(team=>({
    team:team.nameSnapshot,
-   players:(round?.benchPlayerIds??[]).filter(player=>getId(side(getId(player)))===getId(team.team)).map(player=>name(getId(player))),
+   players:(pairingsEditing?draftBench:(round?.benchPlayerIds??[]).map(getId))
+     .filter(player=>getId(side(getId(player)))===getId(team.team)).map(player=>name(getId(player))),
  })).filter(group=>group.players.length>0);
  const cancelParticipants=()=>{
    rosterDirtyRef.current=false;
@@ -129,27 +155,35 @@ export default function InterTeamManagePage(){
  };
  const startPairingsEdit=()=>{
    setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);
+   setDraftBench(round?.benchPlayerIds.map(getId)??[]);
+   setApproveRepeatBench(false);
    setPairingsBaseRevision(data.revision);
    setPairingsError('');
    setPairingsEditing(true);
  };
  const cancelPairingsEdit=()=>{
    setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);
+   setDraftBench(round?.benchPlayerIds.map(getId)??[]);
+   setApproveRepeatBench(false);
    setPairingsEditing(false);
    setPairingsBaseRevision(null);
    setPairingsError('');
  };
  const savePairings=async()=>{
-   if(!round||!pairingsEditing||!pairingDirty||busy)return;
+   if(!round||!pairingsEditing||!pairingDirty||busy||
+      (repeatApprovalNeeded&&!approveRepeatBench))return;
    if(pairingsBaseRevision!==data.revision){
      setPairingsError('הסבב עודכן ממכשיר אחר. בטל את העריכה ופתח אותה מחדש כדי לראות את הצימודים המעודכנים.');
      return;
    }
    const saved=await update(`/api/inter-team/${id}/rounds/${round.number}/pairings`,{
-     matches:draft.map(m=>({matchId:m._id,table:m.table,player1:m.player1,player2:m.player2}))
+     matches:draft.map(m=>({matchId:m._id,table:m.table,player1:m.player1,player2:m.player2})),
+     benchPlayerIds:draftBench,
+     allowRepeatBench:repeatApprovalNeeded&&approveRepeatBench,
    });
    if(saved){
      setPairingsEditing(false);
+     setApproveRepeatBench(false);
      setPairingsBaseRevision(null);
      setPairingsError('');
    }
@@ -158,7 +192,13 @@ export default function InterTeamManagePage(){
    <div className="flex flex-wrap items-center gap-2" aria-label={position==='top'?'סיום עריכת צימודים — למעלה':'סיום עריכת צימודים — למטה'}>
      {pairingsBaseRevision!==data.revision&&<p role="alert" className="basis-full text-sm text-amber-700">הסבב עודכן ממכשיר אחר. בטל ופתח מחדש את העריכה.</p>}
      {pairingsError&&<p role="alert" className="basis-full text-sm text-destructive">{pairingsError}</p>}
-     <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision} onClick={()=>void savePairings()}>שמור צימודים</Button>
+     {repeatApprovalNeeded&&<label className="basis-full flex items-start gap-2 text-sm font-semibold text-amber-800">
+       <input type="checkbox" checked={approveRepeatBench} onChange={event=>setApproveRepeatBench(event.target.checked)}
+         className="mt-1" disabled={busy} />
+       <span>אני מאשר להושיב שוב בספסל את {repeatedBenchPlayers.map(name).join(' · ')} למרות שישבו בספסל בסבב קודם.</span>
+     </label>}
+     <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision||
+       (repeatApprovalNeeded&&!approveRepeatBench)} onClick={()=>void savePairings()}>שמור צימודים</Button>
      <Button variant="outline" disabled={busy} onClick={cancelPairingsEdit}>ביטול</Button>
    </div>
  );
@@ -206,7 +246,7 @@ export default function InterTeamManagePage(){
        {canEdit&&!pairingsEditing&&
          <Button variant="outline" disabled={busy} onClick={startPairingsEdit}>עריכת צימודים</Button>}
      </div>
-     {pairingsEditing&&<p className="text-sm text-muted-foreground">החלף שחקנים בין שולחנות, ואז שמור את הצימודים או בטל את העריכה.</p>}
+     {pairingsEditing&&<p className="text-sm text-muted-foreground">אפשר להחליף שחקנים בין שולחנות. {isAdmin?'ניתן גם לבחור שחקן מהספסל, ואז השחקן שהוחלף יעבור לספסל.':'רק מנהל יכול לשנות את הספסל.'}</p>}
      {pairingsEditing&&pairingActions('top')}
      {draft.map((m,i)=><article key={m._id} className="border rounded-lg p-3 space-y-2">
        <p className="font-bold">שולחן {m.table}</p>
@@ -215,7 +255,10 @@ export default function InterTeamManagePage(){
            aria-label={`שחקן ${slot+1} בשולחן ${m.table}`}
            value={slot===0?m.player1:m.player2}
            onChange={e=>swapPlayer(i,slot===0?'player1':'player2',e.target.value)}>
-           {draft.flatMap(row=>[row.player1,row.player2]).filter(pid=>getId(side(pid)??'')===getId(sides[slot]?.team??'')).filter((pid,j,a)=>a.indexOf(pid)===j).map(pid=><option key={pid} value={pid}>{name(pid)}</option>)}
+           {[...draft.flatMap(row=>[row.player1,row.player2]),...(isAdmin?draftBench:[])]
+             .filter(pid=>getId(side(pid)??'')===getId(side(slot===0?m.player1:m.player2)??''))
+             .filter((pid,j,a)=>a.indexOf(pid)===j)
+             .map(pid=><option key={pid} value={pid}>{name(pid)}{draftBench.includes(pid)?' (ספסל)':''}</option>)}
          </select>)}
        </div>}
        <MatchEditor
