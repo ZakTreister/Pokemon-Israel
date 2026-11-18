@@ -8,6 +8,7 @@ import { SWISS_POLICY, calculateStandings, validateScore } from '../services/swi
 import { planInterTeamRound, validateInterTeamPairings } from '../services/interTeamPairings.js';
 import { notifyTournament } from '../services/tournamentLive.js';
 import { calculateInterTeamScore } from '../services/interTeamScore.js';
+import { publicInterTeamMeeting } from '../services/publicInterTeam.js';
 
 const router = express.Router();
 const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
@@ -41,16 +42,7 @@ const snapshot = player => ({
 
 router.get('/public/:id', asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
-  res.json({
-    id:doc.id, title:doc.title, type:doc.type, phase:doc.phase, status:doc.status,
-    date:doc.date, teams:doc.interTeamSides, revision:doc.revision,
-    participants:doc.playerParticipants.map(p=>({player:p.player,nameSnapshot:p.nameSnapshot,team:p.team})),
-    rounds:doc.rounds.map(r=>({number:r.number,benchPlayerIds:r.benchPlayerIds,matches:r.matches.map(m=>({
-      id:m.id,table:m.table,player1:m.player1,player2:m.player2,result:m.result,
-    }))})),
-    standings:calculateStandings(doc.playerParticipants,doc.rounds),
-    teamScore:calculateInterTeamScore(doc),
-  });
+  res.json(publicInterTeamMeeting(doc));
 }));
 router.use(protect,authorize('admin','judge'));
 router.get('/',asyncHandler(async(req,res)=>{
