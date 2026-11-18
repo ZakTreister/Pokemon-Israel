@@ -12,6 +12,7 @@ import Team from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import Tournament from '../models/tournamentModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
+import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { configureTournamentLive } from '../services/tournamentLive.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
 
@@ -55,6 +56,7 @@ before(async () => {
   const app = express();
   app.use(express.json());
   app.use('/api/inter-team', interTeamRoutes);
+  app.use('/api/tournaments', tournamentRoutes);
   app.use(errorHandler);
   server = createServer(app);
   io = new Server(server);
@@ -73,7 +75,7 @@ after(async () => {
   }
 });
 
-test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and closure', { timeout: 25000 }, async () => {
+test('end-to-end inter-team API, manual swaps, rotating bench, staff live and closure', { timeout: 25000 }, async () => {
   const admin = await User.findOne({ role:'admin' });
   const teams = await Team.create([
     { name:'Alpha Club', createdBy:admin._id },
@@ -93,7 +95,7 @@ test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and c
   assert.equal(created.phase,'setup');
   assert.equal(created.interTeamSides.length,2);
   assert.equal(created.playerParticipants.length,8);
-  assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,404);
+  assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,401);
 
   const first = await ok(`/${created.id}/rounds`, 'POST', {
     expectedRevision: created.revision,
@@ -104,12 +106,11 @@ test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and c
   assert.equal(first.rounds[0].benchPlayerIds.length,2);
   assert.ok(first.rounds[0].matches.every(m=>m.player2 && String(m.player1)!==String(m.player2)));
 
-  const publicOne = await ok(`/public/${created.id}`,'GET',undefined,null);
-  assert.equal(publicOne.rounds[0].matches.length,3);
-  assert.equal(publicOne.rounds[0].benchPlayerIds.length,2);
-  const publicText = JSON.stringify(publicOne);
-  for(const player of players) assert.ok(!publicText.includes(player.id),'public player ID leaked');
-  for(const team of teams) assert.ok(!publicText.includes(team.id),'public team ID leaked');
+  assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,401);
+  assert.equal((await request(`/public/${created.id}`, 'GET', undefined, 'judge')).status,404);
+  // Even the older generic tournament-details route must not reveal team
+  // matchups to anonymous visitors.
+  assert.equal((await fetch(`${origin}/api/tournaments/${created.id}`)).status,404);
 
   const firstMatches=first.rounds[0].matches;
   const swapped=firstMatches.map((m,index)=>({
@@ -130,20 +131,34 @@ test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and c
   });
   assert.equal(String(edited.rounds[0].matches[0].player1),swapped[0].player1);
 
-  socket=connectSocket(origin,{transports:['websocket'],reconnection:false,timeout:5000});
+  const anonymous=connectSocket(origin,{transports:['websocket'],reconnection:false,timeout:5000});
+  try {
+    const denied=new Promise((resolve,reject)=>{
+      anonymous.on('connect_error',reject);
+      anonymous.on('connect',()=>anonymous.emit('tournament:public:subscribe',created.id,resolve));
+    });
+    assert.deepEqual(await Promise.race([denied,delayPromise(5000,'anonymous subscription rejection')]),{ok:false});
+  } finally {
+    anonymous.disconnect();
+  }
+
+  socket=connectSocket(origin,{
+    transports:['websocket'],reconnection:false,timeout:5000,
+    auth:{token:tokens.judge},
+  });
   const subscription=new Promise((resolve,reject)=>{
     socket.on('connect_error',reject);
-    socket.on('connect',()=>socket.emit('tournament:public:subscribe',created.id,ack=>{
-      if(ack?.ok)resolve(); else reject(new Error('Public live subscription rejected'));
+    socket.on('connect',()=>socket.emit('tournament:subscribe',created.id,ack=>{
+      if(ack?.ok)resolve(); else reject(new Error('Authenticated staff subscription rejected'));
     }));
   });
-  await Promise.race([subscription,delayPromise(5000,'public Socket.IO subscription')]);
+  await Promise.race([subscription,delayPromise(5000,'staff Socket.IO subscription')]);
 
   let latest=edited;
   for(const [index, match] of latest.rounds[0].matches.entries()) {
     const event=index===0?new Promise((resolve,reject)=>{
-      socket.once('tournament:public:updated',resolve);
-      setTimeout(()=>reject(new Error('No public live event')),5000);
+      socket.once('tournament:updated',resolve);
+      setTimeout(()=>reject(new Error('No staff live event')),5000);
     }):null;
     latest=await ok(`/${created.id}/rounds/1/matches/${match._id}`,'PUT',{
       expectedRevision:latest.revision,
@@ -181,6 +196,6 @@ test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and c
   assert.equal(done.status,'completed');
   assert.equal(done.teamScore[1].matchWins,3);
   assert.equal((await request(`/${created.id}/rounds`,'POST',{expectedRevision:done.revision})).status,409);
-  const publicDone=await ok(`/public/${created.id}`,'GET',undefined,null);
-  assert.equal(publicDone.phase,'completed');
+  assert.equal((await fetch(`${origin}/api/tournaments/${created.id}`)).status,404);
+  assert.equal((await request(`/${created.id}`,'GET',undefined,'judge')).body.phase,'completed');
 });
