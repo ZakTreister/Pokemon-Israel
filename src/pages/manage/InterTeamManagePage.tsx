@@ -70,6 +70,8 @@ export default function InterTeamManagePage(){
  };
  if(!data)return <p role="status">{error||'טוען מפגש…'}</p>;
  const canEdit=data.phase!=='completed'&&!round?.matches.some(m=>m.result);
+ const rosterDirty=selected.length!==(data.nextRoundParticipantIds??[]).length ||
+   selected.some(value=>!(data.nextRoundParticipantIds??[]).map(getId).includes(value));
  const pairingDirty=draft.some(m=>{
    const original=round?.matches.find(row=>row._id===m._id);
    return original && (getId(original.player1)!==m.player1 || getId(original.player2)!==m.player2);
@@ -77,7 +79,7 @@ export default function InterTeamManagePage(){
  return <section className="space-y-5" dir="rtl">
    <header className="flex flex-wrap items-center justify-between gap-3">
      <div><h2 className="text-2xl font-extrabold">{data.title}</h2><p>{data.phase==='completed'?'הסתיים':data.phase==='running'?'🔴 LIVE':'בהכנה'}</p></div>
-     <Button asChild variant="outline"><Link to={`/inter-team/${id}`}>צפייה בלייב</Link></Button>
+     {data.phase !== "setup" ? <Button asChild variant="outline"><Link to={`/inter-team/${id}`}>צפייה בלייב</Link></Button> : <p className="text-sm text-muted-foreground">הצפייה תיפתח לאחר הגרלת הסבב הראשון.</p>}
    </header>
    {error&&<p role="alert" className="text-destructive">{error}</p>}
    <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
@@ -102,7 +104,8 @@ export default function InterTeamManagePage(){
        </div>)}
      </div>
      <Button variant="outline" disabled={busy} onClick={()=>void update(`/api/inter-team/${id}/participants`,{playerIds:selected})}>שמור הרכב לסבב הבא</Button>
-     <Button disabled={busy} onClick={()=>void save(`/api/inter-team/${id}/rounds`)}>הגרל סבב חדש</Button>
+     {rosterDirty && <p role="status" className="text-sm text-amber-700">יש לשמור את שינויי ההרכב לפני הגרלת הסבב.</p>}
+     <Button disabled={busy||rosterDirty} onClick={()=>void save(`/api/inter-team/${id}/rounds`)}>הגרל סבב חדש</Button>
    </section>}
    {round&&<section className="space-y-3">
      <h3 className="text-xl font-bold">סבב {round.number}</h3>
