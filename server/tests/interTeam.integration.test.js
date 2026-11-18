@@ -212,8 +212,8 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   const firstBench=new Set(benchEdited.rounds[0].benchPlayerIds.map(String));
   assert.ok(second.rounds[1].benchPlayerIds.every(player=>!firstBench.has(String(player))));
 
-  // A manager can override bench rotation deliberately, but must confirm
-  // when choosing a child who already sat out a previous round.
+  // A manager can override the automatic rotation directly and deliberately
+  // keep a child on the bench in consecutive rounds, with no extra approval.
   const recurringBenchPlayer=[...firstBench][0];
   const secondBenchPlayer=String(second.rounds[1].benchPlayerIds[0]);
   const repeatedMatch=second.rounds[1].matches.find(m=>String(m.player1)===recurringBenchPlayer);
@@ -227,14 +227,9 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
     String(player)===secondBenchPlayer?recurringBenchPlayer:String(player));
   assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
     expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
-  },'admin')).status,409);
-  assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
-    expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
-    allowRepeatBench:true,
   },'judge')).status,403);
   const secondEdited=await ok(`/${created.id}/rounds/2/pairings`,'PUT',{
     expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
-    allowRepeatBench:true,
   },'admin');
   assert.ok(secondEdited.rounds[1].manualBenchOverride.repeatedPlayerIds
     .map(String).includes(recurringBenchPlayer));
@@ -242,7 +237,6 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   assert.ok(secondEdited.rounds[1].benchPlayerIds.map(String).includes(recurringBenchPlayer));
   assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
     expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
-    allowRepeatBench:true,
   },'admin')).status,409,'stale revision must not overwrite a bench decision');
   assert.equal((await request(`/${created.id}/rounds/1/matches/${firstMatches[0]._id}`,'PUT',{
     expectedRevision:secondEdited.revision,
