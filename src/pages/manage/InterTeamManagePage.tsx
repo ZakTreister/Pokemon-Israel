@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../../services/api';
 import teamsService from '../../features/teams/teamsService';
 import type { TeamRosterPlayer } from '../../types/team';
@@ -165,7 +165,6 @@ export default function InterTeamManagePage(){
  return <section className="space-y-5" dir="rtl">
    <header className="flex flex-wrap items-center justify-between gap-3">
      <div><h2 className="text-2xl font-extrabold">{data.title}</h2><p>{data.phase==='completed'?'הסתיים':data.phase==='running'?'🔴 LIVE':'בהכנה'}</p></div>
-     {data.phase !== "setup" ? <Button asChild variant="outline"><Link to={`/inter-team/${id}`}>צפייה בלייב</Link></Button> : <p className="text-sm text-muted-foreground">הצפייה תיפתח לאחר הגרלת הסבב הראשון.</p>}
    </header>
    {error&&<p role="alert" className="text-destructive">{error}</p>}
    <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
