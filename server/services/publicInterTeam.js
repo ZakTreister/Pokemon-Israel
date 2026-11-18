@@ -21,6 +21,10 @@ export function publicInterTeamMeeting(doc) {
     (doc.playerParticipants ?? []).map((row,index) => [id(row.player),`player-${index+1}`]),
   );
   const anon = value => value == null ? null : playerAliases.get(id(value)) ?? null;
+  const visiblePlayers = new Set((doc.rounds ?? []).flatMap(round => [
+    ...(round.benchPlayerIds ?? []).map(id),
+    ...round.matches.flatMap(match => [id(match.player1),...(match.player2 ? [id(match.player2)] : [])]),
+  ]));
   return {
     id: doc.id,
     title: doc.title,
@@ -28,7 +32,7 @@ export function publicInterTeamMeeting(doc) {
     phase: doc.phase,
     status: doc.status,
     teams,
-    participants: (doc.playerParticipants ?? []).map(row => ({
+    participants: (doc.playerParticipants ?? []).filter(row => visiblePlayers.has(id(row.player))).map(row => ({
       player: anon(row.player),
       team: teamAliases.get(id(row.team)),
       nameSnapshot: row.nameSnapshot,
@@ -51,7 +55,7 @@ export function publicInterTeamMeeting(doc) {
           : null,
       })),
     })),
-    standings: calculateStandings(doc.playerParticipants,doc.rounds).map(row => ({
+    standings: calculateStandings(doc.playerParticipants,doc.rounds).filter(row => visiblePlayers.has(id(row.player))).map(row => ({
       player: anon(row.player),
       playerName: row.playerName,
       points: row.points,
