@@ -758,6 +758,8 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
     t = await ok(`/internal-tournaments/${t.id}/rounds`, 'POST', {
       expectedRevision: t.revision,
     });
+    assert.equal((await request(`/tournaments/${t.id}`, 'GET', undefined, null)).status, 404,
+      'a live internal-team tournament must not expose a public results page');
     for (const event of await updates) {
       assert.equal(event.id, t.id);
       assert.equal(event.revision, t.revision);
