@@ -111,7 +111,9 @@ export default function ManageTournaments() {
                             : t.engineVersion === 'swiss-v1'
                               ? `/manage/tournaments/${t.id}`
                               : `/manage/tournaments/regular/${t.id}`
-                          : `/tournaments/${t.id}`
+                          : t.type === 'inter_team' && t.engineVersion === 'swiss-v1'
+                            ? `/inter-team/${t.id}`
+                            : `/tournaments/${t.id}`
                       }
                     >
                       {t.canManage ? 'ניהול טורניר' : 'פרטים ותוצאות'}
