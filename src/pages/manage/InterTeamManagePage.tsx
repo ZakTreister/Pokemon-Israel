@@ -44,6 +44,17 @@ export default function InterTeamManagePage(){
  const name=(id:string)=>byId.get(getId(id))?.nameSnapshot??'לא ידוע';
  const sides=data?.interTeamSides??[];
  const side=(id:string)=>byId.get(getId(id))?.team;
+ const swapPlayer=(matchIndex:number,field:'player1'|'player2',newPlayer:string)=>{
+   setDraft(previous=>{
+     const current=previous[matchIndex][field];
+     if(current===newPlayer)return previous;
+     return previous.map((match,index)=>{
+       if(index===matchIndex)return {...match,[field]:newPlayer};
+       if(match[field]===newPlayer)return {...match,[field]:current};
+       return match;
+     });
+   });
+ };
  const save=async(path:string,body:object={})=>{
    if(!data||busy)return;setBusy(true);setError('');
    try{const response=await api.post<Meeting>(path,{...body,expectedRevision:data.revision});setData(response.data);}
@@ -86,7 +97,7 @@ export default function InterTeamManagePage(){
        <div className="grid grid-cols-2 gap-2">
          {[0,1].map(slot=><select key={slot} disabled={!canEdit} className="rounded-md border p-2 bg-background"
            value={slot===0?m.player1:m.player2}
-           onChange={e=>setDraft(rows=>rows.map((row,j)=>j===i?{...row,[slot===0?'player1':'player2']:e.target.value}:row))}>
+           onChange={e=>swapPlayer(i,slot===0?'player1':'player2',e.target.value)}>
            {draft.flatMap(row=>[row.player1,row.player2]).filter(pid=>getId(side(pid)??'')===getId(sides[slot]?.team??'')).filter((pid,j,a)=>a.indexOf(pid)===j).map(pid=><option key={pid} value={pid}>{name(pid)}</option>)}
          </select>)}
        </div>
