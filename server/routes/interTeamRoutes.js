@@ -70,6 +70,18 @@ router.post('/',asyncHandler(async(req,res)=>{
   });
   res.status(201).json(serial(doc));
 }));
+router.get('/active',asyncHandler(async(req,res)=>{
+  const rows=await Tournament.find({
+    type:'inter_team',engineVersion:'swiss-v1',source:'live',status:'upcoming',
+    phase:{$in:['setup','running']},
+  }).select('title phase interTeamSides rounds.number updatedAt')
+    .sort({updatedAt:-1,_id:-1}).limit(30);
+  res.json(rows.map(row=>({
+    id:row.id,title:row.title,phase:row.phase,
+    teamNames:row.interTeamSides.map(side=>side.nameSnapshot),
+    roundNumber:row.rounds.length ? row.rounds[row.rounds.length-1].number : 0,
+  })));
+}));
 router.get('/:id',asyncHandler(async(req,res)=>res.json(serial(await get(req.params.id)))));
 router.put('/:id/participants',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
@@ -114,15 +126,36 @@ router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
     ...latest.matches.find(m=>String(m._id)===row.matchId),
     player1:row.player1,player2:row.player2,table:row.table,
   }));
-  const existing=[...latest.matches.flatMap(m=>[String(m.player1),String(m.player2)]),...latest.benchPlayerIds.map(String)].sort();
-  const proposed=[...mapped.flatMap(m=>[String(m.player1),String(m.player2)]),...latest.benchPlayerIds.map(String)].sort();
+  const oldBench=latest.benchPlayerIds.map(String);
+  const incomingBench=req.body.benchPlayerIds===undefined ? oldBench : req.body.benchPlayerIds;
+  if (!Array.isArray(incomingBench)||incomingBench.length!==oldBench.length||
+      !incomingBench.every(validId)||new Set(incomingBench).size!==incomingBench.length)
+    fail(400,'רשימת הספסל אינה חוקית');
+  const benchChanged=oldBench.slice().sort().join(',')!==incomingBench.slice().sort().join(',');
+  // Ordinary pairing swaps are available to judges; changing the bench is
+  // reserved for an administrator, including when calling the API directly.
+  if (benchChanged&&req.user.role!=='admin')
+    fail(403,'רק מנהל יכול לשנות את הרכב הספסל');
+  const previousBench=new Set(rounds.slice(0,-1).flatMap(round=>round.benchPlayerIds.map(String)));
+  const newlyBenched=new Set(incomingBench.filter(player=>!oldBench.includes(player)));
+  const repeated=[...newlyBenched].filter(player=>previousBench.has(player));
+  if (repeated.length&&req.body.allowRepeatBench!==true)
+    fail(409,'השחקן כבר ישב בספסל בסבב קודם. נדרש אישור מפורש של מנהל');
+  const existing=[...latest.matches.flatMap(m=>[String(m.player1),String(m.player2)]),...oldBench].sort();
+  const proposed=[...mapped.flatMap(m=>[String(m.player1),String(m.player2)]),...incomingBench].sort();
   if (existing.join(',')!==proposed.join(',')||
       new Set(mapped.map(m=>m.table)).size!==mapped.length||
       mapped.some(m=>!Number.isInteger(m.table)||m.table<1||m.table>mapped.length))
     fail(400,'כל שחקן חייב להישאר בדיוק פעם אחת בסבב');
-  try {validateInterTeamPairings(mapped,doc.playerParticipants,doc.interTeamSides.map(s=>s.team),latest.benchPlayerIds);}
+  try {validateInterTeamPairings(mapped,doc.playerParticipants,doc.interTeamSides.map(s=>s.team),incomingBench);}
   catch(error){fail(400,error.message);}
   latest.matches=mapped.sort((a,b)=>a.table-b.table);
+  latest.benchPlayerIds=incomingBench;
+  if (benchChanged) {
+    latest.manualBenchOverride=repeated.length ? {
+      approvedBy:req.user._id,approvedAt:new Date(),repeatedPlayerIds:repeated,
+    } : undefined;
+  }
   res.json(await save(req,doc,{rounds}));
 }));
 router.put('/:id/rounds/:number/matches/:matchId',asyncHandler(async(req,res)=>{

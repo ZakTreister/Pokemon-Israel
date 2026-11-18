@@ -100,6 +100,8 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   assert.equal(created.phase,'setup');
   assert.equal(created.interTeamSides.length,2);
   assert.equal(created.playerParticipants.length,8);
+  assert.ok((await ok('/active')).some(row=>row.id===created.id && row.phase==='setup'),
+    'setup meetings can be reopened from the dashboard');
   assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,401);
 
   const first = await ok(`/${created.id}/rounds`, 'POST', {
@@ -109,6 +111,8 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   assert.equal(first.rounds.length,1);
   assert.equal(first.rounds[0].matches.length,3);
   assert.equal(first.rounds[0].benchPlayerIds.length,2);
+  assert.ok((await ok('/active')).some(row=>row.id===created.id&&row.phase==='running'&&row.roundNumber===1),
+    'running meetings stay on dashboard');
   assert.ok(first.rounds[0].matches.every(m=>m.player2 && String(m.player1)!==String(m.player2)));
 
   assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,401);
@@ -136,6 +140,32 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   });
   assert.equal(String(edited.rounds[0].matches[0].player1),swapped[0].player1);
 
+  // Admin switches one playing child with a benched child. Judges may still
+  // swap table pairings, but cannot change who sits on the bench.
+  const playerFromBench=String(edited.rounds[0].benchPlayerIds[0]);
+  const playerToBench=String(edited.rounds[0].matches[0].player1);
+  const firstBenchSwap=edited.rounds[0].matches.map((match,index)=>({
+    matchId:match._id, table:match.table,
+    player1:index===0?playerFromBench:String(match.player1),
+    player2:String(match.player2),
+  }));
+  const firstNewBench=edited.rounds[0].benchPlayerIds.map(player=>
+    String(player)===playerFromBench?playerToBench:String(player));
+  assert.equal((await request(`/${created.id}/rounds/1/pairings`,'PUT',{
+    expectedRevision:edited.revision,matches:firstBenchSwap,benchPlayerIds:firstNewBench,
+  },'judge')).status,403);
+  const invalidBench=[...firstNewBench,firstNewBench[0]];
+  assert.equal((await request(`/${created.id}/rounds/1/pairings`,'PUT',{
+    expectedRevision:edited.revision,matches:firstBenchSwap,benchPlayerIds:invalidBench,
+  },'admin')).status,400);
+  const benchEdited=await ok(`/${created.id}/rounds/1/pairings`,'PUT',{
+    expectedRevision:edited.revision,matches:firstBenchSwap,benchPlayerIds:firstNewBench,
+  },'admin');
+  assert.equal(String(benchEdited.rounds[0].matches[0].player1),playerFromBench);
+  assert.deepEqual(new Set(benchEdited.rounds[0].benchPlayerIds.map(String)),new Set(firstNewBench));
+  assert.equal(benchEdited.rounds[0].matches.flatMap(m=>[String(m.player1),String(m.player2)])
+    .some(player=>firstNewBench.includes(player)),false,'bench and tables never overlap');
+
   const anonymous=connectSocket(origin,{transports:['websocket'],reconnection:false,timeout:5000});
   try {
     const denied=new Promise((resolve,reject)=>{
@@ -159,7 +189,7 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   });
   await Promise.race([subscription,delayPromise(5000,'staff Socket.IO subscription')]);
 
-  let latest=edited;
+  let latest=benchEdited;
   for(const [index, match] of latest.rounds[0].matches.entries()) {
     const event=index===0?new Promise((resolve,reject)=>{
       socket.once('tournament:updated',resolve);
@@ -179,16 +209,49 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
     expectedRevision:latest.revision,
   });
   assert.equal(second.rounds.length,2);
-  const firstBench=new Set(first.rounds[0].benchPlayerIds.map(String));
+  const firstBench=new Set(benchEdited.rounds[0].benchPlayerIds.map(String));
   assert.ok(second.rounds[1].benchPlayerIds.every(player=>!firstBench.has(String(player))));
+
+  // A manager can override bench rotation deliberately, but must confirm
+  // when choosing a child who already sat out a previous round.
+  const recurringBenchPlayer=[...firstBench][0];
+  const secondBenchPlayer=String(second.rounds[1].benchPlayerIds[0]);
+  const repeatedMatch=second.rounds[1].matches.find(m=>String(m.player1)===recurringBenchPlayer);
+  assert.ok(repeatedMatch,'previously benched child should play in round two');
+  const repeatedMatches=second.rounds[1].matches.map(match=>({
+    matchId:match._id,table:match.table,
+    player1:String(match.player1)===recurringBenchPlayer?secondBenchPlayer:String(match.player1),
+    player2:String(match.player2),
+  }));
+  const repeatedBench=second.rounds[1].benchPlayerIds.map(player=>
+    String(player)===secondBenchPlayer?recurringBenchPlayer:String(player));
+  assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
+    expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
+  },'admin')).status,409);
+  assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
+    expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
+    allowRepeatBench:true,
+  },'judge')).status,403);
+  const secondEdited=await ok(`/${created.id}/rounds/2/pairings`,'PUT',{
+    expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
+    allowRepeatBench:true,
+  },'admin');
+  assert.ok(secondEdited.rounds[1].manualBenchOverride.repeatedPlayerIds
+    .map(String).includes(recurringBenchPlayer));
+  assert.equal(String(secondEdited.rounds[1].manualBenchOverride.approvedBy),String(admin._id));
+  assert.ok(secondEdited.rounds[1].benchPlayerIds.map(String).includes(recurringBenchPlayer));
+  assert.equal((await request(`/${created.id}/rounds/2/pairings`,'PUT',{
+    expectedRevision:second.revision,matches:repeatedMatches,benchPlayerIds:repeatedBench,
+    allowRepeatBench:true,
+  },'admin')).status,409,'stale revision must not overwrite a bench decision');
   assert.equal((await request(`/${created.id}/rounds/1/matches/${firstMatches[0]._id}`,'PUT',{
-    expectedRevision:second.revision,
+    expectedRevision:secondEdited.revision,
     result:{winner:'draw',score1:1,score2:1,drawnGames:0},
   })).status,409);
-  assert.equal((await request(`/${created.id}/close`,'POST',{expectedRevision:second.revision})).status,409);
+  assert.equal((await request(`/${created.id}/close`,'POST',{expectedRevision:secondEdited.revision})).status,409);
 
-  latest=second;
-  for(const match of second.rounds[1].matches) {
+  latest=secondEdited;
+  for(const match of secondEdited.rounds[1].matches) {
     latest=await ok(`/${created.id}/rounds/2/matches/${match._id}`,'PUT',{
       expectedRevision:latest.revision,
       result:{winner:'player2',score1:1,score2:2,drawnGames:0},
@@ -200,6 +263,8 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
   assert.equal(done.phase,'completed');
   assert.equal(done.status,'completed');
   assert.equal(done.teamScore[1].matchWins,3);
+  assert.equal((await ok('/active')).some(row=>row.id===created.id),false,
+    'completed meetings disappear from active dashboard');
   assert.equal((await request(`/${created.id}/rounds`,'POST',{expectedRevision:done.revision})).status,409);
   const completedPublic = await fetch(`${origin}/api/tournaments/${created.id}`);
   assert.equal(completedPublic.status, 200, 'completed results can remain public without live viewing');
