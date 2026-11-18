@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import teamsService from '../../features/teams/teamsService';
@@ -23,13 +23,29 @@ const getId=(v:string|{_id:string}|null|undefined):string=>v==null?'':typeof v==
 export default function InterTeamManagePage(){
  const {id=''}=useParams();
  const [data,setData]=useState<Meeting|null>(null);
+ const revisionRef=useRef(-1);
+ const rosterDirtyRef=useRef(false);
  const [selected,setSelected]=useState<string[]>([]);
  const [rosters,setRosters]=useState<Record<string,TeamRosterPlayer[]>>({});
  const [draft,setDraft]=useState<Match[]>([]);
  const [error,setError]=useState('');
  const [busy,setBusy]=useState(false);
- const reload=useCallback(async()=>{const response=await api.get<Meeting>(`/api/inter-team/${id}`);setData(response.data);setSelected((response.data.nextRoundParticipantIds||[]).map(getId));},[id]);
- useEffect(()=>{void reload().catch(e=>setError(requestError(e)));},[reload]);
+ const accept=useCallback((incoming:Meeting)=>{
+   if(incoming.revision<revisionRef.current)return;
+   revisionRef.current=incoming.revision;
+   setData(incoming);
+   if(!rosterDirtyRef.current)
+     setSelected((incoming.nextRoundParticipantIds||[]).map(getId));
+ },[]);
+ const reload=useCallback(async()=>{
+   const response=await api.get<Meeting>(`/api/inter-team/${id}`);
+   accept(response.data);
+ },[id,accept]);
+ useEffect(()=>{
+   revisionRef.current=-1;
+   rosterDirtyRef.current=false;
+   void reload().catch(e=>setError(requestError(e)));
+ },[reload]);
  useEffect(()=>{
    if (!data?.interTeamSides?.length) return;
    let active=true;
@@ -60,12 +76,12 @@ export default function InterTeamManagePage(){
  };
  const save=async(path:string,body:object={})=>{
    if(!data||busy)return;setBusy(true);setError('');
-   try{const response=await api.post<Meeting>(path,{...body,expectedRevision:data.revision});setData(response.data);}
+   try{const response=await api.post<Meeting>(path,{...body,expectedRevision:data.revision});accept(response.data);}
    catch(e){setError(requestError(e));}finally{setBusy(false);}
  };
  const update=async(path:string,body:object)=>{
    if(!data||busy)return;setBusy(true);setError('');
-   try{const response=await api.put<Meeting>(path,{...body,expectedRevision:data.revision});setData(response.data);}
+   try{const response=await api.put<Meeting>(path,{...body,expectedRevision:data.revision});if(path.endsWith('/participants'))rosterDirtyRef.current=false;accept(response.data);}
    catch(e){setError(requestError(e));}finally{setBusy(false);}
  };
  if(!data)return <p role="status">{error||'טוען מפגש…'}</p>;
@@ -98,7 +114,7 @@ export default function InterTeamManagePage(){
        {sides.map(team=><div key={getId(team.team)} className="space-y-2">
          <h4 className="font-bold">{team.nameSnapshot}</h4>
          {(rosters[getId(team.team)]||data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=>({id:getId(p.player),firstName:p.nameSnapshot,lastName:''} as TeamRosterPlayer))).filter(p=>p.isActive!==false&&p.teamMembershipStatus!=='dismissed').map(p=><label key={p.id} className="flex gap-2 items-center">
-           <input type="checkbox" checked={selected.includes(p.id)} onChange={e=>setSelected(current=>e.target.checked?[...current,p.id]:current.filter(x=>x!==p.id))}/>
+           <input type="checkbox" checked={selected.includes(p.id)} onChange={e=>{rosterDirtyRef.current=true;setSelected(current=>e.target.checked?[...current,p.id]:current.filter(x=>x!==p.id));}}/>
            {p.firstName} {p.lastName}
          </label>)}
        </div>)}
@@ -134,7 +150,7 @@ export default function InterTeamManagePage(){
              const response=await api.put<Meeting>(`/api/inter-team/${id}/rounds/${round.number}/matches/${m._id}`,{
                result,expectedRevision,
              });
-             setData(response.data);
+             accept(response.data);
              return 'saved';
            }catch(e){setError(requestError(e));return 'failed';}
            finally{setBusy(false);}
