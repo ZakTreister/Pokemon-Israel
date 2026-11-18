@@ -192,14 +192,14 @@ export default function InterTeamManagePage(){
    {error&&<p role="alert" className="text-destructive">{error}</p>}
    <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
      const result=data.teamScore.find(row=>getId(row.team)===getId(team.team));
-     return <div key={getId(team.team)} className="rounded-xl border p-3 text-center">
+     return <div key={getId(team.team)} className="rounded-xl border bg-white text-slate-900 p-3 text-center">
        <img src={team.logoSnapshot||'/pokemon_kids_logo.png'} alt="" className="mx-auto h-14 w-14 object-contain"/>
        <strong>{team.nameSnapshot}</strong>
        <p className="text-xl font-extrabold">{result?.matchWins??0} ניצחונות</p>
        <p className="text-xs">{result?.matchDraws??0} תיקו · {result?.gameWins??0} ניצחונות במשחקונים</p>
      </div>;
    })}</div>
-   {data.phase!=='completed'&&<section className="border rounded-lg p-4 space-y-3">
+   {data.phase!=='completed'&&<section className="border rounded-lg bg-white text-slate-900 p-4 space-y-3">
      <div className="flex flex-wrap justify-between items-center gap-2">
        <h3 className="font-bold">משתתפים בסבב הבא</h3>
        {data.rounds.length>0&&!participantsEditing&&
@@ -271,7 +271,7 @@ export default function InterTeamManagePage(){
        />
        </div>)}
      </div>
-     <div className="rounded-lg border border-dashed p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
+     <div className="rounded-lg border border-dashed bg-white text-slate-900 p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
        <h4 className="font-bold">ספסל</h4>
        {benchGroups.length?benchGroups.map(group=>
          <div key={group.team} className="space-y-1">
