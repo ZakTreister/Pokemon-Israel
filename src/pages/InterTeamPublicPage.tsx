@@ -32,6 +32,10 @@ export default function InterTeamPublicPage(){
  },[id,data?.phase,data?.status,reload]);
  const participants=useMemo(()=>new Map(data?.participants.map(p=>[idOf(p.player),p])||[]),[data]);
  const name=(id:string)=>participants.get(idOf(id))?.nameSnapshot??'שחקן';
+ const benchByTeam=(benched:string[])=>data?.teams.map(team=>({
+   team:team.nameSnapshot,
+   players:benched.filter(player=>participants.get(idOf(player))?.team===idOf(team.team)).map(name),
+ })).filter(group=>group.players.length>0)??[];
  const teamScores=new Map(data?.teamScore.map(s=>[idOf(s.team),s])||[]);
  const rounds=data?.rounds||[];
  return <main className="container py-8 space-y-6" dir="rtl">
@@ -50,11 +54,19 @@ export default function InterTeamPublicPage(){
      </div>
      {[...rounds].reverse().map(round=><section key={round.number} className="space-y-3">
        <h2 className="text-xl font-bold">סבב {round.number}</h2>
-       <p className="text-sm text-muted-foreground">ספסל: {round.benchPlayerIds.length?round.benchPlayerIds.map(name).join(' · '):'אין'}</p>
        {round.matches.map(match=><article key={match.id} className="border rounded-lg p-4 flex justify-between gap-3">
          <span>שולחן {match.table}: {name(match.player1)} מול {name(match.player2)}</span>
          <strong>{match.result?`${match.result.score1} – ${match.result.score2}`:'ממתין'}</strong>
        </article>)}
+       <div className="rounded-lg border border-dashed p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
+         <h3 className="font-bold">ספסל</h3>
+         {benchByTeam(round.benchPlayerIds).length?benchByTeam(round.benchPlayerIds).map(group=>
+           <div key={group.team}>
+             <p className="font-semibold">{group.team}</p>
+             <p className="text-sm">{group.players.join(' · ')}</p>
+           </div>
+         ):<p className="text-sm text-muted-foreground">אין שחקנים בספסל בסבב זה.</p>}
+       </div>
      </section>)}
    </>}
  </main>;
