@@ -5,7 +5,7 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { io as connectSocket } from 'socket.io-client';
-import { configureTournamentLive } from '../services/tournamentLive.js';
+import { configureTournamentLive, notifyTournament } from '../services/tournamentLive.js';
 import seasonRoutes from '../routes/seasonRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import mediaRoutes from '../routes/mediaRoutes.js';
@@ -762,9 +762,27 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       assert.equal(event.id, t.id);
       assert.equal(event.revision, t.revision);
     }
-    assert.equal((await subscribePublic(t.id)).ok, true,
-      'anonymous public subscription is available after round one only');
+    assert.equal((await subscribePublic(t.id)).ok, false,
+      'team internal tournaments never allow public live subscriptions');
+    const clubLive = await Tournament.create({
+      title: 'Live club event',
+      description: 'Club-only spectator test',
+      date: new Date(),
+      location: 'Test venue',
+      registrationDeadline: new Date(),
+      image: '/pokemon_kids_logo.png',
+      type: 'quarterly',
+      engineVersion: 'swiss-v1',
+      source: 'live',
+      phase: 'running',
+      status: 'upcoming',
+    });
+    assert.equal((await subscribePublic(clubLive.id)).ok, true,
+      'club tournaments remain available to anonymous live spectators');
     const publicUpdate = socketEvent(spectator, 'tournament:public:updated');
+    notifyTournament({ app: { get: () => live } }, clubLive);
+    assert.deepEqual(await publicUpdate, { id: clubLive.id },
+      'only club live notifications reach public viewers');
     let changed = socketEvent(judge, 'tournament:updated');
     t = await ok(
       `/internal-tournaments/${t.id}/rounds/1/matches/${t.rounds[0].matches[0]._id}`,
@@ -776,8 +794,6 @@ test('authorized Socket.IO rooms broadcast canonical results and hard deletion r
       'admin',
     );
     assert.equal((await changed).revision, t.revision);
-    assert.deepEqual(await publicUpdate, { id: t.id },
-      'public notifications must expose no internal revisions or write metadata');
     t = await ok(`/internal-tournaments/${t.id}/close`, 'POST', {
       expectedRevision: t.revision,
     });
