@@ -68,7 +68,7 @@ export default function InterTeamManagePage(){
      <div className="grid md:grid-cols-2 gap-4">
        {sides.map(team=><div key={getId(team.team)} className="space-y-2">
          <h4 className="font-bold">{team.nameSnapshot}</h4>
-         {(rosters[getId(team.team)]||data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=>({id:getId(p.player),firstName:p.nameSnapshot,lastName:''}))).filter(p=>p.isActive!==false&&p.teamMembershipStatus!=='dismissed').map(p=><label key={p.id} className="flex gap-2 items-center">
+         {(rosters[getId(team.team)]||data.playerParticipants.filter(p=>getId(p.team)===getId(team.team)).map(p=>({id:getId(p.player),firstName:p.nameSnapshot,lastName:''} as TeamRosterPlayer))).filter(p=>p.isActive!==false&&p.teamMembershipStatus!=='dismissed').map(p=><label key={p.id} className="flex gap-2 items-center">
            <input type="checkbox" checked={selected.includes(p.id)} onChange={e=>setSelected(current=>e.target.checked?[...current,p.id]:current.filter(x=>x!==p.id))}/>
            {p.firstName} {p.lastName}
          </label>)}
