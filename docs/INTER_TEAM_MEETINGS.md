@@ -9,6 +9,8 @@
 - Repeated opponents incur a large pairing cost; matching points incurs the next cost.
 - New rounds are rejected until all earlier results have been entered. Last-round pairing edits are disabled once any result has been entered.
 - Public matchups subscribe read-only while running, with periodic HTTP recovery; staff socket rooms remain authenticated.
+- Public projections use event-local aliases instead of exposing canonical child/team/staff IDs and show only players announced in published rounds. Setup rosters are not available through the public endpoint.
+- Team score shows completed match victories, draws and game-win tiebreaks, never a sum of individual Swiss points.
 - Only running (`phase === 'running'`) tournaments receive the pulsing red LIVE indicator. Public events list still remains club-only.
 - A judge/admin dashboard shows currently running club tournaments linked to staff management.
 
@@ -34,7 +36,7 @@ All staff mutations except initial creation require `expectedRevision` for colli
 6. Use two judges with an outdated revision. Ensure the second write fails with 409 and must be refreshed.
 7. Verify LIVE pins appear only for running competitions, and that inter-team meetings stay off the club-only events page.
 
-## Limitations pending verification
-- Automated backend pairing tests were added but could not be executed from the GitHub connector environment.
-- Production deployment / end-to-end CI has not been run here.
-- Match-result entry currently exposes basic 1–0/0–1/1–1 controls; the backend supports other validated best-of-three score shapes.
+## Verification
+- GitHub Actions executes build, lint and the existing Stage A backend/UI tests, including the new pairing, team-score and privacy tests, on this pull request.
+- The management UI reuses the existing full best-of-three result editor.
+- Live end-to-end browser/Socket.IO testing with two authenticated devices and a separate anonymous viewer still needs manual verification before production deployment.
