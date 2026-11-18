@@ -10,7 +10,7 @@ export default function LiveClubTournaments(){
    let active=true;
    const load=()=>api.get<PageResult<TournamentEntry>>('/api/tournaments/management',{
      params:{status:'active',type:'quarterly',page:1,pageSize:30}
-   }).then(({data})=>{if(active)setRows(data.items.filter(t=>t.type==='quarterly'&&t.lifecycle==='active'));}).catch(()=>{});
+   }).then(({data})=>{if(active)setRows(data.items.filter(t=>t.type==='quarterly'&&t.phase==='running'));}).catch(()=>{});
    void load();
    const interval=window.setInterval(()=>void load(),30000);
    return()=>{active=false;window.clearInterval(interval);};
