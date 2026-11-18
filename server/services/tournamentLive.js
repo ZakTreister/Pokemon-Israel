@@ -41,7 +41,7 @@ export function configureTournamentLive(io) {
       try {
         if (!validId(id) || !(await Tournament.exists({ _id: id,
           engineVersion: 'swiss-v1', source: 'live', phase: 'running',
-          type: 'quarterly', status: 'upcoming' }))) throw new Error();
+          type: { $in: ['quarterly', null] }, status: 'upcoming' }))) throw new Error();
         for (const joined of socket.rooms)
           if (joined.startsWith('public-tournament:')) socket.leave(joined);
         await socket.join(publicRoom(id));
@@ -67,7 +67,7 @@ export function notifyTournament(req, tournament, deleted = false) {
   // viewers' sockets when the tournament finishes.
   // Only club events have a public live viewer. Team meeting updates stay in
   // the authenticated staff room, even if older clients kept a public socket.
-  if (tournament.type === 'quarterly') {
+  if (tournament.type === 'quarterly' || tournament.type == null) {
     req.app.get('io')?.to(publicRoom(tournament.id)).emit('tournament:public:updated', {
       id: tournament.id,
     });
