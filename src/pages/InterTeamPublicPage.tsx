@@ -12,6 +12,7 @@ interface PublicMeeting {
    id:string;table:number;player1:string;player2:string;result:{winner:string;score1:number;score2:number}|null
  }[]}[];
  standings:{player:string;points:number}[];
+ teamScore:{team:string;matchWins:number;matchDraws:number;gameWins:number}[];
 }
 const idOf=(value:string|{_id:string})=>typeof value==='string'?value:value._id;
 export default function InterTeamPublicPage(){
@@ -31,7 +32,7 @@ export default function InterTeamPublicPage(){
  },[id,data?.phase,data?.status,reload]);
  const participants=useMemo(()=>new Map(data?.participants.map(p=>[idOf(p.player),p])||[]),[data]);
  const name=(id:string)=>participants.get(idOf(id))?.nameSnapshot??'שחקן';
- const score=new Map(data?.standings.map(s=>[idOf(s.player),s.points])||[]);
+ const teamScores=new Map(data?.teamScore.map(s=>[idOf(s.team),s])||[]);
  const rounds=data?.rounds||[];
  return <main className="container py-8 space-y-6" dir="rtl">
    <Link to="/tournaments" className="underline">אירועים</Link>
@@ -43,7 +44,8 @@ export default function InterTeamPublicPage(){
        {data.teams.map(team=><div key={idOf(team.team)} className="border rounded-xl p-4 text-center space-y-2">
          <img src={team.logoSnapshot||'/pokemon_kids_logo.png'} alt="" className="w-20 h-20 object-contain mx-auto"/>
          <h2 className="font-extrabold">{team.nameSnapshot}</h2>
-         <p>{data.participants.filter(p=>idOf(p.team)===idOf(team.team)).reduce((sum,p)=>sum+(score.get(idOf(p.player))||0),0)} נקודות שחקנים</p>
+         <p className="text-lg font-bold">{teamScores.get(idOf(team.team))?.matchWins ?? 0} ניצחונות</p>
+         <p className="text-sm">{teamScores.get(idOf(team.team))?.matchDraws ?? 0} תיקו · {teamScores.get(idOf(team.team))?.gameWins ?? 0} ניצחונות במשחקונים</p>
        </div>)}
      </div>
      {[...rounds].reverse().map(round=><section key={round.number} className="space-y-3">
