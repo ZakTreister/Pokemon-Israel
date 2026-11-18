@@ -17,6 +17,38 @@ test('bench rotates instead of repeating when other players are available', () =
   const two = planInterTeamRound({participants:people,rounds:[scored],teamIds:['a','b']});
   assert.ok(two.benchPlayerIds.every(p => !one.benchPlayerIds.includes(p)));
 });
+test('automatic bench never repeats the immediately preceding round', () => {
+  const one = planInterTeamRound({participants:people,rounds:[],teamIds:['a','b']});
+  const score = round=>({
+    ...round,
+    matches:round.matches.map(match=>({
+      ...match,result:{winner:'draw',score1:1,score2:1,drawnGames:0},
+    })),
+  });
+  const two = planInterTeamRound({participants:people,rounds:[score(one)],teamIds:['a','b']});
+  assert.ok(two.benchPlayerIds.every(player=>!one.benchPlayerIds.includes(player)));
+  const three = planInterTeamRound({participants:people,rounds:[score(one),score(two)],teamIds:['a','b']});
+  assert.ok(three.benchPlayerIds.every(player=>!two.benchPlayerIds.includes(player)));
+  assert.equal(three.benchPlayerIds.length,2);
+});
+
+test('automatic generator refuses consecutive bench turns when mathematically unavoidable', () => {
+  const uneven=[
+    ...Array.from({length:8},(_,index)=>player(index+1,'a')),
+    ...Array.from({length:3},(_,index)=>player(index+9,'b')),
+  ];
+  const first=planInterTeamRound({participants:uneven,rounds:[],teamIds:['a','b']});
+  assert.equal(first.benchPlayerIds.length,5);
+  const scored={
+    ...first,
+    matches:first.matches.map(match=>({...match,result:{winner:'draw',score1:0,score2:0,drawnGames:0}})),
+  };
+  assert.throws(
+    ()=>planInterTeamRound({participants:uneven,rounds:[scored],teamIds:['a','b']}),
+    /לא ניתן להגריל סבב בלי להושיב שחקן בספסל שני סבבים ברצף/,
+  );
+});
+
 test('invalid same-team manual pairings are rejected', () => {
   assert.throws(()=>validateInterTeamPairings([{player1:'1',player2:'2'}],people,['a','b']),/כל צימוד/);
 });
