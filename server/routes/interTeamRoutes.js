@@ -138,9 +138,9 @@ router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
     fail(403,'רק מנהל יכול לשנות את הרכב הספסל');
   const previousBench=new Set(rounds.slice(0,-1).flatMap(round=>round.benchPlayerIds.map(String)));
   const newlyBenched=new Set(incomingBench.filter(player=>!oldBench.includes(player)));
+  // Manual admin override is intentional; track repeated bench turns without
+  // requiring an extra approval flag or confirmation dialog.
   const repeated=[...newlyBenched].filter(player=>previousBench.has(player));
-  if (repeated.length&&req.body.allowRepeatBench!==true)
-    fail(409,'השחקן כבר ישב בספסל בסבב קודם. נדרש אישור מפורש של מנהל');
   const existing=[...latest.matches.flatMap(m=>[String(m.player1),String(m.player2)]),...oldBench].sort();
   const proposed=[...mapped.flatMap(m=>[String(m.player1),String(m.player2)]),...incomingBench].sort();
   if (existing.join(',')!==proposed.join(',')||

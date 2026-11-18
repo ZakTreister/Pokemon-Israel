@@ -32,7 +32,6 @@ export default function InterTeamManagePage(){
  const [rosters,setRosters]=useState<Record<string,TeamRosterPlayer[]>>({});
  const [draft,setDraft]=useState<Match[]>([]);
  const [draftBench,setDraftBench]=useState<string[]>([]);
- const [approveRepeatBench,setApproveRepeatBench]=useState(false);
  const [participantsEditing,setParticipantsEditing]=useState(false);
  const [pairingsEditing,setPairingsEditing]=useState(false);
  const [pairingsBaseRevision,setPairingsBaseRevision]=useState<number|null>(null);
@@ -90,7 +89,6 @@ export default function InterTeamManagePage(){
      setDraft(previous=>previous.map((match,index)=>
        index===matchIndex?{...match,[field]:newPlayer}:match));
      setDraftBench(previous=>previous.map(id=>id===newPlayer?current:id));
-     setApproveRepeatBench(false);
      return;
    }
    const otherIndex=draft.findIndex(match=>match.player1===newPlayer||match.player2===newPlayer);
@@ -130,10 +128,6 @@ export default function InterTeamManagePage(){
    const original=round?.matches.find(row=>row._id===m._id);
    return original && (getId(original.player1)!==m.player1 || getId(original.player2)!==m.player2);
  });
- const previousBench=new Set(data.rounds.slice(0,-1).flatMap(r=>r.benchPlayerIds.map(getId)));
- const repeatedBenchPlayers=benchChanged?draftBench.filter(player=>
-   !originalBench.includes(player)&&previousBench.has(player)):[];
- const repeatApprovalNeeded=repeatedBenchPlayers.length>0;
  const roundComplete=!round || round.matches.every(match=>Boolean(match.result));
  const benchGroups=sides.map(team=>({
    team:team.nameSnapshot,
@@ -156,7 +150,6 @@ export default function InterTeamManagePage(){
  const startPairingsEdit=()=>{
    setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);
    setDraftBench(round?.benchPlayerIds.map(getId)??[]);
-   setApproveRepeatBench(false);
    setPairingsBaseRevision(data.revision);
    setPairingsError('');
    setPairingsEditing(true);
@@ -164,14 +157,12 @@ export default function InterTeamManagePage(){
  const cancelPairingsEdit=()=>{
    setDraft(round?.matches.map(m=>({...m,player1:getId(m.player1),player2:getId(m.player2)}))??[]);
    setDraftBench(round?.benchPlayerIds.map(getId)??[]);
-   setApproveRepeatBench(false);
    setPairingsEditing(false);
    setPairingsBaseRevision(null);
    setPairingsError('');
  };
  const savePairings=async()=>{
-   if(!round||!pairingsEditing||!pairingDirty||busy||
-      (repeatApprovalNeeded&&!approveRepeatBench))return;
+   if(!round||!pairingsEditing||!pairingDirty||busy)return;
    if(pairingsBaseRevision!==data.revision){
      setPairingsError('הסבב עודכן ממכשיר אחר. בטל את העריכה ופתח אותה מחדש כדי לראות את הצימודים המעודכנים.');
      return;
@@ -179,11 +170,9 @@ export default function InterTeamManagePage(){
    const saved=await update(`/api/inter-team/${id}/rounds/${round.number}/pairings`,{
      matches:draft.map(m=>({matchId:m._id,table:m.table,player1:m.player1,player2:m.player2})),
      benchPlayerIds:draftBench,
-     allowRepeatBench:repeatApprovalNeeded&&approveRepeatBench,
    });
    if(saved){
      setPairingsEditing(false);
-     setApproveRepeatBench(false);
      setPairingsBaseRevision(null);
      setPairingsError('');
    }
@@ -192,13 +181,7 @@ export default function InterTeamManagePage(){
    <div className="flex flex-wrap items-center gap-2" aria-label={position==='top'?'סיום עריכת צימודים — למעלה':'סיום עריכת צימודים — למטה'}>
      {pairingsBaseRevision!==data.revision&&<p role="alert" className="basis-full text-sm text-amber-700">הסבב עודכן ממכשיר אחר. בטל ופתח מחדש את העריכה.</p>}
      {pairingsError&&<p role="alert" className="basis-full text-sm text-destructive">{pairingsError}</p>}
-     {repeatApprovalNeeded&&<label className="basis-full flex items-start gap-2 text-sm font-semibold text-amber-800">
-       <input type="checkbox" checked={approveRepeatBench} onChange={event=>setApproveRepeatBench(event.target.checked)}
-         className="mt-1" disabled={busy} />
-       <span>אני מאשר להושיב שוב בספסל את {repeatedBenchPlayers.map(name).join(' · ')} למרות שישבו בספסל בסבב קודם.</span>
-     </label>}
-     <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision||
-       (repeatApprovalNeeded&&!approveRepeatBench)} onClick={()=>void savePairings()}>שמור צימודים</Button>
+     <Button disabled={busy||!pairingDirty||pairingsBaseRevision!==data.revision} onClick={()=>void savePairings()}>שמור צימודים</Button>
      <Button variant="outline" disabled={busy} onClick={cancelPairingsEdit}>ביטול</Button>
    </div>
  );

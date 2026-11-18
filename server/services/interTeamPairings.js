@@ -29,10 +29,22 @@ export function planInterTeamRound({ participants, rounds, teamIds, eligibleIds 
   }
   const larger = sides[0].length >= sides[1].length ? 0 : 1;
   const extra = sides[larger].length - sides[1 - larger].length;
-  // Point ranking comes first within each bench-rotation tier. Never repeat
-  // the bench until every currently eligible player has had an opportunity.
-  const bench = [...sides[larger]].sort((a,b) =>
-    (benchCounts.get(a) ?? 0) - (benchCounts.get(b) ?? 0) ||
+  // Automatic pairing rotates the bench in complete fairness tiers.
+  // A player cannot sit a second time while any eligible teammate has never
+  // sat; likewise no third turn before every teammate has had two turns.
+  // In particular, we never fill a partially exhausted tier with players who
+  // have already benched more often. Admin manual overrides remain unrestricted.
+  const minBenchCount = Math.min(...sides[larger].map(player => benchCounts.get(player) ?? 0));
+  const sameTier = sides[larger].filter(player => (benchCounts.get(player) ?? 0) === minBenchCount);
+  if (sameTier.length < extra)
+    throw new Error('לא ניתן להגריל סבב: יש ילדים שטרם ישבו בספסל כמספר הפעמים של האחרים, ואין מספיק מהם למלא את הספסל. אפשר לשנות את הרכב המשתתפים לפני ההגרלה.');
+  // An automatically generated round also never puts the same child on the
+  // bench in two consecutive rounds, even after all players had a bench turn.
+  const lastBench = new Set((rounds.at(-1)?.benchPlayerIds ?? []).map(id));
+  const benchCandidates = sameTier.filter(player => !lastBench.has(player));
+  if (benchCandidates.length < extra)
+    throw new Error('לא ניתן להגריל סבב בלי להושיב שחקן בספסל שני סבבים ברצף. יש להתאים את הרכב המשתתפים לפני ההגרלה.');
+  const bench = benchCandidates.sort((a,b) =>
     standings.get(a).points - standings.get(b).points ||
     standings.get(b).position - standings.get(a).position ||
     a.localeCompare(b)).slice(0, extra);
