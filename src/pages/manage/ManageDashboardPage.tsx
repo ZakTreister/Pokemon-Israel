@@ -1,6 +1,7 @@
 import TeacherTeams from './TeacherTeams';
 import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
 import InterTeamManagePage from './InterTeamManagePage';
+import LiveClubTournaments from './LiveClubTournaments';
 import LegacyTournamentManagementPage from '../LegacyTournamentManagementPage';
 import { useState } from 'react';
 import {
@@ -190,6 +191,7 @@ export default function ManageDashboardPage() {
                 element={
                   <>
                     <div className="mb-5"><InterTeamLaunch /></div>
+                    <LiveClubTournaments />
                     {admin && <AdminOverview />}
                     <TeacherTeams />
                   </>
