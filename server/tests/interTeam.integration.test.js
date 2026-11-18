@@ -118,7 +118,10 @@ test('end-to-end inter-team API, manual swaps, rotating bench, live viewer and c
     player1:index===0?String(firstMatches[1].player1):index===1?String(firstMatches[0].player1):String(m.player1),
     player2:String(m.player2),
   }));
-  const bad=swapped.map((m,index)=>index===0?{...m,player1:m.player2,player2:m.player1}:m);
+  const bad=swapped.map((m,index)=>
+    index===0 ? {...m,player2:swapped[1].player1} :
+    index===1 ? {...m,player1:swapped[0].player2} : m
+  );
   assert.equal((await request(`/${created.id}/rounds/1/pairings`,'PUT',{
     matches:bad,expectedRevision:first.revision,
   })).status,400);
