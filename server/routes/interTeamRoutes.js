@@ -139,7 +139,7 @@ router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
   const previousBench=new Set(rounds.slice(0,-1).flatMap(round=>round.benchPlayerIds.map(String)));
   const newlyBenched=new Set(incomingBench.filter(player=>!oldBench.includes(player)));
   const repeated=[...newlyBenched].filter(player=>previousBench.has(player));
-  if (repeated.length&&!req.body.allowRepeatBench)
+  if (repeated.length&&req.body.allowRepeatBench!==true)
     fail(409,'השחקן כבר ישב בספסל בסבב קודם. נדרש אישור מפורש של מנהל');
   const existing=[...latest.matches.flatMap(m=>[String(m.player1),String(m.player2)]),...oldBench].sort();
   const proposed=[...mapped.flatMap(m=>[String(m.player1),String(m.player2)]),...incomingBench].sort();
@@ -151,9 +151,11 @@ router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
   catch(error){fail(400,error.message);}
   latest.matches=mapped.sort((a,b)=>a.table-b.table);
   latest.benchPlayerIds=incomingBench;
-  latest.manualBenchOverride=benchChanged&&repeated.length ? {
-    approvedBy:req.user._id,approvedAt:new Date(),repeatedPlayerIds:repeated,
-  } : undefined;
+  if (benchChanged) {
+    latest.manualBenchOverride=repeated.length ? {
+      approvedBy:req.user._id,approvedAt:new Date(),repeatedPlayerIds:repeated,
+    } : undefined;
+  }
   res.json(await save(req,doc,{rounds}));
 }));
 router.put('/:id/rounds/:number/matches/:matchId',asyncHandler(async(req,res)=>{
