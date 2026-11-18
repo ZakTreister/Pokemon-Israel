@@ -29,9 +29,15 @@ export function planInterTeamRound({ participants, rounds, teamIds, eligibleIds 
   }
   const larger = sides[0].length >= sides[1].length ? 0 : 1;
   const extra = sides[larger].length - sides[1 - larger].length;
-  // Point ranking comes first within each bench-rotation tier. Never repeat
-  // the bench until every currently eligible player has had an opportunity.
-  const bench = [...sides[larger]].sort((a,b) =>
+  // Auto-pairing must NEVER bench a child in consecutive rounds. Manual
+  // overrides are a separate admin action and are not subject to this rule.
+  const lastBench = new Set((rounds.at(-1)?.benchPlayerIds ?? []).map(id));
+  const benchCandidates = sides[larger].filter(player => !lastBench.has(player));
+  if (benchCandidates.length < extra)
+    throw new Error('לא ניתן להגריל סבב בלי להושיב שחקן בספסל שני סבבים ברצף. יש להתאים את הרכב המשתתפים לפני ההגרלה.');
+  // Among permitted candidates, prefer players with fewer historical bench
+  // turns, then lower Swiss scores. Earlier nonconsecutive bench turns are OK.
+  const bench = benchCandidates.sort((a,b) =>
     (benchCounts.get(a) ?? 0) - (benchCounts.get(b) ?? 0) ||
     standings.get(a).points - standings.get(b).points ||
     standings.get(b).position - standings.get(a).position ||
