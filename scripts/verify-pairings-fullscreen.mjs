@@ -4,12 +4,17 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { createServer } from 'vite';
 
-// Keep the focused mode independent of actual browser layout; exercise the
-// browser Fullscreen API contract using a simulated document + React renderer.
+// Exercise both browser fullscreen and a no-fullscreen mobile fallback.
 const listeners = new Map();
 const documentMock = {
   body: { style: { overflow: '' } },
   fullscreenElement: null,
+  documentElement: {
+    async requestFullscreen() {
+      documentMock.fullscreenElement = documentMock.documentElement;
+      listeners.get('fullscreenchange')?.forEach((fn) => fn());
+    },
+  },
   addEventListener(name, fn) {
     const entries = listeners.get(name) ?? new Set();
     entries.add(fn);
@@ -24,12 +29,6 @@ const documentMock = {
   },
 };
 globalThis.document = documentMock;
-const surface = {
-  async requestFullscreen() {
-    documentMock.fullscreenElement = surface;
-    listeners.get('fullscreenchange')?.forEach((fn) => fn());
-  },
-};
 const vite = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -42,64 +41,101 @@ try {
   const { default: FullscreenPairings } = await vite.ssrLoadModule(
     '/src/components/tournaments/FullscreenPairings.tsx',
   );
+
+  // An input or a pending result editor must not remount/lose its local draft
+  // as the operator switches from normal view to fullscreen and back.
+  function EditorFixture() {
+    const [draft, setDraft] = React.useState('');
+    React.useEffect(() => {
+      globalThis.editorMounts = (globalThis.editorMounts ?? 0) + 1;
+    }, []);
+    return el('input', {
+      'aria-label': 'תוצאת משחק',
+      value: draft,
+      onChange: (nextValue) => setDraft(nextValue),
+    });
+  }
+
   const mount = (enabled = true) => TestRenderer.create(
     el(FullscreenPairings, {
-      title: 'צימודים',
+      title: 'ניהול טורניר',
       enabled,
-      children: (presenting) =>
-        el('div', { id: 'match-table', 'data-presentation': presenting }, 'שחקן א מול שחקן ב'),
+      children: el(EditorFixture),
     }),
-    {
-      createNodeMock(element) {
-        return element.type === 'div' && element.props['aria-label'] === 'צימודים'
-          ? surface : {};
-      },
-    },
   );
   const button = () => renderer.root.findAllByType('button')[0];
-  const main = () => renderer.root.findByProps({ 'aria-label': 'צימודים' });
-  const table = () => renderer.root.findByProps({ id: 'match-table' });
+  const surface = () => renderer.root.findByProps({ 'aria-label': 'ניהול טורניר' });
+  const input = () => renderer.root.findByProps({ 'aria-label': 'תוצאת משחק' });
+  globalThis.editorMounts = 0;
+
   await act(async () => { renderer = mount(); });
-  assert.equal(button().props['aria-label'], 'הגדל צימודים למסך מלא');
-  assert.equal(table().props['data-presentation'], false);
+  assert.equal(button().props['aria-label'], 'הגדל מסך ניהול טורניר');
+  assert.equal(surface().props['data-fullscreen'], false);
+  await act(async () => { input().props.onChange('2-1'); });
+  assert.equal(input().props.value, '2-1');
 
   await act(async () => { button().props.onClick(); await flush(); });
-  assert.equal(documentMock.fullscreenElement, surface);
-  assert.equal(button().props['aria-label'], 'צמצם תצוגת צימודים');
-  assert.equal(table().props['data-presentation'], true);
-  assert.match(main().props.className, /fixed inset-0/);
+  assert.equal(documentMock.fullscreenElement, documentMock.documentElement);
+  assert.equal(button().props['aria-label'], 'צמצם מסך ניהול טורניר');
+  assert.match(surface().props.className, /fixed inset-0/);
+  assert.equal(surface().props['data-fullscreen'], true);
+  assert.equal(input().props.value, '2-1');
+  assert.equal(globalThis.editorMounts, 1);
+  assert.equal(documentMock.body.style.overflow, 'hidden');
 
-  // Browser Escape or an external fullscreen exit must restore the normal UI.
   await act(async () => { await documentMock.exitFullscreen(); });
-  assert.equal(table().props['data-presentation'], false);
+  assert.equal(input().props.value, '2-1');
+  assert.equal(globalThis.editorMounts, 1);
+  assert.equal(surface().props['data-fullscreen'], false);
+  assert.equal(documentMock.body.style.overflow, '');
 
-  // When the native API is unavailable, keep a fullscreen-like overlay and
-  // restore body scrolling on Escape.
-  surface.requestFullscreen = undefined;
+  documentMock.documentElement.requestFullscreen = undefined;
   await act(async () => { button().props.onClick(); await flush(); });
-  assert.equal(table().props['data-presentation'], true);
+  assert.equal(button().props['aria-label'], 'צמצם מסך ניהול טורניר');
+  assert.equal(input().props.value, '2-1');
   assert.equal(documentMock.body.style.overflow, 'hidden');
   await act(async () => {
     listeners.get('keydown')?.forEach((fn) => fn({ key: 'Escape' }));
   });
-  assert.equal(table().props['data-presentation'], false);
+  assert.equal(button().props['aria-label'], 'הגדל מסך ניהול טורניר');
+  assert.equal(input().props.value, '2-1');
   assert.equal(documentMock.body.style.overflow, '');
   await act(async () => { renderer.unmount(); });
 
   await act(async () => { renderer = mount(false); });
   assert.equal(renderer.root.findAllByType('button').length, 0);
-  assert.equal(table().props['data-presentation'], false);
+  assert.equal(renderer.root.findAllByType('input').length, 1);
   await act(async () => { renderer.unmount(); });
 
   const club = await readFile('src/pages/manage/InternalTournamentPage.tsx', 'utf8');
   const interTeam = await readFile('src/pages/manage/InterTeamManagePage.tsx', 'utf8');
-  assert.match(club, /<FullscreenPairings enabled=\{club\}/);
-  assert.match(club, /readOnly=\{readOnly \|\| presenting\}/);
-  assert.match(interTeam, /<FullscreenPairings title=/);
-  assert.match(interTeam, /readOnly=\{presenting\|\|data\.phase==='completed'\}/);
-  assert.match(interTeam, /!presenting&&data\.phase/);
+  const matchEditor = await readFile('src/components/MatchEditor.tsx', 'utf8');
+
+  assert.match(club, /<FullscreenPairings enabled=\{club\} title=\{`ניהול טורניר/);
+  assert.match(club, /readOnly=\{readOnly\}/);
+  assert.match(club, /round\.matches\.map/);
+  assert.match(club, /group-data-\[fullscreen=true\]:!grid-cols-\[repeat\(auto-fit,minmax\(min\(100%,20rem\),1fr\)\)\]/);
+  assert.match(club, /subscribeTournament\(/);
+  assert.match(club, /הגרל סיבוב נוסף/);
+  assert.doesNotMatch(club, /readOnly=\{readOnly \|\| presenting\}/);
+  assert.match(matchEditor, /שמור תוצאה/);
+
+  assert.match(interTeam, /<FullscreenPairings title=\{`ניהול מפגש/);
+  assert.match(interTeam, /readOnly=\{data\.phase==='completed'\}/);
+  assert.match(interTeam, /subscribeTournament\(/);
+  assert.match(interTeam, /ספסל/);
+  assert.match(interTeam, /שמור צימודים/);
+  assert.match(interTeam, /סיים מפגש/);
   assert.match(interTeam, /matchPoints\(result\)/);
-  console.log('Pairings fullscreen UI checks passed');
+  assert.match(interTeam, /group-data-\[fullscreen=true\]:!grid-cols-\[repeat\(auto-fit,minmax\(min\(100%,20rem\),1fr\)\)\]/);
+  assert.doesNotMatch(interTeam, /!presenting/);
+  // With a 20rem minimum card width and 3/4 gaps of 0.75rem, these
+  // content widths should allow 2, 3 or 4 columns respectively.
+  const columnsForWidth = (width) => Math.min(4, Math.floor((width + 12) / (320 + 12)));
+  assert.equal(columnsForWidth(700), 2);
+  assert.equal(columnsForWidth(1000), 3);
+  assert.equal(columnsForWidth(1400), 4);
+  console.log('Interactive management fullscreen and adaptive grid checks passed');
 } finally {
   if (renderer) await act(async () => { renderer.unmount(); });
   await vite.close();
