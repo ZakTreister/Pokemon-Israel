@@ -276,7 +276,7 @@ export default function InterTeamManagePage(){
        />
        </div>)}
      </div>
-     {<div className="rounded-lg border border-dashed bg-white text-slate-900 p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
+     <div className="rounded-lg border border-dashed bg-white text-slate-900 p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
        <h4 className="font-bold">ספסל</h4>
        {benchGroups.length?benchGroups.map(group=>
          <div key={group.team} className="space-y-1">
@@ -284,7 +284,7 @@ export default function InterTeamManagePage(){
            <p className="text-sm">{group.players.join(' · ')}</p>
          </div>
        ):<p className="text-sm text-muted-foreground">אין שחקנים בספסל בסבב זה.</p>}
-     </div>}
+     </div>
      {pairingsEditing&&pairingActions('bottom')}
    </section>}
    {data.phase!=='completed'&&<div className="border-t pt-4 flex flex-wrap justify-end gap-2">
