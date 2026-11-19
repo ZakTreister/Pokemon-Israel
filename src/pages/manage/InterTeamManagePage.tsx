@@ -238,7 +238,7 @@ export default function InterTeamManagePage(){
      {pairingsEditing&&pairingActions('top')}
      {/* MatchEditor already supplies a standalone table card. Keep one card
          per table, using the same responsive grid as regular tournaments. */}
-     <div className="grid min-w-0 gap-3 xl:grid-cols-2">
+     <div className="grid min-w-0 gap-3 xl:grid-cols-2 group-data-[fullscreen=true]:!grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))]">
        {draft.map((m,i)=><div key={m._id} className="min-w-0 space-y-2">
          {pairingsEditing&&<div className="min-w-0 rounded-lg border bg-muted/40 p-3 space-y-2">
            <p className="text-sm font-bold">שולחן {m.table} · עריכת צימודים</p>
