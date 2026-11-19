@@ -70,6 +70,7 @@ try {
 
   await act(async () => { renderer = mount(); });
   assert.equal(button().props['aria-label'], 'הגדל מסך ניהול טורניר');
+  assert.equal(surface().props['data-fullscreen'], false);
   await act(async () => { input().props.onChange('2-1'); });
   assert.equal(input().props.value, '2-1');
 
@@ -77,6 +78,7 @@ try {
   assert.equal(documentMock.fullscreenElement, documentMock.documentElement);
   assert.equal(button().props['aria-label'], 'צמצם מסך ניהול טורניר');
   assert.match(surface().props.className, /fixed inset-0/);
+  assert.equal(surface().props['data-fullscreen'], true);
   assert.equal(input().props.value, '2-1');
   assert.equal(globalThis.editorMounts, 1);
   assert.equal(documentMock.body.style.overflow, 'hidden');
@@ -84,6 +86,7 @@ try {
   await act(async () => { await documentMock.exitFullscreen(); });
   assert.equal(input().props.value, '2-1');
   assert.equal(globalThis.editorMounts, 1);
+  assert.equal(surface().props['data-fullscreen'], false);
   assert.equal(documentMock.body.style.overflow, '');
 
   documentMock.documentElement.requestFullscreen = undefined;
@@ -111,6 +114,7 @@ try {
   assert.match(club, /<FullscreenPairings enabled=\{club\} title=\{`ניהול טורניר/);
   assert.match(club, /readOnly=\{readOnly\}/);
   assert.match(club, /round\.matches\.map/);
+  assert.match(club, /group-data-\[fullscreen=true\]:!grid-cols-\[repeat\(auto-fit,minmax\(min\(100%,20rem\),1fr\)\)\]/);
   assert.match(club, /subscribeTournament\(/);
   assert.match(club, /הגרל סיבוב נוסף/);
   assert.doesNotMatch(club, /readOnly=\{readOnly \|\| presenting\}/);
@@ -123,8 +127,15 @@ try {
   assert.match(interTeam, /שמור צימודים/);
   assert.match(interTeam, /סיים מפגש/);
   assert.match(interTeam, /matchPoints\(result\)/);
+  assert.match(interTeam, /group-data-\[fullscreen=true\]:!grid-cols-\[repeat\(auto-fit,minmax\(min\(100%,20rem\),1fr\)\)\]/);
   assert.doesNotMatch(interTeam, /!presenting/);
-  console.log('Interactive management fullscreen checks passed');
+  // With a 20rem minimum card width and 3/4 gaps of 0.75rem, these
+  // content widths should allow 2, 3 or 4 columns respectively.
+  const columnsForWidth = (width) => Math.min(4, Math.floor((width + 12) / (320 + 12)));
+  assert.equal(columnsForWidth(700), 2);
+  assert.equal(columnsForWidth(1000), 3);
+  assert.equal(columnsForWidth(1400), 4);
+  console.log('Interactive management fullscreen and adaptive grid checks passed');
 } finally {
   if (renderer) await act(async () => { renderer.unmount(); });
   await vite.close();
