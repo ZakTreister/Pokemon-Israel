@@ -387,7 +387,8 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
     );
   };
   return (
-    <div className="space-y-3 sm:space-y-5">
+    <FullscreenPairings enabled={club} title={`ניהול טורניר · ${tournament.title}`}>
+      <div className="space-y-3 sm:space-y-5">
       {trialDialog && !club && !readOnly && <TrialPlayerDialog
         tournamentId={id}
         revision={tournament.revision}
@@ -646,35 +647,26 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
         />
       )}
       {round && !resultsView && !pairingsView && (
-        <FullscreenPairings enabled={club} title={`צימודים · סיבוב ${round.number}`}>
-          {(presenting) => (
-            <div className="space-y-3">
-              {presenting && (
-                <p className="font-bold text-lg">סיבוב {round.number}</p>
-              )}
-              <div className={`grid min-w-0 gap-3 ${presenting ? 'md:grid-cols-2' : 'xl:grid-cols-2'}`}>
-                {round.matches.map((match) => (
-                  <MatchEditor
-                    key={match._id}
-                    match={match}
-                    name={name}
-                    revision={match.resultRevision ?? 0}
-                    discard={async () => {
-                      await reload();
-                      setFailedMatches((current) =>
-                        current.filter((value) => value !== match._id),
-                      );
-                      setError('');
-                    }}
-                    readOnly={readOnly || presenting}
-                    disabled={busy}
-                    save={(result, revision) => saveResult(match, result, revision)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </FullscreenPairings>
+        <div className="grid gap-3 xl:grid-cols-2">
+          {round.matches.map((match) => (
+            <MatchEditor
+              key={match._id}
+              match={match}
+              name={name}
+              revision={match.resultRevision ?? 0}
+              discard={async () => {
+                await reload();
+                setFailedMatches((current) =>
+                  current.filter((value) => value !== match._id),
+                );
+                setError('');
+              }}
+              readOnly={readOnly}
+              disabled={busy}
+              save={(result, revision) => saveResult(match, result, revision)}
+            />
+          ))}
+        </div>
       )}
       {!readOnly && !pairingsView && tournament.phase === 'running' && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
@@ -741,6 +733,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
           הסיבובים המקוריים נשמרו בארכיון בשרת.
         </p>
       )}
-    </div>
+      </div>
+    </FullscreenPairings>
   );
 }
