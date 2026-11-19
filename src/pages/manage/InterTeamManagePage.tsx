@@ -188,24 +188,23 @@ export default function InterTeamManagePage(){
      <Button variant="outline" disabled={busy} onClick={cancelPairingsEdit}>ביטול</Button>
    </div>
  );
- return <section className="space-y-5" dir="rtl">
+ return <FullscreenPairings title={`ניהול מפגש · ${data.title}`}>
+   <section className="space-y-5" dir="rtl">
    <header className="flex flex-wrap items-center justify-between gap-3">
      <div><h2 className="text-2xl font-extrabold">{data.title}</h2><p>{data.phase==='completed'?'הסתיים':data.phase==='running'?'🔴 LIVE':'בהכנה'}</p></div>
    </header>
    {error&&<p role="alert" className="text-destructive">{error}</p>}
-   <FullscreenPairings title={`צימודים וניקוד · סבב ${round?.number??1}`} disabled={!round||pairingsEditing}>
-     {(presenting)=><>
    <div className="grid grid-cols-2 gap-3">{sides.map(team=>{
      const result=data.teamScore.find(row=>getId(row.team)===getId(team.team));
-     return <div key={getId(team.team)} className={`rounded-xl border bg-white text-slate-900 p-3 text-center ${presenting?'sm:p-5':''}`}>
+     return <div key={getId(team.team)} className="rounded-xl border bg-white text-slate-900 p-3 text-center">
        <img src={team.logoSnapshot||'/pokemon_kids_logo.png'} alt="" className="mx-auto h-14 w-14 object-contain"/>
        <strong>{team.nameSnapshot}</strong>
-       <p className={`${presenting?'text-3xl':'text-xl'} font-extrabold`}>{matchPoints(result)} נקודות</p>
+       <p className="text-xl font-extrabold">{matchPoints(result)} נקודות</p>
        <p className="text-sm">{result?.matchWins??0} ניצחונות · {result?.matchDraws??0} תיקו</p>
        <p className="text-xs">{result?.gameWins??0} ניצחונות במשחקונים</p>
      </div>;
    })}</div>
-   {!presenting&&data.phase!=='completed'&&<section className="border rounded-lg bg-white text-slate-900 p-4 space-y-3">
+   {data.phase!=='completed'&&<section className="border rounded-lg bg-white text-slate-900 p-4 space-y-3">
      <div className="flex flex-wrap justify-between items-center gap-2">
        <h3 className="font-bold">משתתפים בסבב הבא</h3>
        {data.rounds.length>0&&!participantsEditing&&
@@ -232,14 +231,14 @@ export default function InterTeamManagePage(){
    {round&&<section className="space-y-3">
      <div className="flex flex-wrap items-center justify-between gap-2">
        <h3 className="text-xl font-bold">סבב {round.number}</h3>
-       {canEdit&&!pairingsEditing&&!presenting&&
+       {canEdit&&!pairingsEditing&&
          <Button variant="outline" disabled={busy} onClick={startPairingsEdit}>עריכת צימודים</Button>}
      </div>
      {pairingsEditing&&<p className="text-sm text-muted-foreground">אפשר להחליף שחקנים בין שולחנות. {isAdmin?'ניתן גם לבחור שחקן מהספסל, ואז השחקן שהוחלף יעבור לספסל.':'רק מנהל יכול לשנות את הספסל.'}</p>}
      {pairingsEditing&&pairingActions('top')}
      {/* MatchEditor already supplies a standalone table card. Keep one card
          per table, using the same responsive grid as regular tournaments. */}
-     <div className={`grid min-w-0 gap-3 ${presenting?'md:grid-cols-2':'xl:grid-cols-2'}`}>
+     <div className="grid min-w-0 gap-3 xl:grid-cols-2">
        {draft.map((m,i)=><div key={m._id} className="min-w-0 space-y-2">
          {pairingsEditing&&<div className="min-w-0 rounded-lg border bg-muted/40 p-3 space-y-2">
            <p className="text-sm font-bold">שולחן {m.table} · עריכת צימודים</p>
@@ -259,7 +258,7 @@ export default function InterTeamManagePage(){
          match={{...m, result:m.result??null}}
          name={name}
          disabled={busy||pairingsEditing}
-         readOnly={presenting||data.phase==='completed'}
+         readOnly={data.phase==='completed'}
          discard={async()=>{await reload();}}
          revision={data.revision}
          save={async(result,expectedRevision)=>{
@@ -277,7 +276,7 @@ export default function InterTeamManagePage(){
        />
        </div>)}
      </div>
-     {!presenting&&<div className="rounded-lg border border-dashed bg-white text-slate-900 p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
+     {<div className="rounded-lg border border-dashed bg-white text-slate-900 p-4 space-y-2" aria-label={`ספסל סבב ${round.number}`}>
        <h4 className="font-bold">ספסל</h4>
        {benchGroups.length?benchGroups.map(group=>
          <div key={group.team} className="space-y-1">
@@ -288,13 +287,12 @@ export default function InterTeamManagePage(){
      </div>}
      {pairingsEditing&&pairingActions('bottom')}
    </section>}
-     </>}
-   </FullscreenPairings>
    {data.phase!=='completed'&&<div className="border-t pt-4 flex flex-wrap justify-end gap-2">
      <Button disabled={busy||rosterDirty||participantsEditing||pairingsEditing||!roundComplete}
        onClick={()=>void save(`/api/inter-team/${id}/rounds`)}>{round?'הגרל סבב חדש':'הגרל סבב ראשון'}</Button>
      {round&&<Button variant="outline" disabled={busy||!roundComplete||rosterDirty||participantsEditing||pairingsEditing}
        onClick={()=>void save(`/api/inter-team/${id}/close`)}>סיים מפגש</Button>}
    </div>}
- </section>;
+   </section>
+ </FullscreenPairings>;
 }
