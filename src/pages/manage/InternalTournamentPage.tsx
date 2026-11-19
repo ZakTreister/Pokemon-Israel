@@ -647,7 +647,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
         />
       )}
       {round && !resultsView && !pairingsView && (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-3 xl:grid-cols-2 group-data-[fullscreen=true]:!grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))]">
           {round.matches.map((match) => (
             <MatchEditor
               key={match._id}
