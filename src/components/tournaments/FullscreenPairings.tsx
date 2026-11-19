@@ -27,6 +27,8 @@ export default function FullscreenPairings({
   const presenting = mode !== 'normal';
 
   useEffect(() => {
+    // SSR and React's test renderer do not supply a browser document.
+    if (typeof document === 'undefined') return;
     const handleFullscreenChange = () => {
       if (document.fullscreenElement === surfaceRef.current) {
         setMode('native');
