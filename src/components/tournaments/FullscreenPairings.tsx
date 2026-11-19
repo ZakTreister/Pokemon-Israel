@@ -86,10 +86,11 @@ export default function FullscreenPairings({
     <div
       dir="rtl"
       aria-label={title}
+      data-fullscreen={presenting}
       className={
         presenting
-          ? 'fixed inset-0 z-[45] h-dvh w-screen overflow-y-auto bg-background p-3 text-foreground sm:p-6'
-          : 'space-y-4'
+          ? 'group fixed inset-0 z-[45] h-dvh w-screen overflow-y-auto bg-background p-3 text-foreground sm:p-6'
+          : 'group space-y-4'
       }
     >
       <div className={presenting
