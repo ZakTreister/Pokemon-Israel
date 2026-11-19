@@ -47,3 +47,8 @@ All staff mutations except initial creation require `expectedRevision` for colli
 ## Management interface updates (2026-11-18)
 - Pairing edit mode has Save/Cancel actions both above the tables and below the bench.
 - Management tournament filters use explicit buttons for status/type, rather than dropdowns. The public events filter retains its existing layout.
+
+## Fullscreen presentation of live pairings (2026-11-19)
+- The management screen offers a four-corner expand icon for the current round. Browser fullscreen displays only the two team scorecards, round number, and read-only matchup/result cards; bench, participant editing, match-edit inputs and management controls are hidden. A four-corner inward icon or Escape restores the normal editor and its data.
+- During fullscreen, the team cards show **display-only match points** (`3 × completed match wins + 1 × completed match draws`), alongside match wins, draws and game wins. This is not the official inter-team league table or a new server-side persisted score; it does not award bench points.
+- Live Socket.IO updates continue to refresh the canonical current results and scores. When the Fullscreen API is blocked or unsupported, a full-viewport overlay is used instead.

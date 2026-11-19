@@ -16,6 +16,7 @@ import Button from '../../components/ui/Button';
 import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
 import RoundPairingsEditor from '../../components/tournaments/RoundPairingsEditor';
+import FullscreenPairings from '../../components/tournaments/FullscreenPairings';
 import TrialPlayerDialog from '../../components/tournaments/TrialPlayerDialog';
 import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
 import ParticipantList from '../../features/tournaments/components/ParticipantList';
@@ -645,26 +646,35 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
         />
       )}
       {round && !resultsView && !pairingsView && (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {round.matches.map((match) => (
-            <MatchEditor
-              key={match._id}
-              match={match}
-              name={name}
-              revision={match.resultRevision ?? 0}
-              discard={async () => {
-                await reload();
-                setFailedMatches((current) =>
-                  current.filter((value) => value !== match._id),
-                );
-                setError('');
-              }}
-              readOnly={readOnly}
-              disabled={busy}
-              save={(result, revision) => saveResult(match, result, revision)}
-            />
-          ))}
-        </div>
+        <FullscreenPairings enabled={club} title={`צימודים · סיבוב ${round.number}`}>
+          {(presenting) => (
+            <div className="space-y-3">
+              {presenting && (
+                <p className="font-bold text-lg">סיבוב {round.number}</p>
+              )}
+              <div className={`grid min-w-0 gap-3 ${presenting ? 'md:grid-cols-2' : 'xl:grid-cols-2'}`}>
+                {round.matches.map((match) => (
+                  <MatchEditor
+                    key={match._id}
+                    match={match}
+                    name={name}
+                    revision={match.resultRevision ?? 0}
+                    discard={async () => {
+                      await reload();
+                      setFailedMatches((current) =>
+                        current.filter((value) => value !== match._id),
+                      );
+                      setError('');
+                    }}
+                    readOnly={readOnly || presenting}
+                    disabled={busy}
+                    save={(result, revision) => saveResult(match, result, revision)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </FullscreenPairings>
       )}
       {!readOnly && !pairingsView && tournament.phase === 'running' && (
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
