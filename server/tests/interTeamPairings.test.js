@@ -24,6 +24,55 @@ const scoredRound = round=>({
   })),
 });
 
+test('opening round randomly assigns opponents and the surplus bench', () => {
+  const first = planInterTeamRound({
+    participants: people, rounds: [], teamIds: ['a', 'b'], random: () => 0,
+  });
+  const second = planInterTeamRound({
+    participants: people, rounds: [], teamIds: ['a', 'b'], random: () => 0.999999,
+  });
+
+  assert.deepEqual(first.matches.map(({ player1, player2 }) => [player1, player2]),
+    [['2', '7'], ['3', '8'], ['4', '6']]);
+  assert.deepEqual(first.benchPlayerIds, ['5', '1']);
+  assert.deepEqual(second.matches.map(({ player1, player2 }) => [player1, player2]),
+    [['1', '6'], ['2', '7'], ['3', '8']]);
+  assert.deepEqual(second.benchPlayerIds, ['4', '5']);
+  for (const plan of [first, second]) {
+    assert.equal(validateInterTeamPairings(plan.matches, people, ['a', 'b'], plan.benchPlayerIds), true);
+    assert.equal(new Set([
+      ...plan.matches.flatMap(({player1, player2}) => [player1, player2]),
+      ...plan.benchPlayerIds,
+    ]).size, people.length);
+  }
+});
+
+test('equal-size teams draw a random opponent for each player with no bench', () => {
+  const roster = [
+    ...Array.from({length:3},(_,i)=>player(i+1,'a')),
+    ...Array.from({length:3},(_,i)=>player(i+4,'b')),
+  ];
+  const first = planInterTeamRound({
+    participants: roster, rounds: [], teamIds: ['a', 'b'], random: () => 0,
+  });
+  assert.deepEqual(first.matches.map(({player1,player2})=>[player1,player2]),
+    [['2','5'], ['3','6'], ['1','4']]);
+  assert.deepEqual(first.benchPlayerIds, []);
+  assert.equal(validateInterTeamPairings(first.matches,roster,['a','b'],[]),true);
+});
+
+test('later rounds keep the deterministic Swiss policy and never use randomness', () => {
+  const first = planInterTeamRound({
+    participants: people, rounds: [], teamIds: ['a', 'b'], random: () => 0,
+  });
+  const params = { participants: people, rounds: [scoredRound(first)], teamIds: ['a', 'b'] };
+  const second = planInterTeamRound({
+    ...params, random: () => { throw new Error('random must only be used in round one'); },
+  });
+  assert.deepEqual(second, planInterTeamRound({...params, random: () => 0.999999}));
+  assert.equal(validateInterTeamPairings(second.matches,people,['a','b'],second.benchPlayerIds),true);
+});
+
 test('never repeat a bench turn while any eligible teammate has never sat', () => {
   // Five vs three means two bench seats per round. After two rounds, only
   // one child has never sat, so the third automatic round must be refused.
