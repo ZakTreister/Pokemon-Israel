@@ -1,381 +1,49 @@
-import UpdateAction from '../features/updates/components/UpdateAction';
-import { publicTournaments } from '../services/publicTournaments';
-import HeroArtwork from '../features/home/components/HeroArtwork';
-import DataTable from '../components/ui/DataTable';
-import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
-import { useEffect, useState } from 'react';
+import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { Calendar, Trophy, Newspaper, Users, Images, ArrowUpLeft } from 'lucide-react';
+import { useAppDispatch,useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
-import {
-  getNationalRankings,
-  type NationalRanking,
-} from '../services/rankings';
+import { getNationalRankings,type NationalRanking } from '../services/rankings';
+import { eventsService } from '../services/events';
+import type { EventSummary } from '../types/event';
 import { requestError } from '../utils/requestError';
 import { TRIAL_REGISTRATION_URL } from '../config/publicSite';
-import { Calendar, Trophy, ArrowUpLeft, Newspaper } from 'lucide-react';
+import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
+import HeroArtwork from '../features/home/components/HeroArtwork';
 import Button from '../components/ui/Button';
-import { SectionHeading } from '../components/ui/SectionHeading';
-export default function HomePage() {
-  const dispatch = useAppDispatch();
-  const [tournaments, setTournaments] = useState<
-    import('../services/publicTournaments').PublicTournamentSummary[]
-  >([]);
-  const [tournamentsLoading, setTournamentsLoading] = useState(true);
-  const [tournamentsError, setTournamentsError] = useState('');
-  const [totals, setTotals] = useState({ all: 0, upcoming: 0 });
-  const {
-    updates,
-    isLoading: updatesLoading,
-    error: updatesError,
-  } = useAppSelector((state) => state.updates);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const [rankings, setRankings] = useState<NationalRanking[] | null>(null);
-  const [rankingsError, setRankingsError] = useState('');
-  useEffect(() => {
-    dispatch(fetchUpdates());
-  }, [dispatch]);
-  useEffect(() => {
-    let active = true;
-    getNationalRankings()
-      .then((data) => {
-        if (active) setRankings(data.rankings);
-      })
-      .catch((e) => {
-        if (active) setRankingsError(requestError(e));
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const regular = tournaments.filter((t) => !t.type || t.type === 'quarterly');
-  const upcomingTournaments = regular
-    .filter(
-      (t) =>
-        t.status !== 'completed' && new Date(t.date).getTime() > Date.now(),
-    )
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  useEffect(() => {
-    let active = true;
-    Promise.all([
-      publicTournaments.summary('quarterly'),
-      publicTournaments.list({
-        type: 'quarterly',
-        status: 'upcoming',
-        pageSize: 3,
-        order: 'asc',
-      }),
-    ])
-      .then(([summary, page]) => {
-        if (active) {
-          setTotals({ all: summary.total, upcoming: summary.upcoming });
-          setTournaments(page.items);
-        }
-      })
-      .catch((e) => {
-        if (active) setTournamentsError(requestError(e));
-      })
-      .finally(() => {
-        if (active) setTournamentsLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const totalTournaments = totals.all;
-  const upcomingCount = totals.upcoming;
-  const featuredTournament = upcomingTournaments[0];
-  const latest = [...updates].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  )[0];
-  return (
-    <div>
-      {!!updates.length && (
-        <aside className="cs-ticker py-3 text-white" aria-label="חדשות הליגה">
-          <div className="container flex items-center gap-4">
-            <Newspaper size={20} className="shrink-0 text-gold" />
-            <strong className="shrink-0">חדשות הליגה</strong>
-            <div className="flex gap-8 overflow-x-auto whitespace-nowrap py-1">
-              {[...updates]
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime(),
-                )
-                .slice(0, 5)
-                .map((update) => (
-                  <Link
-                    key={update.id}
-                    className="hover:text-gold"
-                    to={`/news/${update.id}`}
-                  >
-                    {update.title} ←
-                  </Link>
-                ))}
-            </div>
-          </div>
-        </aside>
-      )}
-      <section className="relative overflow-hidden bg-hero-navy text-white">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 halftone-dots"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 diagonal-lines"
-        />
-        <div className="container relative grid items-center gap-2 py-10 sm:py-12 lg:grid-cols-[1.03fr_.97fr] lg:gap-8 lg:py-16">
-          <div className="relative z-10 min-w-0">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-cyan/30 bg-navy-700/30 px-3 py-1.5 text-xs font-bold text-blue-100">
-              <span
-                className="h-2 w-2 rounded-full bg-gold"
-                aria-hidden="true"
-              />
-              <span dir="ltr">CARDSCHOOL IL • POKÉMON TCG</span>
-            </div>
-            <h1 className="text-5xl font-black leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
-              המשחק שלך.
-              <br />
-              <span className="text-gold">הליגה שלנו.</span>
-            </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-blue-100 sm:text-lg">
-              הבית של ליגת הפוקימון הישראלית. בחר את הטורניר הבא שלך, עקוב אחרי
-              הדירוגים ופגוש את הקהילה.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center gap-4">
-              <Button asChild variant="cta" size="lg">
-                <Link to="/tournaments">
-                  לטורניר הבא <ArrowUpLeft className="ms-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="border-white/70 bg-transparent text-white hover:bg-white/10 hover:text-white"
-              >
-                <Link to="/rankings">
-                  טבלת הדירוג <Trophy className="ms-2 h-4 w-4" />
-                </Link>
-              </Button>
-              {!isAuthenticated && (
-                <Link
-                  to="/login"
-                  className="text-sm font-bold text-blue-100 underline decoration-blue-cyan/50 underline-offset-4 hover:text-gold"
-                >
-                  כניסת צוות
-                </Link>
-              )}
-            </div>
-            <div className="mt-9 flex gap-6 border-t border-white/20 pt-5 sm:gap-9">
-              <div>
-                <strong className="block text-2xl font-black text-white tabular-nums">
-                  {tournamentsLoading || tournamentsError
-                    ? '—'
-                    : totalTournaments}
-                </strong>
-                <span className="text-xs text-blue-200">טורנירים בליגה</span>
-              </div>
-              <div>
-                <strong className="block text-2xl font-black text-gold tabular-nums">
-                  {tournamentsLoading || tournamentsError ? '—' : upcomingCount}
-                </strong>
-                <span className="text-xs text-blue-200">טורנירים קרובים</span>
-              </div>
-              <div>
-                <strong className="block text-2xl font-black text-white tabular-nums">
-                  {rankings === null || rankingsError
-                    ? '—'
-                    : (rankings?.length ?? 0)}
-                </strong>
-                <span className="text-xs text-blue-200">שחקנים מדורגים</span>
-              </div>
-            </div>
-          </div>
-          <HeroArtwork />
-        </div>
-      </section>
-      <AllStarsTeamsSection />
-      <section className="bg-section-light py-12">
-        <div className="container">
-          <SectionHeading
-            title="מובילי הליגה הישראלית"
-            subtitle="דירוג שחקני החוגים המצטבר מכל שנות הפעילות"
-            icon={<Trophy size={20} />}
-          />
-          {rankingsError && (
-            <p role="alert" className="text-destructive">
-              {rankingsError}
-            </p>
-          )}
-          {rankings === null ? (
-            <p>טוען דירוג...</p>
-          ) : !rankings.length ? (
-            <p className="text-muted-foreground">
-              הדירוג יופיע לאחר פרסום תוצאות טורנירי החוגים.
-            </p>
-          ) : (
-            <DataTable
-              headerClassName="bg-navy-700 text-white"
-              rows={[...rankings]
-                .sort((a, b) => a.position - b.position)
-                .slice(0, 8)}
-              rowKey={(row) => row.playerId}
-              columns={[
-                {
-                  key: 'position',
-                  label: 'מקום',
-                  value: (row) => row.position,
-                },
-                { key: 'name', label: 'שחקן', value: (row) => row.playerName },
-                { key: 'points', label: 'נקודות', value: (row) => row.points },
-                {
-                  key: 'tournaments',
-                  label: 'טורנירים',
-                  value: (row) => row.tournaments,
-                },
-              ]}
-            />
-          )}
-          <Button asChild variant="outline" className="mt-6">
-            <Link to="/rankings">לטבלת הליגה הישראלית המלאה ←</Link>
-          </Button>
-        </div>
-      </section>
-      {featuredTournament && (
-        <section className="py-12 md:py-14">
-          <div className="container">
-            <div className="cs-public-card relative overflow-hidden bg-feature p-6 text-white shadow-card-hover sm:p-8 md:p-10">
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 halftone-dots opacity-50"
-              />
-              <div className="relative grid items-center gap-6 md:grid-cols-[1.4fr_1fr]">
-                <div>
-                  <p className="mb-3 flex items-center gap-2 text-xs font-bold text-blue-cyan">
-                    <Calendar size={16} /> האירוע הבא בליגה
-                  </p>
-                  <h2 className="text-3xl font-black sm:text-4xl">
-                    {featuredTournament.title}
-                  </h2>
-                  <p className="mt-3 text-blue-100">
-                    {new Date(featuredTournament.date).toLocaleDateString(
-                      'he-IL',
-                    )}{' '}
-                    · {featuredTournament.location}
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-4">
-                    <Button asChild variant="cta">
-                      <Link to={`/tournaments/${featuredTournament.id}`}>
-                        פרטים והרשמה
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="border-white/60 bg-transparent text-white hover:bg-white/10 hover:text-white"
-                    >
-                      <Link to="/tournaments">כל אירועי הליגה</Link>
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-5 border-s-4 border-gold ps-5">
-                  <Trophy className="h-16 w-16 shrink-0 text-gold" />
-                  <div>
-                    <p className="text-xs font-bold text-blue-200">
-                      פרסים בטורניר
-                    </p>
-                    <p className="mt-2 text-xl font-extrabold">
-                      {featuredTournament.prizePool}
-                    </p>
-                    <p className="mt-2 text-sm text-blue-100">
-                      {featuredTournament.currentParticipants} /{' '}
-                      {featuredTournament.maxParticipants} משתתפים
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {!featuredTournament && (
-        <section className="container py-8">
-          <h2 className="text-2xl font-bold mb-3">אירוע החוגים הבא</h2>
-          {tournamentsError ? (
-            <p role="alert">{tournamentsError}</p>
-          ) : (
-            <p className="text-muted-foreground">
-              {tournamentsLoading
-                ? 'טוען אירועים...'
-                : 'האירוע הבא יופיע כאן כשיפורסם.'}
-            </p>
-          )}
-          <Link className="text-blue-500 font-bold" to="/tournaments">
-            לכל האירועים והארכיון ←
-          </Link>
-        </section>
-      )}
-      <section className="bg-navy-700 py-12">
-        <div className="container grid gap-5 md:grid-cols-2">
-          <article className="cs-public-card p-6 sm:p-8 border-t-4 border-t-gold">
-            <p className="text-blue-500 font-bold mb-3">מצטרפים לקהילה</p>
-            <h2 className="text-2xl font-extrabold mb-4">
-              הרשמה לחוג הקרוב לביתכם
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              מצאו את החוג הקרוב והצטרפו למשחק, ללמידה ולקהילה.
-            </p>
-            {TRIAL_REGISTRATION_URL ? (
-              <Button asChild variant="cta">
-                <a
-                  href={TRIAL_REGISTRATION_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  להרשמה לחוג ←
-                </a>
-              </Button>
-            ) : (
-              <Button variant="cta" disabled>
-                קישור ההרשמה יעודכן בקרוב
-              </Button>
-            )}
-          </article>
-          <article className="cs-public-card p-6 sm:p-8 border-t-4 border-t-blue-500">
-            <p className="text-blue-500 font-bold mb-3">העדכון האחרון</p>
-            {updatesError && <p role="alert">{updatesError}</p>}
-            {latest ? (
-              <>
-                {latest.image && (
-                  <img
-                    src={latest.image}
-                    alt=""
-                    className="w-full h-44 object-cover rounded-md mb-4"
-                  />
-                )}
-                <h2 className="text-2xl font-extrabold mb-3">{latest.title}</h2>
-                <p className="text-xs text-muted-foreground mb-4">
-                  {new Date(latest.date).toLocaleDateString('he-IL')}
-                </p>
-                <p className="text-muted-foreground mb-6 line-clamp-3">
-                  {latest.description ?? latest.content}
-                </p>
-                <UpdateAction update={latest} />
-                <Button asChild variant="outline">
-                  <Link to={`/news/${latest.id}`}>לעדכון המלא ←</Link>
-                </Button>
-              </>
-            ) : (
-              <p className="text-muted-foreground">
-                {updatesLoading
-                  ? 'טוען עדכונים...'
-                  : 'העדכון הבא יופיע כאן לאחר פרסומו.'}
-              </p>
-            )}
-          </article>
-        </div>
-      </section>
-    </div>
-  );
+export default function HomePage(){
+ const dispatch=useAppDispatch(),{updates}=useAppSelector(s=>s.updates);
+ const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
+ useEffect(()=>{dispatch(fetchUpdates());eventsService.list({pageSize:16}).then(r=>setEvents(r.items)).catch(e=>setError(requestError(e)));getNationalRankings({pageSize:3}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[dispatch]);
+ const now=Date.now();
+ const future=events.filter(e=>e.startDate&&new Date(e.startDate).getTime()>=now).sort((a,b)=>new Date(a.startDate!).getTime()-new Date(b.startDate!).getTime());
+ const featured=future.find(e=>e.featured)||events.find(e=>e.featured)||future[0]||events[0];
+ const sortedUpdates=[...updates].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime());
+ return <div>
+ {!!sortedUpdates.length&&<aside aria-label="חדשות הליגה" className="cs-ticker py-3 text-white"><div className="container flex gap-4 items-center"><Newspaper className="shrink-0" size={20}/><strong className="shrink-0">חדשות הליגה</strong><div className="flex gap-6 overflow-x-auto whitespace-nowrap">{sortedUpdates.slice(0,6).map(u=><Link className="hover:text-gold" key={u.id} to={'/news/'+u.id}>{u.title} ←</Link>)}</div></div></aside>}
+ <section className="relative overflow-hidden bg-hero-navy text-white">
+ <div className="container grid items-center gap-4 lg:grid-cols-[1.5fr_0.5fr] py-7 sm:py-9">
+ <div><p className="text-gold font-bold text-sm mb-2">מה קורה עכשיו ב־CardSchool?</p>
+ <h1 className="text-3xl sm:text-5xl font-black leading-tight">{featured?featured.title:'המשחק שלך. הליגה שלנו.'}</h1>
+ <p className="mt-3 max-w-xl text-blue-100">{featured?(featured.description||'בואו לגלות את האירוע, המשחקים והעדכונים האחרונים.'):'מגלים את הנבחרות, אירועי הליגה והדירוג הישראלי במקום אחד.'}</p>
+ {featured?.startDate&&<p className="mt-2 text-gold font-bold"><Calendar size={17} className="inline ms-1"/> {new Date(featured.startDate).toLocaleDateString('he-IL')}</p>}
+ <div className="flex flex-wrap gap-3 mt-5"><Button asChild variant="cta"><Link to={featured?'/events/'+featured.id:'/tournaments'}>{featured?'למשחקים ולעדכונים':'לכל האירועים'} <ArrowUpLeft className="inline ms-2" size={17}/></Link></Button><Button asChild variant="outline" className="border-white/70 text-white bg-transparent hover:bg-white/10"><Link to="/all-stars">נבחרות All Stars</Link></Button></div></div>
+ <div className="hidden lg:block max-w-xs"><HeroArtwork/></div>
+ </div></section>
+ <section className="container py-7 grid gap-3 sm:grid-cols-3">
+ {([{to:'/rankings',title:'מצאו את עצמכם בדירוג',subtitle:'חפשו את השם שלכם',icon:<Trophy/>},{to:'/all-stars',title:'הכירו את הנבחרות',subtitle:'המשחקים, הדירוגים והיריבות',icon:<Users/>},{to:'/news',title:'תמונות וסרטונים',subtitle:'מה חדש מהאירועים ומהליגה',icon:<Images/>}] as const).map(x=><Link key={x.to} to={x.to} className="cs-public-card p-5 flex flex-col gap-2 border-t-4 border-t-gold">{x.icon}<strong className="text-lg">{x.title}</strong><span className="text-muted-foreground text-sm">{x.subtitle}</span></Link>)}
+ </section>
+ <section className="bg-section-light py-10"><div className="container space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">חדשות מהשטח</h2><Link to="/news" className="text-blue-500 font-bold">כל העדכונים ←</Link></div>
+ <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4" aria-label="גלגלת עדכונים">
+ {sortedUpdates.slice(0,10).map(u=>{const image=u.mediaItems?.find(m=>m.kind==='image')?.url||u.image;return <article key={u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
+ {image?<img src={image} alt="" loading="lazy" className="w-full h-40 object-cover"/>:<div className="h-40 bg-navy-700 flex items-center justify-center text-gold"><Newspaper size={46}/></div>}
+ <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={'/news/'+u.id} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div></div></article>})}
+ </div>{!sortedUpdates.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>
+ <AllStarsTeamsSection/>
+ <section className="container py-10 space-y-4"><h2 className="text-2xl sm:text-3xl font-extrabold">מובילי הליגה הישראלית</h2><div className="grid grid-cols-3 gap-2 sm:gap-4">{leaders.map(row=><article key={row.playerId} className="cs-public-card p-3 text-center"><strong className="block text-2xl text-blue-500">#{row.position}</strong><p className="font-bold text-sm sm:text-lg break-words">{row.playerName}</p><p className="text-sm">{row.points} נקודות</p></article>)}</div><Button asChild variant="outline"><Link to="/rankings">איפה אתם בדירוג? חפשו את שמכם</Link></Button></section>
+ <section className="container pb-12 space-y-4"><div className="flex justify-between items-center flex-wrap gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">אירועים קרובים</h2><Link to="/tournaments" className="text-blue-500 font-bold">כל האירועים ←</Link></div>{error&&<p role="alert">{error}</p>}
+ <div className="grid sm:grid-cols-2 gap-4">{future.slice(0,2).map(ev=><Link key={ev.id} to={'/events/'+ev.id} className="cs-public-card p-5"><p className="text-xs text-blue-500">{ev.category==='club'?'חוגים':'אולסטארז'}</p><strong>{ev.title}</strong><p className="text-muted-foreground">{ev.startDate&&new Date(ev.startDate).toLocaleDateString('he-IL')}</p></Link>)}</div>
+ {!future.length&&<p className="text-muted-foreground">אירועים קרובים יופיעו כאן לאחר פרסומם.</p>}</section>
+ <section className="bg-navy-700 text-white py-9"><div className="container flex items-center justify-between flex-wrap gap-4"><div><h2 className="text-2xl font-extrabold">מצטרפים לחוג הפוקימון</h2><p>לימוד, משחק וחברים קרוב לבית</p></div><Button asChild variant="cta"><a href={TRIAL_REGISTRATION_URL} target="_blank" rel="noopener noreferrer">להרשמה לחוג</a></Button></div></section>
+ </div>;
 }
