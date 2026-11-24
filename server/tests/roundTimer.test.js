@@ -49,7 +49,7 @@ test('duration may be changed while paused; reset is manual', () => {
 
 test('cannot silently restart, configure or reset a running timer', () => {
   const started = changeRoundTimer(createRoundTimer(), 'start');
-  assert.throws(() => changeRoundTimer(started, 'start'), /להפעיל מחדש/);
+  assert.throws(() => changeRoundTimer(started, 'start'), /הפעלה מחדש/);
   assert.throws(() => changeRoundTimer(started, 'configure', 900), /לעצור/);
   assert.throws(() => changeRoundTimer(started, 'reset'), /לעצור/);
   assert.throws(() => changeRoundTimer(createRoundTimer(), 'pause'), /אינו פועל/);
