@@ -52,6 +52,24 @@ router.post('/',asyncHandler(async(req,res)=>{
   const teamIds=req.body.teamIds;
   if (!Array.isArray(teamIds)||teamIds.length!==2||!teamIds.every(validId)||teamIds[0]===teamIds[1])
     fail(400,'יש לבחור שתי נבחרות שונות');
+
+  let event=null,fixture=null;
+  if(req.body.eventId!==undefined || req.body.fixtureId!==undefined){
+    if(!validId(req.body.eventId)||!validId(req.body.fixtureId))
+      fail(400,'אירוע ומפגש מתוכנן נדרשים');
+    event=await Event.findById(req.body.eventId);
+    if(!event||event.category!=='all_stars')fail(400,'אירוע אולסטארז לא נמצא');
+    fixture=event.fixtures.id(req.body.fixtureId);
+    if(!fixture)fail(404,'המפגש המתוכנן לא נמצא');
+    const planned=[String(fixture.firstTeam),String(fixture.secondTeam)].sort().join(',');
+    if(planned!==[...teamIds].sort().join(','))
+      fail(400,'נבחרות המפגש אינן תואמות לתכנון');
+    if(fixture.tournament){
+      const existing=await Tournament.findOne({_id:fixture.tournament,eventId:event._id,type:'inter_team'});
+      if(!existing)fail(409,'המפגש משויך לטורניר שאינו זמין');
+      return res.json(serial(existing));
+    }
+  }
   const teams=await Team.find({_id:{$in:teamIds},isActive:true});
   if (teams.length!==2) fail(400,'יש לבחור שתי נבחרות פעילות');
   const players=await Player.find({team:{$in:teamIds},playerType:'team',isActive:true,
@@ -67,10 +85,26 @@ router.post('/',asyncHandler(async(req,res)=>{
     location:ordered.map(t=>t.name).join(' / '),image:ordered[0].toJSON().logo||'/pokemon_kids_logo.png',
     maxParticipants:128,currentParticipants:players.length,source:'live',phase:'setup',
     status:'upcoming',createdBy:req.user._id,
+    ...(event?{eventId:event._id}:{}),
     interTeamSides:ordered.map(t=>({team:t._id,nameSnapshot:t.name,logoSnapshot:t.toJSON().logo})),
     playerParticipants:players.map(snapshot),
     nextRoundParticipantIds:players.map(p=>p._id),
   });
+  if(event&&fixture){
+    const result=await Event.updateOne({
+      _id:event._id,fixtures:{$elemMatch:{_id:fixture._id,tournament:null}}
+    },{$set:{'fixtures.$.tournament':doc._id}});
+    if(!result.modifiedCount){
+      await doc.deleteOne();
+      const fresh=await Event.findById(event._id);
+      const matched=fresh?.fixtures.id(fixture._id);
+      if(matched?.tournament){
+        const existing=await Tournament.findOne({_id:matched.tournament,eventId:event._id,type:'inter_team'});
+        if(existing) return res.json(serial(existing));
+      }
+      fail(409,'המפגש כבר הופעל או עודכן במקביל');
+    }
+  }
   res.status(201).json(serial(doc));
 }));
 router.get('/active',asyncHandler(async(req,res)=>{
