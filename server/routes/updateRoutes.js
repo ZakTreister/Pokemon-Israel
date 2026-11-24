@@ -2,6 +2,7 @@ import express from 'express';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import {
   getUpdates,
+  getManagedUpdates,
   getUpdate,
   createUpdate,
   updateUpdate,
@@ -9,6 +10,7 @@ import {
 } from '../controllers/updateController.js';
 
 const router = express.Router();
+router.get('/management', protect, admin, getManagedUpdates);
 
 router.route('/')
   .get(getUpdates)

@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 
 const updateSchema = new mongoose.Schema(
   {
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null, index: true },
     title: {
       type: String,
       required: true,
@@ -32,6 +33,7 @@ const updateSchema = new mongoose.Schema(
 updateSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
+    ret.eventId = ret.eventId ? String(ret.eventId) : null;
     ret.description = ret.content || '';
     ret.image = publicMediaUrl(doc.imageMedia);
     delete ret.imageMedia;

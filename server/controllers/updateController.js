@@ -2,12 +2,21 @@ import { updateFields } from '../services/updateFields.js';
 import { resolveUpload, finishAttachment } from '../services/mediaUpload.js';
 import asyncHandler from 'express-async-handler';
 import Update from '../models/updateModel.js';
+import Event from '../models/eventModel.js';
+import { fail } from '../utils/httpError.js';
+const linkedEvent = async (input, existing) => {
+  const id = input.eventId === undefined ? existing?.eventId ?? null : input.eventId;
+  if (id === null || id === '') return null;
+  if (!/^[a-f0-9]{24}$/i.test(String(id)) || !await Event.exists({ _id:id })) fail(400,'האירוע המשויך לא נמצא');
+  return id;
+};
 
 // @desc    Get all updates
 // @route   GET /api/updates
 // @access  Public
 export const getUpdates = asyncHandler(async (req, res) => {
-  const updates = await Update.find({}).sort('-date');
+  const published = await Event.find({ status:'published' }).select('_id').lean();
+  const updates = await Update.find({ $or: [{eventId:null},{eventId:{$in:published.map(e=>e._id)}}] }).sort('-date');
   res.json(updates);
 });
 
@@ -16,6 +25,7 @@ export const getUpdates = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const createUpdate = asyncHandler(async (req, res) => {
   const fields = updateFields(req.body);
+  fields.eventId = await linkedEvent(req.body);
   const attachment = await resolveUpload(req, 'update-image');
   const update = await Update.create({
     ...fields,
@@ -35,6 +45,7 @@ export const updateUpdate = asyncHandler(async (req, res) => {
 
   if (update) {
     Object.assign(update, updateFields(req.body, update));
+    update.eventId = await linkedEvent(req.body,update);
     const previous = update.imageMedia;
     const attachment = await resolveUpload(
       req,
@@ -75,9 +86,13 @@ export const getUpdate = asyncHandler(async (req, res) => {
     throw new Error('Update not found');
   }
   const update = await Update.findById(req.params.id);
+  if (update?.eventId && !await Event.exists({_id:update.eventId,status:'published'})) fail(404,'Update not found');
   if (!update) {
     res.status(404);
     throw new Error('Update not found');
   }
   res.json(update);
 });
+
+// Admin-only canonical feed, including updates linked to draft events.
+export const getManagedUpdates = asyncHandler(async(req,res)=>res.json(await Update.find({}).sort('-date')));
