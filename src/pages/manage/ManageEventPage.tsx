@@ -3,6 +3,7 @@ import { Link,useNavigate,useParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
 import EventEditor from '../../features/events/EventEditor';
+import FixtureEditor from '../../features/events/FixtureEditor';
 import MediaManager from '../../components/media/MediaManager';
 import UpdateEditDialog from '../../features/updates/components/UpdateEditDialog';
 import { eventsService } from '../../services/events';
@@ -33,6 +34,7 @@ export default function ManageEventPage(){
  <Button disabled={!selected||busy} onClick={()=>void link()}>שייך</Button>
  <Button asChild variant="outline"><Link to={event.category==='club'?'/manage/tournaments/regular?eventId='+id:'/manage/tournaments'}>צור טורניר</Link></Button></div>
  </section>
+ {event.category === "all_stars" && <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תכנון מפגשים</h3><FixtureEditor eventId={id} fixtures={event.fixtures} onSaved={reload}/></section>}
  <section className="border rounded-lg p-4 space-y-3"><div className="flex justify-between items-center"><h3 className="text-xl font-bold">עדכוני האירוע</h3><Button onClick={()=>setEditing(null)}>עדכון חדש</Button></div>
  {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}
