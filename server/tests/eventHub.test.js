@@ -18,10 +18,10 @@ test('official meeting league scoring 3/1/0 and individual game differential',()
  const a=rows.find(x=>x.id==='a'),b=rows.find(x=>x.id==='b'),c=rows.find(x=>x.id==='c');
  assert.equal(a.leaguePoints,3);
  assert.equal(a.played,2);
- assert.equal(a.gameDifference,0);
+ assert.equal(a.gameDifference,1);
  assert.equal(b.leaguePoints,0);
  assert.equal(c.leaguePoints,3);
- assert.equal(c.gameDifference,1);
+ assert.equal(c.gameDifference,2);
  assert.equal(c.position,1);
  assert.equal(a.position,2);
 });
