@@ -191,3 +191,22 @@ test('event-scoped creation persists club association and appends future fixture
  assert.equal(b.fixtures[1].tournamentId,null);
  assert.equal(await Tournament.countDocuments({eventId:stars.id}),0);
 });
+
+test('scheduled inter-team creation creates a real upcoming tournament without rounds',async()=>{
+ const event=await ok('/events','POST',{title:'Scheduled meeting',category:'all_stars'},'admin',201);
+ const admin=await User.findOne({role:'admin'});
+ const [a,b]=await Team.create([{name:'Scheduled Alpha',createdBy:admin._id},{name:'Scheduled Beta',createdBy:admin._id}]);
+ await Player.create([{firstName:'A',lastName:'Scheduled',playerType:'team',team:a._id,city:'City',isActive:true},{firstName:'B',lastName:'Scheduled',playerType:'team',team:b._id,city:'City',isActive:true}]);
+ const scheduledDate=new Date(Date.now()+86400000*10).toISOString();
+ const input={eventId:event.id,teamIds:[a.id,b.id],scheduledDate,location:'Test venue'};
+ assert.equal((await call('/inter-team','POST',input,'judge')).status,403);
+ const created=await ok('/inter-team','POST',input,'admin',201);
+ assert.equal(created.status,'upcoming');
+ assert.equal(created.phase,'setup');
+ assert.equal(created.date,scheduledDate);
+ assert.equal(created.eventId,event.id);
+ assert.equal(created.rounds.length,0);
+ assert.equal((await ok('/events/management/'+event.id,'GET',undefined,'admin')).tournaments.length,1);
+ assert.equal((await ok('/inter-team/active','GET',undefined,'admin')).some(t=>t.id===created.id),false);
+ assert.equal((await call('/inter-team/'+created.id+'/rounds','POST',{expectedRevision:created.revision},'admin')).status,400);
+});
