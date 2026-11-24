@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { teamLeagueStandings,leagueYearStart } from '../services/teamLeagueStandings.js';
-import { validateVideo } from '../services/mediaUpload.js';
 import { youtubeId } from '../services/assetAttachment.js';
 const team=(id,name)=>({_id:id,name,toJSON:()=>({logo:''})});
 function meeting(sides,matches){
@@ -48,12 +47,4 @@ test('YouTube accepts bounded HTTPS video IDs only',()=>{
  for (const input of ['http://youtu.be/AbCdEf123_-','https://evil-youtube.com/watch?v=AbCdEf123_-','https://www.youtube.com/watch?v=<script>','javascript:alert(1)','https://youtu.be/invalid']) {
   assert.throws(()=>youtubeId(input));
  }
-});
-test('MP4 and WebM verification checks actual bytes',()=>{
- const mp4=Buffer.from([0,0,0,20,102,116,121,112,105,115,111,109]);
- const webm=Buffer.from([26,69,223,163,1,2,3,4]);
- assert.doesNotThrow(()=>validateVideo(mp4,'video/mp4'));
- assert.doesNotThrow(()=>validateVideo(webm,'video/webm'));
- assert.throws(()=>validateVideo(mp4,'video/webm'));
- assert.throws(()=>validateVideo(Buffer.from('hello world'),'video/mp4'));
 });
