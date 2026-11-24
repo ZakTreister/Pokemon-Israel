@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   changeRoundTimer, createRoundTimer, readRoundTimer,
-  remainingRoundSeconds, roundsWithStoppedTimer,
+  remainingRoundSeconds, stopRoundTimer,
 } from '../services/roundTimer.js';
 
 const time = iso => new Date(iso);
@@ -12,7 +12,7 @@ test('a new round timer is ready, not automatically started by pairing', () => {
   assert.equal(timer.status, 'ready');
   assert.equal(timer.startedAt, null);
   assert.equal(timer.remainingSeconds, 3000);
-  assert.deepEqual(readRoundTimer({}), timer);
+  assert.deepEqual(readRoundTimer(undefined), timer);
 });
 
 test('start, pause, resume and expiry derive time from server timestamps', () => {
@@ -59,13 +59,12 @@ test('cannot silently restart, configure or reset a running timer', () => {
 test('new round freezes old running clock without restarting the next one', () => {
   const started = changeRoundTimer(createRoundTimer(1200), 'start', undefined,
     time('2026-11-24T10:00:00Z'));
-  const original = {number:1, timer:started, matches:[]};
-  const prepared = roundsWithStoppedTimer([original], time('2026-11-24T10:02:00Z'));
-  assert.equal(prepared[0].timer.status, 'paused');
-  assert.equal(prepared[0].timer.remainingSeconds, 1080);
-  assert.equal(prepared[0].timer.version, 2);
-  assert.equal(original.timer.status, 'running', 'do not mutate stored round');
-  const next = createRoundTimer(prepared[0].timer.durationSeconds);
+  const oldTimer = stopRoundTimer(started, time('2026-11-24T10:02:00Z'));
+  assert.equal(oldTimer.status, 'paused');
+  assert.equal(oldTimer.remainingSeconds, 1080);
+  assert.equal(oldTimer.version, 2);
+  assert.equal(started.status, 'running', 'do not mutate original clock');
+  const next = createRoundTimer(oldTimer.durationSeconds);
   assert.equal(next.status, 'ready');
   assert.equal(next.remainingSeconds, 1200);
 });
