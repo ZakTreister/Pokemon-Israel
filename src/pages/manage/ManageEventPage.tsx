@@ -39,7 +39,7 @@ export default function ManageEventPage(){
  {showEdit&&<EventEditor initial={event} busy={busy} onSave={save}/>}
  {event.status==='published'&&<Link className="text-blue-500" to={'/events/'+id}>צפייה באתר הציבורי ←</Link>}
  <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">טורנירי האירוע</h3>
- {event.tournaments.map(t=><div key={t.id} className="flex gap-3 justify-between items-center"><Link className="text-blue-500" to={'/tournaments/'+t.id}>{t.title}</Link><Button size="sm" variant="outline" disabled={busy} onClick={()=>void unlink(t.id)}>הסר שיוך</Button></div>)}
+ {event.tournaments.map(t=><div key={t.id} className="flex gap-3 justify-between items-center"><Link className="text-blue-500" to={'/tournaments/'+t.id}>{t.title}</Link><div className="flex gap-2">{t.type==='inter_team'&&<Button asChild size="sm" variant="outline"><Link to={'/manage/inter-team/'+t.id}>פתח ניהול מפגש</Link></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={()=>void unlink(t.id)}>הסר שיוך</Button></div></div>)}
  <div className="flex gap-2 flex-wrap"><select aria-label="בחר טורניר" className="border rounded p-2 bg-card" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">בחר טורניר קיים</option>{eligible.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select>
  <Button disabled={!selected||busy} onClick={()=>void link()}>שייך</Button>
  {event.category==='club'&&<Button variant="outline" onClick={()=>setCreateDialog(true)}>יצירת טורניר חוגים</Button>}</div>
