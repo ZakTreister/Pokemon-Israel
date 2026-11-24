@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
+import Event from '../models/eventModel.js';
 import Team from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';

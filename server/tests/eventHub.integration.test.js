@@ -10,6 +10,9 @@ import Event from '../models/eventModel.js';
 import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
 import '../models/deckModel.js';
+import Team from '../models/teamModel.js';
+import Player from '../models/playerModel.js';
+import interTeamRoutes from '../routes/interTeamRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
@@ -38,6 +41,7 @@ before(async()=>{
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
  app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
+ app.use('/api/inter-team',interTeamRoutes);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -103,4 +107,31 @@ test('tournaments have at most one event; weekly internal and wrong categories r
  // Legacy events still have directly reachable tournament records.
  assert.equal((await ok('/tournaments/'+club.id)).id,club.id);
  assert.equal((await ok('/tournaments/'+internal.id)).id,internal.id);
+});
+
+test('planned All-Stars fixture launches exactly one official inter-team tournament',async()=>{
+ const admin=await User.findOne({role:'admin'});
+ const [first,second]=await Team.create([
+  {name:'Planned Alpha',createdBy:admin._id},
+  {name:'Planned Beta',createdBy:admin._id},
+ ]);
+ await Player.create([
+  {firstName:'Alpha',lastName:'Test',playerType:'team',team:first._id,city:'City',isActive:true},
+  {firstName:'Beta',lastName:'Test',playerType:'team',team:second._id,city:'City',isActive:true},
+ ]);
+ const ev=await ok('/events','POST',{title:'מחזור פתיחה',category:'all_stars',status:'published'},'admin',201);
+ const planned=await ok('/events/'+ev.id+'/fixtures','PUT',{fixtures:[{
+  firstTeam:first.id,secondTeam:second.id,date:'2026-11-29T10:00:00.000Z',location:'תל אביב'
+ }]},'admin');
+ assert.equal(planned.fixtures.length,1);
+ const input={teamIds:[first.id,second.id],eventId:ev.id,fixtureId:planned.fixtures[0].id};
+ const created=await ok('/inter-team','POST',input,'admin',201);
+ assert.equal(created.eventId,ev.id);
+ assert.equal(created.phase,'setup');
+ const repeated=await ok('/inter-team','POST',input,'admin',200);
+ assert.equal(repeated.id,created.id);
+ const detail=await ok('/events/'+ev.id);
+ assert.equal(detail.fixtures[0].tournamentId,created.id);
+ assert.equal(detail.tournaments.length,1);
+ assert.equal((await Tournament.countDocuments({eventId:ev.id,type:'inter_team'})),1);
 });

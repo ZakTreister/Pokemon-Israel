@@ -20,6 +20,12 @@ export default function ManageEventPage(){
  const save=async(data:EventInput)=>{setBusy(true);try{await eventsService.update(id,data);await reload();setShowEdit(false);}catch(e){setError(requestError(e));throw e;}finally{setBusy(false);}};
  const link=async()=>{if(!selected)return;setBusy(true);try{await eventsService.link(id,selected);await reload();setSelected('');}catch(e){setError(requestError(e));}finally{setBusy(false);}};
  const unlink=async(tid:string)=>{setBusy(true);try{await eventsService.unlink(id,tid);await reload();}catch(e){setError(requestError(e));}finally{setBusy(false);}};
+ const startFixture=async(f:{id:string;firstTeam:string;secondTeam:string})=>{
+   setBusy(true);setError('');try{
+     const {data}=await api.post<{id:string}>('/api/inter-team',{teamIds:[f.firstTeam,f.secondTeam],eventId:id,fixtureId:f.id});
+     navigate('/manage/inter-team/'+data.id);
+   }catch(e){setError(requestError(e));}finally{setBusy(false);}
+ };
  const remove=async()=>{if(!window.confirm('למחוק אירוע? יש להסיר קודם שיוכי טורנירים ועדכונים.'))return;setBusy(true);try{await eventsService.remove(id);navigate('/manage/events');}catch(e){setError(requestError(e));setBusy(false);}};
  if(!event)return <p role="status">{error||'טוען אירוע...'}</p>;
  const eligible=available.filter(t=>t.type!=='team_internal'&&(!t.eventId||t.eventId===id)&&(event.category==='club'?t.type==='quarterly':t.type==='inter_team'));
@@ -34,7 +40,12 @@ export default function ManageEventPage(){
  <Button disabled={!selected||busy} onClick={()=>void link()}>שייך</Button>
  <Button asChild variant="outline"><Link to={event.category==='club'?'/manage/tournaments/regular?eventId='+id:'/manage/tournaments'}>צור טורניר</Link></Button></div>
  </section>
- {event.category === "all_stars" && <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תכנון מפגשים</h3><FixtureEditor eventId={id} fixtures={event.fixtures} tournaments={event.tournaments} onSaved={reload}/></section>}
+ {event.category === "all_stars" && <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תכנון מפגשים</h3><FixtureEditor eventId={id} fixtures={event.fixtures} tournaments={event.tournaments} onSaved={reload}/>
+ {event.fixtures.map(f=><div key={f.id} className="flex flex-wrap justify-between items-center gap-2 border-t pt-2">
+   <span className="text-sm">{new Date(f.date).toLocaleString('he-IL')} · מפגש נבחרות</span>
+   {f.tournamentId?<Button asChild variant="outline" size="sm"><Link to={'/manage/inter-team/'+f.tournamentId}>פתח ניהול מפגש</Link></Button>:
+    <Button size="sm" disabled={busy} onClick={()=>void startFixture(f)}>הפעל מפגש מתוכנן</Button>}
+ </div>)}</section>}
  <section className="border rounded-lg p-4 space-y-3"><div className="flex justify-between items-center"><h3 className="text-xl font-bold">עדכוני האירוע</h3><Button onClick={()=>setEditing(null)}>עדכון חדש</Button></div>
  {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}
