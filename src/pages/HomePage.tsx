@@ -2,6 +2,7 @@ import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Trophy, Newspaper, Users, Images, ArrowUpLeft } from 'lucide-react';
 import UpdateAction from '../features/updates/components/UpdateAction';
+import api from '../services/api';
 import { useAppDispatch,useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { getNationalRankings,type NationalRanking } from '../services/rankings';
@@ -15,10 +16,16 @@ import Button from '../components/ui/Button';
 export default function HomePage(){
  const dispatch=useAppDispatch(),{updates}=useAppSelector(s=>s.updates);
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
+ const [heroFixtures,setHeroFixtures]=useState<Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>>([]);
  useEffect(()=>{dispatch(fetchUpdates());eventsService.list({pageSize:16}).then(r=>setEvents(r.items)).catch(e=>setError(requestError(e)));getNationalRankings({pageSize:3}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[dispatch]);
  const now=Date.now();
  const future=events.filter(e=>e.startDate&&new Date(e.startDate).getTime()>=now).sort((a,b)=>new Date(a.startDate!).getTime()-new Date(b.startDate!).getTime());
  const featured=future.find(e=>e.featured)||events.find(e=>e.featured)||future[0]||events[0];
+ useEffect(()=>{if(featured?.category!=='all_stars'){setHeroFixtures([]);return;}let active=true;
+   api.get<{fixtures:Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>}>('/api/all-stars/overview').then(({data})=>{if(active)setHeroFixtures((data.fixtures||[]).filter(f=>f.eventId===featured.id));}).catch(()=>{});
+   return ()=>{active=false};
+ },[featured?.id,featured?.category]);
+ const nextFixture=heroFixtures.find(f=>new Date(f.date).getTime()>=now)||heroFixtures[0];
  const sortedUpdates=[...updates].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime());
  return <div>
  {!!sortedUpdates.length&&<aside aria-label="חדשות הליגה" className="cs-ticker py-3 text-white"><div className="container flex gap-4 items-center"><Newspaper className="shrink-0" size={20}/><strong className="shrink-0">חדשות הליגה</strong><div className="flex gap-6 overflow-x-auto whitespace-nowrap">{sortedUpdates.slice(0,6).map(u=><Link className="hover:text-gold" key={u.id} to={'/news/'+u.id}>{u.title} ←</Link>)}</div></div></aside>}
@@ -27,6 +34,7 @@ export default function HomePage(){
  <div><p className="text-gold font-bold text-sm mb-2">מה קורה עכשיו ב־CardSchool?</p>
  <h1 className="text-3xl sm:text-5xl font-black leading-tight">{featured?featured.title:'המשחק שלך. הליגה שלנו.'}</h1>
  <p className="mt-3 max-w-xl text-blue-100">{featured?(featured.description||'בואו לגלות את האירוע, המשחקים והעדכונים האחרונים.'):'מגלים את הנבחרות, אירועי הליגה והדירוג הישראלי במקום אחד.'}</p>
+ {nextFixture&&<div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5" aria-label="הנבחרות המתמודדות">{[nextFixture.firstTeam,nextFixture.secondTeam].map((team,i)=><div key={team.id} className="flex items-center gap-2">{i===1&&<span className="font-black text-gold text-xl me-2">VS</span>}{team.logo&&<img className="h-12 w-12 object-contain" src={team.logo} alt={''}/>}<strong>{team.name}</strong></div>)}<span className="text-sm text-blue-100">{new Date(nextFixture.date).toLocaleString('he-IL')}</span></div>}
  {featured?.startDate&&<p className="mt-2 text-gold font-bold"><Calendar size={17} className="inline ms-1"/> {new Date(featured.startDate).toLocaleDateString('he-IL')}</p>}
  <div className="flex flex-wrap gap-3 mt-5"><Button asChild variant="cta"><Link to={featured?'/events/'+featured.id:'/tournaments'}>{featured?'למשחקים ולעדכונים':'לכל האירועים'} <ArrowUpLeft className="inline ms-2" size={17}/></Link></Button><Button asChild variant="outline" className="border-white/70 text-white bg-transparent hover:bg-white/10"><Link to="/all-stars">נבחרות All Stars</Link></Button></div></div>
  <div className="hidden lg:block max-w-xs"><HeroArtwork/></div>

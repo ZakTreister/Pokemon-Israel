@@ -23,6 +23,11 @@ export default function AllStarsPage(){
  ]).then(([t,overview,e,u])=>{if(active){setTeams(t);setTable(overview.standings);setFixtures(overview.fixtures);setRecentMeetings(overview.recentMeetings||[]);setInternals(overview.internalTournaments);setEvents(e.items);setUpdates(u);}}).catch(e=>{if(active)setError(requestError(e));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false};},[]);
  const now=Date.now(),upcoming=fixtures.filter(f=>new Date(f.date).getTime()>=now),recent=fixtures.filter(f=>new Date(f.date).getTime()<now).reverse();
  const displayed=filter==='all'?internals:internals.filter(t=>t.team===filter);
+ const favorite=typeof window==='undefined'?null:window.localStorage.getItem('cardschool.favoriteTeam');
+ const leagueUpdates=updates.filter(u=>u.eventId&&events.some(ev=>ev.id===u.eventId)).sort((a,b)=>{
+   const preferred=(u:Update)=>Number(!!favorite&&fixtures.some(f=>f.eventId===u.eventId&&(f.firstTeam.id===favorite||f.secondTeam.id===favorite)));
+   return preferred(b)-preferred(a)||new Date(b.date).getTime()-new Date(a.date).getTime();
+ });
  return <div className="container py-8 sm:py-12 space-y-10">
  <header><h1 className="text-4xl font-black">ליגת All Stars</h1><p className="text-muted-foreground mt-2">המשחקים, התוצאות, הנבחרות והטורנירים השבועיים.</p></header>
  {error&&<p role="alert" className="text-destructive">{error}</p>}
@@ -41,6 +46,6 @@ export default function AllStarsPage(){
  {displayed.map(t=><article key={t.id} className="border rounded-lg p-4 flex gap-2 justify-between items-center"><div><strong>{t.title}</strong><p className="text-sm text-muted-foreground">{teams.find(x=>x.id===t.team)?.name||''} · {new Date(t.date).toLocaleDateString('he-IL')}</p></div><Link className="text-blue-500 font-bold" to={'/tournaments/'+t.id}>לתוצאות ←</Link></article>)}
  {!displayed.length&&<p>אין טורנירים להצגה.</p>}
  <p className="text-sm text-muted-foreground">הדירוג האישי נמצא בתוך כל נבחרת; אין דירוג אישי משותף בין נבחרות.</p></section>
- <section className="space-y-3"><h2 className="text-2xl font-extrabold">מה חדש בליגה?</h2><div className="grid gap-3 sm:grid-cols-2">{events.map(ev=><Link key={ev.id} className="cs-public-card p-4" to={'/events/'+ev.id}><h3 className="font-bold">{ev.title}</h3><p className="line-clamp-2 text-muted-foreground">{ev.description}</p></Link>)}</div>{updates.filter(u=>u.eventId&&events.some(ev=>ev.id===u.eventId)).slice(0,6).map(u=><Link key={u.id} to={"/news/"+u.id} className="block border rounded-lg p-3"><strong>{u.title}</strong>{u.image&&<img className="mt-2 w-full max-w-xs aspect-video object-cover rounded-lg" src={u.image} alt="" loading="lazy"/>}</Link>)}</section>
+ <section className="space-y-3"><h2 className="text-2xl font-extrabold">מה חדש בליגה?</h2><div className="grid gap-3 sm:grid-cols-2">{events.map(ev=><Link key={ev.id} className="cs-public-card p-4" to={'/events/'+ev.id}><h3 className="font-bold">{ev.title}</h3><p className="line-clamp-2 text-muted-foreground">{ev.description}</p></Link>)}</div>{leagueUpdates.slice(0,6).map(u=><Link key={u.id} to={"/news/"+u.id} className="block border rounded-lg p-3"><strong>{u.title}</strong>{u.image&&<img className="mt-2 w-full max-w-xs aspect-video object-cover rounded-lg" src={u.image} alt="" loading="lazy"/>}</Link>)}</section>
  </>}</div>;
 }
