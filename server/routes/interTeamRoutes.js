@@ -110,8 +110,10 @@ router.post('/:id/rounds',asyncHandler(async(req,res)=>{
     plan=planInterTeamRound({participants:doc.playerParticipants,rounds:doc.rounds,
       teamIds:doc.interTeamSides.map(s=>s.team),eligibleIds:doc.nextRoundParticipantIds});
   } catch(error){fail(400,error.message);}
-  const round={number:doc.rounds.length+1,createdAt:new Date(),createdBy:req.user._id,...plan};
-  res.json(await save(req,doc,{phase:'running',rounds:[...doc.rounds.map(r=>r.toObject()),round]}));
+  const now=new Date();
+  const round={number:doc.rounds.length+1,createdAt:now,createdBy:req.user._id,
+    timer:createRoundTimer(doc.rounds.at(-1)?.timer?.durationSeconds),...plan};
+  res.json(await save(req,doc,{phase:'running',rounds:[...roundsWithStoppedTimer(doc.rounds,now),round]}));
 }));
 router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
