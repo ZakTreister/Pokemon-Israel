@@ -5,21 +5,12 @@ import MediaUpload from '../models/mediaUploadModel.js';
 import { s3Storage } from './storage/s3Storage.js';
 import { publicMediaUrl } from './storage/mediaMetadata.js';
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-export const VIDEO_TYPES = {'video/mp4':'mp4','video/webm':'webm'};
 export const IMAGE_TYPES = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
 };
 export { fail } from '../utils/httpError.js';
-export function validateVideo(buffer,mime){
- if(!Buffer.isBuffer(buffer)||buffer.length<8) fail(400,'קובץ וידאו לא תקין');
- const mp4=buffer.toString('ascii',4,8)==='ftyp';
- const webm=buffer.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]));
- if(!((mime==='video/mp4'&&mp4)||(mime==='video/webm'&&webm))) fail(400,'פורמט הסרטון לא תואם לקובץ');
-}
-
 const validId = (value) =>
   typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 export function validateImage(buffer, mime) {
@@ -91,11 +82,9 @@ export async function presignUpload(req) {
     ].includes(purpose)
   )
     fail(400, 'מטרת העלאה לא נתמכת');
-  const isVideo = Object.hasOwn(VIDEO_TYPES, contentType);
-  const videoAllowed = ['event-media','update-media'].includes(purpose);
-  const validType = Object.hasOwn(IMAGE_TYPES,contentType)||(isVideo && videoAllowed);
-  if (!validType || !Number.isInteger(size) || size<1 || size>(isVideo?MAX_VIDEO_BYTES:MAX_IMAGE_BYTES))
-    fail(400, videoAllowed ? 'תמונה עד 5MB או סרטון MP4/WebM עד 100MB' : 'בחרו PNG, JPEG או WebP עד 5MB');
+  // Video files are not supported in this release. Videos are YouTube links only.
+  if (!Object.hasOwn(IMAGE_TYPES,contentType) || !Number.isInteger(size) || size<1 || size>MAX_IMAGE_BYTES)
+    fail(400, 'ניתן להעלות תמונות PNG, JPEG או WebP עד 5MB בלבד. לסרטונים יש להוסיף קישור YouTube');
   let entity, id;
   if (entityId !== undefined) {
     if (!validId(entityId)) fail(400, 'מזהה רשומה לא חוקי');
@@ -108,7 +97,7 @@ export async function presignUpload(req) {
     entity?.playerType || req.body.playerType,
   );
   const uploadId = new mongoose.Types.ObjectId();
-  const filename = `${randomUUID()}.${(isVideo?VIDEO_TYPES:IMAGE_TYPES)[contentType]}`;
+  const filename = `${randomUUID()}.${IMAGE_TYPES[contentType]}`;
   const storageKey = `${namespace}/${id}/${purpose === 'player-deck' ? 'deck/' : ''}${filename}`;
   // Unverified bytes are never publicly reachable. Promotion freezes the final
   // key so a still-valid browser authorization cannot overwrite verified media.
@@ -145,6 +134,8 @@ export async function completeUpload(req) {
   };
   let grant = await MediaUpload.findOne(query);
   if (!grant) fail(404, 'אישור ההעלאה פג. העלו את התמונה מחדש');
+  // Also reject video grants issued by an older server version.
+  if (!Object.hasOwn(IMAGE_TYPES, grant.contentType)) fail(400, 'העלאת סרטונים אינה נתמכת. השתמשו בקישור YouTube');
   const storage = storageFor(req);
   if (grant.status !== 'verified') {
     grant = await MediaUpload.findOneAndUpdate(
@@ -157,12 +148,11 @@ export async function completeUpload(req) {
       const object = await storage.inspect(grant.uploadKey);
       if (
         object.size !== grant.size ||
-        object.size > (Object.hasOwn(VIDEO_TYPES,grant.contentType)?MAX_VIDEO_BYTES:MAX_IMAGE_BYTES) ||
+        object.size > MAX_IMAGE_BYTES ||
         object.contentType !== grant.contentType
       )
         fail(400, 'קובץ התמונה אינו תואם לאישור ההעלאה');
-      if(Object.hasOwn(VIDEO_TYPES,grant.contentType)) validateVideo(object.prefix,grant.contentType);
-      else validateImage(object.prefix, grant.contentType);
+      validateImage(object.prefix, grant.contentType);
       if (typeof object.etag !== 'string' || !object.etag)
         fail(502, 'לא הצלחנו לאמת את גרסת הקובץ. נסו להעלות שוב');
       await storage.promote(
