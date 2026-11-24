@@ -26,24 +26,25 @@ async function loadRound(req) {
   return { tournament, roundIndex, round: tournament.rounds[roundIndex], number };
 }
 
-const dto = (round, now) => ({
-  roundNumber: round.number,
-  timer: readRoundTimer(round),
+const dto = (number, timer, now) => ({
+  roundNumber: number,
+  timer: readRoundTimer(timer),
   serverTime: now.toISOString(),
 });
 
 export const getRoundTimer = asyncHandler(async (req, res) => {
-  const { round } = await loadRound(req);
-  res.json(dto(round, new Date()));
+  const { tournament, number } = await loadRound(req);
+  res.json(dto(number, tournament.roundTimers?.get(String(number)), new Date()));
 });
 
 export const updateRoundTimer = asyncHandler(async (req, res) => {
-  const { tournament, roundIndex, round, number } = await loadRound(req);
+  const { tournament, roundIndex, number } = await loadRound(req);
   if (tournament.phase !== 'running' || tournament.status !== 'upcoming' ||
       roundIndex !== tournament.rounds.length - 1)
     fail(409, 'ניתן להפעיל טיימר רק בסבב הפעיל האחרון');
 
-  const current = readRoundTimer(round);
+  const storedTimer = tournament.roundTimers?.get(String(number));
+  const current = readRoundTimer(storedTimer);
   if (!Number.isInteger(req.body.expectedTimerVersion) ||
       req.body.expectedTimerVersion !== current.version)
     fail(409, 'הטיימר עודכן ממכשיר אחר. יש לרענן את הטיימר');
@@ -56,8 +57,8 @@ export const updateRoundTimer = asyncHandler(async (req, res) => {
     fail(400, error.message);
   }
 
-  const timerPath = `rounds.${roundIndex}.timer`;
-  const storedVersion = round.timer?.version;
+  const timerPath = `roundTimers.${number}`;
+  const storedVersion = storedTimer?.version;
   const updated = await Tournament.findOneAndUpdate({
     _id: tournament._id,
     type: req.timerType,
@@ -65,7 +66,6 @@ export const updateRoundTimer = asyncHandler(async (req, res) => {
     source: 'live',
     phase: 'running',
     status: 'upcoming',
-    revision: tournament.revision,
     [`rounds.${roundIndex}.number`]: number,
     [`rounds.${roundIndex + 1}`]: { $exists: false },
     [`${timerPath}.version`]: storedVersion == null ? { $exists: false } : storedVersion,
@@ -76,7 +76,7 @@ export const updateRoundTimer = asyncHandler(async (req, res) => {
   }, { new: true, runValidators: true });
 
   if (!updated) fail(409, 'הסבב או הטיימר השתנו במקביל. יש לרענן את העמוד');
-  const payload = dto(updated.rounds[roundIndex], new Date());
+  const payload = dto(number, updated.roundTimers?.get(String(number)), new Date());
   notifyRoundTimer(req, updated, payload);
   res.json(payload);
 });
