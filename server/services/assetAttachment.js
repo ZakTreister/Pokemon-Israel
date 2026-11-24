@@ -28,9 +28,9 @@ export async function attachAsset(req,owner,purpose){
    purpose,status:'verified',consumed:false,expiresAt:{$gt:new Date()}});
   if(!grant || !grant.storageKey.startsWith((purpose==='event-media'?'public/events/':'public/updates/')+owner.id+'/'))
     fail(400,'קובץ לא אומת עבור הרשומה הזו');
-  const kind=grant.contentType.startsWith('video/')?'video':'image';
-  if(cover&&kind!=='image') fail(400,'תמונת שער חייבת להיות תמונה');
-  item={kind,media:{storageKey:grant.storageKey,contentType:grant.contentType,size:grant.size},caption};
+  // Prevent attaching video grants created before image-only upload enforcement.
+  if (!['image/jpeg','image/png','image/webp'].includes(grant.contentType)) fail(400,'ניתן להעלות תמונות בלבד. לסרטון הוסיפו קישור YouTube');
+  item={kind:'image',media:{storageKey:grant.storageKey,contentType:grant.contentType,size:grant.size},caption};
  }
  owner.mediaItems.push(item);
  if(cover) owner.coverMedia=item.media;
