@@ -166,3 +166,28 @@ test('event and update videos use YouTube links only; S3 video upload grants are
  await ok('/updates/'+update.id,'DELETE',undefined,'admin');
  await ok('/events/'+event.id,'DELETE',undefined,'admin');
 });
+
+test('event-scoped creation persists club association and appends future fixtures without starting play',async()=>{
+ const club=await ok('/events','POST',{title:'Club creation',category:'club'},'admin',201);
+ const stars=await ok('/events','POST',{title:'Fixture creation',category:'all_stars'},'admin',201);
+ const date=new Date(Date.now()+86400000*10).toISOString();
+ const input={date:date.slice(0,10),location:'Test',eventId:club.id};
+ assert.equal((await call('/tournaments','POST',input,'judge')).status,403);
+ assert.equal((await call('/tournaments','POST',{...input,eventId:stars.id},'admin')).status,400);
+ const created=await ok('/tournaments','POST',input,'admin',201);
+ assert.equal(created.eventId,club.id);
+ assert.equal(created.status,'upcoming');
+ assert.equal((await ok('/events/management/'+club.id,'GET',undefined,'admin')).tournaments.length,1);
+ const admin=await User.findOne({role:'admin'});
+ const [first,second]=await Team.create([{name:'Append Alpha',createdBy:admin._id},{name:'Append Beta',createdBy:admin._id}]);
+ const fixture={firstTeam:first.id,secondTeam:second.id,date};
+ const url='/events/'+stars.id+'/fixtures';
+ assert.equal((await call(url,'POST',fixture,'judge')).status,403);
+ assert.equal((await call(url,'POST',{...fixture,secondTeam:first.id},'admin')).status,400);
+ const a=await ok(url,'POST',fixture,'admin',201);
+ const b=await ok(url,'POST',{...fixture,date:new Date(Date.now()+86400000*11).toISOString()},'admin',201);
+ assert.equal(b.fixtures.length,2);
+ assert.equal(b.fixtures[0].id,a.fixtures[0].id);
+ assert.equal(b.fixtures[1].tournamentId,null);
+ assert.equal(await Tournament.countDocuments({eventId:stars.id}),0);
+});
