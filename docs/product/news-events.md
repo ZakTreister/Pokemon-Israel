@@ -1,85 +1,14 @@
 # News and Events
 
-## Events page
-Reuse/upgrade the existing tournaments page rather than creating a disconnected new system.
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
 
-User-facing concept: **אירועים**
 
-Stage A should expose the page from the main navigation.
+## Public Events directory — approved November 2026
+The existing public `/tournaments` route displays published **Event** records (not a public list of tournaments); support `/events` as an optional alias. Filter Events by clubs / All-Stars. The Event detail page contains linked tournaments/results, event updates, promotional and post-event gallery media. Keep `/tournaments/:id` public tournament result deep links working.
 
-The public Events page is the public-facing counterpart of the unified management **טורנירים** page.
+Regular/club and official inter-team tournaments can be linked to an Event, each to at most one Event. Weekly `team_internal` tournaments instead remain under All-Stars/team pages without Event. Existing legacy tournaments may remain unlinked indefinitely, without invented synthetic Events.
 
-Its list presentation should be intentionally similar to the management tournaments list rather than using a separate oversized card-gallery concept.
-
-Prefer the same compact information hierarchy:
-- tournament title
-- type
-- lifecycle/status
-- date
-- relevant team/location metadata
-- one clear public action such as **פרטים**, **פרטים והרשמה**, or **תוצאות הטורניר**
-
-The public page may keep public-site chrome such as its page hero, but the tournament list itself should reuse the management list's compact layout/presentation primitives where sensible.
-
-Do not copy management-only controls into the public page: no create, operate, delete, import, permissions or **עוד פעולות** administration.
-
-It should intentionally look and behave similarly to the management tournament list where the underlying information is the same:
-- same general list/card/row structure
-- same tournament type labels
-- same lifecycle/status labels
-- same filtering model and filter layout where appropriate
-- same responsive behavior and information hierarchy
-
-The public version removes management-only capabilities rather than inventing a separate visual language.
-
-It must expose **all non-deleted canonical tournaments**, across all tournament types:
-- regular/club (`quarterly`)
-- All Stars internal-team (`team_internal`)
-- inter-team (`inter_team`)
-
-It must support public filtering comparable to the management list:
-- lifecycle/status: all, upcoming/future, active/in progress, completed
-- tournament type: all + each supported tournament type
-- free-text search where useful (for example title/location/team)
-- filters may be combined
-
-Default view should not hide internal-team tournaments. The product promise is one public tournament/event history, not separate archives by engine/type.
-
-The page should show enough public-safe summary information to understand each event, such as:
-- title
-- date
-- type
-- lifecycle/status
-- location when relevant
-- team name when relevant
-- participant count when appropriate
-
-A tournament entry links to a public tournament page.
-
-That page displays the **results of that tournament itself**:
-- completed event: final standings/results
-- active event: current recorded results/standings, clearly marked as in progress
-- upcoming event: event details and registration information; no fabricated/empty "final results"
-
-The tournament page must not substitute another ranking view for the event's own results.
-
-Public tournament pages must work for all canonical tournament types, including `swiss-v1` internal-team tournaments. Do not route a public Swiss tournament into the management screen and do not return 404 merely because it uses the new engine.
-
-For active/completed internal-team tournaments, expose only appropriate public tournament information and public-safe standings/results. Never expose:
-- staff identities
-- internal revision/version fields
-- audit metadata
-- deletion metadata
-- management permissions/actions
-- other admin-only fields
-
-Public Events/detail pages use normal HTTP loading/refetch behavior. They do not open Socket.IO connections.
-
-Soft-deleted tournaments are excluded.
-
-Keep the existing registration CTA where registration is actually meaningful for that tournament type. Do not show a misleading registration action for internal-team/inter-team events that are not publicly registerable.
-
-The existing `/tournaments` route may remain internally to preserve links.
+Three independent admin lists remain: `/manage/events`, `/manage/tournaments` (all types), and `/manage/updates` (all updates). Updates authored from within an Event use the same Update model and appear in both Event and global news/homepage feeds.
 
 ## News
 Reuse the existing Updates capability as the basis for News.

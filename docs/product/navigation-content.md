@@ -1,5 +1,8 @@
 # Navigation and Content Pages
 
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
+
+
 The approved main site navigation is part of Stage A.
 
 ## Main public navigation
@@ -55,8 +58,7 @@ It should be the public entry point to teams, official team standings when avail
 Do not show an overall individual ranking comparing All Stars players across different teams. Individual All Stars ranking is team-specific only.
 
 ### אירועים
-Reuse/upgrade the existing tournaments page as the user-facing Events page.
-Do not build a disconnected duplicate events system.
+Use the existing public /tournaments route for **Event entities**, not a raw tournament listing. Each Event links to its competitions, results, media and updates. Tournament results remain directly addressable; staff retain a unified all-types tournament management list.
 
 ### חדשות
 Reuse the existing Updates data/capability as the basis for the News feed.

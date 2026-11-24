@@ -1,3 +1,5 @@
+> November 2026: Event/Update galleries support multiple verified S3 media items and HTTPS YouTube references. Image limits remain 5MB; video size/types need explicit bounded verification. See docs/product/event-hub-rollout.md.
+
 # Reusable File and Media Upload — AWS S3
 
 ## Goal

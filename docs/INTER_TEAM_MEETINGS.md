@@ -1,3 +1,5 @@
+> November 2026: inter-team meetings may belong to Event and be advertised via planned fixtures; no duplication between schedule and live match. See docs/product/event-hub-rollout.md.
+
 # Inter-team meetings (2026-11-18)
 
 ## Scope

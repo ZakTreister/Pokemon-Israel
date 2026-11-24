@@ -1,5 +1,8 @@
 # Homepage
 
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
+
+
 The Stage A homepage is part of the required deliverable, not a future-only concept.
 
 ## Main navigation
@@ -57,7 +60,7 @@ Requirements:
 Do not show team-player scores in this table.
 
 ## Upcoming club event
-Show the nearest upcoming regular/club tournament/event.
+Show the nearest upcoming published Event and link to the Event detail page. A weekly All-Stars internal tournament is not an Event.
 
 Requirements:
 - use the existing tournament/event data
