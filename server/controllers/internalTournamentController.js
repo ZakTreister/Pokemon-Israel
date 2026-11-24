@@ -252,11 +252,14 @@ export const pairRound = asyncHandler(async (req, res) => {
   } catch (error) {
     fail(400, error.message);
   }
+  const previousTimer = tournament.rounds.at(-1)?.timer;
+  const now = new Date();
   const round = {
     number: tournament.rounds.length + 1,
     matches,
-    createdAt: new Date(),
+    createdAt: now,
     createdBy: req.user._id,
+    timer: createRoundTimer(previousTimer?.durationSeconds),
   };
   res.json(
     await commit(req, {
