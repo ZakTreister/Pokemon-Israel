@@ -67,6 +67,7 @@ export const startClubTournament = asyncHandler(async (req, res) => {
     matches,
     createdAt: new Date(),
     createdBy: req.user._id,
+    timer: createRoundTimer(),
   };
   const updated = await Tournament.findOneAndUpdate({
     _id: tournament._id,
