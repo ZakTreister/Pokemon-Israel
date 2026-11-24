@@ -38,10 +38,10 @@ interface DeckSuggestion {
   archetype: string;
 }
 
-export default function AdminTournaments({ embeddedCreate = false }: { embeddedCreate?: boolean }) {
+export default function AdminTournaments({ embeddedCreate = false, eventContext }: { embeddedCreate?: boolean; eventContext?: { id: string; onClose: () => void; onSaved: () => void } }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const eventId = searchParams.get('eventId');
+  const eventId = eventContext?.id || searchParams.get('eventId');
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
@@ -65,8 +65,8 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
   });
 
   useEffect(() => {
-    if (embeddedCreate && !showTournamentModal) navigate('/manage/tournaments');
-  }, [embeddedCreate, showTournamentModal, navigate]);
+    if (embeddedCreate && !showTournamentModal && !eventContext) navigate('/manage/tournaments');
+  }, [embeddedCreate, showTournamentModal, navigate, eventContext]);
 
   // Deck autocomplete states
   const [deckInputs, setDeckInputs] = useState<Record<number, string>>({});
@@ -76,7 +76,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
 
   useEffect(() => {
     if (!embeddedCreate) dispatch(fetchTournaments('management'));
-    dispatch(fetchDecks());
+    if (!embeddedCreate) dispatch(fetchDecks());
   }, [dispatch, embeddedCreate]);
 
   const sortedTournaments = selectLegacyTournamentList(
@@ -121,7 +121,14 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
     setShowTournamentModal(true);
   };
 
+  const closeTournamentModal = () => {
+    if (isSubmitting) return;
+    if (eventContext) eventContext.onClose();
+    else setShowTournamentModal(false);
+  };
+
   const handleSubmitTournament = async () => {
+    if (isSubmitting) return;
     try {
       setIsSubmitting(true);
       
@@ -149,11 +156,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
         showToast('הטורניר עודכן בהצלחה!', 'success');
       } else {
         // Create new tournament(s)
-        const response = await api.post('/api/tournaments', formData);
-        if (eventId) {
-          const created = response.data.tournaments || [response.data];
-          for (const row of created) await api.put(`/api/events/${eventId}/tournaments/${row.id}`);
-        }
+        const response = await api.post('/api/tournaments', { ...formData, ...(eventId ? { eventId } : {}) });
         
         if (formData.isRecurring) {
           showToast(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`, 'success');
@@ -169,6 +172,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       resetForm();
       setShowTournamentModal(false);
       setSelectedTournament(null);
+      eventContext?.onSaved();
       
     } catch (caughtError) {
       const error = caughtError as RequestError;
@@ -658,7 +662,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       {showTournamentModal && (
         <Modal
           title={isEditing ? 'עריכת טורניר' : 'יצירת טורניר חדש'}
-          onClose={() => setShowTournamentModal(false)}
+          onClose={closeTournamentModal}
           closeVariant="ghost"
         >
             <div className="space-y-4">
@@ -666,6 +670,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                 <label className="block text-sm font-medium mb-1">תאריך *</label>
                 <input
                   type="date"
+                  min={eventId ? clubDateKey(new Date()) : undefined}
                   className="w-full px-3 py-2 border border-input rounded-md"
                   value={formData.date}
                   onChange={(e) => setFormData({...formData, date: e.target.value})}
@@ -717,7 +722,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
                 )}
               </div>
               
-              {!isEditing && (
+              {!isEditing && !eventId && (
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -747,7 +752,7 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
               <div className="flex justify-end gap-2 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => setShowTournamentModal(false)}
+                  onClick={closeTournamentModal}
                   disabled={isSubmitting}
                 >
                   ביטול
