@@ -174,7 +174,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
       unsubscribe();
       window.clearInterval(fallback);
     };
-  }, [id, accept, live]);
+  }, [id, accept, live, club]);
   const participantTeam = tournament?.team;
   useEffect(() => {
     if (club || !participantsView || !participantTeam) return;
