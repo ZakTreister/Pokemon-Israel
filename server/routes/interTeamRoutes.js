@@ -54,7 +54,16 @@ router.post('/',asyncHandler(async(req,res)=>{
     fail(400,'יש לבחור שתי נבחרות שונות');
 
   let event=null,fixture=null;
-  if(req.body.eventId!==undefined || req.body.fixtureId!==undefined){
+  const scheduled=req.body.scheduledDate!==undefined;
+  const scheduledDate=scheduled?new Date(req.body.scheduledDate):null;
+  if(scheduled){
+    if(req.user.role!=='admin') fail(403,'רק מנהל יכול לתכנן מפגש');
+    if(!validId(req.body.eventId)||req.body.fixtureId!==undefined||!Number.isFinite(scheduledDate.getTime())||scheduledDate<=new Date()) fail(400,'יש לבחור אירוע ומועד עתידי');
+    if(req.body.location!==undefined&&(typeof req.body.location!=='string'||req.body.location.length>200)) fail(400,'מיקום לא חוקי');
+    event=await Event.findById(req.body.eventId);
+    if(!event||event.category!=='all_stars') fail(400,'אירוע אולסטארז לא נמצא');
+  }
+  if(!scheduled&&(req.body.eventId!==undefined || req.body.fixtureId!==undefined)){
     if(!validId(req.body.eventId)||!validId(req.body.fixtureId))
       fail(400,'אירוע ומפגש מתוכנן נדרשים');
     event=await Event.findById(req.body.eventId);
@@ -81,8 +90,8 @@ router.post('/',asyncHandler(async(req,res)=>{
   const doc=await Tournament.create({
     type:'inter_team',engineVersion:'swiss-v1',scoringPolicy:SWISS_POLICY,
     title:`${ordered[0].name} מול ${ordered[1].name}`,
-    description:'מפגש בין נבחרות',date:now,registrationDeadline:now,
-    location:ordered.map(t=>t.name).join(' / '),image:ordered[0].toJSON().logo||'/pokemon_kids_logo.png',
+    description:'מפגש בין נבחרות',date:scheduledDate||fixture?.date||now,registrationDeadline:scheduledDate||fixture?.date||now,
+    location:(scheduled?req.body.location?.trim():fixture?.location)||ordered.map(t=>t.name).join(' / '),image:ordered[0].toJSON().logo||'/pokemon_kids_logo.png',
     maxParticipants:128,currentParticipants:players.length,source:'live',phase:'setup',
     status:'upcoming',createdBy:req.user._id,
     ...(event?{eventId:event._id}:{}),
@@ -111,6 +120,7 @@ router.get('/active',asyncHandler(async(req,res)=>{
   const rows=await Tournament.find({
     type:'inter_team',engineVersion:'swiss-v1',source:'live',status:'upcoming',
     phase:{$in:['setup','running']},
+    $or:[{phase:'running'},{date:{$lte:new Date()}}],
   }).select('title phase interTeamSides rounds.number updatedAt')
     .sort({updatedAt:-1,_id:-1}).limit(30);
   res.json(rows.map(row=>({
@@ -139,6 +149,7 @@ router.put('/:id/participants',asyncHandler(async(req,res)=>{
 }));
 router.post('/:id/rounds',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
+  if (doc.phase==='setup'&&doc.date>new Date()) fail(400,'מועד המפגש טרם הגיע');
   if (doc.rounds.length>=16) fail(400,'ניתן לקיים עד 16 סבבים');
   let plan;
   try {
