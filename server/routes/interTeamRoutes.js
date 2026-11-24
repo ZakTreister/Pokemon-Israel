@@ -183,7 +183,7 @@ router.post('/:id/close',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
   if (!doc.rounds.length||doc.rounds.some(r=>r.matches.some(m=>!m.result)))
     fail(409,'יש להשלים את כל התוצאות לפני סיום המפגש');
-  res.json(await save(req,doc,{phase:'completed',status:'completed',closedAt:new Date(),
+  res.json(await save(req,doc,{phase:'completed',status:'completed',rounds:roundsWithStoppedTimer(doc.rounds),closedAt:new Date(),
     closedBy:req.user._id,finalStandings:calculateStandings(doc.playerParticipants,doc.rounds)}));
 }));
 export default router;
