@@ -225,6 +225,8 @@ try {
       return {data:{standings:[],fixtures:[],internalTournaments:[]}};
     return {data:profile};
   };
+  const {default:updatesService} = await load('features/updates/updatesService.ts');
+  updatesService.getUpdates=async()=>[];
   const {eventsService} = await load('services/events.ts');
   eventsService.list = async () => ({
     items:[],total:0,page:1,pageSize:20,totalPages:1,

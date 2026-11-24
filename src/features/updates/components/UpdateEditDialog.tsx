@@ -28,7 +28,7 @@ export default function UpdateEditDialog({
   });
   const [eventId,setEventId] = useState(update?.eventId ?? defaultEventId ?? null);
   const [events,setEvents] = useState<EventSummary[]>([]);
-  useEffect(()=>{eventsService.manage().then(setEvents).catch(()=>{});},[]);
+  useEffect(()=>{eventsService.manage().then(rows=>setEvents(Array.isArray(rows)?rows:[])).catch(()=>{});},[]);
   const [image, setImage] = useState(update?.image || '');
   const [imageUploadId, setImageUploadId] = useState<string | null>();
   const [busy, setBusy] = useState(false);

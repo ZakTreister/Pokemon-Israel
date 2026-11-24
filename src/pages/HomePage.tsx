@@ -1,6 +1,7 @@
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Trophy, Newspaper, Users, Images, ArrowUpLeft } from 'lucide-react';
+import UpdateAction from '../features/updates/components/UpdateAction';
 import { useAppDispatch,useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { getNationalRankings,type NationalRanking } from '../services/rankings';
@@ -37,7 +38,7 @@ export default function HomePage(){
  <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4" aria-label="גלגלת עדכונים">
  {sortedUpdates.slice(0,10).map(u=>{const image=u.mediaItems?.find(m=>m.kind==='image')?.url||u.image;return <article key={u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
  {image?<img src={image} alt="" loading="lazy" className="w-full h-40 object-cover"/>:<div className="h-40 bg-navy-700 flex items-center justify-center text-gold"><Newspaper size={46}/></div>}
- <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={'/news/'+u.id} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div></div></article>})}
+ <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={'/news/'+u.id} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div><UpdateAction update={u}/></div></article>})}
  </div>{!sortedUpdates.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>
  <AllStarsTeamsSection/>
  <section className="container py-10 space-y-4"><h2 className="text-2xl sm:text-3xl font-extrabold">מובילי הליגה הישראלית</h2><div className="grid grid-cols-3 gap-2 sm:gap-4">{leaders.map(row=><article key={row.playerId} className="cs-public-card p-3 text-center"><strong className="block text-2xl text-blue-500">#{row.position}</strong><p className="font-bold text-sm sm:text-lg break-words">{row.playerName}</p><p className="text-sm">{row.points} נקודות</p></article>)}</div><Button asChild variant="outline"><Link to="/rankings">איפה אתם בדירוג? חפשו את שמכם</Link></Button></section>
