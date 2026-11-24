@@ -11,5 +11,6 @@ export const eventsService={
  remove:async(id:string)=>(await api.delete(`/api/events/${id}`)).data,
  link:async(eventId:string,tid:string)=>(await api.put(`/api/events/${eventId}/tournaments/${tid}`)).data,
  unlink:async(eventId:string,tid:string)=>(await api.delete(`/api/events/${eventId}/tournaments/${tid}`)).data,
+ appendFixture:async(id:string,fixture:object)=>(await api.post(`/api/events/${id}/fixtures`,fixture)).data,
  fixtures:async(id:string,fixtures:object[])=>(await api.put(`/api/events/${id}/fixtures`,{fixtures})).data,
 };
