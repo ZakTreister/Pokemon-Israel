@@ -7,7 +7,7 @@ const pairKey = (a, b) => [id(a), id(b)].sort().join(':');
  * Bipartite Swiss pairing: never match players from the same team.
  * Bench players are unscored (never a bye).
  */
-export function planInterTeamRound({ participants, rounds, teamIds, eligibleIds }) {
+export function planInterTeamRound({ participants, rounds, teamIds, eligibleIds, random = Math.random }) {
   if (!Array.isArray(teamIds) || teamIds.length !== 2 || id(teamIds[0]) === id(teamIds[1]))
     throw new Error('יש לבחור שתי נבחרות שונות');
   if (rounds.some(round => round.matches.some(match => !match.result)))
@@ -20,6 +20,31 @@ export function planInterTeamRound({ participants, rounds, teamIds, eligibleIds 
   const sides = teamIds.map(team => [...selected].filter(player => teamOf.get(player) === id(team)));
   if (sides.some(side => !side.length) || sides[0].length + sides[1].length !== selected.size)
     throw new Error('נדרש שחקן אחד לפחות מכל נבחרת, ללא שחקנים זרים');
+  // The opening round is a fair draw: neither table assignments nor the
+  // surplus bench depend on roster order, points, names or player IDs.
+  // Shuffle each team independently to keep every match cross-team.
+  // A random function can be injected for deterministic tests.
+  if (!rounds.length) {
+    const shuffle = players => {
+      const pool = [...players];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool;
+    };
+    const [left, right] = sides.map(shuffle);
+    const tableCount = Math.min(left.length, right.length);
+    const largerSide = left.length > right.length ? left : right;
+    return {
+      matches: Array.from({ length: tableCount }, (_, index) => ({
+        player1: left[index],
+        player2: right[index],
+        table: index + 1,
+      })),
+      benchPlayerIds: largerSide.slice(tableCount),
+    };
+  }
   const standings = new Map(calculateStandings(participants, rounds).map(row => [row.player, row]));
   const benchCounts = new Map(participants.map(p => [id(p.player), 0]));
   const previous = new Set();
