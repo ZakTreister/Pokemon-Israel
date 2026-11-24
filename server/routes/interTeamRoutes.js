@@ -84,6 +84,9 @@ router.get('/active',asyncHandler(async(req,res)=>{
     roundNumber:row.rounds.length ? row.rounds[row.rounds.length-1].number : 0,
   })));
 }));
+const interTeamTimerScope = (req, res, next) => { req.timerType = 'inter_team'; next(); };
+router.get('/:id/rounds/:roundNumber/timer', interTeamTimerScope, getRoundTimer);
+router.put('/:id/rounds/:roundNumber/timer', interTeamTimerScope, updateRoundTimer);
 router.get('/:id',asyncHandler(async(req,res)=>res.json(serial(await get(req.params.id)))));
 router.put('/:id/participants',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
