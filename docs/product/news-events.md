@@ -10,6 +10,9 @@ Regular/club and official inter-team tournaments can be linked to an Event, each
 
 Three independent admin lists remain: `/manage/events`, `/manage/tournaments` (all types), and `/manage/updates` (all updates). Updates authored from within an Event use the same Update model and appear in both Event and global news/homepage feeds.
 
+### Media for Events and Updates (November 2026)
+Images can be uploaded to S3 (JPEG/PNG/WebP, max 5MB). Videos can only be added as validated HTTPS YouTube links in the Event or Update media manager. New MP4/WebM uploads to S3 are not supported, including through the upload API. The homepage news carousel displays YouTube videos attached to recent Updates; standalone Event gallery videos do not automatically become news. Existing previously stored video references remain viewable for compatibility.
+
 ## News
 Reuse the existing Updates capability as the basis for News.
 
