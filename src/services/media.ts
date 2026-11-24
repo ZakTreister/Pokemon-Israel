@@ -1,6 +1,5 @@
 import axios from 'axios';
 import api from './api';
-export const MAX_VIDEO_UPLOAD_MB = 100;
 export type UploadPurpose =
   | 'team-logo'
   | 'player-photo'
@@ -46,7 +45,7 @@ export async function uploadImage(
   // Never use the authenticated app client for a third-party upload destination.
   await axios.post(authorization.upload.url, form, {
     withCredentials: false,
-    timeout: file.type.startsWith('video/') ? 600000 : 60000,
+    timeout: 60000,
     onUploadProgress: (event) =>
       progress?.(Math.round((event.loaded / (event.total || file.size)) * 100)),
   });
