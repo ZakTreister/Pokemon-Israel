@@ -23,7 +23,15 @@ const matchSchema = new mongoose.Schema({
     default: null,
   },
 });
+const roundTimerSchema = new mongoose.Schema({
+  durationSeconds: { type: Number, required: true, min: 1, max: 10800 },
+  remainingSeconds: { type: Number, required: true, min: 0, max: 10800 },
+  status: { type: String, enum: ['ready', 'running', 'paused', 'finished'], required: true },
+  startedAt: { type: Date, default: null },
+  version: { type: Number, required: true, min: 0, default: 0 },
+}, { _id: false });
 const roundSchema = new mongoose.Schema({
+  timer: { type: roundTimerSchema, default: undefined },
   number: Number,
   createdAt: Date,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
