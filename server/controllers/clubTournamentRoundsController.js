@@ -67,7 +67,6 @@ export const startClubTournament = asyncHandler(async (req, res) => {
     matches,
     createdAt: new Date(),
     createdBy: req.user._id,
-    timer: createRoundTimer(),
   };
   const updated = await Tournament.findOneAndUpdate({
     _id: tournament._id,
@@ -88,6 +87,7 @@ export const startClubTournament = asyncHandler(async (req, res) => {
       playerParticipants: snapshots,
       nextRoundParticipantIds: ids.map(id => byId.get(id)._id),
       rounds: [round],
+      'roundTimers.1': createRoundTimer(),
       currentParticipants: ids.length,
     },
     // Also invalidate in-flight legacy .save() calls using Mongoose __v.
