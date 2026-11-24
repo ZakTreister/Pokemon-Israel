@@ -4,6 +4,8 @@ Updated 2026-11-24. Source of truth for implementation, supersedes conflicting o
 ## Identity and navigation
 Event is a public narrative container, not a score source. Public `/tournaments` becomes an **Event directory** with All/Club/All-Stars filters; `/events` may alias it. No public raw-tournament list. `/tournaments/:id` result/detail deep links must remain accessible. Public All-Stars has teams, official meetings, team standings, weekly internal tournament history and news. `/manage/events`, `/manage/tournaments` and `/manage/updates` are separate admin areas; the tournament list contains *all* competition types.
 
+Preserve the existing approved header and flat mobile navigation, including the original floating **בהקמה** micro-tags, as specified in [navigation-content.md](./navigation-content.md). Mobile-first page design does not authorize reorganizing the site menu or changing existing component styling without explicit approval.
+
 ## Data ownership
 `Event`: title, description, category (club | all_stars; mixed deferred), optional start/end, cover/promo gallery, retrospective gallery, publication status. Event can exist with zero tournaments. Events include 0..n tournaments and 0..n updates.
 `Tournament.eventId`: optional ObjectId, **at most one** event. New club and inter-team competitions should link to an event; historical competitions remain unlinked until manually assigned. Weekly `team_internal` tournaments have no event and remain attached to their team. Never auto-create event wrappers for old tournaments.
