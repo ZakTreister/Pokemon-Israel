@@ -59,6 +59,14 @@ export function configureTournamentLive(io) {
   });
 }
 
+export function notifyRoundTimer(req, tournament, payload) {
+  // Authenticated staff room only, separate from tournament.revision.
+  req.app.get('io')?.to(staffRoom(tournament.id)).emit('tournament:timer:updated', {
+    id: tournament.id,
+    ...payload,
+  });
+}
+
 export function notifyTournament(req, tournament, deleted = false) {
   const event = { id: tournament.id, revision: tournament.revision, deleted };
   req.app.get('io')?.to(staffRoom(tournament.id)).emit('tournament:updated', event);
