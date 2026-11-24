@@ -31,7 +31,6 @@ const roundTimerSchema = new mongoose.Schema({
   version: { type: Number, required: true, min: 0, default: 0 },
 }, { _id: false });
 const roundSchema = new mongoose.Schema({
-  timer: { type: roundTimerSchema, default: undefined },
   number: Number,
   createdAt: Date,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -135,6 +134,8 @@ const tournamentSchema = new mongoose.Schema({
     nameSnapshot: { type: String, required: true }, citySnapshot: String,
   }],
   rounds: [roundSchema],
+  // Map is updated atomically per round; score updates cannot overwrite clocks.
+  roundTimers: { type: Map, of: roundTimerSchema, default: () => new Map() },
   finalStandings: [standingSchema],
   invalidatedRounds: [{ invalidatedAt: Date, invalidatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, reason: String, rounds: [roundSchema] }],
   participants: [{
