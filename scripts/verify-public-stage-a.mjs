@@ -219,6 +219,16 @@ try {
     playerCount: 1,
     players: [{ id: 'player', firstName: 'לביא', lastName: 'כהן' }],
   });
+  // Event-hub All-Stars now consumes the canonical public league overview.
+  api.get = async (path) => {
+    if (path === '/api/all-stars/overview')
+      return {data:{standings:[],fixtures:[],internalTournaments:[]}};
+    return {data:profile};
+  };
+  const {eventsService} = await load('services/events.ts');
+  eventsService.list = async () => ({
+    items:[],total:0,page:1,pageSize:20,totalPages:1,
+  });
   for (const [Component, path, route] of [
     [AllStars, '/all-stars', '/all-stars'],
     [Teams, '/teams/team', '/teams/:id'],
