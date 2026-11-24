@@ -118,3 +118,6 @@ Approved card artwork:
 - other side card: trophy
 
 Only the artwork/content inside the cards changes for this requirement; card dimensions remain unchanged.
+
+## Featured All-Stars event fixtures
+When the featured homepage Event is an All-Stars event, show all its public associated fixtures in chronological order under the single event heading. Preserve team names, logos, VS and fixture dates; use two columns on desktop when multiple fixtures exist and one column on mobile. A single fixture retains the existing presentation. Never show fixtures belonging to another event.
