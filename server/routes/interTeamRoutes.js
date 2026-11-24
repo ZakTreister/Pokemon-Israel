@@ -7,6 +7,8 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 import { SWISS_POLICY, calculateStandings, validateScore } from '../services/swiss.js';
 import { planInterTeamRound, validateInterTeamPairings } from '../services/interTeamPairings.js';
 import { notifyTournament } from '../services/tournamentLive.js';
+import { createRoundTimer, stopRoundTimer } from '../services/roundTimer.js';
+import { getRoundTimer, updateRoundTimer } from '../controllers/roundTimerController.js';
 import { calculateInterTeamScore } from '../services/interTeamScore.js';
 
 const router = express.Router();
@@ -82,6 +84,9 @@ router.get('/active',asyncHandler(async(req,res)=>{
     roundNumber:row.rounds.length ? row.rounds[row.rounds.length-1].number : 0,
   })));
 }));
+const interTeamTimerScope = (req, res, next) => { req.timerType = 'inter_team'; next(); };
+router.get('/:id/rounds/:roundNumber/timer', interTeamTimerScope, getRoundTimer);
+router.put('/:id/rounds/:roundNumber/timer', interTeamTimerScope, updateRoundTimer);
 router.get('/:id',asyncHandler(async(req,res)=>res.json(serial(await get(req.params.id)))));
 router.put('/:id/participants',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
@@ -105,8 +110,16 @@ router.post('/:id/rounds',asyncHandler(async(req,res)=>{
     plan=planInterTeamRound({participants:doc.playerParticipants,rounds:doc.rounds,
       teamIds:doc.interTeamSides.map(s=>s.team),eligibleIds:doc.nextRoundParticipantIds});
   } catch(error){fail(400,error.message);}
-  const round={number:doc.rounds.length+1,createdAt:new Date(),createdBy:req.user._id,...plan};
-  res.json(await save(req,doc,{phase:'running',rounds:[...doc.rounds.map(r=>r.toObject()),round]}));
+  const now=new Date();
+  const previousTimer=doc.roundTimers?.get(String(doc.rounds.length));
+  const round={number:doc.rounds.length+1,createdAt:now,createdBy:req.user._id,...plan};
+  res.json(await save(req,doc,{phase:'running',
+    rounds:[...doc.rounds.map(r=>r.toObject()),round],
+    [`roundTimers.${round.number}`]:createRoundTimer(previousTimer?.durationSeconds),
+    ...(previousTimer?.status==='running'?{
+      [`roundTimers.${round.number-1}`]:stopRoundTimer(previousTimer,now),
+    }:{}),
+  }));
 }));
 router.put('/:id/rounds/:number/pairings',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
@@ -176,7 +189,12 @@ router.post('/:id/close',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
   if (!doc.rounds.length||doc.rounds.some(r=>r.matches.some(m=>!m.result)))
     fail(409,'יש להשלים את כל התוצאות לפני סיום המפגש');
-  res.json(await save(req,doc,{phase:'completed',status:'completed',closedAt:new Date(),
+  const previousTimer=doc.roundTimers?.get(String(doc.rounds.length));
+  res.json(await save(req,doc,{phase:'completed',status:'completed',
+    ...(previousTimer?.status==='running'?{
+      [`roundTimers.${doc.rounds.length}`]:stopRoundTimer(previousTimer),
+    }:{}),
+    closedAt:new Date(),
     closedBy:req.user._id,finalStandings:calculateStandings(doc.playerParticipants,doc.rounds)}));
 }));
 export default router;

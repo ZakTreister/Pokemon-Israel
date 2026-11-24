@@ -9,6 +9,8 @@ import { requestError } from '../../utils/requestError';
 import Button from '../../components/ui/Button';
 import MatchEditor from '../../components/MatchEditor';
 import FullscreenPairings from '../../components/tournaments/FullscreenPairings';
+import RoundTimer from '../../components/tournaments/RoundTimer';
+import type { RoundTimerNotification } from '../../services/roundTimer';
 import type { MatchResult } from '../../types/internalTournament';
 
 interface Participant {player:string;team:string;nameSnapshot:string}
@@ -29,6 +31,7 @@ export default function InterTeamManagePage(){
  const {user}=useAppSelector(state=>state.auth);
  const isAdmin=user?.role==='admin';
  const [data,setData]=useState<Meeting|null>(null);
+ const [timerEvent,setTimerEvent]=useState<RoundTimerNotification|null>(null);
  const revisionRef=useRef(-1);
  const rosterDirtyRef=useRef(false);
  const [selected,setSelected]=useState<string[]>([]);
@@ -66,7 +69,7 @@ export default function InterTeamManagePage(){
    return()=>{active=false;};
  },[data?.id]);
  useEffect(()=>{if(!data||data.phase==='completed')return;
-   return subscribeTournament(id,()=>void reload().catch(e=>setError(requestError(e))),()=>{});
+   return subscribeTournament(id,()=>void reload().catch(e=>setError(requestError(e))),()=>{},setTimerEvent);
  },[id,data?.phase,reload]);
  const round=data?.rounds.at(-1);
  useEffect(()=>{
@@ -228,6 +231,9 @@ export default function InterTeamManagePage(){
        {rosterDirty&&<p role="status" className="text-sm text-amber-700">יש לשמור את שינויי ההרכב לפני הגרלת הסבב.</p>}
      </>}
    </section>}
+   {round&&data.phase==='running'&&
+     <RoundTimer key={`${id}:${round.number}`} tournamentId={id} roundNumber={round.number}
+       endpoint={`/api/inter-team/${id}/rounds/${round.number}/timer`} notification={timerEvent}/>}
    {round&&<section className="space-y-3">
      <div className="flex flex-wrap items-center justify-between gap-2">
        <h3 className="text-xl font-bold">סבב {round.number}</h3>

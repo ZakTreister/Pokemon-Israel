@@ -115,6 +115,31 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
     'running meetings stay on dashboard');
   assert.ok(first.rounds[0].matches.every(m=>m.player2 && String(m.player1)!==String(m.player2)));
 
+  // Clock begins ready after pairing; timer changes do not invalidate match revisions.
+  const timerPath = `/${created.id}/rounds/1/timer`;
+  assert.equal((await request(timerPath,'GET',undefined,null)).status,401);
+  assert.equal((await request(timerPath,'PUT',{action:'start',expectedTimerVersion:0},null)).status,401);
+  const readyTimer = await ok(timerPath);
+  assert.equal(readyTimer.timer.status,'ready');
+  assert.equal(readyTimer.timer.remainingSeconds,3000);
+  assert.equal(readyTimer.timer.version,0);
+  const startedTimer = await ok(timerPath,'PUT',{action:'start',expectedTimerVersion:0});
+  assert.equal(startedTimer.timer.status,'running');
+  assert.equal(startedTimer.timer.version,1);
+  assert.ok(startedTimer.timer.startedAt);
+  assert.equal((await request(timerPath,'PUT',{action:'pause',expectedTimerVersion:0})).status,409);
+  const pausedTimer = await ok(timerPath,'PUT',{action:'pause',expectedTimerVersion:1});
+  assert.equal(pausedTimer.timer.status,'paused');
+  const configuredTimer = await ok(timerPath,'PUT',{
+    action:'configure',expectedTimerVersion:2,durationSeconds:45*60,
+  });
+  assert.equal(configuredTimer.timer.status,'ready');
+  assert.equal(configuredTimer.timer.remainingSeconds,2700);
+  assert.equal((await ok(`/${created.id}`)).revision,first.revision,
+    'timer commands do not conflict with score/pairing revisions');
+  assert.equal((await Tournament.findById(created.id)).roundTimers.get('1').durationSeconds,2700);
+
+
   assert.equal((await request(`/public/${created.id}`, 'GET', undefined, null)).status,401);
   assert.equal((await request(`/public/${created.id}`, 'GET', undefined, 'judge')).status,404);
   // Even the older generic tournament-details route must not reveal team

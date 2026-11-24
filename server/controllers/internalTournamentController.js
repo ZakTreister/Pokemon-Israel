@@ -1,4 +1,5 @@
 import { notifyTournament } from '../services/tournamentLive.js';
+import { createRoundTimer, stopRoundTimer } from '../services/roundTimer.js';
 import { planRoundPairingEdit } from '../services/roundPairings.js';
 import asyncHandler from "express-async-handler";
 import Tournament from "../models/tournamentModel.js";
@@ -251,16 +252,22 @@ export const pairRound = asyncHandler(async (req, res) => {
   } catch (error) {
     fail(400, error.message);
   }
+  const previousTimer = tournament.roundTimers?.get(String(tournament.rounds.length));
+  const now = new Date();
   const round = {
     number: tournament.rounds.length + 1,
     matches,
-    createdAt: new Date(),
+    createdAt: now,
     createdBy: req.user._id,
   };
   res.json(
     await commit(req, {
       phase: "running",
-      rounds: [...tournament.rounds.map((r) => r.toObject()), round],
+      rounds: [...tournament.rounds.map(r => r.toObject()), round],
+      [`roundTimers.${round.number}`]: createRoundTimer(previousTimer?.durationSeconds),
+      ...(previousTimer?.status === 'running'
+        ? { [`roundTimers.${round.number - 1}`]: stopRoundTimer(previousTimer, now) }
+        : {}),
     }),
   );
 });
@@ -398,6 +405,11 @@ export const closeInternalTournament = asyncHandler(async (req, res) => {
     await commit(req, {
       status: "completed",
       phase: "completed",
+      ...(tournament.roundTimers?.get(String(tournament.rounds.length))?.status === 'running'
+        ? { [`roundTimers.${tournament.rounds.length}`]: stopRoundTimer(
+            tournament.roundTimers.get(String(tournament.rounds.length)),
+          ) }
+        : {}),
       finalStandings,
       closedAt: new Date(),
       closedBy: req.user._id,

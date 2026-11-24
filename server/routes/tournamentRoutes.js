@@ -1,5 +1,6 @@
 import express from 'express';
 import { startClubTournament } from '../controllers/clubTournamentRoundsController.js';
+import { getRoundTimer, updateRoundTimer } from '../controllers/roundTimerController.js';
 import { getClubParticipants, addClubParticipant, removeClubParticipant } from '../controllers/clubParticipantsController.js';
 import {
   getInternalTournament, changeInternalParticipants, pairRound,
@@ -51,6 +52,9 @@ router.get('/:id/club-participants', ...staff, getClubParticipants);
 router.post('/:id/club-participants', ...staff, addClubParticipant);
 router.delete('/:id/club-participants/:source/:registrationId', ...staff, removeClubParticipant);
 router.post('/:id/start', ...staff, startClubTournament);
+const clubTimerScope = (req, res, next) => { req.timerType = 'quarterly'; next(); };
+router.get('/:id/round-management/rounds/:roundNumber/timer', ...staff, clubTimerScope, getRoundTimer);
+router.put('/:id/round-management/rounds/:roundNumber/timer', ...staff, clubTimerScope, updateRoundTimer);
 router.get('/:id/round-management', ...staff, clubRoundScope, getInternalTournament);
 router.put('/:id/round-management/participants', ...staff, clubRoundScope, changeInternalParticipants);
 router.post('/:id/round-management/rounds', ...staff, clubRoundScope, pairRound);

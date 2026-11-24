@@ -2221,6 +2221,31 @@ test('judge starts only a club event and reuses Swiss round workflow without tou
     players.map(p => p.id).sort(),
   );
   assert.equal((await request(url + '/start', 'POST', {}, 'admin')).status, 409);
+
+  const timerPath = url + '/round-management/rounds/1/timer';
+  assert.equal((await request(timerPath, 'GET', undefined, null)).status, 401);
+  assert.equal((await request(timerPath, 'GET', undefined, 'player')).status, 403);
+  const readyClock = await ok(timerPath, 'GET', undefined, 'judge');
+  assert.equal(readyClock.timer.status, 'ready');
+  assert.equal(readyClock.timer.remainingSeconds, 3000);
+  const runningClock = await ok(timerPath, 'PUT', {
+    expectedTimerVersion: 0, action: 'start',
+  }, 'judge');
+  assert.equal(runningClock.timer.status, 'running');
+  assert.equal((await request(timerPath, 'PUT', {
+    expectedTimerVersion: 0, action: 'pause',
+  }, 'judge')).status, 409);
+  const pausedClock = await ok(timerPath, 'PUT', {
+    expectedTimerVersion: 1, action: 'pause',
+  }, 'judge');
+  assert.equal(pausedClock.timer.status, 'paused');
+  const configuredClock = await ok(timerPath, 'PUT', {
+    expectedTimerVersion: 2, action: 'configure', durationSeconds: 1500,
+  }, 'judge');
+  assert.equal(configuredClock.timer.status, 'ready');
+  assert.equal(configuredClock.timer.durationSeconds, 1500);
+  assert.equal((await ok(url + '/round-management', 'GET', undefined, 'judge')).revision,
+    snapshot.revision, 'clock actions must not invalidate result revisions');
   assert.equal((await request('/internal-tournaments/' + tournament.id, 'GET')).status, 404);
   assert.equal((await request(url + '/qr-registration', 'GET')).status, 409);
   assert.equal((await request(url + '/register', 'POST', {}, 'player')).status, 404);
@@ -2244,6 +2269,10 @@ test('judge starts only a club event and reuses Swiss round workflow without tou
   }, 'admin');
   assert.equal(roundTwo.rounds.length, 2);
   assert.equal(roundTwo.phase, 'running');
+  const nextClock = await ok(url + '/round-management/rounds/2/timer', 'GET', undefined, 'judge');
+  assert.equal(nextClock.timer.status, 'ready');
+  assert.equal(nextClock.timer.remainingSeconds, 1500);
+
   assert.equal((await Tournament.findById(tournament.id)).type, 'quarterly');
   assert.equal((await Tournament.findById(tournament.id)).team, null);
   assert.equal((await request(url + '/round-management/rounds/2', 'DELETE', {

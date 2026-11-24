@@ -1,9 +1,11 @@
 import { io } from 'socket.io-client';
 import api from './api';
+import type { RoundTimerNotification } from './roundTimer';
 export function subscribeTournament(
   id: string,
   changed: (deleted?: boolean) => void,
   connectionChanged: (connected: boolean) => void,
+  timerChanged?: (notification: RoundTimerNotification) => void,
 ) {
   const socket = io(api.defaults.baseURL, {
     auth: { token: localStorage.getItem('token') },
@@ -23,6 +25,9 @@ export function subscribeTournament(
       if (event.id === id) changed(event.deleted);
     },
   );
+  socket.on('tournament:timer:updated', (event: RoundTimerNotification) => {
+    if (event.id === id) timerChanged?.(event);
+  });
   return () => {
     socket.emit('tournament:unsubscribe', id);
     socket.disconnect();

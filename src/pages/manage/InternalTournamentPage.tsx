@@ -17,6 +17,8 @@ import { useAppSelector } from '../../hooks/redux';
 import MatchEditor from '../../components/MatchEditor';
 import RoundPairingsEditor from '../../components/tournaments/RoundPairingsEditor';
 import FullscreenPairings from '../../components/tournaments/FullscreenPairings';
+import RoundTimer from '../../components/tournaments/RoundTimer';
+import type { RoundTimerNotification } from '../../services/roundTimer';
 import TrialPlayerDialog from '../../components/tournaments/TrialPlayerDialog';
 import TournamentStandings from '../../features/tournaments/components/TournamentStandings';
 import ParticipantList from '../../features/tournaments/components/ParticipantList';
@@ -35,6 +37,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
   const { id = '' } = useParams();
   const { showConfirm } = useConfirm();
   const [tournament, setTournament] = useState<InternalTournament | null>(null);
+  const [timerEvent, setTimerEvent] = useState<RoundTimerNotification | null>(null);
   const [roster, setRoster] = useState<TeamRosterPlayer[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [roundNumber, setRoundNumber] = useState(0);
@@ -160,6 +163,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
           connectedRef.current = value;
         }
       },
+      (event) => { if (active && club) setTimerEvent(event); },
     );
     // Automatically recover canonical state while a socket connection is unavailable.
     const fallback = window.setInterval(() => {
@@ -170,7 +174,7 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
       unsubscribe();
       window.clearInterval(fallback);
     };
-  }, [id, accept, live]);
+  }, [id, accept, live, club]);
   const participantTeam = tournament?.team;
   useEffect(() => {
     if (club || !participantsView || !participantTeam) return;
@@ -429,6 +433,12 @@ export default function InternalTournamentPage({ mode = 'team' }: { mode?: 'team
           </span>
         )}
       </div>
+      {club && !readOnly && tournament.phase === 'running' && tournament.rounds.length > 0 && (
+        <RoundTimer key={`${id}:${tournament.rounds.length}`}
+          tournamentId={id} roundNumber={tournament.rounds.at(-1)!.number}
+          endpoint={`/api/tournaments/${id}/round-management/rounds/${tournament.rounds.at(-1)!.number}/timer`}
+          notification={timerEvent} />
+      )}
       {(tournament.rounds.length > 0 || live) && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg bg-navy-700 p-3 text-white">
           {tournament.rounds.length > 0 && (
