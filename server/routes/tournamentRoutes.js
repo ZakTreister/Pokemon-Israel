@@ -1,5 +1,6 @@
 import express from 'express';
 import { startClubTournament } from '../controllers/clubTournamentRoundsController.js';
+import { getRoundTimer, updateRoundTimer } from '../controllers/roundTimerController.js';
 import { getClubParticipants, addClubParticipant, removeClubParticipant } from '../controllers/clubParticipantsController.js';
 import {
   getInternalTournament, changeInternalParticipants, pairRound,
