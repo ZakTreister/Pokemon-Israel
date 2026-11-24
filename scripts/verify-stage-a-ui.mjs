@@ -432,13 +432,13 @@ try {
     },
   });
   assert.ok(
-    home.includes('טוען אירועים'),
-    'server rendering shows the asynchronous event loading state',
+    home.includes('חדשות מהשטח'),
+    'homepage advertises the unified news carousel',
   );
   assert.ok(!home.includes('Must not feature internal'));
   assert.ok(home.includes('/news/news-fixture'));
   assert.ok(home.includes('מובילי הליגה הישראלית'));
-  assert.ok(home.includes('הרשמה לחוג הקרוב לביתכם'));
+  assert.ok(home.includes('מצטרפים לחוג הפוקימון'));
   assert.ok(!home.includes('הדקים המובילים'));
   const Construction = await load('pages/ConstructionPage.tsx');
   for (const title of ['חנות', 'על הליגה', 'הזמנת יום הולדת'])

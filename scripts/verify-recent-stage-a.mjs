@@ -171,44 +171,37 @@ try {
     [],
   );
   const { default: api } = await load('services/api.ts');
-  api.get = async (_path, { params }) => {
-    const items = filterTournaments(events, params);
-    return {
-      data: {
-        items,
-        total: items.length,
-        page: 1,
-        pageSize: 25,
-        totalPages: 1,
-      },
-    };
+  const publicEvents = [
+    {id:'club-event',title:'אירוע חוגים',description:'פעילות החוגים',category:'club',
+      startDate:'2026-12-01',endDate:null,status:'published',featured:false,coverUrl:'',mediaItems:[]},
+    {id:'all-stars-event',title:'אירוע אולסטארז',description:'מפגש נבחרות',category:'all_stars',
+      startDate:'2026-12-02',endDate:null,status:'published',featured:false,coverUrl:'',mediaItems:[]},
+  ];
+  api.get = async (path, {params} = {}) => {
+    const items = path === '/api/events' ? publicEvents.filter(e=>!params?.category || e.category===params.category)
+      : filterTournaments(events,params||{});
+    return { data: {items,total:items.length,page:1,pageSize:25,totalPages:1} };
   };
   publicTournaments.list = async () => ({
-    items: structuredClone(events),
-    total: events.length,
-    page: 1,
-    pageSize: 25,
-    totalPages: 1,
+    items: structuredClone(events),total:events.length,page:1,pageSize:25,totalPages:1,
   });
   const { default: Events } = await load('pages/TournamentsPage.tsx');
   await mount(router(el(Events), '/tournaments'));
-  // The public Events index now restricts to club tournaments in the request,
-  // before server pagination. Team/internal event links remain directly usable.
-  assert.equal(renderer.root.findAllByType('article').length, 1);
-  assert.ok(text(renderer.toJSON()).includes('אירוע 0'));
-  assert.ok(!text(renderer.toJSON()).includes('אירוע 1'));
-  const selects = renderer.root.findAllByType('select');
-  assert.equal(selects.length, 1, 'public event type filter is hidden');
-  await act(async () => {
-    selects[0].props.onChange({ target: { value: 'active' } });
+  assert.equal(renderer.root.findAllByType('article').length,2);
+  assert.ok(text(renderer.toJSON()).includes('אירוע חוגים'));
+  assert.ok(text(renderer.toJSON()).includes('אירוע אולסטארז'));
+  await act(async()=>{
+    renderer.root.findAllByType('button').find(button=>text(button)==='חוגים').props.onClick();
     await flush();
   });
-  assert.equal(renderer.root.findAllByType('article').length, 0);
-  await act(async () => {
-    selects[0].props.onChange({ target: { value: '' } });
+  assert.equal(renderer.root.findAllByType('article').length,1);
+  assert.ok(text(renderer.toJSON()).includes('אירוע חוגים'));
+  assert.ok(!text(renderer.toJSON()).includes('אירוע אולסטארז'));
+  await act(async()=>{
+    renderer.root.findAllByType('button').find(button=>text(button)==='הכול').props.onClick();
     await flush();
   });
-  assert.equal(renderer.root.findAllByType('article').length, 1);
+  assert.equal(renderer.root.findAllByType('article').length,2);
   unmount();
 
   const { default: PublicMatchCard } = await load('components/tournaments/PublicMatchCard.tsx');
