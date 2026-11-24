@@ -5,7 +5,7 @@ import MediaUpload from '../models/mediaUploadModel.js';
 import { s3Storage } from './storage/s3Storage.js';
 import { publicMediaUrl } from './storage/mediaMetadata.js';
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 export const VIDEO_TYPES = {'video/mp4':'mp4','video/webm':'webm'};
 export const IMAGE_TYPES = {
   'image/png': 'png',
@@ -95,7 +95,7 @@ export async function presignUpload(req) {
   const videoAllowed = ['event-media','update-media'].includes(purpose);
   const validType = Object.hasOwn(IMAGE_TYPES,contentType)||(isVideo && videoAllowed);
   if (!validType || !Number.isInteger(size) || size<1 || size>(isVideo?MAX_VIDEO_BYTES:MAX_IMAGE_BYTES))
-    fail(400, videoAllowed ? 'תמונה עד 5MB או סרטון MP4/WebM עד 50MB' : 'בחרו PNG, JPEG או WebP עד 5MB');
+    fail(400, videoAllowed ? 'תמונה עד 5MB או סרטון MP4/WebM עד 100MB' : 'בחרו PNG, JPEG או WebP עד 5MB');
   let entity, id;
   if (entityId !== undefined) {
     if (!validId(entityId)) fail(400, 'מזהה רשומה לא חוקי');

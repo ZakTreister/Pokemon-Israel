@@ -1,4 +1,4 @@
-> November 2026: Event/Update galleries support multiple verified S3 media items and HTTPS YouTube references. Image limits remain 5MB; video size/types need explicit bounded verification. See docs/product/event-hub-rollout.md.
+> November 2026: Event/Update galleries support multiple verified S3 media items and HTTPS YouTube references. Images remain 5MB; MP4/WebM uploads are capped at 100 MiB (104,857,600 bytes), checked both before signing and after S3 upload, and recommended to stay around 20–50 MB for mobile. The current presigned POST upload path uses a 10-minute client timeout for video; exceeding 100 MiB would require a reviewed multipart-upload design. See docs/product/event-hub-rollout.md.
 
 # Reusable File and Media Upload — AWS S3
 

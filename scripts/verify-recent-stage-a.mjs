@@ -204,6 +204,30 @@ try {
   assert.equal(renderer.root.findAllByType('article').length,2);
   unmount();
 
+  const { default: UpdateCarouselMedia } = await load('components/media/UpdateCarouselMedia.tsx');
+  const baseUpdate = {id:'news-video',title:'עדכון מהטורניר',date:'2026-11-24',content:''};
+  const imageAsset = {id:'photo',kind:'image',url:'https://cdn.example.test/photo.webp',caption:''};
+  const videoAsset = {id:'clip',kind:'video',url:'https://cdn.example.test/clip.mp4',caption:''};
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,image:'/legacy.jpg',mediaItems:[imageAsset,videoAsset]}}));
+  const carouselVideo = renderer.root.findByType('video');
+  assert.equal(carouselVideo.props.src,videoAsset.url);
+  assert.equal(carouselVideo.props.controls,true);
+  assert.equal(carouselVideo.props.preload,'none');
+  assert.equal(carouselVideo.props.autoPlay,undefined);
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,mediaItems:[{id:'youtube',kind:'youtube',youtubeId:'AbCdEf123_-',url:'https://www.youtube-nocookie.com/embed/AbCdEf123_-',caption:''}]}}));
+  const youtubeFrame = renderer.root.findByType('iframe');
+  assert.equal(youtubeFrame.props.src,'https://www.youtube-nocookie.com/embed/AbCdEf123_-');
+  assert.ok(!youtubeFrame.props.src.includes('autoplay'));
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,image:'/legacy.jpg',mediaItems:[]}}));
+  assert.equal(renderer.root.findByType('img').props.src,'/legacy.jpg');
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:baseUpdate}));
+  assert.equal(renderer.root.findAllByType('video').length,0);
+  assert.equal(renderer.root.findAllByType('iframe').length,0);
+  unmount();
+
   const { default: PublicMatchCard } = await load('components/tournaments/PublicMatchCard.tsx');
   await mount(el(PublicMatchCard, {
     match: {

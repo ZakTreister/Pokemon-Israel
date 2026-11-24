@@ -11,6 +11,13 @@ The public site header/navigation must expose the approved Stage A menu and rema
 
 The homepage also participates in the shared public floating **הירשמו לשיעור ניסיון** CTA defined in `docs/product/navigation-content.md`.
 
+## Latest Updates media carousel (November 2026)
+The homepage "חדשות מהשטח" horizontal carousel shows the ten most recent public Updates, including Updates linked to published Events, from the existing unified news feed. It is NOT a separate gallery of Event media.
+- Each card features a playable uploaded MP4/WebM or embedded safe YouTube video when the Update has one; otherwise show an image from its media items, falling back to the legacy image field and then a text-only placeholder.
+- Playback is user-initiated only: native video controls with `preload="none"`, inline/mobile playback and YouTube embeds without autoplay.
+- Preserve the Update title, date, excerpt and links to full post and related Event.
+- Videos uploaded directly to an Event's gallery do not enter the homepage carousel unless attached to an Update as well.
+
 ## Running news banner
 Show a prominent running/top news banner using the existing Updates/News data source.
 
