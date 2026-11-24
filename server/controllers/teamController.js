@@ -141,6 +141,10 @@ const publicTeam = async (team) => ({
   id: team.id,
   name: team.name,
   logo: team.toJSON().logo || '',
+  coverUrl: team.toJSON().coverUrl || '',
+  region: team.region || '',
+  description: team.description || '',
+  themeColor: team.themeColor || '#2563eb',
   isActive: team.isActive,
   ...(await counts(team)),
   officialStats: null,
@@ -161,6 +165,10 @@ export const getPublicTeams = asyncHandler(async (req, res) => {
       id: team.id,
       name: team.name,
       logo: team.toJSON().logo || '',
+      coverUrl: team.toJSON().coverUrl || '',
+      region: team.region || '',
+      description: team.description || '',
+      themeColor: team.themeColor || '#2563eb',
       isActive: team.isActive,
       ...count(team),
       officialStats: null,
@@ -238,9 +246,15 @@ export const updateTeam = asyncHandler(async (req, res) => {
     const team = await Team.findById(req.params.id);
     if (!team) fail(404, 'נבחרת לא נמצאה');
     const previousMedia = team.logoMedia;
+    const previousCover = team.coverMedia;
+    const coverAttachment = await resolveUpload(req,'team-cover',team._id,previousCover);
+    if(coverAttachment) team.coverMedia=coverAttachment.media;
     const attachment = await resolveUpload(req, 'team-logo', team._id, previousMedia);
     if (attachment) { team.logoMedia = attachment.media; team.logo = ''; team.logoPublicId = ''; }
-    const { name, logo, logoPublicId, isActive, teacher } = req.body;
+    const { name, logo, logoPublicId, isActive, teacher,region,description,themeColor } = req.body;
+    if(region!==undefined){if(typeof region!=='string'||region.length>120)fail(400,'אזור לא תקין');team.region=region.trim();}
+    if(description!==undefined){if(typeof description!=='string'||description.length>1200)fail(400,'תיאור לא תקין');team.description=description.trim();}
+    if(themeColor!==undefined){if(typeof themeColor!=='string'||!/^#[0-9a-fA-F]{6}$/.test(themeColor))fail(400,'צבע נבחרת לא תקין');team.themeColor=themeColor;}
     if (teacher !== undefined) team.teacher = await validateTeacher(teacher);
     if (name !== undefined) {
       if (typeof name !== 'string' || !name.trim()) fail(400, 'שם נבחרת הוא שדה חובה');
@@ -256,6 +270,7 @@ export const updateTeam = asyncHandler(async (req, res) => {
     }
     try { await team.save(); } catch (error) { if (error.code === 11000) fail(409, 'נבחרת בשם זה כבר קיימת'); throw error; }
     await finishAttachment(req, attachment, previousMedia);
+    await finishAttachment(req, coverAttachment, previousCover);
     await team.populate('teacher', 'name role');
     return { ...team.toJSON(), ...await counts(team), openInternalTournament: await openForTeam(team) };
   });

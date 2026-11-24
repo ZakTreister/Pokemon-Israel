@@ -43,7 +43,7 @@ export function validateImage(buffer, mime) {
     fail(400, 'ניתן להעלות PNG, JPEG או WebP בלבד');
 }
 export function uploadNamespace(purpose, playerType) {
-  if (purpose === 'team-logo') return 'public/teams';
+  if (purpose === 'team-logo' || purpose==='team-cover') return 'public/teams';
   if (purpose === 'update-image' || purpose === 'update-media') return 'public/updates';
   if (purpose === 'event-media') return 'public/events';
   if (purpose === 'player-deck' && playerType === 'team')
@@ -55,7 +55,7 @@ export function uploadNamespace(purpose, playerType) {
 }
 async function owner(purpose, id) {
   const name =
-    purpose === 'team-logo'
+    (purpose === 'team-logo' || purpose === 'team-cover')
       ? 'Team'
       : purpose === 'event-media'
         ? 'Event'
@@ -81,6 +81,7 @@ export async function presignUpload(req) {
   if (
     ![
       'team-logo',
+      'team-cover',
       'player-photo',
       'player-deck',
       'badge-image',
@@ -197,6 +198,8 @@ export async function resolveUpload(req, purpose, id, currentMedia) {
   const field =
     purpose === 'team-logo'
       ? 'logoUploadId'
+      : purpose === 'team-cover'
+        ? 'coverUploadId'
       : purpose === 'badge-image'
         ? 'imageUploadId'
         : purpose === 'update-image'
@@ -254,10 +257,10 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player'].map(
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update'].map(
         (name, index) =>
           mongoose.model(name).exists({
-            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia'][index]}.storageKey`]:
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media'][index]}.storageKey`]:
               key,
           }),
       ),

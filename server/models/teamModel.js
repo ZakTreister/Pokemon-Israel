@@ -10,6 +10,10 @@ const teamSchema = new mongoose.Schema({
     maxlength: [100, 'Team name cannot exceed 100 characters'],
   },
   logoMedia: { type: mediaSchema, default: null },
+  coverMedia: { type: mediaSchema, default: null },
+  region: { type: String, trim: true, maxlength: 120, default: '' },
+  description: { type: String, trim: true, maxlength: 1200, default: '' },
+  themeColor: { type: String, match: /^#[0-9a-fA-F]{6}$/, default: '#2563eb' },
   teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   logo: { type: String, trim: true, maxlength: 2000, default: '' },
   logoPublicId: { type: String, maxlength: 255, default: '' },
@@ -36,6 +40,8 @@ teamSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
     ret.logo = publicMediaUrl(doc.logoMedia) || ret.logo || '';
+    ret.coverUrl = publicMediaUrl(doc.coverMedia) || '';
+    delete ret.coverMedia;
     delete ret._id;
     delete ret.__v;
     delete ret.rosterLock;

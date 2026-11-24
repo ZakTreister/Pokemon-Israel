@@ -19,6 +19,7 @@ import playerRoutes from './routes/playerRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
 import internalTournamentRoutes from './routes/internalTournamentRoutes.js';
 import interTeamRoutes from './routes/interTeamRoutes.js';
+import allStarsPublicRoutes from './routes/allStarsPublicRoutes.js';
 import { getAllStarsRankings } from './controllers/internalTournamentController.js';
 import badgeRoutes from './routes/badgeRoutes.js';
 import { getNationalRankings } from './controllers/rankingController.js';
@@ -109,6 +110,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/internal-tournaments', internalTournamentRoutes);
 app.use('/api/inter-team', interTeamRoutes);
+app.use('/api/all-stars',allStarsPublicRoutes);
 app.get('/api/all-stars/rankings', getAllStarsRankings);
 app.get('/api/rankings', getNationalRankings);
 

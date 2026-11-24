@@ -13,6 +13,10 @@ export interface Team {
   name: string;
   isActive: boolean;
   logo?: string;
+  coverUrl?: string;
+  region?: string;
+  themeColor?: string;
+  description?: string;
   logoPublicId?: string;
   logoUploadId?: string | null;
   completedInternalTournamentCount?: number;
@@ -81,4 +85,8 @@ export interface UpdateTeamInput {
   logoUploadId?: string | null;
   name?: string;
   isActive?: boolean;
+  region?: string;
+  themeColor?: string;
+  description?: string;
+  coverUploadId?: string | null;
 }

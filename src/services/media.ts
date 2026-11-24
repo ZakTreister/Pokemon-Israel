@@ -6,6 +6,7 @@ export type UploadPurpose =
   | 'player-deck'
   | 'badge-image'
   | 'update-image'
+  | 'team-cover'
   | 'event-media'
   | 'update-media';
 export interface UploadTarget {
