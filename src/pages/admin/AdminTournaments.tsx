@@ -1,6 +1,6 @@
 import type { RequestError } from '../../types/api';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { fetchTournaments } from '../../features/tournaments/tournamentsSlice';
 import { fetchDecks } from '../../features/decks/decksSlice';
@@ -40,6 +40,8 @@ interface DeckSuggestion {
 
 export default function AdminTournaments({ embeddedCreate = false }: { embeddedCreate?: boolean }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId');
   const dispatch = useAppDispatch();
   const { showToast } = useToast();
   const { showConfirm } = useConfirm();
@@ -148,6 +150,10 @@ export default function AdminTournaments({ embeddedCreate = false }: { embeddedC
       } else {
         // Create new tournament(s)
         const response = await api.post('/api/tournaments', formData);
+        if (eventId) {
+          const created = response.data.tournaments || [response.data];
+          for (const row of created) await api.put(`/api/events/${eventId}/tournaments/${row.id}`);
+        }
         
         if (formData.isRecurring) {
           showToast(`נוצרו ${response.data.tournaments?.length || 'מספר'} טורנירים שבועיים בהצלחה!`, 'success');

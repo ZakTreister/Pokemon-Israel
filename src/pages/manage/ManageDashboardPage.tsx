@@ -183,7 +183,7 @@ export default function ManageDashboardPage() {
                       ? location.pathname.split('/').filter(Boolean).length > 3
                         ? `/${teamParent}`
                         : '/manage/teams'
-                      : '/manage/tournaments'
+                      : location.pathname.startsWith('/manage/events/') ? '/manage/events' : '/manage/tournaments'
                   }
                 >
                   → חזרה ל
@@ -191,7 +191,7 @@ export default function ManageDashboardPage() {
                     ? location.pathname.split('/').filter(Boolean).length > 3
                       ? 'נבחרת'
                       : 'נבחרות All-Stars'
-                    : 'טורנירים'}
+                    : location.pathname.startsWith('/manage/events/') ? 'אירועים' : 'טורנירים'}
                 </Link>
               </Button>
             )}

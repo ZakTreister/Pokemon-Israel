@@ -49,6 +49,7 @@ export default function NewsPostPage() {
               className="w-full max-h-96 object-contain rounded-md mb-5"
             />
           )}
+          {post.eventId&&<Link to={'/events/'+post.eventId} className="block font-bold text-blue-500 mb-4">לאירוע המשויך ←</Link>}
           <UpdateAction update={post} />
           <div className="whitespace-pre-wrap break-words leading-8">
             {(post.description ?? post.content ?? '')
