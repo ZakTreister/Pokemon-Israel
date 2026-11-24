@@ -402,6 +402,7 @@ export const closeInternalTournament = asyncHandler(async (req, res) => {
     await commit(req, {
       status: "completed",
       phase: "completed",
+      rounds: roundsWithStoppedTimer(tournament.rounds),
       finalStandings,
       closedAt: new Date(),
       closedBy: req.user._id,
