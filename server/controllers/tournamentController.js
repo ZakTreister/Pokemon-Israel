@@ -1,6 +1,7 @@
 import { paginate, tournamentQuery } from '../services/pagination.js';
 import { publicTournament } from '../services/publicTournament.js';
 import asyncHandler from 'express-async-handler';
+import Event from '../models/eventModel.js';
 import Tournament from '../models/tournamentModel.js';
 import User from '../models/userModel.js';
 import Player from '../models/playerModel.js';
@@ -125,7 +126,19 @@ export const createTournament = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('התאריך האחרון חייב להיות בתאריך הטורניר הראשון או אחריו');
   }
+  const eventId = req.body.eventId;
+  if (eventId != null) {
+    if (!club || isRecurring || typeof eventId !== 'string' || !/^[a-f\d]{24}$/i.test(eventId) || !(await Event.exists({_id:eventId,category:'club'}))) {
+      res.status(400);
+      throw new Error('יש לבחור אירוע חוגים תקין לטורניר יחיד');
+    }
+    if (firstDay < clubDateKey(new Date())) {
+      res.status(400);
+      throw new Error('יש לבחור תאריך עתידי');
+    }
+  }
   const baseTournamentData = {
+    ...(eventId != null ? {eventId} : {}),
     title: `טורניר פוקימון - ${location.trim()}`,
     description: `טורניר פוקימון ב${location.trim()}`,
     location: location.trim(),
