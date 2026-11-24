@@ -860,19 +860,18 @@ try {
   };
   await mount(route(el(Events), '/tournaments'));
   assert.equal(listRequests.at(-1).params.page, 1);
+  assert.equal(listRequests.at(-1).path,'/api/events');
   await act(async () => {
     button('הבא').props.onClick();
     await flush();
   });
   assert.equal(listRequests.at(-1).params.page, 2);
   await act(async () => {
-    renderer.root
-      .findByType('input')
-      .props.onChange({ target: { value: 'query' } });
+    button('חוגים').props.onClick();
     await flush();
   });
-  assert.equal(listRequests.at(-1).params.page, 1);
-  assert.equal(listRequests.at(-1).params.search, 'query');
+  assert.equal(listRequests.at(-1).params.page,1);
+  assert.equal(listRequests.at(-1).params.category,'club');
   unmount();
 
   const { default: UpdateEditor } = await load(
@@ -926,30 +925,14 @@ try {
   const { publicTournaments } = await load('services/publicTournaments.ts');
   const { TRIAL_REGISTRATION_URL } = await load('config/publicSite.ts');
   const homepageRequests = [];
-  publicTournaments.summary = async () => ({
-    total: 40,
-    upcoming: 7,
-    participants: 0,
-    capacity: 0,
-    nearest: null,
-  });
-  publicTournaments.list = async (params) => {
+  const {eventsService} = await load('services/events.ts');
+  eventsService.list=async params=>{
     homepageRequests.push(params);
-    return {
-      items: [
-        {
-          id: 'featured',
-          title: 'Nearest club event',
-          type: 'quarterly',
-          date: new Date(Date.now() + 86400000).toISOString(),
-          status: 'upcoming',
-        },
-      ],
-      total: 7,
-      page: 1,
-      pageSize: 3,
-      totalPages: 3,
-    };
+    return {items:[{
+      id:'featured',title:'Nearest club event',description:'Event description',category:'club',
+      status:'published',featured:true,startDate:new Date(Date.now()+86400000).toISOString(),
+      endDate:null,coverUrl:'',mediaItems:[]
+    }],total:1,page:1,pageSize:16,totalPages:1};
   };
   state.updates = {
     updates: [
@@ -975,8 +958,8 @@ try {
   await mount(provided(route(el(Home))));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
   assert.ok(text(renderer.toJSON()).includes('Configured description'));
-  assert.equal(homepageRequests[0].pageSize, 3);
-  assert.equal(homepageRequests[0].type, 'quarterly');
+  assert.equal(homepageRequests[0].pageSize, 16);
+  assert.equal(homepageRequests[0].category, undefined);
   assert.ok(
     renderer.root
       .findAllByType('a')

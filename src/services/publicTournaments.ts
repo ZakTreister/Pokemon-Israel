@@ -8,6 +8,7 @@ import type {
 } from '../../shared/tournamentDomain';
 export interface PublicTournamentSummary {
   id: string;
+  eventId?: string | null;
   title: string;
   description: string;
   date: string;

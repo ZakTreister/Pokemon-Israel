@@ -456,32 +456,15 @@ try {
   assert.equal(ranks[0].position, 2, 'sorting is view-only');
   unmount();
 
-  const { publicTournaments } = await load('services/publicTournaments.ts');
-  const { default: Events } = await load('pages/TournamentsPage.tsx');
-  api.get = async () => ({
-    data: {
-      items: [
-        {
-          id: 'event',
-          title: 'אירוע פנימי',
-          date: '2026-10-01',
-          type: 'team_internal',
-          lifecycle: 'active',
-          image: '/huge-event.png',
-          currentParticipants: 4,
-          canRegister: false,
-        },
-      ],
-      total: 1,
-      page: 1,
-      pageSize: 25,
-      totalPages: 1,
-    },
-  });
+  const {default:Events} = await load('pages/TournamentsPage.tsx');
+  api.get=async()=>({data:{items:[{
+    id:'event',title:'אירוע נבחרות',description:'אירוע ציבורי',
+    category:'all_stars',status:'published',featured:false,startDate:'2026-12-01',endDate:null,coverUrl:'',mediaItems:[]
+  }],total:1,page:1,pageSize:25,totalPages:1}});
   await mount(router(el(Events)));
-  assert.equal(renderer.root.findAllByType('article').length, 1);
-  assert.equal(renderer.root.findAllByType('img').length, 0);
-  assert.ok(text(renderer.toJSON()).includes('תוצאות הטורניר'));
+  assert.equal(renderer.root.findAllByType('article').length,1);
+  assert.equal(renderer.root.findAllByType('img').length,0);
+  assert.ok(text(renderer.toJSON()).includes('לאירוע, למשחקים ולעדכונים'));
   assert.ok(!button('מחק'));
   unmount();
   const { publicTeams } = await load('services/publicTeams.ts');
@@ -494,6 +477,11 @@ try {
   publicTeams.list = async () => [
     { id: 'team', name: 'נבחרת', playerCount: 1 },
   ];
+  const { eventsService } = await load('services/events.ts');
+  const {default:updatesService} = await load('features/updates/updatesService.ts');
+  eventsService.list=async()=>({items:[],total:0,page:1,pageSize:20,totalPages:1});
+  updatesService.getUpdates=async()=>[];
+  api.get=async(path)=>({data:path==='/api/all-stars/overview'?{standings:[],fixtures:[],recentMeetings:[],internalTournaments:[]}:{rankings:[]}});
   const { default: AllStars } = await load('pages/AllStarsPage.tsx');
   await mount(router(el(AllStars)));
   assert.equal(rankingCalls, 0);

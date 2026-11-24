@@ -1,5 +1,8 @@
 # Rankings
 
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
+
+
 ## Principle
 Rankings are derived from tournament/result records. Do not use opaque manually updated counters as the primary source of truth.
 

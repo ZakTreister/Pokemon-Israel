@@ -1,4 +1,5 @@
 import UpdateAction from '../features/updates/components/UpdateAction';
+import { MediaGallery } from '../components/media/MediaGallery';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import updatesService from '../features/updates/updatesService';
@@ -49,6 +50,8 @@ export default function NewsPostPage() {
               className="w-full max-h-96 object-contain rounded-md mb-5"
             />
           )}
+          {post.eventId&&<Link to={'/events/'+post.eventId} className="block font-bold text-blue-500 mb-4">לאירוע המשויך ←</Link>}
+          {!!post.mediaItems?.length&&<MediaGallery items={post.mediaItems}/>}
           <UpdateAction update={post} />
           <div className="whitespace-pre-wrap break-words leading-8">
             {(post.description ?? post.content ?? '')

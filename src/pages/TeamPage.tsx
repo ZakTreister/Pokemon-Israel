@@ -20,6 +20,7 @@ import { publicTeams } from '../services/publicTeams';
 import teamsService from '../features/teams/teamsService';
 import { internalTournaments } from '../services/internalTournaments';
 import { requestError } from '../utils/requestError';
+import api from '../services/api';
 import type { TeamWithRoster } from '../types/team';
 import type { AllStarsRanking } from '../types/internalTournament';
 import { TeamEmblem } from '../components/teams/TeamCard';
@@ -48,6 +49,9 @@ export default function TeamPage() {
   const admin = user?.role === 'admin';
   const staff = user?.role === 'admin' || user?.role === 'judge';
   const [section, setSection] = useState('members');
+  const [favorite,setFavorite]=useState(false);
+  const [nextMeeting,setNextMeeting]=useState<{date:string;opponent:string;eventId:string}|null>(null);
+  const [lastMeeting,setLastMeeting]=useState<{id:string;date:string;opponent:string;gameWins:number[]}|null>(null);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyMeta, setHistoryMeta] = useState({ total: 0, totalPages: 1 });
   const [duplicateMatches, setDuplicateMatches] = useState<Player[] | null>(
@@ -70,6 +74,19 @@ export default function TeamPage() {
     setTeam(t);
     setRankings(r.rankings);
   }, [id, staff]);
+  useEffect(()=>{
+    setFavorite(window.localStorage.getItem('cardschool.favoriteTeam')===id);
+    let active=true;
+    api.get<{fixtures:Array<{date:string;eventId:string;firstTeam:{id:string;name:string};secondTeam:{id:string;name:string}}>;
+      recentMeetings?:Array<{id:string;date:string;teams:Array<{id:string;name:string}>;gameWins:number[]}>}>('/api/all-stars/overview').then(({data})=>{
+      if(!active)return;
+      const next=data.fixtures.find(f=>new Date(f.date)>new Date() && (f.firstTeam.id===id||f.secondTeam.id===id));
+      setNextMeeting(next?{date:next.date,opponent:next.firstTeam.id===id?next.secondTeam.name:next.firstTeam.name,eventId:next.eventId}:null);
+      const last=data.recentMeetings?.find(m=>m.teams.some(t=>t.id===id));
+      setLastMeeting(last?{id:last.id,date:last.date,opponent:last.teams.find(t=>t.id!==id)?.name||'נבחרת',gameWins:last.gameWins}:null);
+    }).catch(()=>{});
+    return ()=>{active=false};
+  },[id]);
   useEffect(() => {
     setTeam(null);
     setError('');
@@ -182,11 +199,15 @@ export default function TeamPage() {
         <p>טוען נבחרת...</p>
       ) : (
         <>
-          <div className="cs-public-card flex flex-wrap gap-6 items-center p-6 mb-6">
+          {team.coverUrl&&<img src={team.coverUrl} alt={"תמונת "+team.name} className="w-full max-h-72 object-cover rounded-xl mb-4"/>}
+          <div className="cs-public-card flex flex-wrap gap-6 items-center p-6 mb-6" style={{borderTop:"4px solid "+(team.themeColor||"#2563eb")}}>
             <TeamEmblem team={team} />
             <div>
               <p className="text-blue-500 font-bold">ALL STARS</p>
               <h1 className="text-4xl font-extrabold">{team.name}</h1>
+              {team.region&&<p className="font-bold text-blue-500">{team.region}</p>}
+              {team.description&&<p className="mt-2 max-w-xl">{team.description}</p>}
+              {!management&&<button type="button" className="mt-3 border rounded-lg p-2 font-bold" aria-pressed={favorite} onClick={()=>{if(favorite){window.localStorage.removeItem("cardschool.favoriteTeam");setFavorite(false);}else{window.localStorage.setItem("cardschool.favoriteTeam",id);setFavorite(true);}}}>{favorite?"⭐ זו הנבחרת שלי":"☆ זו הנבחרת שלי"}</button>}
               <p className="mt-2">
                 {team.playerCount} שחקנים פעילים ·{' '}
                 {team.completedInternalTournamentCount ?? 0} טורנירים פנימיים
@@ -195,6 +216,8 @@ export default function TeamPage() {
               {!team.isActive && <p>הנבחרת אינה פעילה</p>}
             </div>
           </div>
+          {nextMeeting&&!management&&<section className="border rounded-lg p-4 mb-6"><h2 className="font-bold">המשחק הרשמי הקרוב</h2><p>מול {nextMeeting.opponent} · {new Date(nextMeeting.date).toLocaleString("he-IL")}</p><Link className="text-blue-500 font-bold" to={"/events/"+nextMeeting.eventId}>לפרטי האירוע ←</Link></section>}
+          {lastMeeting&&!management&&<section className="border rounded-lg p-4 mb-6"><h2 className="font-bold">התוצאה הרשמית האחרונה</h2><p>מול {lastMeeting.opponent} · {new Date(lastMeeting.date).toLocaleDateString("he-IL")} · משחקונים {lastMeeting.gameWins.join(" : ")}</p><Link className="text-blue-500 font-bold" to={"/tournaments/"+lastMeeting.id}>לפרטי התוצאות ←</Link></section>}
           {management && staff && (
             <div className="mb-5">
               <TeamTournamentAction team={team} />

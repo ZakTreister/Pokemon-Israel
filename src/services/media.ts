@@ -5,7 +5,10 @@ export type UploadPurpose =
   | 'player-photo'
   | 'player-deck'
   | 'badge-image'
-  | 'update-image';
+  | 'update-image'
+  | 'team-cover'
+  | 'event-media'
+  | 'update-media';
 export interface UploadTarget {
   purpose: UploadPurpose;
   entityId?: string;

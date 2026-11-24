@@ -19,6 +19,8 @@ import Button from '../../components/ui/Button';
 import ManageTeams from './ManageTeams';
 import ManageBadges from './ManageBadges';
 import ManageTournaments from './ManageTournaments';
+import ManageEvents from './ManageEvents';
+import ManageEventPage from './ManageEventPage';
 import AdminTournaments from '../admin/AdminTournaments';
 import AdminUsers from '../admin/AdminUsers';
 import AdminOverview from '../admin/AdminOverview';
@@ -73,6 +75,7 @@ export default function ManageDashboardPage() {
     ['', 'סקירה כללית'],
     ['teams', 'נבחרות All-Stars'],
     ['tournaments', 'טורנירים'],
+    ...(admin ? [['events', 'אירועים']] : []),
     ...(admin
       ? [
           ['players', 'שחקנים'],
@@ -180,7 +183,7 @@ export default function ManageDashboardPage() {
                       ? location.pathname.split('/').filter(Boolean).length > 3
                         ? `/${teamParent}`
                         : '/manage/teams'
-                      : '/manage/tournaments'
+                      : location.pathname.startsWith('/manage/events/') ? '/manage/events' : '/manage/tournaments'
                   }
                 >
                   → חזרה ל
@@ -188,7 +191,7 @@ export default function ManageDashboardPage() {
                     ? location.pathname.split('/').filter(Boolean).length > 3
                       ? 'נבחרת'
                       : 'נבחרות All-Stars'
-                    : 'טורנירים'}
+                    : location.pathname.startsWith('/manage/events/') ? 'אירועים' : 'טורנירים'}
                 </Link>
               </Button>
             )}
@@ -223,6 +226,8 @@ export default function ManageDashboardPage() {
                 }
               />
               <Route path="tournaments" element={<ManageTournaments />} />
+              {admin && <Route path="events" element={<ManageEvents />} />}
+              {admin && <Route path="events/:id" element={<ManageEventPage />} />}
               <Route
                 path="tournaments/:id"
                 element={<InternalTournamentPage />}

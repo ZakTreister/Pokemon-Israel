@@ -1,5 +1,8 @@
 # Homepage
 
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
+
+
 The Stage A homepage is part of the required deliverable, not a future-only concept.
 
 ## Main navigation
@@ -7,6 +10,13 @@ See `docs/product/navigation-content.md`.
 The public site header/navigation must expose the approved Stage A menu and remain usable on desktop and mobile.
 
 The homepage also participates in the shared public floating **הירשמו לשיעור ניסיון** CTA defined in `docs/product/navigation-content.md`.
+
+## Latest Updates media carousel (November 2026)
+The homepage "חדשות מהשטח" horizontal carousel shows the ten most recent public Updates, including Updates linked to published Events, from the existing unified news feed. It is NOT a separate gallery of Event media.
+- Each card features a safe, playable YouTube embed when the Update has a YouTube link; otherwise show an image from its media items, falling back to the legacy image field and then a text-only placeholder. Previously stored S3 videos, if any, remain readable for backward compatibility, but new video file uploads are disabled.
+- Playback is user-initiated only; YouTube embeds never autoplay when the carousel appears. Uploading new videos to S3 is not supported.
+- Preserve the Update title, date, excerpt and links to full post and related Event.
+- Videos uploaded directly to an Event's gallery do not enter the homepage carousel unless attached to an Update as well.
 
 ## Running news banner
 Show a prominent running/top news banner using the existing Updates/News data source.
@@ -57,7 +67,7 @@ Requirements:
 Do not show team-player scores in this table.
 
 ## Upcoming club event
-Show the nearest upcoming regular/club tournament/event.
+Show the nearest upcoming published Event and link to the Event detail page. A weekly All-Stars internal tournament is not an Event.
 
 Requirements:
 - use the existing tournament/event data

@@ -1,3 +1,5 @@
+> November 2026: Event/Update galleries support multiple verified S3 **images** (JPEG/PNG/WebP, up to 5MB) and validated HTTPS YouTube video links. **New S3 video uploads are disabled** on both the client and server. Old stored video references may be displayed for backward compatibility only. A future S3 video capability would require a separate implementation decision, limits and upload design. See docs/product/event-hub-rollout.md.
+
 # Reusable File and Media Upload — AWS S3
 
 ## Goal

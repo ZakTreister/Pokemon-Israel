@@ -1,5 +1,8 @@
 # Teams
 
+> **November 2026 event-hub specification overrides conflicting Stage A details below.** See [event-hub-rollout.md](./event-hub-rollout.md). Public `/tournaments` lists Event records; staff `/manage/tournaments` lists all tournament types. Weekly internal All-Stars tournaments need no Event.
+
+
 ## Team entity
 An All Stars team has at least:
 - name

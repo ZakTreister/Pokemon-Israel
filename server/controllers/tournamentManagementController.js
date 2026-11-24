@@ -11,7 +11,7 @@ export const getManagedTournaments = asyncHandler(async (req, res) => {
     (q) =>
       q
         .select(
-          'title date location type status phase engineVersion team teamNameSnapshot currentParticipants source revision',
+          'title date location type status phase engineVersion team teamNameSnapshot currentParticipants source revision eventId',
         )
         .sort({ date: -1, _id: -1 }),
   );

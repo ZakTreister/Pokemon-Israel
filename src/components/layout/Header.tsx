@@ -33,6 +33,12 @@ export default function Header() {
     { to: '/about', label: 'על הליגה', construction: true },
     { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
   ];
+  const mobilePrimary = [
+    {to:'/',label:'בית'},
+    {to:'/all-stars',label:'נבחרות'},
+    {to:'/rankings',label:'דירוג'},
+    {to:'/all-stars#matches',label:'משחקים'},
+  ];
   const actions = (
     <>
       <Button
@@ -148,23 +154,20 @@ export default function Header() {
               aria-label="ניווט ראשי בנייד"
               className="grid grid-cols-2 gap-2"
             >
-              {links.map(({ to, label, construction }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={to === '/'}
-                  className="cs-nav-link px-3"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {label}
-                  {construction && (
-                    <span className="pointer-events-none absolute -top-1 left-0 whitespace-nowrap rounded-[3px] border border-blue-200 bg-blue-50 px-1 py-0.5 text-[8px] font-semibold leading-none text-blue-600 shadow-sm">
-                      בהקמה
-                    </span>
-                  )}
-                </NavLink>
+              {mobilePrimary.map(({to,label}) => (
+                <NavLink key={to} to={to} onClick={()=>setIsMenuOpen(false)} className="cs-nav-link px-3">{label}</NavLink>
               ))}
             </nav>
+            <details className="mt-3 border-t pt-3">
+              <summary className="cursor-pointer font-bold px-3">עוד באתר</summary>
+              <nav aria-label="ניווט נוסף" className="grid grid-cols-2 gap-2 mt-2">
+                {links.filter(item=>!['/rankings','/all-stars'].includes(item.to)).map(({to,label,construction})=>(
+                  <NavLink key={to} to={to} onClick={()=>setIsMenuOpen(false)} className="cs-nav-link px-3">
+                    {label}{construction&&<span className="text-xs ms-1">בהקמה</span>}
+                  </NavLink>
+                ))}
+              </nav>
+            </details>
             <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
               {actions}
             </div>

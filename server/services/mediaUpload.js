@@ -34,8 +34,9 @@ export function validateImage(buffer, mime) {
     fail(400, 'ניתן להעלות PNG, JPEG או WebP בלבד');
 }
 export function uploadNamespace(purpose, playerType) {
-  if (purpose === 'team-logo') return 'public/teams';
-  if (purpose === 'update-image') return 'public/updates';
+  if (purpose === 'team-logo' || purpose==='team-cover') return 'public/teams';
+  if (purpose === 'update-image' || purpose === 'update-media') return 'public/updates';
+  if (purpose === 'event-media') return 'public/events';
   if (purpose === 'player-deck' && playerType === 'team')
     return 'public/players';
   if (purpose === 'badge-image') return 'public/badges';
@@ -45,9 +46,13 @@ export function uploadNamespace(purpose, playerType) {
 }
 async function owner(purpose, id) {
   const name =
-    purpose === 'team-logo'
+    (purpose === 'team-logo' || purpose === 'team-cover')
       ? 'Team'
-      : purpose === 'badge-image'
+      : purpose === 'event-media'
+        ? 'Event'
+        : purpose === 'update-media'
+          ? 'Update'
+          : purpose === 'badge-image'
         ? 'BadgeDefinition'
         : purpose === 'update-image'
           ? 'Update'
@@ -67,21 +72,19 @@ export async function presignUpload(req) {
   if (
     ![
       'team-logo',
+      'team-cover',
       'player-photo',
       'player-deck',
       'badge-image',
       'update-image',
+      'update-media',
+      'event-media',
     ].includes(purpose)
   )
     fail(400, 'מטרת העלאה לא נתמכת');
-  if (
-    typeof contentType !== 'string' ||
-    !Object.hasOwn(IMAGE_TYPES, contentType) ||
-    !Number.isInteger(size) ||
-    size < 1 ||
-    size > MAX_IMAGE_BYTES
-  )
-    fail(400, 'בחרו PNG, JPEG או WebP עד 5MB');
+  // Video files are not supported in this release. Videos are YouTube links only.
+  if (!Object.hasOwn(IMAGE_TYPES,contentType) || !Number.isInteger(size) || size<1 || size>MAX_IMAGE_BYTES)
+    fail(400, 'ניתן להעלות תמונות PNG, JPEG או WebP עד 5MB בלבד. לסרטונים יש להוסיף קישור YouTube');
   let entity, id;
   if (entityId !== undefined) {
     if (!validId(entityId)) fail(400, 'מזהה רשומה לא חוקי');
@@ -131,6 +134,8 @@ export async function completeUpload(req) {
   };
   let grant = await MediaUpload.findOne(query);
   if (!grant) fail(404, 'אישור ההעלאה פג. העלו את התמונה מחדש');
+  // Also reject video grants issued by an older server version.
+  if (!Object.hasOwn(IMAGE_TYPES, grant.contentType)) fail(400, 'העלאת סרטונים אינה נתמכת. השתמשו בקישור YouTube');
   const storage = storageFor(req);
   if (grant.status !== 'verified') {
     grant = await MediaUpload.findOneAndUpdate(
@@ -183,6 +188,8 @@ export async function resolveUpload(req, purpose, id, currentMedia) {
   const field =
     purpose === 'team-logo'
       ? 'logoUploadId'
+      : purpose === 'team-cover'
+        ? 'coverUploadId'
       : purpose === 'badge-image'
         ? 'imageUploadId'
         : purpose === 'update-image'
@@ -240,10 +247,10 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player'].map(
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update'].map(
         (name, index) =>
           mongoose.model(name).exists({
-            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia'][index]}.storageKey`]:
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media'][index]}.storageKey`]:
               key,
           }),
       ),

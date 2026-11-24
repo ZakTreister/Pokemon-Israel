@@ -29,6 +29,7 @@ export function publicTournament(t, detail = false) {
   const type = t.type || 'quarterly';
   const data = {
     id: t.id,
+    eventId: t.eventId ? String(t.eventId) : null,
     title: t.title,
     description: t.description,
     date: t.date,

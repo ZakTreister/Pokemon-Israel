@@ -171,44 +171,61 @@ try {
     [],
   );
   const { default: api } = await load('services/api.ts');
-  api.get = async (_path, { params }) => {
-    const items = filterTournaments(events, params);
-    return {
-      data: {
-        items,
-        total: items.length,
-        page: 1,
-        pageSize: 25,
-        totalPages: 1,
-      },
-    };
+  const publicEvents = [
+    {id:'club-event',title:'אירוע חוגים',description:'פעילות החוגים',category:'club',
+      startDate:'2026-12-01',endDate:null,status:'published',featured:false,coverUrl:'',mediaItems:[]},
+    {id:'all-stars-event',title:'אירוע אולסטארז',description:'מפגש נבחרות',category:'all_stars',
+      startDate:'2026-12-02',endDate:null,status:'published',featured:false,coverUrl:'',mediaItems:[]},
+  ];
+  api.get = async (path, {params} = {}) => {
+    const items = path === '/api/events' ? publicEvents.filter(e=>!params?.category || e.category===params.category)
+      : filterTournaments(events,params||{});
+    return { data: {items,total:items.length,page:1,pageSize:25,totalPages:1} };
   };
   publicTournaments.list = async () => ({
-    items: structuredClone(events),
-    total: events.length,
-    page: 1,
-    pageSize: 25,
-    totalPages: 1,
+    items: structuredClone(events),total:events.length,page:1,pageSize:25,totalPages:1,
   });
   const { default: Events } = await load('pages/TournamentsPage.tsx');
   await mount(router(el(Events), '/tournaments'));
-  // The public Events index now restricts to club tournaments in the request,
-  // before server pagination. Team/internal event links remain directly usable.
-  assert.equal(renderer.root.findAllByType('article').length, 1);
-  assert.ok(text(renderer.toJSON()).includes('אירוע 0'));
-  assert.ok(!text(renderer.toJSON()).includes('אירוע 1'));
-  const selects = renderer.root.findAllByType('select');
-  assert.equal(selects.length, 1, 'public event type filter is hidden');
-  await act(async () => {
-    selects[0].props.onChange({ target: { value: 'active' } });
+  assert.equal(renderer.root.findAllByType('article').length,2);
+  assert.ok(text(renderer.toJSON()).includes('אירוע חוגים'));
+  assert.ok(text(renderer.toJSON()).includes('אירוע אולסטארז'));
+  await act(async()=>{
+    renderer.root.findAllByType('button').find(button=>text(button)==='חוגים').props.onClick();
     await flush();
   });
-  assert.equal(renderer.root.findAllByType('article').length, 0);
-  await act(async () => {
-    selects[0].props.onChange({ target: { value: '' } });
+  assert.equal(renderer.root.findAllByType('article').length,1);
+  assert.ok(text(renderer.toJSON()).includes('אירוע חוגים'));
+  assert.ok(!text(renderer.toJSON()).includes('אירוע אולסטארז'));
+  await act(async()=>{
+    renderer.root.findAllByType('button').find(button=>text(button)==='הכול').props.onClick();
     await flush();
   });
-  assert.equal(renderer.root.findAllByType('article').length, 1);
+  assert.equal(renderer.root.findAllByType('article').length,2);
+  unmount();
+
+  const { default: UpdateCarouselMedia } = await load('components/media/UpdateCarouselMedia.tsx');
+  const baseUpdate = {id:'news-video',title:'עדכון מהטורניר',date:'2026-11-24',content:''};
+  const imageAsset = {id:'photo',kind:'image',url:'https://cdn.example.test/photo.webp',caption:''};
+  const videoAsset = {id:'clip',kind:'video',url:'https://cdn.example.test/clip.mp4',caption:''};
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,image:'/legacy.jpg',mediaItems:[imageAsset,videoAsset]}}));
+  const carouselVideo = renderer.root.findByType('video');
+  assert.equal(carouselVideo.props.src,videoAsset.url);
+  assert.equal(carouselVideo.props.controls,true);
+  assert.equal(carouselVideo.props.preload,'none');
+  assert.equal(carouselVideo.props.autoPlay,undefined);
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,mediaItems:[{id:'youtube',kind:'youtube',youtubeId:'AbCdEf123_-',url:'https://www.youtube-nocookie.com/embed/AbCdEf123_-',caption:''}]}}));
+  const youtubeFrame = renderer.root.findByType('iframe');
+  assert.equal(youtubeFrame.props.src,'https://www.youtube-nocookie.com/embed/AbCdEf123_-');
+  assert.ok(!youtubeFrame.props.src.includes('autoplay'));
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:{...baseUpdate,image:'/legacy.jpg',mediaItems:[]}}));
+  assert.equal(renderer.root.findByType('img').props.src,'/legacy.jpg');
+  unmount();
+  await mount(el(UpdateCarouselMedia,{update:baseUpdate}));
+  assert.equal(renderer.root.findAllByType('video').length,0);
+  assert.equal(renderer.root.findAllByType('iframe').length,0);
   unmount();
 
   const { default: PublicMatchCard } = await load('components/tournaments/PublicMatchCard.tsx');
