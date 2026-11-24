@@ -19,6 +19,9 @@ Images: multiple JPEG/PNG/WebP using the existing protected S3 presign->inspect-
 Inter-team official completed meetings alone contribute team standings: win 3, draw 1, loss 0. Tie-break by individual game **win minus loss** difference across completed official meetings; equal residual shares place. Internal All-Stars tournaments contribute only to a player's **within-team** ranking, never public overall cross-team individual ranking. Regular/club national rankings remain lifetime and separate.
 All-Stars hub: nearest official encounter/event, team table, 4 team cards with branded color/region, team updates/media, weekly internal tournaments; team page: banner/description/cover, next and last official encounters, unified member ranking/history, device-only `localStorage` favorite team button. National ranking: prominent search, top 3 derived from unfiltered canonical ranking, mobile minimal columns, clear points explainer. Historical rank movers deferred until snapshots exist.
 
+## Event-scoped creation dialogs
+Club events expose the existing club tournament creation modal with the event preselected, single future calendar date, and server-side event association on creation. All-Stars events expose a single future fixture creation modal using the shared fixture editor; saving appends a planned fixture without starting a tournament or changing standings. Stay on the event page, refresh after success, and preserve existing fixtures and IDs. Existing tournament linking and global creation remain available; mixed-category events remain deferred.
+
 ## Scheduling
 Admin can plan a full season or a single encounter. Planned fixtures are not completed tournaments and cannot affect scoring. A fixture may link to a created inter-team tournament, and when live competition is opened it must not create a second duplicate. Dates/teams remain editable in admin until play; display only verified dates/fixtures, no fabricated fixtures.
 
