@@ -15,6 +15,8 @@ import Player from '../models/playerModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
+import mediaRoutes from '../routes/mediaRoutes.js';
+import MediaUpload from '../models/mediaUploadModel.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
 let server, origin, tokens = {};
@@ -41,7 +43,7 @@ before(async()=>{
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
  app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
- app.use('/api/inter-team',interTeamRoutes);
+ app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -134,4 +136,33 @@ test('planned All-Stars fixture launches exactly one official inter-team tournam
  assert.equal(detail.fixtures[0].tournamentId,created.id);
  assert.equal(detail.tournaments.length,1);
  assert.equal((await Tournament.countDocuments({eventId:ev.id,type:'inter_team'})),1);
+});
+
+
+test('event and update videos use YouTube links only; S3 video upload grants are rejected',async()=>{
+ const admin=await User.findOne({role:'admin'});
+ const event=await ok('/events','POST',{title:'מדיה לאירוע',category:'club',status:'published'},'admin',201);
+ const update=await ok('/updates','POST',{title:'עדכון וידאו',description:'עדכון',eventId:event.id},'admin',201);
+ for(const purpose of ['event-media','update-media']) {
+  const target=purpose==='event-media'?event.id:update.id;
+  for(const contentType of ['video/mp4','video/webm']) {
+   const r=await call('/media/presign','POST',{purpose,entityId:target,contentType,size:1024},'admin');
+   assert.equal(r.status,400,JSON.stringify(r.body));
+  }
+ }
+ assert.equal((await call('/updates/'+update.id+'/media','POST',{youtubeUrl:'https://fake-youtube.com/watch?v=AbCdEf123_-'},'admin')).status,400);
+ const updated=await ok('/updates/'+update.id+'/media','POST',{youtubeUrl:'https://youtu.be/AbCdEf123_-'},'admin',201);
+ assert.equal(updated.mediaItems[0].kind,'youtube');
+ assert.equal(updated.mediaItems[0].youtubeId,'AbCdEf123_-');
+ const gallery=await ok('/events/'+event.id+'/media','POST',{youtubeUrl:'https://www.youtube.com/watch?v=AbCdEf123_-'},'admin',201);
+ assert.equal(gallery.mediaItems[0].kind,'youtube');
+ const news=await ok('/updates');
+ assert.equal(news.find(item=>item.id===update.id)?.mediaItems[0]?.kind,'youtube');
+ const legacy=await MediaUpload.create({purpose:'update-media',entityId:update.id,createdBy:admin._id,
+  uploadKey:'private/uploads/old-video.mp4',storageKey:`public/updates/${update.id}/old-video.mp4`,
+  contentType:'video/mp4',size:1024,status:'verified',expiresAt:new Date(Date.now()+300000)});
+ const forbidden=await call('/updates/'+update.id+'/media','POST',{uploadId:legacy.id},'admin');
+ assert.equal(forbidden.status,400,JSON.stringify(forbidden.body));
+ await ok('/updates/'+update.id,'DELETE',undefined,'admin');
+ await ok('/events/'+event.id,'DELETE',undefined,'admin');
 });
