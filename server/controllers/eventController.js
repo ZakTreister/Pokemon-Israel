@@ -110,6 +110,19 @@ export const unlinkTournament = asyncHandler(async (req,res) => {
   await Event.updateOne({_id:event._id},{$set:{'fixtures.$[fixture].tournament':null}},{arrayFilters:[{'fixture.tournament':req.params.tournamentId}]});
   res.json({message:'הטורניר הוסר מהאירוע'});
 });
+export const appendFixture = asyncHandler(async (req,res) => {
+  const event = await findEvent(req.params.id);
+  if (event.category !== 'all_stars') fail(400,'תכנון מפגשים אפשרי רק באולסטארז');
+  const {firstTeam,secondTeam,date:input,location=''} = req.body;
+  if (!valid(firstTeam)||!valid(secondTeam)||firstTeam===secondTeam) fail(400,'בחר שתי נבחרות שונות');
+  const date=new Date(input);
+  if (!input || !Number.isFinite(date.getTime()) || date <= new Date()) fail(400,'יש לבחור מועד עתידי');
+  if (typeof location!=='string'||location.length>200) fail(400,'מיקום לא חוקי');
+  if (await Team.countDocuments({_id:{$in:[firstTeam,secondTeam]},isActive:true})!==2) fail(400,'יש לבחור נבחרות פעילות');
+  const updated=await Event.findOneAndUpdate({_id:event._id,category:'all_stars','fixtures.79':{$exists:false}},{$push:{fixtures:{firstTeam,secondTeam,date,location}}},{new:true,runValidators:true});
+  if (!updated) fail(409,'לא ניתן להוסיף מפגש נוסף לאירוע');
+  res.status(201).json(updated);
+});
 export const changeFixtures = asyncHandler(async (req,res) => {
   const event = await findEvent(req.params.id);
   if (event.category !== 'all_stars') fail(400,'תכנון מפגשים אפשרי רק באולסטארז');
@@ -122,7 +135,7 @@ export const changeFixtures = asyncHandler(async (req,res) => {
     if (Number.isNaN(date.getTime())) fail(400,'מועד מפגש לא חוקי');
     if (typeof f.location!=='string' && f.location!==undefined) fail(400,'מיקום לא חוקי');
     ids.add(f.firstTeam);ids.add(f.secondTeam);
-    return {firstTeam:f.firstTeam,secondTeam:f.secondTeam,date,location:(f.location||'').slice(0,200),
+    return {...(valid(f.id)&&event.fixtures.id(f.id)?{_id:f.id}:{}),firstTeam:f.firstTeam,secondTeam:f.secondTeam,date,location:(f.location||'').slice(0,200),
       ...(valid(f.tournamentId)?{tournament:f.tournamentId}:{})};
   });
   const teams=await Team.countDocuments({_id:{$in:[...ids]},isActive:true});
