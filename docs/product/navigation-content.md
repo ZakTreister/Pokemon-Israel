@@ -102,7 +102,8 @@ Destination:
 - do not substitute a different destination without a later product decision
 
 ## Responsive public navigation
-The main site menu must work well on mobile:
+The main site menu must work well on mobile. Preserve the approved single, flat two-column mobile menu, with all authorized links in the same order as desktop. Do not introduce a primary/secondary split, a “עוד באתר” disclosure, or substitute inline text for the floating construction micro-tag. Changes to existing navigation design require explicit product approval.
+
 - no clipped items
 - clear open/close behavior
 - RTL-safe layout
