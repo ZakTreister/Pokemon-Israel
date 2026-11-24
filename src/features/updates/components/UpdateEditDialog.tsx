@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { eventsService } from '../../../services/events';
+import type { EventSummary } from '../../../types/event';
 import type { Update } from '../../../types/update';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
@@ -24,7 +26,9 @@ export default function UpdateEditDialog({
     ctaText: update?.ctaText || '',
     ctaUrl: update?.ctaUrl || '',
   });
-  const [eventId] = useState(update?.eventId ?? defaultEventId ?? null);
+  const [eventId,setEventId] = useState(update?.eventId ?? defaultEventId ?? null);
+  const [events,setEvents] = useState<EventSummary[]>([]);
+  useEffect(()=>{eventsService.manage().then(setEvents).catch(()=>{});},[]);
   const [image, setImage] = useState(update?.image || '');
   const [imageUploadId, setImageUploadId] = useState<string | null>();
   const [busy, setBusy] = useState(false);
@@ -109,6 +113,7 @@ export default function UpdateEditDialog({
           ),
         )}
         {update && <MediaManager owner="update" id={update.id} items={update.mediaItems||[]} onChanged={onSaved}/>}
+        {!defaultEventId && <label className="block">אירוע משויך (אופציונלי)<select className="block w-full border rounded-md p-2 bg-background" value={eventId||""} onChange={e=>setEventId(e.target.value||null)}><option value="">עדכון רגיל ללא אירוע</option>{events.map(ev=><option key={ev.id} value={ev.id}>{ev.title}</option>)}</select></label>}
         <ImageUpload
           purpose="update-image"
           entityId={update?.id}

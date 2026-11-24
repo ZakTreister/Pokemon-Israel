@@ -9,6 +9,7 @@ import User from '../models/userModel.js';
 import Event from '../models/eventModel.js';
 import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
+import '../models/deckModel.js';
 import eventRoutes from '../routes/eventRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';

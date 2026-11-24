@@ -98,7 +98,8 @@ export const linkTournament = asyncHandler(async (req,res) => {
   if (t.type==='team_internal') fail(400,'טורניר פנימי שבועי אינו משויך לאירוע');
   if (categoryFor(t.type) !== event.category) fail(400,'סוג הטורניר אינו תואם את האירוע');
   if (t.eventId && String(t.eventId)!==String(event._id)) fail(409,'הטורניר משויך כבר לאירוע אחר');
-  await Tournament.updateOne({ _id:t._id,$or:[{eventId:null},{eventId:event._id}] },{$set:{eventId:event._id}});
+  const result=await Tournament.updateOne({ _id:t._id,$or:[{eventId:null},{eventId:event._id}] },{$set:{eventId:event._id}});
+  if(!result.matchedCount) fail(409,'שיוך הטורניר השתנה במהלך הפעולה');
   res.json({message:'הטורניר שויך לאירוע'});
 });
 export const unlinkTournament = asyncHandler(async (req,res) => {
@@ -106,6 +107,7 @@ export const unlinkTournament = asyncHandler(async (req,res) => {
   if (!valid(req.params.tournamentId)) fail(404,'הטורניר לא נמצא');
   const result=await Tournament.updateOne({_id:req.params.tournamentId,eventId:event._id},{$set:{eventId:null}});
   if (!result.matchedCount) fail(404,'הטורניר אינו משויך לאירוע');
+  await Event.updateOne({_id:event._id},{$set:{'fixtures.$[fixture].tournament':null}},{arrayFilters:[{'fixture.tournament':req.params.tournamentId}]});
   res.json({message:'הטורניר הוסר מהאירוע'});
 });
 export const changeFixtures = asyncHandler(async (req,res) => {
