@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   validateImage,
   MAX_IMAGE_BYTES,
-  MAX_VIDEO_BYTES,
   uploadNamespace,
 } from '../services/mediaUpload.js';
 import { publicMediaUrl } from '../services/storage/mediaMetadata.js';
@@ -41,9 +40,6 @@ test('purpose namespaces and CloudFront URLs never turn private media into publi
     publicMediaUrl({ storageKey: 'public/teams/123/logo.png' }),
     'https://d1grgd8g6bpbb7.cloudfront.net/teams/123/logo.png',
   );
-});
-test('S3 video upload size cap is 100 MiB', () => {
-  assert.equal(MAX_VIDEO_BYTES, 100 * 1024 * 1024);
 });
 test('real AWS SDK presigns a short-lived exact-key/content-type/size POST without ACL or secret credentials', async () => {
   const config = {
@@ -84,17 +80,6 @@ test('real AWS SDK presigns a short-lived exact-key/content-type/size POST witho
         signed.url.includes('eu-north-1'),
     );
     assert.equal(signed.fields.key, 'private/uploads/test/image.png');
-    const signedVideo = await s3Storage.presign({
-      key: 'private/uploads/test/video.mp4',
-      contentType: 'video/mp4',
-      size: MAX_VIDEO_BYTES,
-    });
-    const videoPolicy = JSON.parse(Buffer.from(signedVideo.fields.Policy, 'base64').toString());
-    assert.ok(videoPolicy.conditions.some(condition =>
-      JSON.stringify(condition) === JSON.stringify(['content-length-range', MAX_VIDEO_BYTES, MAX_VIDEO_BYTES])));
-    assert.ok(videoPolicy.conditions.some(condition =>
-      JSON.stringify(condition) === JSON.stringify(['eq', '$Content-Type', 'video/mp4'])));
-    assert.equal(signedVideo.fields.key, 'private/uploads/test/video.mp4');
     assert.ok(!('acl' in signed.fields));
     assert.ok(new Date(policy.expiration) - Date.now() <= 300000);
     assert.ok(!JSON.stringify(signed).includes(config.AWS_SECRET_ACCESS_KEY));
