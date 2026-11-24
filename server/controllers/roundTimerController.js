@@ -3,7 +3,7 @@ import Tournament from '../models/tournamentModel.js';
 import { changeRoundTimer, readRoundTimer } from '../services/roundTimer.js';
 import { notifyRoundTimer } from '../services/tournamentLive.js';
 
-const validId = value => typeof value === 'string' && /^[a-f\\d]{24}$/i.test(value);
+const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 const fail = (statusCode, message) => {
   const error = new Error(message);
   error.statusCode = statusCode;
