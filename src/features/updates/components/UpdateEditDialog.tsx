@@ -10,8 +10,10 @@ export default function UpdateEditDialog({
   update,
   onClose,
   onSaved,
+  defaultEventId,
 }: {
   update?: Update;
+  defaultEventId?: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
@@ -21,6 +23,7 @@ export default function UpdateEditDialog({
     ctaText: update?.ctaText || '',
     ctaUrl: update?.ctaUrl || '',
   });
+  const [eventId] = useState(update?.eventId ?? defaultEventId ?? null);
   const [image, setImage] = useState(update?.image || '');
   const [imageUploadId, setImageUploadId] = useState<string | null>();
   const [busy, setBusy] = useState(false);
@@ -36,7 +39,7 @@ export default function UpdateEditDialog({
     setBusy(true);
     setError('');
     try {
-      const input = { ...parsed.data, imageUploadId };
+      const input = { ...parsed.data, imageUploadId, eventId };
       if (update) await updatesService.updateUpdate(update.id, input);
       else await updatesService.createUpdate(input);
       await onSaved();

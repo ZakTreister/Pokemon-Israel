@@ -16,6 +16,7 @@ interface Entry {
   location?: string;
   date: string;
   type: 'quarterly' | 'team_internal' | 'inter_team';
+  eventId?: string | null;
   lifecycle: 'upcoming' | 'active' | 'completed';
   engineVersion?: string;
   teamNameSnapshot?: string;
@@ -100,6 +101,7 @@ export default function ManageTournaments() {
               tournament={t}
               actions={
                 <>
+                  {t.eventId && <Button asChild size="sm" variant="outline"><Link to={`/manage/events/${t.eventId}`}>אירוע משויך</Link></Button>}
                   <Button asChild size="sm" variant="outline">
                     <Link
                       to={

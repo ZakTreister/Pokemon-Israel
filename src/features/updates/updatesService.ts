@@ -1,6 +1,7 @@
 import api from '../../services/api';
 import { Update, UpdateInput } from '../../types/update';
 
+const getManagedUpdates = async () => (await api.get<Update[]>('/api/updates/management')).data;
 const getUpdates = async () => {
   const { data } = await api.get<Update[]>('/api/updates');
   return data;
@@ -22,6 +23,7 @@ const deleteUpdate = async (id: string) => {
 
 const updatesService = {
   getUpdates,
+  getManagedUpdates,
   getUpdate: async (id: string) =>
     (await api.get<Update>(`/api/updates/${id}`)).data,
   createUpdate,

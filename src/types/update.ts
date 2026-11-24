@@ -1,5 +1,6 @@
 export interface Update {
   id: string;
+  eventId?: string | null;
   title: string;
   content: string;
   description?: string;
@@ -14,4 +15,5 @@ export interface UpdateInput {
   ctaText: string;
   ctaUrl: string;
   imageUploadId?: string | null;
+  eventId?: string | null;
 }
