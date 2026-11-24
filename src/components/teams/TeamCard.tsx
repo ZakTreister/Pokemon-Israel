@@ -16,10 +16,12 @@ export default function TeamCard({ team }: { team: Team }) {
   return (
     <Link
       to={`/teams/${team.id}`}
-      className="flex min-h-[325px] flex-col items-center justify-between rounded-lg border border-line border-t-4 border-t-gold bg-card p-6 text-center shadow-panel hover:border-blue-500 transition-colors"
+      style={{borderTopColor:team.themeColor||undefined}}
+      className="flex min-h-[235px] flex-col items-center justify-between rounded-lg border border-line border-t-4 border-t-gold bg-card p-6 text-center shadow-panel hover:border-blue-500 transition-colors"
     >
       <TeamEmblem team={team} />
       <h3 className="text-xl font-extrabold">{team.name}</h3>
+      {team.region && <p className="text-sm text-muted-foreground">{team.region}</p>}
       <div className="w-full grid grid-cols-2 gap-2 border-t pt-4 text-sm">
         <div>
           <strong className="block text-2xl text-blue-500">

@@ -16,6 +16,7 @@ type SortKey = NonNullable<RankingQuery['sort']>;
 export default function RankingsPage() {
   const [data, setData] = useState<NationalRankingsResponse | null>(null);
   const [search, setSearch] = useState('');
+  const [leaders,setLeaders]=useState<NationalRanking[]>([]);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [includeAllStars, setIncludeAllStars] = useState(false);
   const [page, setPage] = useState(1);
@@ -25,6 +26,7 @@ export default function RankingsPage() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
 
+  useEffect(()=>{getNationalRankings({pageSize:3,sort:'position'}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[]);
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search), 250);
     return () => window.clearTimeout(timer);
@@ -64,9 +66,10 @@ export default function RankingsPage() {
         subtitle="הדירוג הארצי המצטבר של שחקני החוגים — לאורך כל שנות הפעילות"
       />
       <div className="container py-12">
+        <section className="mb-7"><h2 className="text-xl font-extrabold mb-3">מובילי הדירוג הארצי</h2><div className="grid grid-cols-3 gap-2">{leaders.map(row=><div key={row.playerId} className="cs-public-card p-2 sm:p-4 text-center"><strong className="block text-xl text-blue-500">#{row.position}</strong><span className="block font-bold text-sm sm:text-base break-words">{row.playerName}</span><span className="text-sm">{row.points} נקודות</span></div>)}</div></section>
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <label className="block font-bold sm:flex-1 sm:max-w-md">
-            חיפוש שחקן
+            איפה אתם בדירוג? חפשו את השם שלכם
             <input
               type="search"
               className="block w-full mt-2 p-3 border rounded-lg bg-card"
@@ -129,6 +132,7 @@ export default function RankingsPage() {
             )}
           </div>
         )}
+        <details className="mt-6 border rounded-lg p-4"><summary className="font-bold cursor-pointer">איך צוברים נקודות?</summary><p className="mt-3">הנקודות בדירוג הארצי מצטברות מטורנירי החוגים. טורנירים פנימיים ומפגשים בין נבחרות לא מוסיפים לניקוד זה.</p></details>
       </div>
     </div>
   );

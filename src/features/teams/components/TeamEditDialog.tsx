@@ -20,6 +20,11 @@ export default function TeamEditDialog({
   const dispatch = useAppDispatch();
   const { showConfirm } = useConfirm();
   const [name, setName] = useState(team.name);
+  const [region,setRegion] = useState(team.region||'');
+  const [description,setDescription] = useState(team.description||'');
+  const [themeColor,setThemeColor] = useState(team.themeColor||'#2563eb');
+  const [cover,setCover] = useState(team.coverUrl||'');
+  const [coverUploadId,setCoverUploadId] = useState<string|null>();
   const [teacher, setTeacher] = useState(team.teacher?.id || '');
   const [active, setActive] = useState(team.isActive);
   const [logo, setLogo] = useState(team.logo || '');
@@ -67,7 +72,7 @@ export default function TeamEditDialog({
         updateTeam({
           id: team.id,
           input: {
-            name: name.trim(),
+            name: name.trim(),region,description,themeColor,coverUploadId,
             logoUploadId,
             isActive: active,
             ...(teacher ? { teacher } : {}),
@@ -121,6 +126,10 @@ export default function TeamEditDialog({
             onChange={(e) => setName(e.target.value)}
           />
         </label>
+        <label className="block">אזור הנבחרת<input className="w-full p-2 border rounded-md bg-background" maxLength={120} value={region} onChange={e=>setRegion(e.target.value)}/></label>
+        <label className="block">משפט היכרות<textarea className="w-full p-2 border rounded-md bg-background" maxLength={1200} value={description} onChange={e=>setDescription(e.target.value)}/></label>
+        <label className="block">צבע נבחרת<input type="color" className="block mt-2" value={themeColor} onChange={e=>setThemeColor(e.target.value)}/></label>
+        <ImageUpload purpose="team-cover" entityId={team.id} label="תמונה קבוצתית / שער" value={cover} onChange={image=>{setCover(image?.url||"");setCoverUploadId(image?.uploadId||null);}} onBusyChange={setUploading} disabled={busy}/>
         <ImageUpload
           purpose="team-logo"
           entityId={team.id}
