@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../../services/api';
-import { MAX_VIDEO_UPLOAD_MB, uploadImage } from '../../services/media';
+import { uploadImage } from '../../services/media';
 import type { EventMedia } from '../../types/event';
 import { MediaGallery } from './MediaGallery';
 import Button from '../ui/Button';
@@ -12,8 +12,7 @@ export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'
  try{
  let uploadId:string|undefined;
  if(file){
-  const video=file.type.startsWith('video/');
-  if(!['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(file.type)||file.size>(video?MAX_VIDEO_UPLOAD_MB:5)*1024*1024||file.size===0) throw new Error(`יש לבחור תמונה עד 5MB או סרטון MP4/WebM עד ${MAX_VIDEO_UPLOAD_MB}MB`);
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024||file.size===0) throw new Error('יש לבחור תמונה מסוג JPEG, PNG או WebP עד 5MB');
   const uploaded=await uploadImage(file,{purpose:owner==='event'?'event-media':'update-media',entityId:id},setProgress);
   uploadId=uploaded.uploadId;
  }
@@ -23,8 +22,8 @@ export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'
  const remove=async(assetId:string)=>{setBusy(true);setError('');try{const {data}=await api.delete<{mediaItems:EventMedia[]}>(`/api/${path}/${id}/media/${assetId}`);setLocal(data.mediaItems);await onChanged();}catch(e){setError(requestError(e));}finally{setBusy(false);}};
  return <div className="space-y-3">
  <MediaGallery items={local}/>
- <label className="block">בחר תמונה (עד 5MB) או סרטון MP4/WebM (עד {MAX_VIDEO_UPLOAD_MB}MB)<input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" className="block w-full mt-1" disabled={busy} onChange={e=>setFile(e.target.files?.[0]||null)}/></label>
- <label className="block">או קישור YouTube<input type="url" placeholder="https://www.youtube.com/watch?v=..." className="block border p-2 rounded-md w-full" value={youtubeUrl} disabled={busy||!!file} onChange={e=>setYoutubeUrl(e.target.value)}/></label>
+ <label className="block">בחר תמונה (עד 5MB)<input type="file" accept="image/png,image/jpeg,image/webp" className="block w-full mt-1" disabled={busy} onChange={e=>setFile(e.target.files?.[0]||null)}/></label>
+ <label className="block">או הוסף קישור לסרטון YouTube<input type="url" placeholder="https://www.youtube.com/watch?v=..." className="block border p-2 rounded-md w-full" value={youtubeUrl} disabled={busy||!!file} onChange={e=>setYoutubeUrl(e.target.value)}/></label>
  <label className="block">כיתוב<input maxLength={240} className="block border p-2 rounded-md w-full" value={caption} onChange={e=>setCaption(e.target.value)}/></label>
  {owner==='event'&&<label className="flex gap-2"><input type="checkbox" checked={cover} disabled={busy} onChange={e=>setCover(e.target.checked)}/> השתמש בתמונה כתמונת שער</label>}
  {error&&<p role="alert" className="text-destructive">{error}</p>}
