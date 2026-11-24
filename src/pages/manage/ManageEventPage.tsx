@@ -3,6 +3,7 @@ import { Link,useNavigate,useParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/ui/Button';
 import EventEditor from '../../features/events/EventEditor';
+import MediaManager from '../../components/media/MediaManager';
 import UpdateEditDialog from '../../features/updates/components/UpdateEditDialog';
 import { eventsService } from '../../services/events';
 import type { EventDetails,EventInput } from '../../types/event';
@@ -36,7 +37,7 @@ export default function ManageEventPage(){
  {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}
  </section>
- <section className="border rounded-lg p-4"><h3 className="text-xl font-bold">תמונות וסרטונים</h3><p>ניתן לצרף מדיה אחרי יצירת האירוע.</p></section>
+ <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תמונות וסרטונים</h3><MediaManager owner="event" id={id} items={event.mediaItems} onChanged={reload}/></section>
  <Button disabled={busy} variant="destructive" onClick={()=>void remove()}>מחק אירוע</Button>
  </div>;
 }

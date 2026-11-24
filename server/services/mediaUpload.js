@@ -5,12 +5,21 @@ import MediaUpload from '../models/mediaUploadModel.js';
 import { s3Storage } from './storage/s3Storage.js';
 import { publicMediaUrl } from './storage/mediaMetadata.js';
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const VIDEO_TYPES = {'video/mp4':'mp4','video/webm':'webm'};
 export const IMAGE_TYPES = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
 };
 export { fail } from '../utils/httpError.js';
+export function validateVideo(buffer,mime){
+ if(!Buffer.isBuffer(buffer)||buffer.length<8) fail(400,'קובץ וידאו לא תקין');
+ const mp4=buffer.toString('ascii',4,8)==='ftyp';
+ const webm=buffer.subarray(0,4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]));
+ if(!((mime==='video/mp4'&&mp4)||(mime==='video/webm'&&webm))) fail(400,'פורמט הסרטון לא תואם לקובץ');
+}
+
 const validId = (value) =>
   typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 export function validateImage(buffer, mime) {
@@ -35,7 +44,8 @@ export function validateImage(buffer, mime) {
 }
 export function uploadNamespace(purpose, playerType) {
   if (purpose === 'team-logo') return 'public/teams';
-  if (purpose === 'update-image') return 'public/updates';
+  if (purpose === 'update-image' || purpose === 'update-media') return 'public/updates';
+  if (purpose === 'event-media') return 'public/events';
   if (purpose === 'player-deck' && playerType === 'team')
     return 'public/players';
   if (purpose === 'badge-image') return 'public/badges';
@@ -47,7 +57,11 @@ async function owner(purpose, id) {
   const name =
     purpose === 'team-logo'
       ? 'Team'
-      : purpose === 'badge-image'
+      : purpose === 'event-media'
+        ? 'Event'
+        : purpose === 'update-media'
+          ? 'Update'
+          : purpose === 'badge-image'
         ? 'BadgeDefinition'
         : purpose === 'update-image'
           ? 'Update'
@@ -71,17 +85,16 @@ export async function presignUpload(req) {
       'player-deck',
       'badge-image',
       'update-image',
+      'update-media',
+      'event-media',
     ].includes(purpose)
   )
     fail(400, 'מטרת העלאה לא נתמכת');
-  if (
-    typeof contentType !== 'string' ||
-    !Object.hasOwn(IMAGE_TYPES, contentType) ||
-    !Number.isInteger(size) ||
-    size < 1 ||
-    size > MAX_IMAGE_BYTES
-  )
-    fail(400, 'בחרו PNG, JPEG או WebP עד 5MB');
+  const isVideo = Object.hasOwn(VIDEO_TYPES, contentType);
+  const videoAllowed = ['event-media','update-media'].includes(purpose);
+  const validType = Object.hasOwn(IMAGE_TYPES,contentType)||(isVideo && videoAllowed);
+  if (!validType || !Number.isInteger(size) || size<1 || size>(isVideo?MAX_VIDEO_BYTES:MAX_IMAGE_BYTES))
+    fail(400, videoAllowed ? 'תמונה עד 5MB או סרטון MP4/WebM עד 50MB' : 'בחרו PNG, JPEG או WebP עד 5MB');
   let entity, id;
   if (entityId !== undefined) {
     if (!validId(entityId)) fail(400, 'מזהה רשומה לא חוקי');
@@ -94,7 +107,7 @@ export async function presignUpload(req) {
     entity?.playerType || req.body.playerType,
   );
   const uploadId = new mongoose.Types.ObjectId();
-  const filename = `${randomUUID()}.${IMAGE_TYPES[contentType]}`;
+  const filename = `${randomUUID()}.${(isVideo?VIDEO_TYPES:IMAGE_TYPES)[contentType]}`;
   const storageKey = `${namespace}/${id}/${purpose === 'player-deck' ? 'deck/' : ''}${filename}`;
   // Unverified bytes are never publicly reachable. Promotion freezes the final
   // key so a still-valid browser authorization cannot overwrite verified media.
@@ -143,11 +156,12 @@ export async function completeUpload(req) {
       const object = await storage.inspect(grant.uploadKey);
       if (
         object.size !== grant.size ||
-        object.size > MAX_IMAGE_BYTES ||
+        object.size > (Object.hasOwn(VIDEO_TYPES,grant.contentType)?MAX_VIDEO_BYTES:MAX_IMAGE_BYTES) ||
         object.contentType !== grant.contentType
       )
         fail(400, 'קובץ התמונה אינו תואם לאישור ההעלאה');
-      validateImage(object.prefix, grant.contentType);
+      if(Object.hasOwn(VIDEO_TYPES,grant.contentType)) validateVideo(object.prefix,grant.contentType);
+      else validateImage(object.prefix, grant.contentType);
       if (typeof object.etag !== 'string' || !object.etag)
         fail(502, 'לא הצלחנו לאמת את גרסת הקובץ. נסו להעלות שוב');
       await storage.promote(

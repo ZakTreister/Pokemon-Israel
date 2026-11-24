@@ -5,6 +5,7 @@ export interface Update {
   content: string;
   description?: string;
   image?: string;
+  mediaItems?: import('./event').EventMedia[];
   ctaText?: string;
   ctaUrl?: string;
   date: string;

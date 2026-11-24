@@ -5,7 +5,9 @@ export type UploadPurpose =
   | 'player-photo'
   | 'player-deck'
   | 'badge-image'
-  | 'update-image';
+  | 'update-image'
+  | 'event-media'
+  | 'update-media';
 export interface UploadTarget {
   purpose: UploadPurpose;
   entityId?: string;
@@ -42,7 +44,7 @@ export async function uploadImage(
   // Never use the authenticated app client for a third-party upload destination.
   await axios.post(authorization.upload.url, form, {
     withCredentials: false,
-    timeout: 60000,
+    timeout: file.type.startsWith('video/') ? 180000 : 60000,
     onUploadProgress: (event) =>
       progress?.(Math.round((event.loaded / (event.total || file.size)) * 100)),
   });

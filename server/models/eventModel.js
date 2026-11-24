@@ -1,11 +1,6 @@
 import mongoose from 'mongoose';
 import { mediaSchema, publicMediaUrl } from '../services/storage/mediaMetadata.js';
-const assetSchema = new mongoose.Schema({
-  kind: { type: String, enum: ['image', 'video', 'youtube'], required: true },
-  media: { type: mediaSchema, default: null },
-  youtubeId: { type: String, default: '' },
-  caption: { type: String, maxlength: 240, default: '' },
-}, { _id: true });
+import { mediaAssetSchema, publicAssets } from './mediaAssetSchema.js';
 const fixtureSchema = new mongoose.Schema({
   firstTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
   secondTeam: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
@@ -22,7 +17,7 @@ const eventSchema = new mongoose.Schema({
   status: { type: String, enum: ['draft', 'published'], default: 'draft' },
   featured: { type: Boolean, default: false },
   coverMedia: { type: mediaSchema, default: null },
-  mediaItems: { type: [assetSchema], default: [] },
+  mediaItems: { type: [mediaAssetSchema], default: [] },
   fixtures: { type: [fixtureSchema], default: [] },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, { timestamps: true });
@@ -30,11 +25,7 @@ eventSchema.index({ status: 1, category: 1, startDate: 1 });
 eventSchema.set('toJSON', { transform: (doc, ret) => {
   ret.id = String(doc._id);
   ret.coverUrl = publicMediaUrl(doc.coverMedia);
-  ret.mediaItems = (doc.mediaItems || []).map(asset => ({
-    id: String(asset._id), kind: asset.kind, caption: asset.caption,
-    url: asset.kind === 'youtube' ? `https://www.youtube-nocookie.com/embed/${asset.youtubeId}` : publicMediaUrl(asset.media),
-    youtubeId: asset.kind === 'youtube' ? asset.youtubeId : undefined,
-  }));
+  ret.mediaItems = publicAssets(doc.mediaItems || []);
   ret.fixtures = (doc.fixtures || []).map(f => ({
     id: String(f._id), firstTeam: String(f.firstTeam),
     secondTeam: String(f.secondTeam), date: f.date, location: f.location,

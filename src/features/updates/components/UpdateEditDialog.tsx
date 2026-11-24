@@ -3,6 +3,7 @@ import type { Update } from '../../../types/update';
 import Modal from '../../../components/ui/Modal';
 import Button from '../../../components/ui/Button';
 import ImageUpload from '../../../components/ui/ImageUpload';
+import MediaManager from '../../../components/media/MediaManager';
 import updatesService from '../updatesService';
 import { updateFormSchema } from '../utils/updateForm';
 import { requestError } from '../../../utils/requestError';
@@ -107,6 +108,7 @@ export default function UpdateEditDialog({
             </label>
           ),
         )}
+        {update && <MediaManager owner="update" id={update.id} items={update.mediaItems||[]} onChanged={onSaved}/>}
         <ImageUpload
           purpose="update-image"
           entityId={update?.id}

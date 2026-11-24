@@ -2,7 +2,7 @@ import express from 'express';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import {
  listEvents,manageEvents,getEvent,getManagedEvent,createEvent,changeEvent,removeEvent,
- linkTournament,unlinkTournament,changeFixtures
+ linkTournament,unlinkTournament,changeFixtures,addEventAsset,deleteEventAsset
 } from '../controllers/eventController.js';
 const router=express.Router();
 router.get('/',listEvents);
@@ -15,4 +15,6 @@ router.delete('/:id',protect,admin,removeEvent);
 router.put('/:id/tournaments/:tournamentId',protect,admin,linkTournament);
 router.delete('/:id/tournaments/:tournamentId',protect,admin,unlinkTournament);
 router.put('/:id/fixtures',protect,admin,changeFixtures);
+router.post('/:id/media',protect,admin,addEventAsset);
+router.delete('/:id/media/:assetId',protect,admin,deleteEventAsset);
 export default router;
