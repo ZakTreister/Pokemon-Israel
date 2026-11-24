@@ -264,7 +264,7 @@ export const pairRound = asyncHandler(async (req, res) => {
   res.json(
     await commit(req, {
       phase: "running",
-      rounds: [...tournament.rounds.map((r) => r.toObject()), round],
+      rounds: [...roundsWithStoppedTimer(tournament.rounds, now), round],
     }),
   );
 });
