@@ -485,6 +485,13 @@ try {
   const { default: AllStars } = await load('pages/AllStarsPage.tsx');
   await mount(router(el(AllStars)));
   assert.equal(rankingCalls, 0);
+  for (const heading of ["המשחקים הקרובים", "טבלת הנבחרות", "תוצאות האימונים השבועיים", "מה חדש בליגה?"]) {
+    const sectionTitle = renderer.root.findAllByType("h2").find(node => text(node) === heading);
+    assert.ok(sectionTitle, heading);
+    let ancestor = sectionTitle.parent;
+    while (ancestor && !(typeof ancestor.type === "string" && ancestor.props.className?.split(" ").includes("cs-public-card"))) ancestor = ancestor.parent;
+    assert.ok(ancestor, heading + " must be inside a public Card");
+  }
   assert.ok(
     renderer.root
       .findAllByType('a')

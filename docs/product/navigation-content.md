@@ -169,3 +169,6 @@ Admin-only **ניהול טקסטים** is separate from dynamic content pages. L
 
 ## Owner update — All-Stars page hero (2026-11-25)
 Use the shared full-width PageHero on the public All Stars page, with its existing responsive typography and spacing and an explicit purple/gold variant matching the homepage league identity (purple gradient, amber accents, white heading and light purple subtitle). Keep title and subtitle connected to managed fixed-page texts; render the managed rich HTML inside a public Card immediately below the hero, before standings/team content. Existing dark/light hero appearances on other pages remain unchanged.
+
+## Owner update — All-Stars section cards (2026-11-25)
+On the public All Stars page, wrap each complete upcoming matches, team standings, weekly training results and league news section (heading and all existing content) in its own shared public Card, with consistent responsive padding. Preserve section order, matches/standings anchor IDs, internal controls and content. Do not change homepage, favorite team chooser or badge area.
