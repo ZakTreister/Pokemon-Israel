@@ -35,11 +35,17 @@ try {
     assert.match(n.parent.props.className,/\bcs-card-frame\b/);
   };
   const divs=()=>renderer.root.findAllByType('div');
+  const buttonRequests=[];
+  contentPagesService.buttons=async target=>{buttonRequests.push(target);return target==='/content/info'?[{id:'rules',label:'כללי הליגה'}]:[];};
   contentPagesService.get=async()=>({id:'info',title:'מידע',subtitle:'כותרת משנה',bodyHtml:'<p>תוכן לדוגמה</p>',mediaItems:[]});
   await mount(Content,'/content/info');
   const body=divs().find(n=>n.props['aria-label']==='תוכן העמוד');
   card(body);
   assert.equal(body.findAllByType('div').find(n=>n.props.dangerouslySetInnerHTML).props.dangerouslySetInnerHTML.__html,'<p>תוכן לדוגמה</p>');
+  const related=renderer.root.findByType('nav');
+  assert.equal(related.findByType('a').props.href,'/content/rules');
+  assert.ok(JSON.stringify(renderer.toJSON()).indexOf('תוכן לדוגמה')<JSON.stringify(renderer.toJSON()).indexOf('כללי הליגה'));
+  assert.deepEqual(buttonRequests,['/content/info']);
   unmount();
   publicTeams.list=async()=>[];
   const event={id:'event',title:'אירוע',description:'כותרת משנה',bodyHtml:'<p>פרטי האירוע</p>',mediaItems:[],coverUrl:'',category:'club',startDate:'2026-12-01',updates:[],fixtures:[],contentPages:[{id:'one',title:'עמוד ראשון'},{id:'two',title:'עמוד שני'}],tournaments:[{id:'t1',title:'טורניר ראשון',date:'2026-12-01',type:'quarterly',lifecycle:'completed'},{id:'t2',title:'טורניר שני',date:'2026-12-01',type:'quarterly',lifecycle:'upcoming'}]};
@@ -125,6 +131,10 @@ try {
   };
   assert.equal(titleField().props.value,'עמוד ראשון');
   assertFooterActions();
+  const fields=()=>renderer.root.findByType('fieldset');
+  const checkbox=path=>fields().findAllByType('input').find(n=>n.props.type==='checkbox'&&n.props.value===path);
+  await act(async()=>{checkbox(undefined).props.onChange({target:{checked:true}});await new Promise(resolve=>setImmediate(resolve));});
+  assert.ok(checkbox('/all-stars'));assert.ok(checkbox('/content/second'));assert.ok(!checkbox('/content/first'));
   await go('/manage/content-pages/second');
   assert.equal(titleField().props.value,'עמוד שני');
   await go('/manage/content-pages');
@@ -134,9 +144,16 @@ try {
   assertFooterActions();
   assert.equal(renderer.root.findAllByType('article').length,0);
   await act(async()=>{titleField().props.onChange({target:{value:'עמוד חדש'}});});
+  await act(async()=>{checkbox(undefined).props.onChange({target:{checked:true}});await new Promise(resolve=>setImmediate(resolve));});
+  await act(async()=>{checkbox('/all-stars').props.onChange({target:{checked:true}});});
+  await act(async()=>{checkbox('/content/first').props.onChange({target:{checked:true}});});
+  assert.ok(checkbox('/all-stars').props.checked);assert.ok(checkbox('/content/first').props.checked);
   await act(async()=>{renderer.root.findByType('form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));});
   assert.equal(pathname,'/manage/content-pages/created');
   assert.equal(titleField().props.value,'עמוד חדש');
+  assert.deepEqual(managed.at(-1).buttonTargets,['/all-stars','/content/first']);
+  assert.equal(managed.at(-1).buttonLabel,'עמוד חדש');
+  assert.ok(checkbox('/all-stars').props.checked);assert.ok(checkbox('/content/first').props.checked);
   assert.equal(renderer.root.findAllByType('input').find(n=>n.props.type==='file')?.props.type,'file');
   assert.ok(renderer.root.findAllByType('input').some(n=>n.props.value==='https://cardschool.co.il/content/created'));
   assertFooterActions();
@@ -145,6 +162,16 @@ try {
   assert.equal(renderer.root.findAllByType('article').length,3);
   assert.equal(renderer.root.findAllByType('form').length,0);
   unmount();
+  const {StaticContentPageLinks}=await load('components/content/ContentPageLinks.tsx');
+  contentPagesService.buttons=async target=>{buttonRequests.push(target);return target==='/tournaments'?[{id:'rules',label:'תקנון'}]:[];};
+  for(const [path,hasLinks] of [['/events',true],['/rankings',false],['/manage',false],['/login',false],['/content/info',false]]){
+   const before=buttonRequests.length;
+   await act(async()=>{renderer=TestRenderer.create(el(MemoryRouter,{initialEntries:[path],future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(StaticContentPageLinks)));await new Promise(resolve=>setImmediate(resolve));});
+   assert.equal(renderer.root.findAllByType('nav').length,hasLinks?1:0);
+   if(path==='/events')assert.equal(buttonRequests.at(-1),'/tournaments');
+   if(path==='/manage'||path==='/login'||path==='/content/info')assert.equal(buttonRequests.length,before);
+   unmount();
+  }
   const {default:LeagueSections}=await load('features/home/components/LeagueSections.tsx');
   await act(async()=>{renderer=TestRenderer.create(el(MemoryRouter,{future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(LeagueSections,{leaders:[],standings:[],events:[],error:''})));});
   for(const title of ['טורנירים ואירועים קרובים','מפגשי נבחרות ואירועים קרובים']){

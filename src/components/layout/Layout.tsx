@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import RouteScroll from './RouteScroll';
 import Header from './Header';
 import Footer from './Footer';
+import {StaticContentPageLinks} from '../content/ContentPageLinks';
 import FloatingTrialCTA from './FloatingTrialCTA';
 
 interface LayoutProps {
@@ -25,6 +26,7 @@ export default function Layout({ children }: LayoutProps) {
         tabIndex={-1}
       >
         {children}
+        <StaticContentPageLinks />
       </main>
       <Footer />
       <FloatingTrialCTA />

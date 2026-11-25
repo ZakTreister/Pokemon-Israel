@@ -3,16 +3,18 @@ import {useNavigate,useParams} from 'react-router-dom';
 import type {ContentPage,ContentPageInput} from '../../types/contentPage';
 import {contentPagesService} from '../../services/contentPages';
 import ContentPageAddress from '../../components/content/ContentPageAddress';
+import ContentPageButtonFields from '../../components/content/ContentPageButtonFields';
 import RichHtmlField from '../../components/content/RichHtmlField';
 import MediaManager from '../../components/media/MediaManager';
 import Button from '../../components/ui/Button';
 import {requestError} from '../../utils/requestError';
 
 const listPath='/manage/content-pages';
-const empty=():ContentPageInput=>({title:'',subtitle:'',bodyHtml:'',status:'draft',showInNavigation:false,navigationLabel:'',showInFieldNews:false});
+const empty=():ContentPageInput=>({title:'',subtitle:'',bodyHtml:'',status:'draft',showInNavigation:false,navigationLabel:'',showInFieldNews:false,showAsButton:false,buttonLabel:'',buttonTargets:[]});
 const fromPage=(page:ContentPage):ContentPageInput=>({
  title:page.title,subtitle:page.subtitle||'',bodyHtml:page.bodyHtml||'',status:page.status,
  showInNavigation:!!page.showInNavigation,navigationLabel:page.navigationLabel||'',showInFieldNews:!!page.showInFieldNews,
+ showAsButton:!!page.showAsButton,buttonLabel:page.buttonLabel||'',buttonTargets:page.buttonTargets||[],
 });
 
 export default function ManageContentPageEditor(){
@@ -59,6 +61,7 @@ function ContentPageEditor({id}:{id:string}){
  <label className="flex gap-2 items-center"><input type="checkbox" checked={input.showInNavigation} onChange={e=>setInput({...input,showInNavigation:e.target.checked})}/> הצג בתפריט</label>
  {input.showInNavigation&&<label className="block">שם פריט ניווט<input required maxLength={80} className="block w-full p-2 border rounded bg-card" value={input.navigationLabel} onChange={e=>setInput({...input,navigationLabel:e.target.value})}/></label>}
  <label className="flex gap-2 items-center"><input type="checkbox" checked={input.showInFieldNews} onChange={e=>setInput({...input,showInFieldNews:e.target.checked})}/> הצג בחדשות מהשטח</label>
+ <ContentPageButtonFields value={input} onChange={setInput} id={id} disabled={busy}/>
  <label className="block">פרסום<select className="block w-full p-2 border rounded bg-card" value={input.status} onChange={e=>setInput({...input,status:e.target.value as ContentPageInput['status']})}><option value="draft">טיוטה</option><option value="published">מפורסם</option></select></label>
  </form>
  {current?<><ContentPageAddress key={'address-'+current.id} id={current.id} published={current.status==='published'}/><MediaManager key={current.id} owner="content-page" id={current.id} items={current.mediaItems||[]} onChanged={reloadMedia}/></>:<p className="text-sm">לאחר שמירת העמוד ניתן להוסיף מדיה.</p>}
