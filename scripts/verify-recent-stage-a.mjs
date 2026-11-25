@@ -191,7 +191,7 @@ try {
   assert.ok(text(renderer.toJSON()).includes('אירוע חוגים'));
   assert.ok(text(renderer.toJSON()).includes('אירוע אולסטארז'));
   await act(async()=>{
-    renderer.root.findAllByType('button').find(button=>text(button)==='חוגים').props.onClick();
+    renderer.root.findAllByType('button').find(button=>text(button)==='אירועי הליגה הישראלית').props.onClick();
     await flush();
   });
   assert.equal(renderer.root.findAllByType('article').length,1);
