@@ -5,6 +5,8 @@ import Event from '../models/eventModel.js';
 import {protect,admin} from '../middleware/authMiddleware.js';
 import {fail} from '../utils/httpError.js';
 import {contentPageFields} from '../services/contentFields.js';
+import {getSiteSettings} from '../services/siteSettings.js';
+import {pageActive} from '../../shared/siteSettings.js';
 import {normalizeContentLinkTarget} from '../../shared/contentLinkTargets.js';
 import {attachAsset,removeAsset,changeAssetVisibility} from '../services/assetAttachment.js';
 const router=express.Router();
@@ -22,6 +24,7 @@ async function validateButtonTargets(fields){
 router.get('/buttons',asyncHandler(async(req,res)=>{
  const target=normalizeContentLinkTarget(req.query.target);
  if(!target)fail(400,'יעד כפתור לא תקין');
+ if(!target.startsWith('/content/')&&!pageActive(await getSiteSettings(),target))return res.json([]);
  if(target.startsWith('/content/')&&!await ContentPage.exists({_id:target.slice(9),status:'published'}))return res.json([]);
  const pages=await ContentPage.find({status:'published',showAsButton:true,buttonTargets:target})
   .select('buttonLabel').sort({createdAt:1,_id:1});

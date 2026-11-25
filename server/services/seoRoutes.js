@@ -1,3 +1,4 @@
+import {getSiteSettings} from './siteSettings.js';
 import {readFile} from 'node:fs/promises';
 import {buildSitemap,injectSeo,noIndexSeo,resolveSeo,ROBOTS} from './seo.js';
 
@@ -7,7 +8,7 @@ async function resolveWithin(path, timeoutMs=800) {
   let timer;
   try {
     return await Promise.race([
-      resolveSeo(path),
+      getSiteSettings().then(settings=>resolveSeo(path,undefined,settings)),
       new Promise(resolve=>{timer=setTimeout(()=>resolve(noIndexSeo()),timeoutMs);}),
     ]);
   } catch {
@@ -22,7 +23,7 @@ export function registerSeoEndpoints(app) {
   app.get('/sitemap.xml',async (_req,res)=>{
     try {
       const xml=await buildSitemap();
-      res.set('Cache-Control','public, max-age=300').type('application/xml').send(xml);
+      res.set('Cache-Control','no-cache').type('application/xml').send(xml);
     } catch {
       res.status(503).type('text/plain').send('Sitemap temporarily unavailable');
     }
@@ -34,6 +35,7 @@ export function createSpaSeoHandler(indexFile) {
   return async (req,res)=>{
     const meta=await resolveWithin(req.path);
     res.set('Cache-Control','no-cache');
+    if(meta.disabled)res.status(404);
     if(!meta.indexable) res.set('X-Robots-Tag','noindex, follow');
     try {
       template ||= await readFile(indexFile,'utf8');

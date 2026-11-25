@@ -23,6 +23,7 @@ import ManageEventPage from './ManageEventPage';
 import ManageGallery from './ManageGallery';
 import ManageContentPages from './ManageContentPages';
 import ManageContentPageEditor from './ManageContentPageEditor';
+import ManageSiteSettings from './ManageSiteSettings';
 import ManageStaticPageTexts from './ManageStaticPageTexts';
 import ManageStaticPageTextEditor from './ManageStaticPageTextEditor';
 import AdminTournaments from '../admin/AdminTournaments';
@@ -79,7 +80,7 @@ export default function ManageDashboardPage() {
     ['', 'סקירה כללית'],
     ['teams', 'נבחרות All-Stars'],
     ['tournaments', 'טורנירים'],
-    ...(admin ? [['events', 'אירועים'],['content-pages','עמודי תוכן'],['texts','ניהול טקסטים'],['gallery','גלריה']] : []),
+    ...(admin ? [['events', 'אירועים'],['content-pages','עמודי תוכן'],['texts','ניהול טקסטים'],['gallery','גלריה'],['site-settings','הגדרות האתר']] : []),
     ...(admin
       ? [
           ['players', 'שחקנים'],
@@ -233,6 +234,7 @@ export default function ManageDashboardPage() {
               {admin && <Route path="gallery" element={<ManageGallery />} />}
               {admin && <Route path="content-pages" element={<ManageContentPages />} />}
               {admin && <Route path="content-pages/:id" element={<ManageContentPageEditor />} />}
+              {admin && <Route path="site-settings" element={<ManageSiteSettings />} />}
               {admin && <Route path="texts" element={<ManageStaticPageTexts />} />}
               {admin && <Route path="texts/:id" element={<ManageStaticPageTextEditor />} />}
               {admin && <Route path="events/:id" element={<ManageEventPage />} />}
