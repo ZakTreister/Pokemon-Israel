@@ -12,10 +12,9 @@ export function TeamEmblem({ team }: { team: Pick<Team, "name" | "logo"> }) {
     <Shield className="h-20 w-20 text-blue-500" aria-hidden="true" />
   );
 }
-export default function TeamCard({ team }: { team: Team }) {
+export default function TeamCard({ team, selected, busy, onSelect }: { team: Team; selected?: boolean; busy?: boolean; onSelect?: (team:Team)=>void }) {
   return (
-    <Link
-      to={`/teams/${team.id}`}
+    <article
       style={{borderTopColor:team.themeColor||undefined}}
       className="flex min-h-[235px] flex-col items-center justify-between rounded-lg border border-line border-t-4 border-t-gold bg-card p-6 text-center shadow-panel hover:border-blue-500 transition-colors"
     >
@@ -43,7 +42,8 @@ export default function TeamCard({ team }: { team: Team }) {
           משחקים · {Math.round(team.officialStats.winRate * 100)}% ניצחונות
         </p>
       )}
-      <span className="mt-3 font-bold text-blue-500">הכירו את הנבחרת ←</span>
-    </Link>
+      {onSelect&&<button type="button" aria-pressed={!!selected} disabled={busy} className="mt-3 rounded-md border border-purple-600 px-3 py-2 font-bold text-purple-700 dark:text-purple-300 disabled:opacity-60" onClick={()=>onSelect(team)}>{selected?'★ הנבחרת שלי':'☆ זו הנבחרת שלי'}</button>}
+      <Link to={`/teams/${team.id}`} className="mt-3 font-bold text-blue-500">הכירו את הנבחרת ←</Link>
+    </article>
   );
 }
