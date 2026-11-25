@@ -41,7 +41,7 @@ export default function AllStarsPage(){
    return preferred(b)-preferred(a)||new Date(b.date).getTime()-new Date(a.date).getTime();
  });
  return <div>
- <PageHero variant="all-stars" title={pageText?.title??'ליגת האולסטארז'} subtitle={pageText?.subtitle??'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.'}/>
+ {pageText?.title && <PageHero variant="all-stars" title={pageText.title} subtitle={pageText.subtitle}/>}
  <div className="container py-8 sm:py-12 space-y-10">
  {textError&&<p role="alert" className="text-destructive">לא ניתן לטעון את טקסטי העמוד: {textError}</p>}
  {error&&<p role="alert" className="text-destructive">{error}</p>}

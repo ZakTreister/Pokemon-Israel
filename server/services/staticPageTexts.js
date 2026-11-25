@@ -3,8 +3,8 @@ import { fail } from '../utils/httpError.js';
 
 const defaults = {
   'all-stars': {
-    title: 'ליגת האולסטארז',
-    subtitle: 'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.',
+    title: '',
+    subtitle: '',
     bodyHtml: '',
   },
 };
