@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
           </div>
           <div>
-            <h2 className="mb-4 text-sm font-bold text-white">על המגרש</h2>
+            <h2 className="mb-4 text-sm font-bold text-white">ניווט באתר</h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               {[
                 ['/', 'דף הבית'],

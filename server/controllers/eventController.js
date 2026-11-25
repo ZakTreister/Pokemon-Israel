@@ -12,7 +12,7 @@ const limit = (value, max = 100) => Math.max(1, Math.min(max, parseInt(value, 10
 function categoryFor(type) { return type === 'inter_team' ? 'all_stars' : 'club'; }
 async function eventFields(input, current) {
   const data = {};
-  for (const field of ['title', 'description', 'category', 'status', 'featured', 'startDate', 'endDate']) {
+  for (const field of ['title', 'description', 'category', 'status', 'featured', 'openingRound', 'startDate', 'endDate']) {
     if (input[field] === undefined) continue;
     data[field] = input[field];
   }
@@ -21,6 +21,8 @@ async function eventFields(input, current) {
   if (data.category !== undefined && !['club', 'all_stars'].includes(data.category)) fail(400, 'סוג אירוע לא חוקי');
   if (data.status !== undefined && !['draft', 'published'].includes(data.status)) fail(400, 'סטטוס אירוע לא חוקי');
   if (data.featured !== undefined && typeof data.featured !== 'boolean') fail(400, 'ערך הבלטה לא חוקי');
+  if (data.openingRound !== undefined && typeof data.openingRound !== 'boolean') fail(400, 'ערך מחזור פתיחה לא חוקי');
+  if ((data.category ?? current?.category) !== 'all_stars' && (data.openingRound ?? current?.openingRound)) fail(400, 'מחזור פתיחה אפשרי רק באולסטארז');
   for (const field of ['startDate', 'endDate']) if (data[field] != null) {
     const date = new Date(data[field]);
     if (Number.isNaN(date.getTime())) fail(400, 'תאריך אירוע לא תקין');
@@ -39,7 +41,7 @@ const findEvent = async id => {
   return event;
 };
 const summary = e => ({ id: e.id, title: e.title, description: e.description,
-  category: e.category, status: e.status, featured: e.featured, startDate: e.startDate,
+  category: e.category, status: e.status, featured: e.featured, openingRound: !!e.openingRound, startDate: e.startDate,
   endDate: e.endDate, coverUrl: e.toJSON().coverUrl, mediaItems: e.toJSON().mediaItems });
 export const listEvents = asyncHandler(async (req, res) => {
   const query = { status: 'published' };

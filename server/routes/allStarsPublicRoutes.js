@@ -12,11 +12,11 @@ router.get('/overview',asyncHandler(async(req,res)=>{
    Team.find({isActive:true}).sort({normalizedName:1}),
    Tournament.find({type:'inter_team',status:'completed',date:{$gte:leagueYearStart()}}).select('interTeamSides playerParticipants rounds phase status type date eventId').sort({date:-1}),
    Tournament.find({type:'team_internal',status:'completed'}).sort({date:-1}).limit(12),
-   Event.find({status:'published',category:'all_stars'}).select('title fixtures startDate').sort({startDate:-1}).limit(30),
+   Event.find({status:'published',category:'all_stars'}).select('title fixtures startDate openingRound').sort({startDate:-1}).limit(30),
  ]);
  const byId=new Map(teams.map(t=>[String(t._id),t]));
  const fixtures=events.flatMap(ev=>(ev.fixtures||[]).map(f=>({
-  id:String(f._id),eventId:ev.id,eventTitle:ev.title,date:f.date,location:f.location||'',
+  id:String(f._id),eventId:ev.id,eventTitle:ev.title,openingRound:!!ev.openingRound,eventStartDate:ev.startDate,date:f.date,location:f.location||'',
   firstTeam:{id:String(f.firstTeam),name:byId.get(String(f.firstTeam))?.name||'',logo:byId.get(String(f.firstTeam))?.toJSON().logo||''},
   secondTeam:{id:String(f.secondTeam),name:byId.get(String(f.secondTeam))?.name||'',logo:byId.get(String(f.secondTeam))?.toJSON().logo||''},
   tournamentId:f.tournament?String(f.tournament):null,

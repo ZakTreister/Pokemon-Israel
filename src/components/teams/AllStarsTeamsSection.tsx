@@ -28,7 +28,7 @@ export default function AllStarsTeamsSection() {
       <SectionHeading
         icon={<Shield size={22} />}
         title="נבחרות All Stars"
-        subtitle="הנבחרות, הסגלים והפעילות הפנימית של הליגה"
+        subtitle="נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות."
       />
       <Link to="/all-stars" className="block mb-5 font-bold text-blue-500">
         לכל הנבחרות והדירוגים ←
