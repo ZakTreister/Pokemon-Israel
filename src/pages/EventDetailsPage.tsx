@@ -11,15 +11,20 @@ import Button from '../components/ui/Button';
 import { MediaGallery } from '../components/media/MediaGallery';
 import SafeHtml from '../components/content/SafeHtml';
 export default function EventDetailsPage(){
- const {id=''}=useParams(),[event,setEvent]=useState<EventDetails|null>(null),[error,setError]=useState(''),[teams,setTeams]=useState<Team[]>([]);
+ const {id=''}=useParams();
+ return <EventDetails key={id} id={id}/>;
+}
+function EventDetails({id}:{id:string}){
+ const [event,setEvent]=useState<EventDetails|null>(null),[error,setError]=useState(''),[teams,setTeams]=useState<Team[]>([]);
  useEffect(()=>{let active=true;eventsService.get(id).then(r=>{if(active)setEvent(r)}).catch(e=>{if(active)setError(requestError(e))});publicTeams.list().then(t=>{if(active)setTeams(t)}).catch(()=>{});return ()=>{active=false};},[id]);
  const name=(id:string)=>teams.find(t=>t.id===id)?.name||'נבחרת';
- return <div><PageHero league={event?event.category==='all_stars'?'allStars':'kids':undefined} title={event?.title||'אירוע'} highlightWord="אירוע" subtitle={event?.description||'אירועי CardSchool'}/>
+ if(error)return <div className="container py-8"><p role="alert" className="text-destructive">{error}</p></div>;
+ if(!event)return null;
+ const allStars=event.category==='all_stars';
+ return <div><PageHero league={allStars?'allStars':'kids'} variant={allStars?'all-stars':'dark'} title={event.title} highlightWord="אירוע" subtitle={event.description}/>
  <div className="container py-8 space-y-8">
  <Link className="font-bold text-blue-500" to="/tournaments">→ לכל האירועים</Link>
- {error&&<p role="alert" className="text-destructive">{error}</p>}
- {!event&&!error&&<p role="status">טוען אירוע...</p>}
- {event&&<>
+ <>
  <div className={'grid gap-5 items-start '+(event.bodyHtml&&(event.mediaItems.length||event.coverUrl)?'md:grid-cols-2':'')}>
  {event.bodyHtml&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml}/></Card>}
  {event.mediaItems.length>0?<MediaGallery carousel items={event.mediaItems}/>:event.coverUrl?<img src={event.coverUrl} alt="" className="w-full max-h-96 object-cover rounded-xl" loading="lazy"/>:null}
@@ -32,6 +37,6 @@ export default function EventDetailsPage(){
  {!!event.updates.length&&<section className="space-y-4"><h2 className="text-2xl font-extrabold">עדכונים מהאירוע</h2>
  {event.updates.map(u=><article key={u.id} className="cs-public-card p-5"><h3 className="font-bold text-xl">{u.title}</h3><p className="my-2 whitespace-pre-wrap line-clamp-3">{u.description||u.content}</p><Link className="text-blue-500 font-bold" to={'/news/'+u.id}>קראו את העדכון המלא ←</Link></article>)}
  </section>}
- </>}
+ </>
  </div></div>;
 }

@@ -488,10 +488,20 @@ try {
   const {default:updatesService} = await load('features/updates/updatesService.ts');
   eventsService.list=async()=>({items:[],total:0,page:1,pageSize:20,totalPages:1});
   updatesService.getUpdates=async()=>[];
-  api.get=async(path)=>({data:path==='/api/all-stars/overview'?{standings:[],fixtures:[],recentMeetings:[],internalTournaments:[]}:{rankings:[]}});
+  const allStarsRequests=[];
+  api.get=async(path,options)=>{
+    allStarsRequests.push({path,params:options?.params});
+    if(path==='/api/all-stars/overview')return {data:{standings:[],fixtures:[],recentMeetings:[]}};
+    if(path==='/api/static-page-texts/all-stars')return {data:{title:'ליגת האולסטארז',subtitle:'',bodyHtml:''}};
+    if(path==='/api/tournaments')return {data:{items:[],total:0,page:1,pageSize:3,totalPages:0}};
+    throw new Error('Unexpected All Stars fixture request: '+path);
+  };
   const { default: AllStars } = await load('pages/AllStarsPage.tsx');
   await mount(router(el(AllStars)));
   assert.equal(rankingCalls, 0);
+  assert.ok(allStarsRequests.some(({path,params})=>path==='/api/tournaments'&&params.type==='team_internal'&&params.status==='completed'));
+  assert.ok(allStarsRequests.some(({path})=>path==='/api/static-page-texts/all-stars'));
+  assert.equal(renderer.root.findAllByProps({role:'alert'}).length,0);
   for (const heading of ["המשחקים הקרובים", "טבלת הנבחרות", "תוצאות האימונים השבועיים", "מה חדש בליגה?"]) {
     const sectionTitle = renderer.root.findAllByType("h2").find(node => text(node) === heading);
     assert.ok(sectionTitle, heading);

@@ -6,14 +6,14 @@ export function richBody(input){
 }
 export function contentPageFields(input,current={}){
  const data={};
- for(const key of ['title','subtitle','bodyHtml','status','showInNavigation','navigationLabel','showInFieldNews','showAsButton','buttonLabel','buttonTargets'])if(input[key]!==undefined)data[key]=input[key];
+ for(const key of ['title','subtitle','bodyHtml','status','showInNavigation','navigationLabel','showInFieldNews','isAllStars','showAsButton','buttonLabel','buttonTargets'])if(input[key]!==undefined)data[key]=input[key];
  for(const [key,max] of [['title',180],['subtitle',5000],['navigationLabel',80],['buttonLabel',80]])if(data[key]!==undefined){
   if(typeof data[key]!=='string'||data[key].length>max)fail(400,'יש להזין טקסט תקין');
   data[key]=data[key].trim();
  }
  if(!(data.title??current.title))fail(400,'כותרת היא שדה חובה');
  if(data.status!==undefined&&!['draft','published'].includes(data.status))fail(400,'סטטוס לא תקין');
- for(const key of ['showInNavigation','showInFieldNews','showAsButton'])if(data[key]!==undefined&&typeof data[key]!=='boolean')fail(400,'סימון לא תקין');
+ for(const key of ['showInNavigation','showInFieldNews','isAllStars','showAsButton'])if(data[key]!==undefined&&typeof data[key]!=='boolean')fail(400,'סימון לא תקין');
  if((data.showInNavigation??current.showInNavigation)&&!(data.navigationLabel??current.navigationLabel))fail(400,'יש להזין שם לפריט בתפריט');
  if(data.buttonTargets!==undefined){
   if(!Array.isArray(data.buttonTargets)||data.buttonTargets.length>200)fail(400,'רשימת עמודים לא תקינה');

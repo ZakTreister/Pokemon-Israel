@@ -157,3 +157,6 @@ Do not overload Season to mean competition year.
 
 ## Public badge-program explanation
 In admin **ניהול טקסטים → עמוד האולסטארז**, the existing singleton explanation is editable independently of badge definitions and awards. Use the shared rich HTML editor and server allow-list validation (50,000 characters); keep the optional uploaded image and existing verified S3 flow. Public GET returns id, legacy description, descriptionHtml and image URL; admin-only PUT accepts sanitized HTML and preserves old plain-text compatibility. Existing plain text is escaped and converted to HTML with line breaks at read time, without destructive migration. Show the section תגים in All Stars after team cards, hidden if both HTML and image are empty. No season or award behavior changes.
+
+## Owner follow-up — explanation moves to CMS
+Remove the dedicated badge-program explanation section from All Stars public page and the editor embedded in All Stars static text management. Use a regular published CMS page (isAllStars=true, optional related button targeting /all-stars) for this explanation instead. Existing badge definitions, individual descriptions/images, awards, seasons and player badges remain intact. Preserve legacy badge-program data and API for backward compatibility; no automatic migration/deletion or new CMS page creation.

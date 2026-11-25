@@ -9,7 +9,6 @@ import type { Team } from '../types/team';
 import {TeamFanCards} from '../components/teams/AllStarsTeamsSection';
 import {useFavoriteSelection} from '../features/teams/hooks/useFavoriteTeam';
 import {updateForTeam} from '../features/home/utils/favoriteContent';
-import PublicBadgeProgram from '../features/badges/components/PublicBadgeProgram';
 import ManagedPageIntro from '../components/content/ManagedPageIntro';
 import { Card } from '../components/ui/Card';
 import RankingFreshness from '../components/rankings/RankingFreshness';
@@ -52,7 +51,6 @@ export default function AllStarsPage(){
  <div className="hidden sm:block"><table className="w-full text-sm sm:text-base"><thead><tr className="bg-navy-700 text-white">{['מקום','נבחרת','מפגשים ששוחקו','ניצחונות','נקודות','הפרש משחקונים'].map(h=><th key={h} className="p-2 text-start">{h==='הפרש משחקונים'?<details><summary className="cursor-pointer">{h}</summary><span className="text-xs font-normal">מספר הניצחונות פחות מספר ההפסדים במשחקונים האישיים</span></details>:h}</th>)}</tr></thead><tbody>{table.map(t=><tr key={t.id} className="border-b"><td className="p-2">{t.position}</td><td className="p-2 font-bold"><Link to={'/teams/'+t.id}>{t.name}</Link></td><td className="p-2">{t.played}</td><td className="p-2">{t.wins}</td><td className="p-2 font-bold">{t.leaguePoints}</td><td className="p-2" dir="ltr">{t.gameDifference>0?'+':''}{t.gameDifference}</td></tr>)}</tbody></table></div>
  <p className="text-sm text-muted-foreground">ניצחון במפגש: 3 נקודות · תיקו: נקודה אחת</p><details className="text-sm"><summary className="cursor-pointer font-bold">איך נקבע הדירוג?</summary><p>הפסד במפגש: 0 נקודות. שוויון מוכרע לפי הפרש ניצחונות פחות הפסדים במשחקונים האישיים. טורנירי אימון לא נכללים.</p></details></Card></section>
  <section className="space-y-4"><h2 className="text-2xl font-extrabold">איזו נבחרת אתם מעודדים?</h2><TeamFanCards teams={teams} favorite={fan}/></section>
- <PublicBadgeProgram/>
  <WeeklyTrainingResults teams={teams} favoriteId={favorite}/>
  <section><Card variant="public" className="space-y-3 p-4 sm:p-6"><h2 className="text-2xl font-extrabold">מה חדש בליגה?</h2><div className="grid gap-3 sm:grid-cols-2">{events.map(ev=><Link key={ev.id} className="cs-public-card p-4" to={'/events/'+ev.id}><h3 className="font-bold">{ev.title}</h3><p className="line-clamp-2 text-muted-foreground">{ev.description}</p></Link>)}</div>{leagueUpdates.slice(0,6).map(u=><Link key={u.id} to={"/news/"+u.id} className="block border rounded-lg p-3"><strong>{u.title}</strong>{u.image&&<img className="mt-2 w-full max-w-xs aspect-video object-cover rounded-lg" src={u.image} alt="" loading="lazy"/>}</Link>)}</Card></section>
  </>}</div></div>;

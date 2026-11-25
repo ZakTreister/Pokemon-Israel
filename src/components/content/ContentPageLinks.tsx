@@ -5,6 +5,7 @@ import {pageActive} from '../../../shared/siteSettings';
 import {staticContentLinkTarget} from '../../../shared/contentLinkTargets';
 import {contentPagesService} from '../../services/contentPages';
 import Button from '../ui/Button';
+import {Card} from '../ui/Card';
 
 export default function ContentPageLinks({target}:{target:string}){
  return <PageLinks key={target} target={target}/>;
@@ -17,9 +18,9 @@ function PageLinks({target}:{target:string}){
   return()=>{active=false};
  },[target]);
  if(!links.length)return null;
- return <nav aria-label="מידע נוסף" className="container py-5"><div className="flex flex-wrap gap-3">
+ return <div className="container py-5"><Card variant="public" className="p-5 space-y-3"><nav aria-label="קישורים נוספים" className="space-y-3"><h2 className="text-xl font-extrabold">קישורים נוספים</h2><div className="flex flex-wrap gap-3">
  {links.map(link=><Button key={link.id} asChild variant="outline" className="max-w-full h-auto min-h-10 whitespace-normal text-start"><Link to={'/content/'+link.id}>{link.label} ←</Link></Button>)}
- </div></nav>;
+ </div></nav></Card></div>;
 }
 // Fixed pages share the same footer placement. Dynamic content pages mount the
 // same component only after their published record has been loaded successfully.

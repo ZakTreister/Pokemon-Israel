@@ -260,6 +260,10 @@ try {
   badges.getBadges = async () => [];
   badges.getBadgeAwards = async () => [];
   seasons.getSeasons = async () => [];
+  api.get=async path=>{
+    if(path==='/api/all-stars/overview')return {data:{standings:[],fixtures:[],recentMeetings:[]}};
+    throw new Error('Unexpected team fixture request: '+path);
+  };
   const { default: TeamPage } = await load('pages/TeamPage.tsx');
   const { internalTournaments } = await load('services/internalTournaments.ts');
   const members = [
@@ -577,23 +581,10 @@ try {
     deletedSeason = id;
     return { id };
   };
-  const {badgeProgramService}=await load('features/badges/badgeProgramService.ts');
-  const {default:ProgramEditor}=await load('features/badges/components/BadgeProgramEditor.tsx');
-  const program={id:'000000000000000000000001',description:'הסבר קודם',descriptionHtml:'<p>הסבר קודם</p>',image:''};
-  let savedProgram;
-  badgeProgramService.get=async()=>program;
-  badgeProgramService.save=async input=>{savedProgram=input;return {...program,descriptionHtml:input.descriptionHtml,image:image.url};};
   const { default: ManageBadges } = await load('pages/manage/ManageBadges.tsx');
   await mount(provided(route(el(ManageBadges), '/manage/badges')));
   assert.ok(text(renderer.toJSON()).includes('עונת סתיו'));
-  const programEditor=renderer.root.findByType(ProgramEditor);
-  const {default:RichHtmlField}=await load('components/content/RichHtmlField.tsx');
-  act(()=>programEditor.findByType(RichHtmlField).props.onChange('<p>הסבר חדש על מערך התגים</p>'));
-  await act(async()=>{programEditor.findByProps({type:'file'}).props.onChange({target:{files:[file],value:'program'}});await flush();});
-  assert.equal(uploadTarget.purpose,'badge-program-image');
-  assert.equal(uploadTarget.entityId,program.id);
-  await act(async()=>{button('שמור הסבר תגים').props.onClick();await flush();});
-  assert.deepEqual(savedProgram,{descriptionHtml:'<p>הסבר חדש על מערך התגים</p>',imageUploadId:'upload'});
+  assert.ok(!text(renderer.toJSON()).includes('שמור הסבר תגים'));
   assert.ok(
     renderer.root
       .findAllByType('img')
@@ -945,6 +936,8 @@ try {
   const {eventsService} = await load('services/events.ts');
   eventsService.list=async params=>{
     homepageRequests.push(params);
+    if(params.category==='all_stars')return {items:[{id:'stars-event',title:'All Stars event',description:'All Stars description',category:'all_stars',status:'published',featured:false,startDate:new Date(Date.now()+259200000).toISOString(),endDate:null,coverUrl:'',mediaItems:[]}],total:1,page:1,pageSize:16,totalPages:1};
+    assert.equal(params.category,'club');
     return {items:[{
       id:'featured',title:'Nearest club event',description:'Event description',category:'club',
       status:'published',featured:true,startDate:new Date(Date.now()+86400000).toISOString(),
@@ -971,7 +964,11 @@ try {
   const homeApiRequests=[];
   api.get = async (path) => {
     homeApiRequests.push(path);
-    return {data:path === '/api/teams/public' ? [] : path === '/api/tournaments/live' ? [{id:'live1',title:'Live tournament',location:'Hall',date:'2026-11-25'}] : { rankings: [], tournamentCount: 0 }};
+    if(path==='/api/teams/public')return {data:[]};
+    if(path==='/api/tournaments/live')return {data:[{id:'live1',title:'Live tournament',location:'Hall',date:'2026-11-25'}]};
+    if(path==='/api/all-stars/overview')return {data:{standings:[],fixtures:[],recentMeetings:[]}};
+    if(path==='/api/rankings')return {data:{rankings:[],tournamentCount:0}};
+    throw new Error('Unexpected homepage fixture request: '+path);
   };
   await mount(provided(route(el(Home))));
   const liveSection=renderer.root.findByProps({'aria-label':'טורנירים פעילים ברגע זה'});
@@ -981,33 +978,38 @@ try {
   assert.ok(homeApiRequests.includes('/api/tournaments/live'));
   assert.ok(!homeApiRequests.includes('/api/field-news'));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
-  const upcomingSection = renderer.root.findAllByType('section').find(n=>n.props['aria-label']==='אירועים קרובים');
-  assert.ok(upcomingSection);
-  assert.ok(!upcomingSection.props.className.includes('bg-card'));
-  const upcomingCarousel = upcomingSection.findByProps({'aria-label':'גלגלת אירועים קרובים'});
-  const upcomingSwiper=upcomingCarousel.findAllByType('div').find(n=>n.props.className?.includes('cs-content-swiper-cards'));
-  assert.ok(upcomingSwiper);
-  assert.equal(upcomingSwiper.props.dir,'rtl');
-  assert.equal(upcomingSwiper.props['data-navigation'],true);
-  assert.equal(upcomingSwiper.props['data-pagination'],true);
-  assert.equal(upcomingSwiper.props['data-touch'],true);
-  assert.equal(upcomingSwiper.findAllByType('div').filter(n=>n.props.className==='swiper-slide').length,2);
-  assert.ok(!upcomingCarousel.props.className.includes('bg-card'));
-  assert.ok(!upcomingCarousel.findAllByType('h2').length);
-  const upcomingLinks=upcomingCarousel.findAllByType('a');
-  assert.deepEqual(upcomingLinks.map(a=>a.props.href),['/events/featured','/events/second']);
-  for (const link of upcomingLinks) {
-    const cards=link.findAllByType('div').filter(n=>n.props.className?.split(' ').includes('bg-card'));
-    assert.equal(cards.length,1);
-    assert.ok(cards[0].parent.props.className.includes('cs-card-frame'));
+  // The homepage now has one event carousel per league, inside equal-height league cards.
+  const leagueCarousels=[
+    ['אירועי ילדים קרובים',['/events/featured','/events/second']],
+    ['אירועי אולסטארז קרובים',['/events/stars-event']],
+  ];
+  for(const [label,expectedLinks] of leagueCarousels){
+    const upcomingCarousel=renderer.root.findByProps({'aria-label':label,role:'region'});
+    const upcomingSwiper=upcomingCarousel.findAllByType('div').find(n=>n.props.className?.includes('cs-content-swiper-media'));
+    assert.ok(upcomingSwiper,label);
+    assert.equal(upcomingSwiper.props.dir,'rtl');
+    const multiple=expectedLinks.length>1;
+    assert.equal(upcomingSwiper.props['data-navigation'],multiple);
+    assert.equal(upcomingSwiper.props['data-pagination'],multiple);
+    assert.equal(upcomingSwiper.props['data-touch'],multiple);
+    assert.equal(upcomingSwiper.findAllByType('div').filter(n=>n.props.className==='swiper-slide').length,expectedLinks.length);
+    assert.ok(!upcomingCarousel.props.className.includes('bg-card'));
+    assert.ok(!upcomingCarousel.findAllByType('h2').length);
+    const upcomingLinks=upcomingCarousel.findAllByType('a');
+    assert.deepEqual(upcomingLinks.map(a=>a.props.href),expectedLinks);
+    for(const link of upcomingLinks){
+      const cards=link.findAllByType('div').filter(n=>n.props.className?.split(' ').includes('bg-card'));
+      assert.equal(cards.length,1);
+      assert.ok(cards[0].parent.props.className.includes('cs-card-frame'));
+    }
   }
+  assert.ok(homeApiRequests.includes('/api/all-stars/overview'));
+  assert.equal(renderer.root.findAllByProps({role:'alert'}).length,0);
   assert.ok(text(renderer.toJSON()).includes('Configured news'),'news ticker remains');
   assert.ok(!text(renderer.toJSON()).includes('חדשות מהשטח'));
   assert.ok(!text(renderer.toJSON()).includes('Configured description'));
-  assert.ok(text(renderer.toJSON()).includes('גלריה'));
-  assert.ok(renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'));
-  assert.equal(homepageRequests[0].pageSize, 16);
-  assert.equal(homepageRequests[0].category, undefined);
+  assert.ok(!renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'),'standalone homepage gallery shortcut was removed');
+  assert.deepEqual(homepageRequests,[{category:'club',pageSize:16},{category:'all_stars',pageSize:16}]);
   assert.ok(
     renderer.root
       .findAllByType('a')

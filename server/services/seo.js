@@ -36,7 +36,7 @@ async function publishedEvent(id) {
   return Event.findOne({_id:id,status:'published'}).select('title description category').lean().maxTimeMS(600);
 }
 async function publishedContent(id) {
-  return ContentPage.findOne({_id:id,status:'published'}).select('title subtitle bodyHtml').lean().maxTimeMS(600);
+  return ContentPage.findOne({_id:id,status:'published'}).select('title subtitle bodyHtml isAllStars').lean().maxTimeMS(600);
 }
 async function publishedNews(id) {
   const update=await Update.findById(id).select('title content eventId').lean().maxTimeMS(600);
@@ -62,7 +62,7 @@ export async function resolveSeo(path, sources = {
   if (!entity) return excluded();
   const title = text(entity.title, 100) || 'קארדסקול';
   const description = text(entity.description || entity.subtitle || entity.content || entity.bodyHtml, 170) || HOME_DESCRIPTION;
-  return {...publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description),image:settings.logos?.[kind==='events'&&entity.category==='all_stars'?'allStars':'kids'],favicon:settings.logos?.kids};
+  return {...publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description),image:settings.logos?.[(kind==='events'&&entity.category==='all_stars')||(kind==='content'&&entity.isAllStars===true)?'allStars':'kids'],favicon:settings.logos?.kids};
 }
 
 export const noIndexSeo = excluded;

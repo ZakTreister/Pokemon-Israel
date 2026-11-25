@@ -97,4 +97,8 @@ test('configured league logos drive sharing metadata and no bundled fallback is 
  assert.ok(stars.includes('rel="icon" href="'+settings.logos.kids+'"'));
  const event=await resolveSeo('/events/'+id,{...sources,event:async()=>({title:'Event',category:'all_stars'})},settings);
  assert.equal(event.image,settings.logos.allStars);
+ const cms=await resolveSeo('/content/'+id,{...sources,content:async()=>({title:'Rules',isAllStars:true})},settings);
+ assert.equal(cms.image,settings.logos.allStars);
+ const regular=await resolveSeo('/content/'+id,{...sources,content:async()=>({title:'Rules'})},settings);
+ assert.equal(regular.image,settings.logos.kids);
 });
