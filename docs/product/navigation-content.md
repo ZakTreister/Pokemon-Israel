@@ -163,3 +163,6 @@ Remove the built-in על הליגה item from desktop/mobile header and footer n
 
 ## Owner clarification — trailing construction links
 Keep dynamic content-page links before the final two built-in header links: חנות and הזמנת יום הולדת, in that order, for all roles and desktop/mobile. Keep the same final two links in footer navigation. Preserve construction indicators.
+
+## Owner update — fixed-page text management (2026-11-25)
+Admin-only **ניהול טקסטים** is separate from dynamic content pages. List fixed pages (initially All Stars) with an internal edit route and parent back navigation. Edit title, subtitle and sanitized rich HTML body using the existing HTML editor. Persist by fixed page key; no create/delete or navigation-menu controls. All Stars renders the managed header and a body section **מהי ליגת האולסטארז?** after team cards, before badges; hide empty body. Preserve the previous heading/subtitle as defaults until configured. The existing badge-program description/image editor moves here; badge definition/award management remains under Badges. The two existing resources save independently. No database migration or new editorial content is required at deployment.
