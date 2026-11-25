@@ -59,6 +59,13 @@ export const listEvents = asyncHandler(async (req, res) => {
   const items = await Event.find(query).sort({ featured: -1, startDate: -1, createdAt: -1 }).skip((page-1)*pageSize).limit(pageSize);
   res.json({ items: items.map(summary), total, page, pageSize, totalPages: Math.max(1,Math.ceil(total/pageSize)) });
 });
+// Only real club tournaments can award national-ranking points. Filter before selecting the earliest event.
+export const nextRankingEvent = asyncHandler(async (_req,res) => {
+  const today = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const ids = await Tournament.distinct('eventId',{type:'quarterly',deletedAt:null,eventId:{$ne:null}});
+  const event = await Event.findOne({_id:{$in:ids},status:'published',category:'club',startDate:{$gte:new Date(today+'T00:00:00.000Z')}}).sort({startDate:1,_id:1});
+  res.json(event ? summary(event) : null);
+});
 export const manageEvents = asyncHandler(async (req,res) => {
   const items = await Event.find({}).sort({ createdAt: -1 }).limit(200);
   res.json(items.map(summary));

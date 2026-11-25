@@ -2,6 +2,7 @@ import {useCallback,useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
 import type {ContentPage,ContentPageInput} from '../../types/contentPage';
 import {contentPagesService} from '../../services/contentPages';
+import ContentPageAddress from '../../components/content/ContentPageAddress';
 import RichHtmlField from '../../components/content/RichHtmlField';
 import MediaManager from '../../components/media/MediaManager';
 import Button from '../../components/ui/Button';
@@ -26,7 +27,7 @@ export default function ManageContentPages(){
  <label className="flex gap-2 items-center"><input type="checkbox" checked={input.showInFieldNews} onChange={e=>setInput({...input,showInFieldNews:e.target.checked})}/> הצג בחדשות מהשטח</label>
  <label className="block">פרסום<select className="block w-full p-2 border rounded bg-card" value={input.status} onChange={e=>setInput({...input,status:e.target.value as ContentPageInput['status']})}><option value="draft">טיוטה</option><option value="published">מפורסם</option></select></label>
  <div className="flex gap-2"><Button type="submit" disabled={busy}>{busy?'שומר...':'שמור'}</Button><Button type="button" variant="outline" onClick={()=>setSelected(null)}>סגור</Button></div></form>
- {current?<MediaManager key={current.id} owner="content-page" id={current.id} items={current.mediaItems||[]} onChanged={reload}/>:<p className="text-sm">לאחר שמירת העמוד ניתן להוסיף מדיה.</p>}</section>}
- {pages.map(page=><article key={page.id} className="border rounded-lg p-3 flex flex-wrap gap-3 items-center justify-between"><div><strong>{page.title}</strong><p className="text-sm">{page.status==='published'?'מפורסם':'טיוטה'}</p></div><div className="flex gap-2 flex-wrap">{page.status==='published'&&<Button asChild variant="outline" size="sm"><Link to={'/content/'+page.id}>צפייה</Link></Button>}<Button variant="outline" size="sm" onClick={()=>edit(page)}>ערוך</Button><Button disabled={busy} variant="destructive" size="sm" onClick={()=>void remove(page.id)}>מחק</Button></div></article>)}
+ {current?<><ContentPageAddress key={'address-'+current.id} id={current.id} published={current.status==='published'}/><MediaManager key={current.id} owner="content-page" id={current.id} items={current.mediaItems||[]} onChanged={reload}/></>:<p className="text-sm">לאחר שמירת העמוד ניתן להוסיף מדיה.</p>}</section>}
+ {pages.map(page=><article key={page.id} className="border rounded-lg p-3 flex flex-wrap gap-3 items-center justify-between"><div className="flex-1 min-w-0"><strong>{page.title}</strong><p className="text-sm">{page.status==='published'?'מפורסם':'טיוטה'}</p><ContentPageAddress id={page.id} published={page.status==='published'}/></div><div className="flex gap-2 flex-wrap">{page.status==='published'&&<Button asChild variant="outline" size="sm"><Link to={'/content/'+page.id}>צפייה</Link></Button>}<Button variant="outline" size="sm" onClick={()=>edit(page)}>ערוך</Button><Button disabled={busy} variant="destructive" size="sm" onClick={()=>void remove(page.id)}>מחק</Button></div></article>)}
  {!pages.length&&!selected&&<p>טרם נוצרו עמודי תוכן.</p>}</div>;
 }

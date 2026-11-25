@@ -3,6 +3,7 @@ import type { EventDetails,EventInput,EventSummary,EventCategory } from '../type
 import type { PageResult } from '../types/pagination';
 export const eventsService={
  list:async(params?:{category?:EventCategory;page?:number;pageSize?:number})=>(await api.get<PageResult<EventSummary>>('/api/events',{params})).data,
+ nextRankingEvent:async()=>(await api.get<EventSummary|null>('/api/events/next-ranking-event')).data,
  get:async(id:string)=>(await api.get<EventDetails>(`/api/events/${id}`)).data,
  manage:async()=>(await api.get<EventSummary[]>('/api/events/management')).data,
  getManaged:async(id:string)=>(await api.get<EventDetails>(`/api/events/management/${id}`)).data,
