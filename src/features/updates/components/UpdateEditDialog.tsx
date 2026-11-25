@@ -26,6 +26,8 @@ export default function UpdateEditDialog({
     ctaText: update?.ctaText || '',
     ctaUrl: update?.ctaUrl || '',
   });
+  const [showInFieldNews,setShowInFieldNews]=useState(update?.showInFieldNews!==false);
+  const [imageInGallery,setImageInGallery]=useState(!!update?.imageInGallery);
   const [eventId,setEventId] = useState(update?.eventId ?? defaultEventId ?? null);
   const [events,setEvents] = useState<EventSummary[]>([]);
   useEffect(()=>{eventsService.manage().then(rows=>setEvents(Array.isArray(rows)?rows:[])).catch(()=>{});},[]);
@@ -44,7 +46,7 @@ export default function UpdateEditDialog({
     setBusy(true);
     setError('');
     try {
-      const input = { ...parsed.data, imageUploadId, eventId };
+      const input = { ...parsed.data, imageUploadId, eventId,showInFieldNews,imageInGallery };
       if (update) await updatesService.updateUpdate(update.id, input);
       else await updatesService.createUpdate(input);
       await onSaved();
@@ -114,6 +116,8 @@ export default function UpdateEditDialog({
         )}
         {update && <MediaManager owner="update" id={update.id} items={update.mediaItems||[]} onChanged={onSaved}/>}
         {!defaultEventId && <label className="block">אירוע משויך (אופציונלי)<select className="block w-full border rounded-md p-2 bg-background" value={eventId||""} onChange={e=>setEventId(e.target.value||null)}><option value="">עדכון רגיל ללא אירוע</option>{events.map(ev=><option key={ev.id} value={ev.id}>{ev.title}</option>)}</select></label>}
+        <label className="flex gap-2"><input type="checkbox" checked={showInFieldNews} onChange={e=>setShowInFieldNews(e.target.checked)}/> הצג בחדשות מהשטח</label>
+        <label className="flex gap-2"><input type="checkbox" checked={imageInGallery} onChange={e=>setImageInGallery(e.target.checked)}/> הצג את תמונת העדכון בגלריה</label>
         <ImageUpload
           purpose="update-image"
           entityId={update?.id}

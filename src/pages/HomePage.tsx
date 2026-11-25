@@ -8,6 +8,7 @@ import { useAppDispatch,useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { getNationalRankings,type NationalRanking } from '../services/rankings';
 import { eventsService } from '../services/events';
+import type { FieldNewsItem } from '../types/gallery';
 import type { EventSummary } from '../types/event';
 import { requestError } from '../utils/requestError';
 import { TRIAL_REGISTRATION_URL } from '../config/publicSite';
@@ -18,6 +19,8 @@ import RankingPodium from '../components/rankings/RankingPodium';
 export default function HomePage(){
  const dispatch=useAppDispatch(),{updates}=useAppSelector(s=>s.updates);
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
+ const [fieldNews,setFieldNews]=useState<FieldNewsItem[]>([]);
+ useEffect(()=>{api.get<FieldNewsItem[]>('/api/field-news').then(r=>setFieldNews(Array.isArray(r.data)?r.data:[])).catch(e=>setError(requestError(e)));},[]);
  const [heroFixtures,setHeroFixtures]=useState<Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>>([]);
  useEffect(()=>{dispatch(fetchUpdates());eventsService.list({pageSize:16}).then(r=>setEvents(r.items)).catch(e=>setError(requestError(e)));getNationalRankings({pageSize:3}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[dispatch]);
  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -42,14 +45,14 @@ export default function HomePage(){
  <div className="hidden lg:block max-w-xs"><HeroArtwork/></div>
  </div></section>
  <section className="container py-7 grid gap-3 sm:grid-cols-3">
- {([{to:'/rankings',title:'מצאו את עצמכם בדירוג',subtitle:'חפשו את השם שלכם',icon:<Trophy/>},{to:'/all-stars',title:'הכירו את הנבחרות',subtitle:'המשחקים, הדירוגים והיריבות',icon:<Users/>},{to:'/news',title:'תמונות וסרטונים',subtitle:'מה חדש מהאירועים ומהליגה',icon:<Images/>}] as const).map(x=><Link key={x.to} to={x.to} className="cs-public-card p-5 flex items-center justify-between gap-3 border-t-4 border-t-gold"><span className="flex flex-col gap-2"><strong className="text-lg">{x.title}</strong><span className="text-muted-foreground text-sm">{x.subtitle}</span></span><span className="shrink-0 [&>svg]:size-10 text-blue-500" aria-hidden="true">{x.icon}</span></Link>)}
+ {([{to:'/rankings',title:'מצאו את עצמכם בדירוג',subtitle:'חפשו את השם שלכם',icon:<Trophy/>},{to:'/all-stars',title:'הכירו את הנבחרות',subtitle:'המשחקים, הדירוגים והיריבות',icon:<Users/>},{to:'/gallery',title:'גלריה',subtitle:'מה חדש מהאירועים ומהליגה',icon:<Images/>}] as const).map(x=><Link key={x.to} to={x.to} className="cs-public-card p-5 flex items-center justify-between gap-3 border-t-4 border-t-gold"><span className="flex flex-col gap-2"><strong className="text-lg">{x.title}</strong><span className="text-muted-foreground text-sm">{x.subtitle}</span></span><span className="shrink-0 [&>svg]:size-10 text-blue-500" aria-hidden="true">{x.icon}</span></Link>)}
  </section>
  <section className="bg-section-light py-10"><div className="container space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">חדשות מהשטח</h2><Link to="/news" className="text-blue-500 font-bold">כל העדכונים ←</Link></div>
  <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4" aria-label="גלגלת עדכונים">
- {sortedUpdates.slice(0,10).map(u=><article key={u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
+ {fieldNews.slice(0,10).map(u=><article key={u.kind+u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
  <UpdateCarouselMedia update={u}/>
- <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={'/news/'+u.id} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div><UpdateAction update={u}/></div></article>)}
- </div>{!sortedUpdates.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>
+ <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={u.href} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div>{u.kind==='update'&&<UpdateAction update={u}/>}</div></article>)}
+ </div>{!fieldNews.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>
  <AllStarsTeamsSection/>
  <section className="container py-10 space-y-4"><h2 className="text-2xl sm:text-3xl font-extrabold">מובילי הליגה הישראלית</h2><RankingPodium leaders={leaders}/><Button asChild variant="outline"><Link to="/rankings">איפה אתם בדירוג? חפשו את שמכם</Link></Button></section>
  <section className="container pb-12"><div className="cs-public-card p-4 sm:p-6 space-y-4"><div className="flex justify-between items-center flex-wrap gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">אירועים קרובים</h2><Link to="/tournaments" className="text-blue-500 font-bold">כל האירועים ←</Link></div>{error&&<p role="alert">{error}</p>}

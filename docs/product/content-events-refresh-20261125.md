@@ -21,7 +21,7 @@ Approved scope requested 2026-11-25. Implementation is incremental; this documen
 - Restricted HTML grammar rejects unsupported tags/attributes and allows safe HTTP(S)/local links. Draft pages are not exposed publicly; navigation and event cards include published pages only. A page may be reused across events; deletion requires unlinking first.
 - Shared safe HTML sanitation at persistence/render boundary; no scripts, handlers, unsafe URLs, raw untrusted markup. Admin-only editing and publication; preserve navigation styling, no overflow menu.
 
-## Batch 4 — field news and gallery (pending)
+## Batch 4 — field news and gallery (implemented, pending verification)
 - Independent show-in-field-news checkbox for Update, Event and ContentPage; unified feed with canonical links and no duplicates. Existing updates remain visible by default.
 - Per-media show-in-gallery checkbox on Event/Update/ContentPage uploads; admin-managed standalone gallery media, editable title/subtitle; public gallery only published and explicitly selected media. Use shared S3 images and YouTube link flow (no new video file uploads). Homepage gallery button points to gallery.
 
