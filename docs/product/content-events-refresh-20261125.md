@@ -53,3 +53,9 @@ Admin list `/manage/content-pages` shows only the list. Edit navigates to `/mana
 
 ## Follow-up — public homepage live tournaments and simpler navigation
 See homepage.md: show only actually running public club competitions, remove the homepage field-news carousel (not the ticker or news page), and remove the built-in About link from public header/footer.
+
+## Follow-up — content editor action placement
+The shared create/edit editor displays Save and Close together at the bottom, after all content fields, public address and media controls (or the first-save media hint). The save button is explicitly associated with the content form to preserve native required-field validation; media actions remain independent. Close retains existing navigation behavior.
+
+## Follow-up — larger Pokémon and badge-program information
+Keep the selected Pokémon in one responsive full-width row of the player hero card, not constrained by portrait width; use 5rem maximum frames and 94% image fill with zero minimum width/height. Badge-program settings and navigation ordering follow badges-seasons.md and navigation-content.md.

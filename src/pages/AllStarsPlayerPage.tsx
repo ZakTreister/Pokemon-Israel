@@ -62,10 +62,21 @@ export default function AllStarsPlayerPage() {
                   />
                 </div>
               )}
+
+            </div>
+            {player.team && (
+              <Link
+                aria-label={`לנבחרת ${player.team.name}`}
+                to={`/teams/${player.team.id}`}
+                className="flex flex-col items-center gap-2 text-blue-500 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+              >
+                <TeamEmblem team={player.team} />
+              </Link>
+            )}
               {!!player.pokemon?.length && (
                 <ul
                   aria-label="הפוקימונים של השחקן"
-                  className="cs-pokemon-row mt-3"
+                  className="cs-pokemon-row basis-full mt-1"
                 >
                   {player.pokemon.slice(0, 6).map((name, index) => (
                     <li
@@ -82,16 +93,6 @@ export default function AllStarsPlayerPage() {
                   ))}
                 </ul>
               )}
-            </div>
-            {player.team && (
-              <Link
-                aria-label={`לנבחרת ${player.team.name}`}
-                to={`/teams/${player.team.id}`}
-                className="flex flex-col items-center gap-2 text-blue-500 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
-              >
-                <TeamEmblem team={player.team} />
-              </Link>
-            )}
           </div>
           <section
             aria-label="פרטי שחקן"

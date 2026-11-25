@@ -111,13 +111,27 @@ try {
   assert.equal(pathname,'/manage/content-pages/first');
   assert.equal(renderer.root.findAllByType('article').length,0);
   const titleField=()=>renderer.root.findByType('form').findAllByType('input').find(n=>n.props.maxLength===180);
+  const assertFooterActions=()=>{
+   const form=renderer.root.findByType('form');
+   const actions=renderer.root.findByProps({'aria-label':'פעולות עמוד תוכן'});
+   assert.equal(form.parent.children.at(-1),actions,'save and close are the final editor section, after address/media');
+   const [save,close]=actions.findAllByType('button');
+   assert.equal(save.children.join(''),'שמור');
+   assert.equal(save.props.type,'submit');
+   assert.equal(save.props.form,form.props.id,'external save retains native form validation and submission');
+   assert.equal(close.children.join(''),'סגור');
+   assert.equal(close.props.type,'button');
+   assert.ok(!form.findAllByType('button').some(button=>button.props.type==='submit'));
+  };
   assert.equal(titleField().props.value,'עמוד ראשון');
+  assertFooterActions();
   await go('/manage/content-pages/second');
   assert.equal(titleField().props.value,'עמוד שני');
   await go('/manage/content-pages');
   await clickLink('/manage/content-pages/new');
   assert.equal(pathname,'/manage/content-pages/new');
   assert.equal(titleField().props.value,'');
+  assertFooterActions();
   assert.equal(renderer.root.findAllByType('article').length,0);
   await act(async()=>{titleField().props.onChange({target:{value:'עמוד חדש'}});});
   await act(async()=>{renderer.root.findByType('form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));});
@@ -125,6 +139,7 @@ try {
   assert.equal(titleField().props.value,'עמוד חדש');
   assert.equal(renderer.root.findAllByType('input').find(n=>n.props.type==='file')?.props.type,'file');
   assert.ok(renderer.root.findAllByType('input').some(n=>n.props.value==='https://cardschool.co.il/content/created'));
+  assertFooterActions();
   await act(async()=>{renderer.root.findAllByType('button').find(n=>n.children.join('')==='סגור').props.onClick();await new Promise(resolve=>setImmediate(resolve));});
   assert.equal(pathname,'/manage/content-pages');
   assert.equal(renderer.root.findAllByType('article').length,3);

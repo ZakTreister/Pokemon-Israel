@@ -4,6 +4,7 @@ export type UploadPurpose =
   | 'team-logo'
   | 'player-photo'
   | 'player-deck'
+  | 'badge-program-image'
   | 'badge-image'
   | 'update-image'
   | 'team-cover'

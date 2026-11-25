@@ -154,3 +154,6 @@ Deletion requires an explicit confirmation.
 ## Team competition year is separate
 The annual All Stars scoring cycle that resets around September 1 is a separate concept from Season.
 Do not overload Season to mean competition year.
+
+## Public badge-program explanation
+In the admin Badges page, a separate singleton explanation (plain text up to 5000 characters and optional uploaded image) is editable independently of badge definitions and awards. Use the existing verified S3 image flow under public/badges with a dedicated upload purpose. Public GET returns only id, description and image URL; admin-only PUT validates text and upload ownership. Show the section תגים in All Stars after team cards, hidden if both fields are empty. No season or award behavior changes.

@@ -30,9 +30,9 @@ export default function Footer() {
                 ['/rankings', 'הליגה הישראלית'],
                 ['/all-stars', 'All Stars'],
                 ['/news', 'חדשות'],
+                ['/login', 'כניסת צוות'],
                 ['/store', 'חנות · בהקמה'],
                 ['/birthday', 'הזמנת יום הולדת · בהקמה'],
-                ['/login', 'כניסת צוות'],
               ].map(([to, label]) => (
                 <Link
                   key={to}
