@@ -209,3 +209,28 @@ test('scheduled inter-team creation creates a real upcoming tournament without r
  assert.equal((await ok('/inter-team/active','GET',undefined,'admin')).some(t=>t.id===created.id),false);
  assert.equal((await call('/inter-team/'+created.id+'/rounds','POST',{expectedRevision:created.revision},'admin')).status,400);
 });
+
+
+test('next ranking event skips empty, draft, past and All-Stars events and respects date rather than featured order',async()=>{
+ const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const date=offset=>new Date(Date.parse(today+'T00:00:00Z')+offset*86400000);
+ const make=async(title,offset,category='club',status='published',featured=false)=>ok('/events','POST',{title,category,status,featured,startDate:date(offset).toISOString()},'admin',201);
+ const past=await make('Past ranking event',-1);
+ const empty=await make('Empty ranking event',0);
+ const draft=await make('Draft ranking event',0,'club','draft');
+ const stars=await make('Stars ranking event',0,'all_stars');
+ const next=await make('Next ranking event',1);
+ const later=await make('Later featured ranking event',2,'club','published',true);
+ const tournaments=[];
+ try{
+  for(const ev of [past,draft,next,later]) tournaments.push(await Tournament.create({title:'Ranking '+ev.title,description:'test',date:ev.startDate,location:'Test',registrationDeadline:ev.startDate,image:'/pokemon.png',type:'quarterly',source:'historical',status:'upcoming',eventId:ev.id}));
+  assert.equal((await ok('/events/next-ranking-event')).id,next.id);
+  await Tournament.updateMany({eventId:next.id},{$set:{eventId:null}});
+  assert.equal((await ok('/events/next-ranking-event')).id,later.id);
+  await Tournament.updateMany({eventId:later.id},{$set:{eventId:null}});
+  assert.equal(await ok('/events/next-ranking-event'),null);
+ }finally{
+  await Tournament.deleteMany({_id:{$in:tournaments.map(t=>t._id)}});
+  await Event.deleteMany({_id:{$in:[past,empty,draft,stars,next,later].map(e=>e.id)}});
+ }
+});

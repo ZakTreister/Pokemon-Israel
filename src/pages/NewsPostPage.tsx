@@ -51,7 +51,7 @@ export default function NewsPostPage() {
             />
           )}
           {post.eventId&&<Link to={'/events/'+post.eventId} className="block font-bold text-blue-500 mb-4">לאירוע המשויך ←</Link>}
-          {!!post.mediaItems?.length&&<MediaGallery items={post.mediaItems}/>}
+          {!!post.mediaItems?.length&&<MediaGallery carousel items={post.mediaItems}/>}
           <UpdateAction update={post} />
           <div className="whitespace-pre-wrap break-words leading-8">
             {(post.description ?? post.content ?? '')

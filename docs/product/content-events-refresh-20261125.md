@@ -6,7 +6,7 @@ Approved scope requested 2026-11-25. Implementation is incremental; this documen
 - Shared three-player podium on homepage and ranking; preserve canonical shared ranks on ties.
 - National ranking initially displays 25 rows; More appends up to 25 using server offset; search/filter/sort reset; next club event CTA in points explanation below search.
 - Rank movers derive from full canonical ranking before and after the latest completed regular tournament (closedAt, falling back to date). Compare existing players only, keep historical snapshot and league separation; show up to three positive movers, even when outside the first visible rows.
-- Homepage quick links have larger icons on the left; upcoming events inside one card with horizontally scrollable cards; events directory falls back to first image when cover is absent.
+- Homepage quick links have larger icons on the left; upcoming events in individual cards in a horizontal carousel below the heading, without an enclosing card; events directory falls back to first image when cover is absent.
 
 ## Batch 2 — canonical event tournaments (partially implemented)
 - Tournament is the sole authoritative inter-team competition, with eventId, date, teams, optional location, setup lifecycle. No independent fixture creation or optional official tournament selector.
@@ -35,3 +35,15 @@ Favorite changes use one atomic append-only action (selection, removal or switch
 
 ## Follow-up — visual HTML editing
 - Shared RichHtmlField defaults to RTL visual editing with formatting, lists, quotes, undo/redo and a source mode. Remove the two permanent link inputs; select text and use the toolbar link action, which opens only a temporary URL field. Keep the existing HTML allow-list and separate media upload. Pasted text is plain text; source is validated before switching to visual mode. Browser-native editing commands require desktop/mobile browser acceptance.
+
+## Follow-up — public card wrappers
+Use the shared `Card` public variant (background, border and shadow frame), not the clipping-only `cs-public-card` CSS class, for content body, event body, each event tournament and legacy fixture, the single stacked linked-content panel and each event in the homepage upcoming-events carousel. The heading and carousel must not have an enclosing Card (owner clarification). Keep event tournament section hidden when no tournaments or legacy fixtures exist. Keep the event body/media two-column layout and horizontal upcoming carousel.
+
+## Follow-up — next points-earning event
+Rankings selects the earliest published club event on or after the Israel-local calendar date with at least one linked quarterly tournament. Events without linked tournaments, past and draft events, and All-Stars events do not qualify. Filter server-side before choosing the next event; do not use the featured sort or an arbitrary page limit.
+
+## Follow-up — Swiper and public content address
+Use one shared real Swiper React component for homepage field-news cards and upcoming-event cards, event and content-page media, and news-post media. RTL touch/mouse swipe, responsive card counts, previous/next navigation and pagination; no autoplay. Keep the standalone gallery grid and text ticker unchanged. Each persisted content page displays its full public address and a copy button in the management list and selected editor; draft links remain inaccessible until published.
+
+## Follow-up — hide empty event updates
+Render the entire public event updates section only if at least one update is returned. No empty-state heading or placeholder; existing update links and layout are preserved.

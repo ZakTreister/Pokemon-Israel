@@ -4,6 +4,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { createServer } from 'vite';
+import { fileURLToPath } from 'node:url';
 import axios from 'axios';
 const originalAxiosPost = axios.post;
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -17,6 +18,7 @@ globalThis.window = {
   clearTimeout,
 };
 const vite = await createServer({
+  resolve:{alias:[{find:/^swiper\/react$/,replacement:fileURLToPath(new URL('./test-support/swiper-react.mjs',import.meta.url))}]},
   server: { middlewareMode: true },
   appType: 'custom',
   logLevel: 'error',
@@ -932,7 +934,7 @@ try {
       id:'featured',title:'Nearest club event',description:'Event description',category:'club',
       status:'published',featured:true,startDate:new Date(Date.now()+86400000).toISOString(),
       endDate:null,coverUrl:'',mediaItems:[]
-    }],total:1,page:1,pageSize:16,totalPages:1};
+    },{id:'second',title:'Second upcoming event',description:'Second event',category:'club',status:'published',featured:false,startDate:new Date(Date.now()+172800000).toISOString(),endDate:null,coverUrl:'',mediaItems:[]}],total:2,page:1,pageSize:16,totalPages:1};
   };
   state.updates = {
     updates: [
@@ -957,6 +959,26 @@ try {
   });
   await mount(provided(route(el(Home))));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
+  const upcomingSection = renderer.root.findAllByType('section').find(n=>n.props['aria-label']==='אירועים קרובים');
+  assert.ok(upcomingSection);
+  assert.ok(!upcomingSection.props.className.includes('bg-card'));
+  const upcomingCarousel = upcomingSection.findByProps({'aria-label':'גלגלת אירועים קרובים'});
+  const upcomingSwiper=upcomingCarousel.findAllByType('div').find(n=>n.props.className?.includes('cs-content-swiper-cards'));
+  assert.ok(upcomingSwiper);
+  assert.equal(upcomingSwiper.props.dir,'rtl');
+  assert.equal(upcomingSwiper.props['data-navigation'],true);
+  assert.equal(upcomingSwiper.props['data-pagination'],true);
+  assert.equal(upcomingSwiper.props['data-touch'],true);
+  assert.equal(upcomingSwiper.findAllByType('div').filter(n=>n.props.className==='swiper-slide').length,2);
+  assert.ok(!upcomingCarousel.props.className.includes('bg-card'));
+  assert.ok(!upcomingCarousel.findAllByType('h2').length);
+  const upcomingLinks=upcomingCarousel.findAllByType('a');
+  assert.deepEqual(upcomingLinks.map(a=>a.props.href),['/events/featured','/events/second']);
+  for (const link of upcomingLinks) {
+    const cards=link.findAllByType('div').filter(n=>n.props.className?.split(' ').includes('bg-card'));
+    assert.equal(cards.length,1);
+    assert.ok(cards[0].parent.props.className.includes('cs-card-frame'));
+  }
   assert.ok(text(renderer.toJSON()).includes('Configured description'));
   assert.ok(text(renderer.toJSON()).includes('גלריה'));
   assert.ok(renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'));
