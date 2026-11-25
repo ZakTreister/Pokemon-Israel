@@ -137,3 +137,6 @@ Remove the standalone gallery link/card from the homepage for now; preserve the 
 
 ## Owner clarification — homepage league card footers (2026-11-25)
 Rename the national league upcoming-events heading to **טורנירים ואירועים קרובים**. Keep equal-height desktop cards and push each card's upcoming-events group (including separator and related links) to the bottom via flex layout, without fixed heights; preserve natural stacked layout on mobile.
+
+## Owner clarification — compact hero fixtures on mobile (2026-11-25)
+At viewport widths up to 680px, center each featured All-Stars fixture and show only team logos and VS visually; retain accessible team names and use a compact initials fallback if a logo is absent. Above 680px preserve the existing team names and layout. Keep the event date and all fixtures unchanged.
