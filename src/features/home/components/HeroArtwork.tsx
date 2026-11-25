@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react';
+import {LeagueLogo} from '../../siteSettings/LeagueLogo';
 import { Trophy, User, Zap } from 'lucide-react';
 import { settleCardOffset } from '../utils/cardDrag';
 
@@ -88,7 +89,7 @@ export default function HeroArtwork() {
             <User size={14} className="text-gold" />
           </div>
           <div className="cs-card-art">
-            <Trophy className="relative h-20 w-20 text-gold" />
+            <LeagueLogo league="allStars" decorative className="relative h-full w-full p-2" fallback={<Trophy className="relative h-20 w-20 text-gold" />}/>
           </div>
           <div className="text-center text-sm font-black text-white">
             משחקים ביחד.
@@ -101,12 +102,7 @@ export default function HeroArtwork() {
             <Zap size={14} className="text-gold" fill="currentColor" />
           </div>
           <div className="cs-card-art">
-            <img
-              src="/pokemon_kids_logo.png"
-              alt=""
-              draggable={false}
-              className="relative h-full w-full object-contain p-2"
-            />
+            <LeagueLogo league="kids" decorative className="relative h-full w-full p-2" fallback={<span className="text-center text-2xl font-black text-white">CardSchool IL</span>}/>
           </div>
           <p className="text-center text-base font-black text-white">
             נפגשים בליגה.

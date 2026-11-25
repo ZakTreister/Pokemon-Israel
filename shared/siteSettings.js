@@ -1,4 +1,8 @@
 import {STATIC_CONTENT_LINK_TARGETS,staticContentLinkTarget,isRetiredPublicPage} from './contentLinkTargets.js';
+export const LEAGUE_LOGOS=Object.freeze([
+ {key:'kids',label:'לוגו ליגת הילדים',purpose:'league-kids-logo',entityId:'000000000000000000000002'},
+ {key:'allStars',label:'לוגו ליגת הנבחרות',purpose:'league-all-stars-logo',entityId:'000000000000000000000003'},
+]);
 export const SOCIAL_PLATFORMS=Object.freeze([
  {key:'facebook',label:'Facebook',hosts:['facebook.com','fb.com','fb.me']},
  {key:'instagram',label:'Instagram',hosts:['instagram.com']},
@@ -11,7 +15,7 @@ export const FOOTER_ORDER=['/','/tournaments','/rankings','/all-stars','/news','
 export const TRAILING_PAGES=['/store','/birthday'];
 export function defaultSiteSettings(){
  return {pages:STATIC_CONTENT_LINK_TARGETS.map(({path})=>({path,active:true,menu:['/rankings','/all-stars','/tournaments','/news','/store','/birthday'].includes(path),footer:['/','/tournaments','/rankings','/all-stars','/news','/store','/birthday'].includes(path)})),
- socials:SOCIAL_PLATFORMS.map(({key})=>({key,enabled:false,url:''}))};
+ socials:SOCIAL_PLATFORMS.map(({key})=>({key,enabled:false,url:''})),logos:{kids:'',allStars:''}};
 }
 export function pageActive(settings,path){
  if(isRetiredPublicPage(path))return false;

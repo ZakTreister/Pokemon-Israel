@@ -1,3 +1,4 @@
+import {LeagueLogo} from '../features/siteSettings/LeagueLogo';
 import { useCallback, useEffect, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, useParams } from 'react-router-dom';
@@ -55,7 +56,7 @@ export default function TournamentDetailsPage() {
       {t && <>
         <div className="cs-public-card p-6 space-y-3">
           {t.image && <img src={t.image} alt="" className="w-full max-h-72 rounded-lg object-cover" />}
-          <h1 className="text-3xl font-extrabold">{t.title}</h1>
+          <div className="flex items-center gap-3"><LeagueLogo league={t.type==='quarterly'?'kids':'allStars'} decorative className="size-16 shrink-0"/><h1 className="text-3xl font-extrabold">{t.title}</h1></div>
           <p>{tournamentTypes[t.type]} · {tournamentStatuses[t.lifecycle]}</p>
           <p>{new Date(t.date).toLocaleDateString('he-IL')} · {t.location}</p>
           {t.description && <p>{t.description}</p>}

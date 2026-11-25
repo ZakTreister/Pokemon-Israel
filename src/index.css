@@ -554,3 +554,7 @@
   max-width: 100%;
   object-fit: contain;
 }
+
+/* Row headings belong to the card body, not the dark table-header surface. */
+.cs-workspace .cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }
+.cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }

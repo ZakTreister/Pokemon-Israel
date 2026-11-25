@@ -1,3 +1,5 @@
+import siteSettingsRoutes from '../routes/siteSettingsRoutes.js';
+import {defaultSiteSettings,LEAGUE_LOGOS} from '../../shared/siteSettings.js';
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
@@ -113,6 +115,7 @@ before(async () => {
   app.use('/api/seasons', seasonRoutes);
   app.use('/api/updates', updateRoutes);
   app.use('/api/media', mediaRoutes);
+  app.use('/api/site-settings',siteSettingsRoutes);
   app.get('/api/rankings', getNationalRankings);
   app.use(errorHandler);
   server = createServer(app);
@@ -2540,4 +2543,29 @@ test('badge program public explanation and verified image are independent of ind
  assert.ok(removedMedia.includes(image.storageKey));
  const cleared=await ok(path,'PUT',{description:'',imageUploadId:null},'admin');
  assert.equal(cleared.image,'');assert.ok(removedMedia.includes(replaced.storageKey));
+});
+
+
+test('league logos use independent verified uploads and preserve unrelated settings',async()=>{
+ const root='/site-settings',management=root+'/management';
+ const defaults=defaultSiteSettings();
+ const [kids,stars]=LEAGUE_LOGOS;
+ const current=await ok(root,'GET',undefined,null);
+ assert.deepEqual(current.logos,{kids:'',allStars:''});
+ assert.equal((await request(management,'PUT',defaults,'judge')).status,403);
+ assert.equal((await request('/media/presign','POST',{purpose:kids.purpose,entityId:stars.entityId,contentType:'image/png',size:png.length},'admin')).status,400);
+ const a=await uploaded(kids.purpose,kids.entityId),b=await uploaded(stars.purpose,stars.entityId);
+ assert.equal((await request(management,'PUT',{...defaults,kidsLogoUploadId:b.uploadId},'admin')).status,400);
+ const saved=await ok(management,'PUT',{...defaults,kidsLogoUploadId:a.uploadId,allStarsLogoUploadId:b.uploadId},'admin');
+ assert.deepEqual(saved.logos,{kids:a.url,allStars:b.url});
+ assert.deepEqual((await ok(root,'GET',undefined,null)).logos,saved.logos);
+ const updated=await ok(management,'PUT',{...defaults,logos:{kids:'https://evil.example/logo.png',allStars:''}},'admin');
+ assert.deepEqual(updated.logos,saved.logos,'raw URLs cannot replace verified attachments');
+ const replacement=await uploaded(kids.purpose,kids.entityId);
+ const changed=await ok(management,'PUT',{...defaults,kidsLogoUploadId:replacement.uploadId},'admin');
+ assert.deepEqual(changed.logos,{kids:replacement.url,allStars:b.url});
+ assert.ok(removedMedia.includes(a.storageKey));assert.ok(!removedMedia.includes(b.storageKey));
+ const cleared=await ok(management,'PUT',{...defaults,kidsLogoUploadId:null,allStarsLogoUploadId:null},'admin');
+ assert.deepEqual(cleared.logos,{kids:'',allStars:''});
+ assert.ok(removedMedia.includes(replacement.storageKey));assert.ok(removedMedia.includes(b.storageKey));
 });

@@ -25,7 +25,7 @@ function PageIntro({ pageId }: { pageId: StaticPageTextKey }) {
   const allStars = pageId === 'all-stars';
   const highlightWord = !allStars && content.title.split('הישראלית').length === 2 ? 'הישראלית' : undefined;
   return <>
-    <PageHero variant={allStars ? 'all-stars' : 'dark'} title={content.title} subtitle={content.subtitle} highlightWord={highlightWord}/>
+    <PageHero league={allStars?'allStars':'kids'} variant={allStars ? 'all-stars' : 'dark'} title={content.title} subtitle={content.subtitle} highlightWord={highlightWord}/>
     {content.bodyHtml?.trim() && <div className="container pt-8">
       <Card variant="public" className="p-5 sm:p-6"><SafeHtml html={content.bodyHtml}/></Card>
     </div>}

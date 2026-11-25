@@ -5,5 +5,5 @@ import {getSiteSettings,saveSiteSettings,publicSiteSettings} from '../services/s
 const router=express.Router();
 router.get('/',asyncHandler(async(_req,res)=>res.set('Cache-Control','no-store').json(publicSiteSettings(await getSiteSettings()))));
 router.get('/management',protect,admin,asyncHandler(async(_req,res)=>res.set('Cache-Control','no-store').json(await getSiteSettings())));
-router.put('/management',protect,admin,asyncHandler(async(req,res)=>res.json(await saveSiteSettings(req.body))));
+router.put('/management',protect,admin,asyncHandler(async(req,res)=>res.json(await saveSiteSettings(req))));
 export default router;

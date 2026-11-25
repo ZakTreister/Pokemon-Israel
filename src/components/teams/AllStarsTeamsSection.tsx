@@ -4,6 +4,7 @@ import {publicTeams} from '../../services/publicTeams';
 import type {Team} from '../../types/team';
 import TeamCard from './TeamCard';
 import {SectionHeading} from '../ui/SectionHeading';
+import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import {Shield} from 'lucide-react';
 import {requestError} from '../../utils/requestError';
 import {useFavoriteSelection} from '../../features/teams/hooks/useFavoriteTeam';
@@ -23,7 +24,7 @@ export default function AllStarsTeamsSection({teams:provided,favorite:providedFa
  useEffect(()=>{if(provided!==undefined)return;let active=true;publicTeams.list().then(t=>{if(active)setTeams(t);}).catch(e=>{if(active)setError(requestError(e));});return()=>{active=false};},[provided]);
  const rows=provided??teams;
  return <section id="choose-team" className="container py-10 scroll-mt-24 space-y-4">
-  <SectionHeading icon={<Shield size={22}/>} title="איזו נבחרת אתם מעודדים?" subtitle="ליגת האולסטארז · נבחרות למתקדמים"/>
+  <SectionHeading icon={<LeagueLogo league="allStars" decorative className="size-10" fallback={<Shield size={22}/>}/>} title="איזו נבחרת אתם מעודדים?" subtitle="ליגת האולסטארז · נבחרות למתקדמים"/>
   <Link to="/all-stars" className="block font-bold text-purple-700 dark:text-purple-300">לכל הנבחרות והדירוגים ←</Link>
   {error?<p role="alert">{error}</p>:rows===null?<p>טוען נבחרות...</p>:!rows.length?<p>נבחרות יופיעו כאן לאחר פתיחתן.</p>:<TeamFanCards teams={rows} favorite={providedFavorite??ownFavorite}/>}
  </section>;

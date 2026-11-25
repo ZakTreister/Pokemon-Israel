@@ -263,3 +263,6 @@ The shared media layer supports an optional public image for Updates/News.
 - image is optional
 - replace/remove follows the same safe media attachment rules as other public managed images
 - legacy updates without image metadata remain valid
+
+### League branding
+`league-kids-logo` and `league-all-stars-logo` use separate fixed singleton entity IDs under `public/site-logos/`. Admin-only verified upload grants attach through site settings; replacing/removing a logo follows the shared reference-checked cleanup. Ensure deployed S3 IAM and CloudFront allow the `public/site-logos/` prefix (existing broad public/* policies suffice).

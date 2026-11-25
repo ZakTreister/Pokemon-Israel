@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
 import {navigationPages,TRAILING_PAGES,SOCIAL_PLATFORMS,validSocialUrl} from '../../../shared/siteSettings';
 import { Zap, ArrowUpLeft, Mail, Facebook, Instagram, Youtube, Music2, MessageCircle } from 'lucide-react';
@@ -16,13 +17,12 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Link to="/" className="mb-4 flex items-center gap-3 text-white">
-              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold text-navy-700">
-                <Zap size={23} fill="currentColor" />
-              </span>
+              {!settings.logos?.kids&&!settings.logos?.allStars&&<span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold text-navy-700"><Zap size={23} fill="currentColor"/></span>}
               <span dir="ltr" className="text-2xl font-black">
                 CardSchool <span className="text-gold">IL</span>
               </span>
             </Link>
+            {(settings.logos?.kids||settings.logos?.allStars)&&<div className="flex flex-wrap items-center gap-4 mb-4"><LeagueLogo league="kids" className="h-16 max-w-[8rem]"/><LeagueLogo league="allStars" className="h-16 max-w-[8rem]"/></div>}
             <p className="max-w-xs text-sm leading-relaxed text-white">
               הבית של ליגת הפוקימון הישראלית. אירועים, נבחרות ודירוגים — כל
               הליגה במקום אחד.

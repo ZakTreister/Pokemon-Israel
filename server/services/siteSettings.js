@@ -1,10 +1,13 @@
 import SiteSettings from '../models/siteSettingsModel.js';
-import {defaultSiteSettings,validSocialUrl} from '../../shared/siteSettings.js';
+import {publicMediaUrl} from './storage/mediaMetadata.js';
+import {resolveUpload,finishAttachment} from './mediaUpload.js';
+import {defaultSiteSettings,validSocialUrl,LEAGUE_LOGOS} from '../../shared/siteSettings.js';
 import {fail} from '../utils/httpError.js';
 const ID='site';
 export function settingsView(record){
  const defaults=defaultSiteSettings();
  return {
+  logos:{kids:publicMediaUrl(record?.kidsLogoMedia),allStars:publicMediaUrl(record?.allStarsLogoMedia)},
   pages:defaults.pages.map(p=>{const saved=record?.pages?.find(x=>x.path===p.path);return saved?{path:p.path,active:p.path==='/'||saved.active!==false,menu:!!saved.menu,footer:!!saved.footer}:p;}),
   socials:defaults.socials.map(s=>{const saved=record?.socials?.find(x=>x.key===s.key);return saved?{key:s.key,enabled:!!saved.enabled,url:saved.url||''}:s;}),
  };
@@ -26,8 +29,17 @@ export function settingsFields(input){
  return {pages,socials};
 }
 export async function getSiteSettings(){return settingsView(await SiteSettings.findById(ID).lean().maxTimeMS(600));}
-export async function saveSiteSettings(input){
- const fields=settingsFields(input);
- return settingsView(await SiteSettings.findOneAndUpdate({_id:ID},{$set:fields},{upsert:true,new:true,runValidators:true}).lean());
+export async function saveSiteSettings(req){
+ const fields=settingsFields(req.body);
+ const previous=await SiteSettings.findById(ID).lean();
+ const attachments=[];
+ for(const logo of LEAGUE_LOGOS){
+  const field=logo.key+'LogoMedia';
+  const attachment=await resolveUpload(req,logo.purpose,logo.entityId,previous?.[field]);
+  if(attachment){fields[field]=attachment.media;attachments.push({attachment,previous:previous?.[field]});}
+ }
+ const record=await SiteSettings.findOneAndUpdate({_id:ID},{$set:fields},{upsert:true,new:true,runValidators:true}).lean();
+ for(const item of attachments)await finishAttachment(req,item.attachment,item.previous);
+ return settingsView(record);
 }
 export function publicSiteSettings(settings){return {...settings,socials:settings.socials.map(s=>({...s,url:s.enabled?s.url:''}))};}

@@ -155,7 +155,8 @@ try {
   let stored=defaultSiteSettings();
   siteSettingsService.get=async()=>stored;
   siteSettingsService.manage=async()=>structuredClone(stored);
-  siteSettingsService.save=async value=>{stored=structuredClone(value);return stored;};
+  let savedUploads;
+  siteSettingsService.save=async (value,uploads)=>{savedUploads=uploads;stored=structuredClone(value);return stored;};
   const wrap=(child,path)=>element(Provider,{store:menuStore},element(MemoryRouter,{initialEntries:[path],future:{v7_startTransition:true,v7_relativeSplatPath:true}},child));
   await act(async()=>{
    headerRenderer=TestRenderer.create(wrap(element(SiteSettingsProvider,{},element(Header),element(SettingsEditor),element(Footer)),'/manage/site-settings'));
@@ -164,13 +165,25 @@ try {
   const checkbox=label=>headerRenderer.root.findAllByType('input').find(n=>n.props['aria-label']===label);
   const click=label=>headerRenderer.root.findAllByType('button').find(n=>n.children.join('')===label).props.onClick();
   assert.equal(checkbox('דף הבית פעיל').props.disabled,true);
+  assert.ok(headerRenderer.root.findByType('table').props.className.includes('cs-site-settings-table'));
+  assert.ok(headerRenderer.root.findAllByType('th').some(n=>n.props.scope==='row'&&n.children.includes('הליגה הישראלית')));
   act(()=>checkbox('אירועים פעיל').props.onChange({target:{checked:false}}));
   act(()=>checkbox('גלריה בתפריט').props.onChange({target:{checked:true}}));
   act(()=>click('רשתות חברתיות'));
   const instagram=headerRenderer.root.findAllByType('label').find(n=>n.children.includes('Instagram'));
   act(()=>instagram.findByType('input').props.onChange({target:{checked:true}}));
   act(()=>checkbox('Instagram כתובת').props.onChange({target:{value:'https://www.instagram.com/cardschool/'}}));
+  act(()=>click('לוגואים'));
+  const ImageUpload=await load('components/ui/ImageUpload.tsx');
+  const kids=headerRenderer.root.findAllByType(ImageUpload).find(n=>n.props.purpose==='league-kids-logo');
+  const stars=headerRenderer.root.findAllByType(ImageUpload).find(n=>n.props.purpose==='league-all-stars-logo');
+  assert.ok(kids&&stars);
+  act(()=>kids.props.onChange({url:'https://example.com/kids.png',uploadId:'kids-upload'}));
+  act(()=>stars.props.onChange({url:'https://example.com/stars.png',uploadId:'stars-upload'}));
   await act(async()=>{click('שמור הגדרות');await new Promise(resolve=>setImmediate(resolve));});
+  assert.deepEqual(savedUploads,{kids:'kids-upload',allStars:'stars-upload'});
+  assert.ok(headerRenderer.root.findByType('header').findAllByType('img').some(n=>n.props.src===stored.logos.kids));
+  assert.deepEqual(headerRenderer.root.findByType('footer').findAllByType('img').map(n=>n.props.src),[stored.logos.kids,stored.logos.allStars]);
   const navLinks=headerRenderer.root.findByProps({'aria-label':'ניווט ראשי'}).findAllByType('a').map(n=>n.props.href);
   assert.ok(navLinks.includes('/gallery'));assert.ok(!navLinks.includes('/tournaments'));assert.deepEqual(navLinks.slice(-2),['/store','/birthday']);
   assert.ok(!headerRenderer.root.findByType('footer').findAllByType('a').some(n=>n.props.href==='/tournaments'));

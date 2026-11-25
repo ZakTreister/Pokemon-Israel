@@ -14,7 +14,7 @@ export default function EventDetailsPage(){
  const {id=''}=useParams(),[event,setEvent]=useState<EventDetails|null>(null),[error,setError]=useState(''),[teams,setTeams]=useState<Team[]>([]);
  useEffect(()=>{let active=true;eventsService.get(id).then(r=>{if(active)setEvent(r)}).catch(e=>{if(active)setError(requestError(e))});publicTeams.list().then(t=>{if(active)setTeams(t)}).catch(()=>{});return ()=>{active=false};},[id]);
  const name=(id:string)=>teams.find(t=>t.id===id)?.name||'נבחרת';
- return <div><PageHero title={event?.title||'אירוע'} highlightWord="אירוע" subtitle={event?.description||'אירועי CardSchool'}/>
+ return <div><PageHero league={event?event.category==='all_stars'?'allStars':'kids':undefined} title={event?.title||'אירוע'} highlightWord="אירוע" subtitle={event?.description||'אירועי CardSchool'}/>
  <div className="container py-8 space-y-8">
  <Link className="font-bold text-blue-500" to="/tournaments">→ לכל האירועים</Link>
  {error&&<p role="alert" className="text-destructive">{error}</p>}

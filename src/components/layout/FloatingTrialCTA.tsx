@@ -1,3 +1,4 @@
+import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import { TRIAL_REGISTRATION_URL, isPublicPage } from '../../config/publicSite';
 import { useLocation } from 'react-router-dom';
 import Button from '../ui/Button';
@@ -20,11 +21,7 @@ export default function FloatingTrialCTA() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <img
-            src="/pokemon_kids_logo.png"
-            alt="CardSchool"
-            className="h-9 w-9 object-contain"
-          />
+          <LeagueLogo league="kids" decorative className="h-9 w-9 shrink-0"/>
           הירשמו לשיעור ניסיון
         </a>
       </Button>

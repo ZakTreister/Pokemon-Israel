@@ -141,7 +141,12 @@ try {
     [-500, -50, -15, 20, 55, 900].map(settleCardOffset),
     [-80, -80, 0, 0, 80, 80],
   );
-  await mount(el(Hero));
+  const {default:LogoProvider}=await load('features/siteSettings/SiteSettingsProvider.tsx');
+  const {siteSettingsService}=await load('services/siteSettings.ts');
+  const {defaultSiteSettings}=await vite.ssrLoadModule('/shared/siteSettings.js');
+  const branding=defaultSiteSettings();branding.logos={kids:'https://example.com/kids.png',allStars:'https://example.com/stars.png'};
+  siteSettingsService.get=async()=>branding;
+  await mount(el(LogoProvider,{},el(Hero)));
   const drag = () =>
     renderer.root.find(
       (node) => typeof node.type === 'string' && !!node.props.onPointerDown,
@@ -186,7 +191,8 @@ try {
   const main = renderer.root.findByProps({
     className: 'cs-trading-card cs-trading-card-main',
   });
-  assert.equal(main.findByType('img').props.src, '/pokemon_kids_logo.png');
+  assert.equal(main.findByType('img').props.src, branding.logos.kids);
+  assert.ok(renderer.root.findAllByType('img').some(n=>n.props.src===branding.logos.allStars));
   assert.equal(main.findByType('img').props.draggable, false);
   assert.equal(
     renderer.root.findAll((node) => node.props.className === 'cs-pokeball')
