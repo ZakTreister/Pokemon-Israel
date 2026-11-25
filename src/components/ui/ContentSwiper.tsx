@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { A11y, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -33,7 +33,7 @@ export default function ContentSwiper({ children, label, variant = 'media' }: Pr
         noSwipingSelector="video, iframe, input, textarea, select"
         a11y={{ enabled:true, prevSlideMessage:'הקודם', nextSlideMessage:'הבא', firstSlideMessage:'פריט ראשון', lastSlideMessage:'פריט אחרון', paginationBulletMessage:'מעבר לפריט {{index}}', slideLabelMessage:'{{index}} מתוך {{slidesLength}}' }}
       >
-        {slides.map((slide,index)=><SwiperSlide key={index}>{slide}</SwiperSlide>)}
+        {slides.map((slide,index)=><SwiperSlide key={isValidElement(slide) ? slide.key ?? index : index}>{slide}</SwiperSlide>)}
       </Swiper>
     </div>
   );

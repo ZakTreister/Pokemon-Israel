@@ -4,12 +4,19 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { createServer } from 'vite';
 
+const storage={getItem:()=>null,setItem(){},removeItem(){}};
+globalThis.localStorage=storage;
+globalThis.window={localStorage:storage,location:{origin:'https://cardschool.co.il'},setTimeout,clearTimeout,setInterval,clearInterval};
+let copied='';
+Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'node-test',clipboard:{writeText:async value=>{copied=value;}}}});
 const vite = await createServer({server:{middlewareMode:true},appType:'custom',logLevel:'error',optimizeDeps:{noDiscovery:true,include:[]}});
 const el=React.createElement;
 let renderer;
 try {
   const load=file=>vite.ssrLoadModule('/src/'+file);
   const {default:Content}=await load('pages/ContentPage.tsx');
+  const {default:Address}=await load('components/content/ContentPageAddress.tsx');
+  const {MediaGallery}=await load('components/media/MediaGallery.tsx');
   const {default:Event}=await load('pages/EventDetailsPage.tsx');
   const {contentPagesService}=await load('services/contentPages.ts');
   const {eventsService}=await load('services/events.ts');
@@ -50,6 +57,21 @@ try {
   await mount(Event,'/events/event');
   assert.ok(!renderer.root.findAllByType('h2').some(n=>n.children.join('')==='טורנירי האירוע ותוצאות'));
   assert.ok(!divs().some(n=>n.props['aria-label']==='מידע נוסף'));
+  unmount();
+  await act(async()=>{renderer=TestRenderer.create(el(Address,{id:'abc',published:false}));});
+  assert.equal(renderer.root.findByType('input').props.value,'https://cardschool.co.il/content/abc');
+  assert.equal(renderer.root.findByType('input').props.readOnly,true);
+  await act(async()=>{renderer.root.findByType('button').props.onClick();await new Promise(resolve=>setImmediate(resolve));});
+  assert.equal(copied,'https://cardschool.co.il/content/abc');
+  assert.equal(renderer.root.findByProps({role:'status'}).children.join(''),'הכתובת הועתקה');
+  unmount();
+  await act(async()=>{renderer=TestRenderer.create(el(MediaGallery,{carousel:true,items:[{id:'m1',kind:'image',url:'/a.jpg',caption:'תמונה'},{id:'m2',kind:'youtube',url:'https://www.youtube-nocookie.com/embed/AbCdEf123_-',caption:'סרטון'}]}));});
+  const slides=divs().filter(n=>n.props.className?.split(' ').includes('swiper-slide'));
+  assert.equal(slides.length,2);
+  assert.equal(slides[0].findByType('img').props.src,'/a.jpg');
+  assert.equal(slides[1].findByType('iframe').props.title,'סרטון');
+  assert.ok(divs().some(n=>n.props.className?.includes('cs-content-swiper-media')));
+  unmount();
   console.log('Public card checks passed: actual shared background/frame, event body, one linked-content panel, individual tournament cards and empty-section hiding.');
 } finally {
   if(renderer) act(()=>renderer.unmount());
