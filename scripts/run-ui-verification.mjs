@@ -11,7 +11,8 @@ const suites = [
   "scripts/verify-recent-stage-a.mjs",
   "scripts/verify-version-2026-10-1.mjs",
   "scripts/verify-version-2026-10-2.mjs",
-  "scripts/verify-pairings-fullscreen.mjs"
+  "scripts/verify-pairings-fullscreen.mjs",
+  "scripts/verify-rich-html-editor.mjs"
 ];
 const failures = [];
 for (const suite of suites) {
