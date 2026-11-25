@@ -953,11 +953,18 @@ try {
     error: null,
   };
   updatesService.getUpdates = async () => state.updates.updates;
-  api.get = async (path) => ({
-    data:
-      path === '/api/teams/public' ? [] : path === '/api/field-news' ? state.updates.updates.map(u=>({...u,kind:'update',href:'/news/'+u.id,eventIds:[]})) : { rankings: [], tournamentCount: 0 },
-  });
+  const homeApiRequests=[];
+  api.get = async (path) => {
+    homeApiRequests.push(path);
+    return {data:path === '/api/teams/public' ? [] : path === '/api/tournaments/live' ? [{id:'live1',title:'Live tournament',location:'Hall',date:'2026-11-25'}] : { rankings: [], tournamentCount: 0 }};
+  };
   await mount(provided(route(el(Home))));
+  const liveSection=renderer.root.findByProps({'aria-label':'טורנירים פעילים ברגע זה'});
+  assert.ok(text(liveSection).includes('Live tournament'));
+  assert.equal(liveSection.findByType('a').props.href,'/tournaments/live1');
+  assert.ok(liveSection.findAllByType('span').some(n=>n.props.className?.includes('motion-safe:animate-pulse')));
+  assert.ok(homeApiRequests.includes('/api/tournaments/live'));
+  assert.ok(!homeApiRequests.includes('/api/field-news'));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
   const upcomingSection = renderer.root.findAllByType('section').find(n=>n.props['aria-label']==='אירועים קרובים');
   assert.ok(upcomingSection);
@@ -979,7 +986,9 @@ try {
     assert.equal(cards.length,1);
     assert.ok(cards[0].parent.props.className.includes('cs-card-frame'));
   }
-  assert.ok(text(renderer.toJSON()).includes('Configured description'));
+  assert.ok(text(renderer.toJSON()).includes('Configured news'),'news ticker remains');
+  assert.ok(!text(renderer.toJSON()).includes('חדשות מהשטח'));
+  assert.ok(!text(renderer.toJSON()).includes('Configured description'));
   assert.ok(text(renderer.toJSON()).includes('גלריה'));
   assert.ok(renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'));
   assert.equal(homepageRequests[0].pageSize, 16);
@@ -989,21 +998,32 @@ try {
       .findAllByType('a')
       .some((link) => link.props.href === TRIAL_REGISTRATION_URL),
   );
-  assert.ok(
-    renderer.root
-      .findAllByType('a')
-      .some(
-        (link) =>
-          text(link) === 'Manager CTA' &&
-          link.props.href === 'https://example.com/action',
-      ),
-  );
+  assert.ok(!renderer.root.findAllByType('a').some(link=>link.props.href==='https://example.com/action'));
   unmount();
+  const {default:ActivePublic}=await load('features/home/components/ActivePublicTournaments.tsx');
+  let activeRows=[],poll,cleared=false;
+  const origInterval=window.setInterval,origClear=window.clearInterval;
+  window.setInterval=(cb,ms)=>{assert.equal(ms,30000);poll=cb;return 123;};
+  window.clearInterval=id=>{assert.equal(id,123);cleared=true;};
+  publicTournaments.live=async()=>activeRows;
+  try{
+   await mount(route(el(ActivePublic)));
+   assert.equal(renderer.toJSON(),null,'no live section without a running competition');
+   activeRows=[{id:'later',title:'Now live',location:'Hall'}];
+   await act(async()=>{poll();await flush();});
+   assert.equal(renderer.root.findByType('a').props.href,'/tournaments/later');
+   activeRows=[];
+   await act(async()=>{poll();await flush();});
+   assert.equal(renderer.toJSON(),null,'hide after finish without refreshing the page');
+   unmount();
+   assert.ok(cleared);
+  }finally{window.setInterval=origInterval;window.clearInterval=origClear;}
   const { default: Footer } = await load('components/layout/Footer.tsx');
   await mount(route(el(Footer)));
   assert.ok(
     renderer.root.findByType('footer').props.className.includes('text-white'),
   );
+  assert.ok(!renderer.root.findAllByType('a').some(link=>link.props.href==='/about'));
   assert.ok(
     renderer.root
       .findAllByType('a')

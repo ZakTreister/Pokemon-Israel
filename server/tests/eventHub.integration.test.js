@@ -23,7 +23,6 @@ import MediaUpload from '../models/mediaUploadModel.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
 import { fileURLToPath } from 'node:url';
-import ContentPage from '../models/contentPageModel.js';
 import {registerSeoEndpoints,createSpaSeoHandler} from '../services/seoRoutes.js';
 let server, origin, tokens = {};
 const dbName = 'events_integration_' + randomUUID().replaceAll('-', '');
@@ -255,6 +254,8 @@ test('admin can open a draft directly in the content editor without exposing it 
   assert.equal(managed.title,page.title);assert.equal(managed.status,'draft');
   assert.equal((await call('/content-pages/management/not-a-page','GET',undefined,'admin')).status,404);
  }finally{await page.deleteOne();}
+});
+
 test('production-style SEO HTML and sitemap respect publication and exclude personal pages',async()=>{
  const published=await ok('/events','POST',{title:'SEO public event',description:'Public event description',category:'club',status:'published'},'admin',201);
  const draft=await ok('/events','POST',{title:'SEO private event',category:'club',status:'draft'},'admin',201);
@@ -290,4 +291,26 @@ test('production-style SEO HTML and sitemap respect publication and exclude pers
   await Event.deleteMany({_id:{$in:[published.id,draft.id]}});
   await ContentPage.deleteMany({_id:{$in:[page.id,hiddenPage.id]}});
  }
+});
+
+
+test('public live discovery includes only running club Swiss competitions and stops at completion',async()=>{
+ const fixture={title:'Live home fixture',description:'Test',location:'Hall',image:'/event.png',date:new Date(),registrationDeadline:new Date(),maxParticipants:20,engineVersion:'swiss-v1',status:'upcoming',phase:'running',type:'quarterly'};
+ const rows=await Tournament.create([
+  fixture,{...fixture,title:'Second live'},
+  {...fixture,title:'Setup',phase:'setup'},
+  {...fixture,title:'Completed',phase:'completed',status:'completed'},
+  {...fixture,title:'Old legacy',engineVersion:null,phase:null,date:'2020-01-01'},
+  {...fixture,title:'Staff only',type:'inter_team'},
+  {...fixture,title:'Training',type:'team_internal'},
+  {...fixture,title:'Deleted',deletedAt:new Date()},
+ ]);
+ try{
+  const ids=new Set(rows.map(row=>row.id));
+  const live=(await ok('/tournaments/live')).filter(row=>ids.has(row.id));
+  assert.deepEqual(live.map(row=>row.id),rows.slice(0,2).map(row=>row.id));
+  assert.deepEqual(Object.keys(live[0]).sort(),['date','id','location','title']);
+  await Tournament.updateOne({_id:rows[0]._id},{$set:{phase:'completed',status:'completed'}});
+  assert.deepEqual((await ok('/tournaments/live')).filter(row=>ids.has(row.id)).map(row=>row.id),[rows[1].id]);
+ }finally{await Tournament.deleteMany({_id:{$in:rows.map(row=>row._id)}}).setOptions({includeDeleted:true});}
 });

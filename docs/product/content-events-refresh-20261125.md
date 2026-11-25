@@ -50,3 +50,6 @@ Render the entire public event updates section only if at least one update is re
 
 ## Follow-up — routed content editing and creation
 Admin list `/manage/content-pages` shows only the list. Edit navigates to `/manage/content-pages/:id`, New to `/manage/content-pages/new`. Both use the same editor and hide the list; initial save replaces the new URL with the saved ID, keeps the editor open for media and copy address, and subsequent saves stay in the editor. Close/back navigates to the list. Direct refresh supports drafts through an admin-only detail endpoint, never changes public draft access.
+
+## Follow-up — public homepage live tournaments and simpler navigation
+See homepage.md: show only actually running public club competitions, remove the homepage field-news carousel (not the ticker or news page), and remove the built-in About link from public header/footer.
