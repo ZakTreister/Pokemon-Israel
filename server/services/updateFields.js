@@ -20,7 +20,10 @@ export function updateFields(input, existing = {}) {
     if (!['http:', 'https:'].includes(url.protocol))
       fail(400, 'הקישור חייב להתחיל ב-http או https');
   }
+  for(const key of ['showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
   return {
+    ...(input.showInFieldNews!==undefined?{showInFieldNews:input.showInFieldNews}:{}),
+    ...(input.imageInGallery!==undefined?{imageInGallery:input.imageInGallery}:{}),
     title: title.trim(),
     content: content.trim(),
     ctaText: ctaText.trim(),

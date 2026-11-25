@@ -31,6 +31,7 @@ export interface Team {
     name: string;
   };
   playerCount: number;
+  fanCount?: number;
 }
 
 export interface TeamWithRoster extends Team {

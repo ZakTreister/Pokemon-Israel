@@ -14,6 +14,8 @@ const updateSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    showInFieldNews:{type:Boolean,default:true},
+    imageInGallery:{type:Boolean,default:false},
     imageMedia: { type: mediaSchema, default: null },
     ctaText: { type: String, default: '', trim: true },
     ctaUrl: { type: String, default: '', trim: true },

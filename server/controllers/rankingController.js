@@ -29,14 +29,16 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
   // and inter-team scores remain exclusively in their own competitions.
   const query = regularTournamentFilter(hasHistoricalSnapshot);
   const tournaments = await Tournament.find(query)
-    .select('results finalStandings engineVersion type')
+    .select('results finalStandings engineVersion type closedAt date')
     .lean();
   const tournamentRows = [];
+  const latest = [...tournaments].sort((a,b) => new Date(b.closedAt || b.date).getTime() - new Date(a.closedAt || a.date).getTime() || String(b._id).localeCompare(String(a._id)))[0];
   for (const tournament of tournaments) {
     if (tournament.engineVersion === 'swiss-v1') {
       for (const result of tournament.finalStandings || []) {
         if (!result.player) continue;
         tournamentRows.push({
+          tournamentId: String(tournament._id),
           playerId: String(result.player),
           playerKind: 'player',
           playerName: result.playerName,
@@ -48,6 +50,7 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
       for (const result of tournament.results || []) {
         if (!result.player) continue;
         tournamentRows.push({
+          tournamentId: String(tournament._id),
           playerId: String(result.player),
           playerKind: result.playerModel === 'Player' ? 'player' : 'user',
           playerName: result.playerName,
@@ -64,6 +67,8 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
     search: typeof req.query.search === 'string' ? req.query.search : '',
     page: requestedPage,
     pageSize: requestedPageSize,
+    offset: Number.parseInt(req.query.offset, 10),
+    ...(latest ? { previousTournamentRows: tournamentRows.filter(row => row.tournamentId !== String(latest._id)) } : {}),
     sort: typeof req.query.sort === 'string' ? req.query.sort : 'position',
     descending: req.query.descending === 'true',
   });

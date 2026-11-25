@@ -11,6 +11,9 @@ const fixtureSchema = new mongoose.Schema({
 const eventSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 180 },
   description: { type: String, default: '', maxlength: 5000 },
+  bodyHtml: { type:String,default:'',maxlength:50000 },
+  contentPageIds: { type:[{type:mongoose.Schema.Types.ObjectId,ref:'ContentPage'}],default:[] },
+  showInFieldNews:{type:Boolean,default:false},
   category: { type: String, enum: ['club', 'all_stars'], required: true },
   startDate: { type: Date, default: null },
   endDate: { type: Date, default: null },

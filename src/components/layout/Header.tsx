@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useEffect,useState } from 'react';
+import { Link, NavLink, useNavigate,useLocation } from 'react-router-dom';
+import {contentPagesService} from '../../services/contentPages';
 import { X, LogOut, Sun, Moon, Menu as MenuIcon, Zap } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../features/auth/authSlice';
@@ -13,6 +14,9 @@ export default function Header() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location=useLocation();
+  const [contentLinks,setContentLinks]=useState<{id:string;label:string}[]>([]);
+  useEffect(()=>{let active=true;contentPagesService.navigation().then(links=>{if(active&&Array.isArray(links))setContentLinks(links)}).catch(()=>{});return()=>{active=false};},[location.pathname]);
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
@@ -32,6 +36,7 @@ export default function Header() {
     { to: '/store', label: 'חנות', construction: true },
     { to: '/about', label: 'על הליגה', construction: true },
     { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
+    ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
   ];
   const actions = (
     <>

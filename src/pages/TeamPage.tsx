@@ -16,6 +16,7 @@ import PlayerNumberField from '../features/players/components/PlayerNumberField'
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../hooks/redux';
+import {toggleFavoriteTeam} from '../services/favoriteTeam';
 import { publicTeams } from '../services/publicTeams';
 import teamsService from '../features/teams/teamsService';
 import { internalTournaments } from '../services/internalTournaments';
@@ -50,6 +51,7 @@ export default function TeamPage() {
   const staff = user?.role === 'admin' || user?.role === 'judge';
   const [section, setSection] = useState('members');
   const [favorite,setFavorite]=useState(false);
+  const [favoriteBusy,setFavoriteBusy]=useState(false),[favoriteError,setFavoriteError]=useState('');
   const [nextMeeting,setNextMeeting]=useState<{date:string;opponent:string;eventId:string}|null>(null);
   const [lastMeeting,setLastMeeting]=useState<{id:string;date:string;opponent:string;gameWins:number[]}|null>(null);
   const [historyPage, setHistoryPage] = useState(1);
@@ -113,6 +115,7 @@ export default function TeamPage() {
       active = false;
     };
   }, [id, section, historyPage]);
+  const changeFavorite=async()=>{if(favoriteBusy)return;setFavoriteBusy(true);setFavoriteError('');try{const result=await toggleFavoriteTeam(id);setFavorite(result.favorite===id);setTeam(old=>old&&result.counts[old.id]!==undefined?{...old,fanCount:result.counts[old.id]}:old);}catch(e){setFavoriteError(requestError(e));}finally{setFavoriteBusy(false);}};
   const loadChildren = async (allowDuplicate = false) => {
     if (busy || pendingUploads) return;
     setBusy(true);
@@ -207,7 +210,10 @@ export default function TeamPage() {
               <h1 className="text-4xl font-extrabold">{team.name}</h1>
               {team.region&&<p className="font-bold text-blue-500">{team.region}</p>}
               {team.description&&<p className="mt-2 max-w-xl">{team.description}</p>}
-              {!management&&<button type="button" className="mt-3 border rounded-lg p-2 font-bold" aria-pressed={favorite} onClick={()=>{if(favorite){window.localStorage.removeItem("cardschool.favoriteTeam");setFavorite(false);}else{window.localStorage.setItem("cardschool.favoriteTeam",id);setFavorite(true);}}}>{favorite?"⭐ זו הנבחרת שלי":"☆ זו הנבחרת שלי"}</button>}
+              {!management&&<button type="button" className="mt-3 border rounded-lg p-2 font-bold" aria-pressed={favorite} disabled={favoriteBusy} onClick={()=>void changeFavorite()}>{favorite?"⭐ זו הנבחרת שלי":"☆ זו הנבחרת שלי"}</button>}
+              {!management&&<p className="text-sm text-muted-foreground">סמנו וקבלו עדכונים בעמוד הראשי</p>}
+              {favoriteError&&<p role="alert">{favoriteError}</p>}
+              <p className="font-bold mt-2">{team.fanCount??0} אוהדים</p>
               <p className="mt-2">
                 {team.playerCount} שחקנים פעילים ·{' '}
                 {team.completedInternalTournamentCount ?? 0} טורנירי אימון

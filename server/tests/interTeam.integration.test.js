@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import User from '../models/userModel.js';
 import Team from '../models/teamModel.js';
+import Event from '../models/eventModel.js';
 import Player from '../models/playerModel.js';
 import Tournament from '../models/tournamentModel.js';
 import '../models/deckModel.js'; // Required by generic tournament result population
@@ -82,8 +83,9 @@ after(async () => {
 
 test('end-to-end inter-team API, manual swaps, rotating bench, staff live and closure', { timeout: 25000 }, async () => {
   const admin = await User.findOne({ role:'admin' });
+  const judge=await User.findOne({role:'judge'});
   const teams = await Team.create([
-    { name:'Alpha Club', createdBy:admin._id },
+    { name:'Alpha Club', createdBy:admin._id, teacher:judge._id },
     { name:'Beta Club', createdBy:admin._id },
   ]);
   const players = [];
@@ -96,7 +98,10 @@ test('end-to-end inter-team API, manual swaps, rotating bench, staff live and cl
     }
   }
   assert.equal((await request('/', 'POST', {teamIds:teams.map(t=>t.id)},null)).status,401);
-  const created = await ok('/', 'POST', { teamIds:teams.map(t=>t.id) }, 'judge', 201);
+  assert.equal((await request('/', 'POST', {teamIds:teams.map(t=>t.id)},'judge')).status,403);
+  const event=await Event.create({title:'Official meeting',category:'all_stars',createdBy:admin._id});
+  const created = await ok('/', 'POST', { teamIds:teams.map(t=>t.id),eventId:event.id,scheduledDate:new Date(Date.now()+86400000).toISOString() }, 'admin', 201);
+  await Tournament.updateOne({_id:created.id},{$set:{date:new Date()}});
   assert.equal(created.phase,'setup');
   assert.equal(created.interTeamSides.length,2);
   assert.equal(created.playerParticipants.length,8);

@@ -24,10 +24,10 @@ export default function ManageEventPage(){
  const save=async(data:EventInput)=>{setBusy(true);try{await eventsService.update(id,data);await reload();setShowEdit(false);}catch(e){setError(requestError(e));throw e;}finally{setBusy(false);}};
  const link=async()=>{if(!selected)return;setBusy(true);try{await eventsService.link(id,selected);await reload();setSelected('');}catch(e){setError(requestError(e));}finally{setBusy(false);}};
  const unlink=async(tid:string)=>{setBusy(true);try{await eventsService.unlink(id,tid);await reload();}catch(e){setError(requestError(e));}finally{setBusy(false);}};
- const startFixture=async(f:{id:string;firstTeam:string;secondTeam:string})=>{
+ const convertLegacyFixture=async(f:{id:string;firstTeam:string;secondTeam:string})=>{
    setBusy(true);setError('');try{
      const {data}=await api.post<{id:string}>('/api/inter-team',{teamIds:[f.firstTeam,f.secondTeam],eventId:id,fixtureId:f.id});
-     navigate('/manage/inter-team/'+data.id);
+     if(data.id)await reload();
    }catch(e){setError(requestError(e));}finally{setBusy(false);}
  };
  const remove=async()=>{if(!window.confirm('למחוק אירוע? יש להסיר קודם שיוכי טורנירים ועדכונים.'))return;setBusy(true);try{await eventsService.remove(id);navigate('/manage/events');}catch(e){setError(requestError(e));setBusy(false);}};
@@ -42,15 +42,11 @@ export default function ManageEventPage(){
  {event.tournaments.map(t=><div key={t.id} className="flex gap-3 justify-between items-center"><Link className="text-blue-500" to={'/tournaments/'+t.id}>{t.title}</Link><div className="flex gap-2">{t.type==='inter_team'&&<Button asChild size="sm" variant="outline"><Link to={'/manage/inter-team/'+t.id}>פתח ניהול מפגש</Link></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={()=>void unlink(t.id)}>הסר שיוך</Button></div></div>)}
  <div className="flex gap-2 flex-wrap"><select aria-label="בחר טורניר" className="border rounded p-2 bg-card" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">בחר טורניר קיים</option>{eligible.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select>
  <Button disabled={!selected||busy} onClick={()=>void link()}>שייך</Button>
- {event.category==='club'&&<Button variant="outline" onClick={()=>setCreateDialog(true)}>יצירת טורניר חוגים</Button>}</div>
+ <Button variant="outline" onClick={()=>setCreateDialog(true)}>{event.category==='club'?'יצירת טורניר חוגים':'יצירת מפגש נבחרות'}</Button></div>
  </section>
- {event.category === "all_stars" && <section className="border rounded-lg p-4 space-y-3"><div className="flex flex-wrap justify-between gap-2"><h3 className="text-xl font-bold">תכנון מפגשים</h3><Button onClick={()=>setCreateDialog(true)}>יצירת מפגש נבחרות</Button></div><FixtureEditor eventId={id} fixtures={event.fixtures} tournaments={event.tournaments} onSaved={reload}/>
- {event.fixtures.map(f=><div key={f.id} className="flex flex-wrap justify-between items-center gap-2 border-t pt-2">
-   <span className="text-sm">{new Date(f.date).toLocaleString('he-IL')} · מפגש נבחרות</span>
-   {f.tournamentId?<Button asChild variant="outline" size="sm"><Link to={'/manage/inter-team/'+f.tournamentId}>פתח ניהול מפגש</Link></Button>:
-    <Button size="sm" disabled={busy} onClick={()=>void startFixture(f)}>הפעל מפגש מתוכנן</Button>}
- </div>)}</section>}
- {createDialog&&(event.category==='club'?<AdminTournaments embeddedCreate eventContext={{id,onClose:()=>setCreateDialog(false),onSaved:()=>void competitionSaved()}}/>:<Modal title="יצירת מפגש נבחרות עתידי" onClose={()=>setCreateDialog(false)} panelClassName="max-w-2xl"><FixtureEditor createOnly eventId={id} fixtures={event.fixtures} tournaments={event.tournaments} onSaved={competitionSaved}/></Modal>)}
+ {event.category==='all_stars'&&event.fixtures.some(f=>!f.tournamentId)&&<section className="border rounded-lg p-4 space-y-3"><h3 className="font-bold">הסבת מפגשים ישנים לטורנירים</h3><p className="text-sm">מפגשים שתוכננו לפני איחוד המערכת. יש להסב כל מפגש פעם אחת, בלי לאבד את התאריך והנבחרות.</p>
+ {event.fixtures.filter(f=>!f.tournamentId).map(f=><div key={f.id} className="flex flex-wrap justify-between items-center gap-2"><span>{new Date(f.date).toLocaleString('he-IL')} · {f.location}</span><Button size="sm" disabled={busy} onClick={()=>void convertLegacyFixture(f)}>הסב לטורניר</Button></div>)}</section>}
+ {createDialog&&(event.category==='club'?<AdminTournaments embeddedCreate eventContext={{id,onClose:()=>setCreateDialog(false),onSaved:()=>void competitionSaved()}}/>:<Modal title="יצירת מפגש נבחרות עתידי" onClose={()=>setCreateDialog(false)} panelClassName="max-w-2xl"><FixtureEditor eventId={id} onSaved={competitionSaved}/></Modal>)}
  <section className="border rounded-lg p-4 space-y-3"><div className="flex justify-between items-center"><h3 className="text-xl font-bold">עדכוני האירוע</h3><Button onClick={()=>setEditing(null)}>עדכון חדש</Button></div>
  {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}

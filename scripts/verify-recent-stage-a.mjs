@@ -451,7 +451,7 @@ try {
   assert.ok(!text(renderer.toJSON()).includes('עריכת נבחרת'));
   assert.ok(!text(renderer.toJSON()).includes('הזנת טורניר היסטורי'));
   await act(async () => {
-    button('היסטוריית טורנירים').props.onClick();
+    button('טורנירי אימון ותוצאות').props.onClick();
     await flush();
   });
   assert.ok(text(renderer.toJSON()).includes('הזנת טורניר היסטורי'));

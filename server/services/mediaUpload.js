@@ -37,6 +37,8 @@ export function uploadNamespace(purpose, playerType) {
   if (purpose === 'team-logo' || purpose==='team-cover') return 'public/teams';
   if (purpose === 'update-image' || purpose === 'update-media') return 'public/updates';
   if (purpose === 'event-media') return 'public/events';
+  if (purpose === 'gallery-media') return 'public/gallery';
+  if (purpose === 'content-page-media') return 'public/content-pages';
   if (purpose === 'player-deck' && playerType === 'team')
     return 'public/players';
   if (purpose === 'badge-image') return 'public/badges';
@@ -50,6 +52,8 @@ async function owner(purpose, id) {
       ? 'Team'
       : purpose === 'event-media'
         ? 'Event'
+        : purpose === 'gallery-media' ? 'Gallery'
+        : purpose === 'content-page-media' ? 'ContentPage'
         : purpose === 'update-media'
           ? 'Update'
           : purpose === 'badge-image'
@@ -79,6 +83,8 @@ export async function presignUpload(req) {
       'update-image',
       'update-media',
       'event-media',
+      'content-page-media',
+      'gallery-media',
     ].includes(purpose)
   )
     fail(400, 'מטרת העלאה לא נתמכת');
@@ -247,10 +253,10 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update'].map(
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update','ContentPage','Gallery'].map(
         (name, index) =>
-          mongoose.model(name).exists({
-            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media'][index]}.storageKey`]:
+          mongoose.models[name]?.exists({
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media','mediaItems.media','mediaItems.media'][index]}.storageKey`]:
               key,
           }),
       ),

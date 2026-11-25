@@ -75,3 +75,27 @@ test('an existing All-Stars Player accumulates ordinary imported and new regular
   assert.equal(regular.rankings[0].isAllStars, true);
   assert.equal(buildNationalRanking([row], [futureRegular]).total, 0);
 });
+
+
+test('rank movers compare full canonical positions before the latest tournament, before filtering or paging', () => {
+  const baseline = [
+    {_id:'a',playerName:'א',points:10,tournaments:1,player:'a'},
+    {_id:'b',playerName:'ב',points:8,tournaments:1,player:'b'},
+    {_id:'c',playerName:'ג',points:6,tournaments:1,player:'c'},
+  ];
+  const result = buildNationalRanking(baseline, [{playerId:'c',playerKind:'player',points:6},{playerId:'new',playerKind:'player',playerName:'חדש',points:2}], {previousTournamentRows:[],offset:1,pageSize:2});
+  assert.deepEqual(result.rankings.map(row=>row.position),[2,3]);
+  assert.equal(result.topMovers[0].playerName,'ג');
+  assert.equal(result.topMovers[0].rankChange,2);
+  assert.equal(result.topMovers.length,1);
+});
+test('offset supports initial 25 rows followed by batches without overlapping', () => {
+  const rows=Array.from({length:60},(_,i)=>({_id:String(i),playerName:String(i),points:60-i,tournaments:1}));
+  const initial=buildNationalRanking(rows,[],{pageSize:25,offset:0});
+  const next=buildNationalRanking(rows,[],{pageSize:25,offset:25});
+  assert.equal(initial.rankings.length,25);
+  assert.equal(next.rankings.length,25);
+  assert.equal(next.rankings[0].position,26);
+  assert.equal(next.rankings[24].position,50);
+  assert.equal(buildNationalRanking(rows,[],{pageSize:25,offset:50}).rankings.length,10);
+});

@@ -1,5 +1,6 @@
 import MediaUpload from '../models/mediaUploadModel.js';
 import { fail } from '../utils/httpError.js';
+import {uploadNamespace} from './mediaUpload.js';
 const idOK=x=>typeof x==='string'&&/^[a-f0-9]{24}$/i.test(x);
 export function youtubeId(url){
  if(typeof url!=='string') fail(400,'קישור YouTube לא תקין');
@@ -16,7 +17,8 @@ export function youtubeId(url){
  return id;
 }
 export async function attachAsset(req,owner,purpose){
- const {uploadId,youtubeUrl,caption='',cover=false}=req.body;
+ const {uploadId,youtubeUrl,caption='',cover=false,showInGallery=false}=req.body;
+ if(typeof showInGallery!=='boolean')fail(400,'סימון גלריה לא תקין');
  if(typeof caption!=='string'||caption.length>240) fail(400,'כיתוב ארוך מדי');
  if(cover!==false&&cover!==true) fail(400,'סימון תמונת שער לא חוקי');
  if(Boolean(uploadId)===Boolean(youtubeUrl)) fail(400,'יש לבחור סרטון YouTube או קובץ אחד');
@@ -26,12 +28,13 @@ export async function attachAsset(req,owner,purpose){
   if(!idOK(uploadId)) fail(400,'מזהה העלאה לא חוקי');
   grant=await MediaUpload.findOne({_id:uploadId,entityId:owner._id,createdBy:req.user._id,
    purpose,status:'verified',consumed:false,expiresAt:{$gt:new Date()}});
-  if(!grant || !grant.storageKey.startsWith((purpose==='event-media'?'public/events/':'public/updates/')+owner.id+'/'))
+  if(!grant || !grant.storageKey.startsWith(uploadNamespace(purpose)+'/'+owner.id+'/'))
     fail(400,'קובץ לא אומת עבור הרשומה הזו');
   // Prevent attaching video grants created before image-only upload enforcement.
   if (!['image/jpeg','image/png','image/webp'].includes(grant.contentType)) fail(400,'ניתן להעלות תמונות בלבד. לסרטון הוסיפו קישור YouTube');
   item={kind:'image',media:{storageKey:grant.storageKey,contentType:grant.contentType,size:grant.size},caption};
  }
+ item.showInGallery=purpose==='gallery-media'||showInGallery;
  owner.mediaItems.push(item);
  if(cover) owner.coverMedia=item.media;
  await owner.save();
@@ -44,7 +47,14 @@ export async function removeAsset(owner,assetId){
  if(!item) fail(404,'פריט המדיה לא נמצא');
  const key=item.media?.storageKey;
  item.deleteOne();
- if(owner.coverMedia?.storageKey===key) owner.coverMedia=null;
+ if(key&&owner.coverMedia?.storageKey===key) owner.coverMedia=null;
  await owner.save();
  return owner;
+}
+
+export async function changeAssetVisibility(owner,assetId,value){
+ if(typeof value!=='boolean')fail(400,'סימון גלריה לא תקין');
+ if(!idOK(assetId))fail(404,'פריט המדיה לא נמצא');
+ const item=owner.mediaItems.id(assetId);if(!item)fail(404,'פריט המדיה לא נמצא');
+ item.showInGallery=value;await owner.save();return owner;
 }

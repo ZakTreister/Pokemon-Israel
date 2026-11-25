@@ -4,7 +4,7 @@ import asyncHandler from 'express-async-handler';
 import Update from '../models/updateModel.js';
 import Event from '../models/eventModel.js';
 import { fail } from '../utils/httpError.js';
-import { attachAsset,removeAsset } from '../services/assetAttachment.js';
+import { attachAsset,removeAsset,changeAssetVisibility } from '../services/assetAttachment.js';
 const linkedEvent = async (input, existing) => {
   const id = input.eventId === undefined ? existing?.eventId ?? null : input.eventId;
   if (id === null || id === '') return null;
@@ -107,4 +107,10 @@ export const deleteUpdateAsset=asyncHandler(async(req,res)=>{
  if(!/^[a-f0-9]{24}$/i.test(req.params.id)) fail(404,'העדכון לא נמצא');
  const update=await Update.findById(req.params.id);if(!update)fail(404,'העדכון לא נמצא');
  res.json(await removeAsset(update,req.params.assetId));
+});
+
+export const changeUpdateAsset=asyncHandler(async(req,res)=>{
+ if(!/^[a-f0-9]{24}$/i.test(req.params.id))fail(404,'העדכון לא נמצא');
+ const update=await Update.findById(req.params.id);if(!update)fail(404,'העדכון לא נמצא');
+ res.json(await changeAssetVisibility(update,req.params.assetId,req.body.showInGallery));
 });

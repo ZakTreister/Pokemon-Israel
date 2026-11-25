@@ -13,6 +13,7 @@ import '../models/deckModel.js';
 import Team from '../models/teamModel.js';
 import Player from '../models/playerModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
+import allStarsPublicRoutes from '../routes/allStarsPublicRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import mediaRoutes from '../routes/mediaRoutes.js';
@@ -43,7 +44,7 @@ before(async()=>{
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
  app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
- app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
+ app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -122,9 +123,11 @@ test('planned All-Stars fixture launches exactly one official inter-team tournam
   {firstName:'Beta',lastName:'Test',playerType:'team',team:second._id,city:'City',isActive:true},
  ]);
  const ev=await ok('/events','POST',{title:'מחזור פתיחה',category:'all_stars',status:'published'},'admin',201);
- const planned=await ok('/events/'+ev.id+'/fixtures','PUT',{fixtures:[{
-  firstTeam:first.id,secondTeam:second.id,date:'2026-11-29T10:00:00.000Z',location:'תל אביב'
- }]},'admin');
+ // Seed a legacy fixture directly; the public API no longer allows creating one.
+ const legacy=await Event.findById(ev.id);
+ legacy.fixtures.push({firstTeam:first.id,secondTeam:second.id,date:new Date('2026-11-29T10:00:00.000Z'),location:'תל אביב'});
+ await legacy.save();
+ const planned=legacy.toJSON();
  assert.equal(planned.fixtures.length,1);
  const input={teamIds:[first.id,second.id],eventId:ev.id,fixtureId:planned.fixtures[0].id};
  const created=await ok('/inter-team','POST',input,'admin',201);
@@ -167,7 +170,7 @@ test('event and update videos use YouTube links only; S3 video upload grants are
  await ok('/events/'+event.id,'DELETE',undefined,'admin');
 });
 
-test('event-scoped creation persists club association and appends future fixtures without starting play',async()=>{
+test('event-scoped creation persists club association and rejects standalone fixtures',async()=>{
  const club=await ok('/events','POST',{title:'Club creation',category:'club'},'admin',201);
  const stars=await ok('/events','POST',{title:'Fixture creation',category:'all_stars'},'admin',201);
  const date=new Date(Date.now()+86400000*10).toISOString();
@@ -178,22 +181,15 @@ test('event-scoped creation persists club association and appends future fixture
  assert.equal(created.eventId,club.id);
  assert.equal(created.status,'upcoming');
  assert.equal((await ok('/events/management/'+club.id,'GET',undefined,'admin')).tournaments.length,1);
- const admin=await User.findOne({role:'admin'});
- const [first,second]=await Team.create([{name:'Append Alpha',createdBy:admin._id},{name:'Append Beta',createdBy:admin._id}]);
- const fixture={firstTeam:first.id,secondTeam:second.id,date};
  const url='/events/'+stars.id+'/fixtures';
- assert.equal((await call(url,'POST',fixture,'judge')).status,403);
- assert.equal((await call(url,'POST',{...fixture,secondTeam:first.id},'admin')).status,400);
- const a=await ok(url,'POST',fixture,'admin',201);
- const b=await ok(url,'POST',{...fixture,date:new Date(Date.now()+86400000*11).toISOString()},'admin',201);
- assert.equal(b.fixtures.length,2);
- assert.equal(b.fixtures[0].id,a.fixtures[0].id);
- assert.equal(b.fixtures[1].tournamentId,null);
+ assert.equal((await call(url,'POST',{},'judge')).status,403);
+ assert.equal((await call(url,'POST',{},'admin')).status,410);
+ assert.equal((await call(url,'PUT',{fixtures:[]},'admin')).status,410);
  assert.equal(await Tournament.countDocuments({eventId:stars.id}),0);
 });
 
 test('scheduled inter-team creation creates a real upcoming tournament without rounds',async()=>{
- const event=await ok('/events','POST',{title:'Scheduled meeting',category:'all_stars'},'admin',201);
+ const event=await ok('/events','POST',{title:'Scheduled meeting',category:'all_stars',status:'published'},'admin',201);
  const admin=await User.findOne({role:'admin'});
  const [a,b]=await Team.create([{name:'Scheduled Alpha',createdBy:admin._id},{name:'Scheduled Beta',createdBy:admin._id}]);
  await Player.create([{firstName:'A',lastName:'Scheduled',playerType:'team',team:a._id,city:'City',isActive:true},{firstName:'B',lastName:'Scheduled',playerType:'team',team:b._id,city:'City',isActive:true}]);
@@ -207,6 +203,9 @@ test('scheduled inter-team creation creates a real upcoming tournament without r
  assert.equal(created.eventId,event.id);
  assert.equal(created.rounds.length,0);
  assert.equal((await ok('/events/management/'+event.id,'GET',undefined,'admin')).tournaments.length,1);
+ const overview=await ok('/all-stars/overview');
+ assert.equal(overview.fixtures.filter(f=>f.eventId===event.id).length,1);
+ assert.equal(overview.fixtures.find(f=>f.eventId===event.id).tournamentId,created.id);
  assert.equal((await ok('/inter-team/active','GET',undefined,'admin')).some(t=>t.id===created.id),false);
  assert.equal((await call('/inter-team/'+created.id+'/rounds','POST',{expectedRevision:created.revision},'admin')).status,400);
 });

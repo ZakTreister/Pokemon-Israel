@@ -8,6 +8,7 @@ export interface NationalRanking {
   bestRank: number | null;
   position: number;
   isAllStars: boolean;
+  rankChange?: number;
 }
 
 export interface NationalRankingsResponse {
@@ -17,6 +18,7 @@ export interface NationalRankingsResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+  topMovers?: NationalRanking[];
 }
 
 export interface RankingQuery {
@@ -24,6 +26,7 @@ export interface RankingQuery {
   includeAllStars?: boolean;
   page?: number;
   pageSize?: number;
+  offset?: number;
   sort?: 'position' | 'playerName' | 'points' | 'tournaments';
   descending?: boolean;
 }
