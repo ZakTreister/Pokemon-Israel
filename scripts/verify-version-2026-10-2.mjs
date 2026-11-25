@@ -1062,7 +1062,13 @@ try {
   unmount();
   api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[]}};};
   await mount(provided(route(el(TeacherOverview),'/manage')));
-  assert.equal(renderer.toJSON(),null,'hide entire teacher section for empty assignments');
+  // The harness includes ToastProvider, which always renders an empty live overlay.
+  // Assert absence of TeacherTeams' own DOM, not absence of the entire provider tree.
+  const teacherSection=renderer.root.findByType(TeacherOverview);
+  assert.equal(teacherSection.children.length,0,'hide entire teacher section for empty assignments');
+  assert.equal(renderer.root.findAllByType('section').length,0);
+  assert.ok(!text(renderer.toJSON()).includes('הנבחרות שלי'));
+  assert.ok(!text(renderer.toJSON()).includes('אין נבחרות המשויכות'));
   unmount();state.auth.user.role='admin';
   // Full profile hierarchy and graceful missing-media state.
   api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands','Eevee','Mew','Pidgey','Charizard'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});
