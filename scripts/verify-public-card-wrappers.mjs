@@ -52,6 +52,13 @@ try {
   const tournaments=divs().filter(n=>n.props.role==='article'&&!n.props['aria-label']);
   assert.equal(tournaments.length,2);
   tournaments.forEach(card);
+  assert.ok(!renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים מהאירוע'));
+  assert.ok(!renderer.root.findAllByType('p').some(n=>n.children.join('')==='עדכונים יופיעו כאן לאחר פרסומם.'));
+  unmount();
+  eventsService.get=async()=>({...event,updates:[{id:'news1',title:'עדכון ראשון',description:'פרטי העדכון'}]});
+  await mount(Event,'/events/event');
+  assert.ok(renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים מהאירוע'));
+  assert.ok(renderer.root.findAllByType('a').some(n=>n.props.href==='/news/news1'));
   unmount();
   eventsService.get=async()=>({...event,tournaments:[],fixtures:[],contentPages:[]});
   await mount(Event,'/events/event');

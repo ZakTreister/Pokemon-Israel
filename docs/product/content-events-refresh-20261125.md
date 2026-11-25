@@ -44,3 +44,6 @@ Rankings selects the earliest published club event on or after the Israel-local 
 
 ## Follow-up — Swiper and public content address
 Use one shared real Swiper React component for homepage field-news cards and upcoming-event cards, event and content-page media, and news-post media. RTL touch/mouse swipe, responsive card counts, previous/next navigation and pagination; no autoplay. Keep the standalone gallery grid and text ticker unchanged. Each persisted content page displays its full public address and a copy button in the management list and selected editor; draft links remain inaccessible until published.
+
+## Follow-up — hide empty event updates
+Render the entire public event updates section only if at least one update is returned. No empty-state heading or placeholder; existing update links and layout are preserved.

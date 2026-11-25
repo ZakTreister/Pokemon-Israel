@@ -29,9 +29,9 @@ export default function EventDetailsPage(){
  {event.tournaments.map(t=><Card key={t.id} variant="public" role="article" className="p-4 flex gap-3 flex-wrap justify-between items-center"><div><h3 className="font-bold">{t.title}</h3><p className="text-sm text-muted-foreground">{new Date(t.date).toLocaleDateString('he-IL')} · {t.lifecycle==='completed'?'הסתיים':t.lifecycle==='active'?'פעיל':'מתוכנן'}</p></div>{(t.type==='quarterly'||t.lifecycle==='completed')?<Button variant="outline" asChild><Link to={'/tournaments/'+t.id}>{t.lifecycle==='completed'?'צפו בתוצאות':'פרטים ומשחקים'}</Link></Button>:<span className="text-sm text-muted-foreground">התוצאות יפורסמו בסיום המפגש</span>}</Card>)}
  {event.fixtures?.filter(f=>!f.tournamentId).map(f=><Card key={f.id} variant="public" role="article" className="p-4"><strong>{name(f.firstTeam)} נגד {name(f.secondTeam)}</strong><p className="text-sm text-muted-foreground">{new Date(f.date).toLocaleString('he-IL')} {f.location} · מפגש מתוכנן</p></Card>)}</section>}
  {!!event.contentPages?.length&&<Card variant="public" role="region" aria-label="מידע נוסף" className="p-5 space-y-3"><h2 className="text-xl font-extrabold">מידע נוסף</h2>{event.contentPages.map(page=><Link key={page.id} to={'/content/'+page.id} className="block rounded-lg border p-3 hover:border-blue-500"><strong>{page.title}</strong>{page.subtitle&&<p className="text-sm text-muted-foreground">{page.subtitle}</p>}</Link>)}</Card>}
- <section className="space-y-4"><h2 className="text-2xl font-extrabold">עדכונים מהאירוע</h2>
+ {!!event.updates.length&&<section className="space-y-4"><h2 className="text-2xl font-extrabold">עדכונים מהאירוע</h2>
  {event.updates.map(u=><article key={u.id} className="cs-public-card p-5"><h3 className="font-bold text-xl">{u.title}</h3><p className="my-2 whitespace-pre-wrap line-clamp-3">{u.description||u.content}</p><Link className="text-blue-500 font-bold" to={'/news/'+u.id}>קראו את העדכון המלא ←</Link></article>)}
- {!event.updates.length&&<p>עדכונים יופיעו כאן לאחר פרסומם.</p>}</section>
+ </section>}
  </>}
  </div></div>;
 }
