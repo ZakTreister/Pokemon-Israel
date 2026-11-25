@@ -145,6 +145,17 @@ try {
   assert.equal(renderer.root.findAllByType('article').length,3);
   assert.equal(renderer.root.findAllByType('form').length,0);
   unmount();
+  const {default:LeagueSections}=await load('features/home/components/LeagueSections.tsx');
+  await act(async()=>{renderer=TestRenderer.create(el(MemoryRouter,{future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(LeagueSections,{leaders:[],standings:[],events:[],error:''})));});
+  for(const title of ['טורנירים ואירועים קרובים','מפגשי נבחרות ואירועים קרובים']){
+    const heading=renderer.root.findAllByType('h3').find(n=>n.children.join('')===title);
+    assert.ok(heading,title);
+    const group=heading.parent.parent;
+    assert.match(group.props.className,/\bmt-auto\b/);
+    assert.match(group.parent.props.className,/\bflex-1\b/);
+    assert.match(group.parent.parent.props.className,/\bflex-col\b/);
+  }
+  unmount();
   const {default:Freshness}=await load('components/rankings/RankingFreshness.tsx');
   await act(async()=>{renderer=TestRenderer.create(el(Freshness,{showCoverage:true,showLastUpdated:false,resultsThrough:{date:'2026-07',precision:'month',title:'אליפות ישראל'}}));});
   assert.equal(renderer.root.findAllByType('p').length,1);
