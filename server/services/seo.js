@@ -95,7 +95,9 @@ export function renderSeoHead(meta) {
 }
 
 export function injectSeo(html, meta) {
-  return html.replace(/<!--\s*seo:start\s*-->[\s\S]*?<!--\s*seo:end\s*-->/, () =>
+  const marker = /<!--\s*seo:start\s*-->[\s\S]*?<!--\s*seo:end\s*-->/;
+  if (!marker.test(html)) throw new Error('Missing SEO template markers');
+  return html.replace(marker, () =>
     '<!-- seo:start -->\n    '+renderSeoHead(meta)+'\n    <!-- seo:end -->');
 }
 

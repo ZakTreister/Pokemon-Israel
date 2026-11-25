@@ -33,6 +33,7 @@ export function createSpaSeoHandler(indexFile) {
   let template;
   return async (req,res)=>{
     const meta=await resolveWithin(req.path);
+    res.set('Cache-Control','no-cache');
     if(!meta.indexable) res.set('X-Robots-Tag','noindex, follow');
     try {
       template ||= await readFile(indexFile,'utf8');

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import {resolveSeo,renderSeoHead,injectSeo,sitemapXml,ROBOTS,SITE_ORIGIN} from '../services/seo.js';
 
 const id='6b05ea478f45378a9ed8dfaa';
@@ -44,4 +45,14 @@ test('sitemap lists published entities and excludes updates whose events are not
  assert.ok(!xml.includes('<loc>'+SITE_ORIGIN+'/events</loc>'));
  assert.ok(ROBOTS.includes('Sitemap: '+SITE_ORIGIN+'/sitemap.xml'));
  assert.ok(!ROBOTS.includes('Disallow: /manage'));
+});
+
+// QR CI builds before running the server suite; verify the real Vite output too.
+test('built HTML retains the SEO injection boundary when a build exists',async()=>{
+ const file=new URL('../../dist/index.html',import.meta.url);
+ if(!existsSync(file))return;
+ const html=injectSeo(await readFile(file,'utf8'),await resolveSeo('/rankings'));
+ assert.match(html,/<title>דירוג ליגת הפוקימון הישראלית \| קארדסקול<\/title>/);
+ assert.ok(html.includes('rel="canonical" href="'+SITE_ORIGIN+'/rankings"'));
+ assert.equal((html.match(/<title>/g)||[]).length,1);
 });
