@@ -1,3 +1,4 @@
+import { Card } from '../components/ui/Card';
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Trophy, Newspaper, Users, Images, ArrowUpLeft } from 'lucide-react';
@@ -59,9 +60,9 @@ export default function HomePage(){
  </div>{!fieldNews.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>
  <AllStarsTeamsSection/>
  <section className="container py-10 space-y-4"><h2 className="text-2xl sm:text-3xl font-extrabold">מובילי הליגה הישראלית</h2><RankingPodium leaders={leaders}/><Button asChild variant="outline"><Link to="/rankings">איפה אתם בדירוג? חפשו את שמכם</Link></Button></section>
- <section className="container pb-12"><div className="cs-public-card p-4 sm:p-6 space-y-4"><div className="flex justify-between items-center flex-wrap gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">אירועים קרובים</h2><Link to="/tournaments" className="text-blue-500 font-bold">כל האירועים ←</Link></div>{error&&<p role="alert">{error}</p>}
- <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-2" aria-label="גלגלת אירועים קרובים">{future.map(ev=><Link key={ev.id} to={'/events/'+ev.id} className="cs-public-card p-5 min-w-0 flex-[0_0_85%] sm:flex-[0_0_45%] snap-start"><p className="text-xs text-blue-500">{ev.category==='club'?'חוגים':'אולסטארז'}</p><strong>{ev.title}</strong><p className="text-muted-foreground">{ev.startDate&&new Date(ev.startDate).toLocaleDateString('he-IL')}</p></Link>)}</div>
- {!future.length&&<p className="text-muted-foreground">אירועים קרובים יופיעו כאן לאחר פרסומם.</p>}</div></section>
+ <section className="container pb-12"><Card variant="public" role="region" aria-label="אירועים קרובים" className="p-4 sm:p-6 space-y-4"><div className="flex justify-between items-center flex-wrap gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">אירועים קרובים</h2><Link to="/tournaments" className="text-blue-500 font-bold">כל האירועים ←</Link></div>{error&&<p role="alert">{error}</p>}
+ <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-2" aria-label="גלגלת אירועים קרובים">{future.map(ev=><Link key={ev.id} to={'/events/'+ev.id} className="block rounded-lg border border-border bg-muted/30 hover:border-blue-500 p-5 min-w-0 flex-[0_0_85%] sm:flex-[0_0_45%] snap-start"><p className="text-xs text-blue-500">{ev.category==='club'?'חוגים':'אולסטארז'}</p><strong>{ev.title}</strong><p className="text-muted-foreground">{ev.startDate&&new Date(ev.startDate).toLocaleDateString('he-IL')}</p></Link>)}</div>
+ {!future.length&&<p className="text-muted-foreground">אירועים קרובים יופיעו כאן לאחר פרסומם.</p>}</Card></section>
  <section className="bg-navy-700 text-white py-9"><div className="container flex items-center justify-between flex-wrap gap-4"><div><h2 className="text-2xl font-extrabold">מצטרפים לחוג הפוקימון</h2><p>לימוד, משחק וחברים קרוב לבית</p></div><Button asChild variant="cta"><a href={TRIAL_REGISTRATION_URL} target="_blank" rel="noopener noreferrer">להרשמה לחוג</a></Button></div></section>
  </div>;
 }
