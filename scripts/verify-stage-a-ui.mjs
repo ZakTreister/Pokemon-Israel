@@ -127,6 +127,26 @@ try {
     'Header controls use contextual styling',
   );
   assert.ok(render(Header, '/', 'judge').includes('href="/manage"'));
+  const {contentPagesService}=await vite.ssrLoadModule('/src/services/contentPages.ts');
+  contentPagesService.navigation=async()=>[{id:'dynamic',label:'עמוד תוכן'}];
+  const menuStore={getState:()=>store.getState(),subscribe:()=>()=>{},dispatch:action=>action};
+  let headerRenderer;
+  await act(async()=>{
+   headerRenderer=TestRenderer.create(element(Provider,{store:menuStore},element(MemoryRouter,{initialEntries:['/'],future:{v7_startTransition:true,v7_relativeSplatPath:true}},element(Header))));
+   await new Promise(resolve=>setImmediate(resolve));
+  });
+  const assertMenuEnd=label=>{
+   const links=headerRenderer.root.findByProps({'aria-label':label}).findAllByType('a').map(a=>a.props.href);
+   assert.deepEqual(links.slice(-3),['/content/dynamic','/store','/birthday']);
+  };
+  assertMenuEnd('ניווט ראשי');
+  act(()=>headerRenderer.root.findAllByType('button').find(n=>n.props['aria-label']==='פתיחת תפריט').props.onClick());
+  assertMenuEnd('ניווט ראשי בנייד');
+  act(()=>headerRenderer.unmount());
+  const Footer=await load('components/layout/Footer.tsx');
+  const footer=render(Footer);
+  assert.ok(footer.indexOf('href="/login"')<footer.indexOf('href="/store"'));
+  assert.ok(footer.indexOf('href="/store"')<footer.indexOf('href="/birthday"'));
   const Manage = await load('pages/manage/ManageDashboardPage.tsx');
   for (const role of ['admin', 'judge']) {
     const markup = render(Manage, '/manage', role);
@@ -433,8 +453,8 @@ try {
     },
   });
   assert.ok(
-    home.includes('חדשות מהשטח'),
-    'homepage advertises the unified news carousel',
+    !home.includes('חדשות מהשטח'),
+    'homepage no longer advertises the field-news carousel',
   );
   assert.ok(!home.includes('Must not feature internal'));
   assert.ok(home.includes('/news/news-fixture'));

@@ -221,6 +221,7 @@ try {
   });
   // Event-hub All-Stars now consumes the canonical public league overview.
   api.get = async (path) => {
+    if (path === '/api/badges/program') return {data:{id:'program',description:'הסבר מערך התגים',image:'https://example.com/program.png'}};
     if (path === '/api/all-stars/overview')
       return {data:{standings:[],fixtures:[],internalTournaments:[]}};
     return {data:profile};
@@ -257,6 +258,11 @@ try {
               : '/all-stars/players/player'),
         ),
     );
+    if(Component===AllStars){
+     const section=renderer.root.findByProps({'aria-label':'תגים'});
+     assert.ok(text(section).includes('הסבר מערך התגים'));
+     assert.equal(section.findByType('img').props.src,'https://example.com/program.png');
+    }
     act(() => renderer.unmount());
     renderer = null;
   }

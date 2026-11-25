@@ -2515,3 +2515,28 @@ test('admin overview returns the inter-team workspace for the nearest Swiss meet
   assert.equal(overview.nearest.managementPath,`/manage/inter-team/${fixture.id}`);
  } finally {await fixture.deleteOne();}
 });
+
+
+test('badge program public explanation and verified image are independent of individual badges',async()=>{
+ const path='/badges/program';
+ const empty=await ok(path,'GET',undefined,null);
+ assert.equal(empty.description,'');assert.equal(empty.image,'');
+ assert.equal((await request(path,'PUT',{description:'Denied'},null)).status,401);
+ assert.equal((await request(path,'PUT',{description:'Denied'},'judge')).status,403);
+ assert.equal((await request(path,'PUT',{description:'x'.repeat(5001)},'admin')).status,400);
+ assert.equal((await request('/media/presign','POST',{purpose:'badge-program-image',contentType:'image/png',size:png.length},'admin')).status,400);
+ const image=await uploaded('badge-program-image',empty.id);
+ const saved=await ok(path,'PUT',{description:'מערך התגים',imageUploadId:image.uploadId},'admin');
+ assert.equal(saved.image,image.url);
+ assert.deepEqual(await ok(path,'GET',undefined,null),saved);
+ assert.deepEqual(Object.keys(saved).sort(),['description','id','image']);
+ const changed=await ok(path,'PUT',{description:'הסבר חדש'},'admin');
+ assert.equal(changed.image,image.url);
+ const wrong=await uploaded('badge-image');
+ assert.equal((await request(path,'PUT',{description:'Bad',imageUploadId:wrong.uploadId},'admin')).status,400);
+ const replaced=await uploaded('badge-program-image',empty.id);
+ await ok(path,'PUT',{description:'הסבר חדש',imageUploadId:replaced.uploadId},'admin');
+ assert.ok(removedMedia.includes(image.storageKey));
+ const cleared=await ok(path,'PUT',{description:'',imageUploadId:null},'admin');
+ assert.equal(cleared.image,'');assert.ok(removedMedia.includes(replaced.storageKey));
+});

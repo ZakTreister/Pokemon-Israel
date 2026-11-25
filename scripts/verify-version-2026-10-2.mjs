@@ -576,9 +576,22 @@ try {
     deletedSeason = id;
     return { id };
   };
+  const {badgeProgramService}=await load('features/badges/badgeProgramService.ts');
+  const {default:ProgramEditor}=await load('features/badges/components/BadgeProgramEditor.tsx');
+  const program={id:'000000000000000000000001',description:'הסבר קודם',image:''};
+  let savedProgram;
+  badgeProgramService.get=async()=>program;
+  badgeProgramService.save=async input=>{savedProgram=input;return {...program,description:input.description,image:image.url};};
   const { default: ManageBadges } = await load('pages/manage/ManageBadges.tsx');
   await mount(provided(route(el(ManageBadges), '/manage/badges')));
   assert.ok(text(renderer.toJSON()).includes('עונת סתיו'));
+  const programEditor=renderer.root.findByType(ProgramEditor);
+  act(()=>programEditor.findByType('textarea').props.onChange({target:{value:'הסבר חדש על מערך התגים'}}));
+  await act(async()=>{programEditor.findByProps({type:'file'}).props.onChange({target:{files:[file],value:'program'}});await flush();});
+  assert.equal(uploadTarget.purpose,'badge-program-image');
+  assert.equal(uploadTarget.entityId,program.id);
+  await act(async()=>{button('שמור הסבר תגים').props.onClick();await flush();});
+  assert.deepEqual(savedProgram,{description:'הסבר חדש על מערך התגים',imageUploadId:'upload'});
   assert.ok(
     renderer.root
       .findAllByType('img')
@@ -603,7 +616,7 @@ try {
   assert.ok(!text(renderer.toJSON()).includes('שם lucide'));
   await act(async () => {
     renderer.root
-      .findByProps({ type: 'file' })
+      .findAllByProps({ type: 'file' }).at(-1)
       .props.onChange({ target: { files: [file], value: 'badge' } });
     await flush();
   });
@@ -647,7 +660,7 @@ try {
   );
   await act(async () => {
     renderer.root
-      .findByProps({ type: 'file' })
+      .findAllByProps({ type: 'file' }).at(-1)
       .props.onChange({ target: { files: [file], value: 'badge' } });
     await flush();
   });
@@ -1123,6 +1136,8 @@ try {
   assert.equal(pokemons.findAllByType('img')[1].props.src,pokemonImageUrl('Iron Hands'));
   assert.equal(renderer.root.findAllByType('a').find(link=>link.findAllByType('img').some(img=>img.props.src==='https://example.com/team.png')).props.href,'/teams/team');
   assert.ok(pokemons.props.className.includes('cs-pokemon-row'));
+  assert.ok(pokemons.props.className.includes('basis-full'));
+  assert.ok(pokemons.parent.props.className.includes('cs-public-card'),'row no longer constrained by portrait width');
   assert.ok(!pokemons.props.className.includes('flex-wrap'));
   assert.equal(pokemons.findAllByType('li').length,6);
   assert.ok(pokemons.findAllByType('img').every(icon=>!/(?:^| )(?:(?:min-)?w|h)-\d/.test(icon.props.className)));
@@ -1144,7 +1159,8 @@ try {
   const frameRules=css.match(/\.cs-pokemon-frame\s*\{([^}]+)\}/)[1];
   const imageRules=css.match(/\.cs-pokemon-frame img\s*\{([^}]+)\}/)[1];
   assert.ok(rowRules.includes('flex-wrap: nowrap')&&rowRules.includes('width: 100%'));
-  assert.ok(frameRules.includes('flex: 0 1 3rem'));
+  assert.ok(frameRules.includes('flex: 0 1 5rem')&&frameRules.includes('max-width: 5rem'));
+  assert.ok(imageRules.includes('width: 94%'));
   for(const rules of [frameRules,imageRules]){
     assert.ok(rules.includes('min-width: 0')&&rules.includes('min-height: 0'));
     assert.ok(!/min-(?:width|height):\s*[1-9]/.test(rules));
