@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { createServer } from 'vite';
+import {MemoryRouter,Routes,Route} from 'react-router-dom';
 
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.localStorage = storage;
@@ -38,6 +39,12 @@ try {
   staticPageTextsService.get = async () => ({ title: 'כותרת', subtitle: '', bodyHtml: '' });
   await act(async () => { renderer = TestRenderer.create(React.createElement(Intro, { pageId: 'rankings' })); });
   assert.equal(renderer.toJSON().type, 'section');
+  act(()=>renderer.unmount());renderer=null;
+  const {default:Editor}=await vite.ssrLoadModule('/src/pages/manage/ManageStaticPageTextEditor.tsx');
+  const {ToastProvider}=await vite.ssrLoadModule('/src/components/ui/ToastProvider.tsx');
+  await act(async()=>{renderer=TestRenderer.create(React.createElement(ToastProvider,{},React.createElement(MemoryRouter,{initialEntries:['/manage/texts/all-stars'],future:{v7_startTransition:true,v7_relativeSplatPath:true}},React.createElement(Routes,{},React.createElement(Route,{path:'/manage/texts/:id',element:React.createElement(Editor)})))));});
+  assert.equal(renderer.root.findAllByType('form').length,1);
+  assert.ok(!JSON.stringify(renderer.toJSON()).includes('שמור הסבר תגים'));
   console.log('Managed league introductions: saved text, palette, card order and empty states passed.');
 } finally {
   if (renderer) act(() => renderer.unmount());

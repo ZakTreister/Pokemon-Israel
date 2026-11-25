@@ -393,3 +393,22 @@ test('site settings preserve defaults, authorize writes and synchronize fixed ro
   assert.deepEqual(await ok('/content-pages/buttons?target=/events'),[{id:source.id,label:'Rules'}]);
  }finally{await ok(management,'PUT',defaults,'admin');await ContentPage.deleteOne({_id:source.id});}
 });
+
+
+test('CMS All Stars hero flag persists, defaults off, and validates boolean input',async()=>{
+ const root='/content-pages';
+ const regular=await ok(root,'POST',{title:'Regular page',status:'published'},'admin',201);
+ const stars=await ok(root,'POST',{title:'All Stars rules',status:'published',isAllStars:true},'admin',201);
+ try{
+  assert.equal(regular.isAllStars,false);
+  assert.equal((await ok(root+'/'+stars.id)).isAllStars,true);
+  assert.equal((await ok(root+'/management/'+stars.id,'GET',undefined,'admin')).isAllStars,true);
+  assert.equal((await call(root,'POST',{title:'Invalid flag',isAllStars:'true'},'admin')).status,400);
+  assert.equal((await call(root+'/'+stars.id,'PUT',{isAllStars:1},'admin')).status,400);
+  assert.equal((await call(root+'/'+stars.id,'PUT',{isAllStars:false},'judge')).status,403);
+  await ok(root+'/'+stars.id,'PUT',{title:'Changed'},'admin');
+  assert.equal((await ok(root+'/'+stars.id)).isAllStars,true);
+  await ok(root+'/'+stars.id,'PUT',{isAllStars:false},'admin');
+  assert.equal((await ok(root+'/'+stars.id)).isAllStars,false);
+ }finally{await ContentPage.deleteMany({_id:{$in:[regular.id,stars.id]}});}
+});

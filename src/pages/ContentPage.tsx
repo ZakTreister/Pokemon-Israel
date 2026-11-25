@@ -16,7 +16,7 @@ function ContentPageBody({id}:{id:string}){
  const [page,setPage]=useState<Page|null>(null),[error,setError]=useState('');
  useEffect(()=>{let active=true;contentPagesService.get(id).then(p=>{if(active)setPage(p)}).catch(e=>{if(active)setError(requestError(e))});return()=>{active=false};},[id]);
  if(error)return <div className="container py-8"><p role="alert">{error}</p></div>;
- if(!page||page.id!==id)return null;
+ if(!page)return null;
  const allStars=!!page.isAllStars;
  const hasMedia=!!page.mediaItems?.length,hasBody=!!page.bodyHtml?.trim();
  return <div>
