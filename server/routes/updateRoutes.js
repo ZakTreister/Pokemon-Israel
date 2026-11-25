@@ -5,6 +5,7 @@ import {
   getManagedUpdates,
   addUpdateAsset,
   deleteUpdateAsset,
+  changeUpdateAsset,
   getUpdate,
   createUpdate,
   updateUpdate,
@@ -13,6 +14,7 @@ import {
 
 const router = express.Router();
 router.post('/:id/media',protect,admin,addUpdateAsset);
+router.put('/:id/media/:assetId',protect,admin,changeUpdateAsset);
 router.delete('/:id/media/:assetId',protect,admin,deleteUpdateAsset);
 router.get('/management', protect, admin, getManagedUpdates);
 

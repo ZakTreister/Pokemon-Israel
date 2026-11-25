@@ -5,7 +5,7 @@ import Event from '../models/eventModel.js';
 import {protect,admin} from '../middleware/authMiddleware.js';
 import {fail} from '../utils/httpError.js';
 import {contentPageFields} from '../services/contentFields.js';
-import {attachAsset,removeAsset} from '../services/assetAttachment.js';
+import {attachAsset,removeAsset,changeAssetVisibility} from '../services/assetAttachment.js';
 const router=express.Router();
 async function find(id){
  if(!/^[a-f0-9]{24}$/i.test(id))fail(404,'עמוד התוכן לא נמצא');
@@ -33,5 +33,6 @@ router.delete('/:id',protect,admin,asyncHandler(async(req,res)=>{
  await page.deleteOne();res.json({message:'עמוד התוכן נמחק'});
 }));
 router.post('/:id/media',protect,admin,asyncHandler(async(req,res)=>res.status(201).json(await attachAsset(req,await find(req.params.id),'content-page-media'))));
+router.put('/:id/media/:assetId',protect,admin,asyncHandler(async(req,res)=>res.json(await changeAssetVisibility(await find(req.params.id),req.params.assetId,req.body.showInGallery))));
 router.delete('/:id/media/:assetId',protect,admin,asyncHandler(async(req,res)=>res.json(await removeAsset(await find(req.params.id),req.params.assetId))));
 export default router;

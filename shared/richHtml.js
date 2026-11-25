@@ -31,7 +31,7 @@ export function sanitizeRichHtml(input){
     match=part.match(/^<a\s+href\s*=\s*(?:"([^"]*)"|'([^']*)')\s*>$/i);
     if(match){
       if(stack.includes('a'))throw new Error('אין לקנן קישורים');
-      output.push('<a href="'+escapeRichText(linkUrl(match[1]??match[2]))+'">');stack.push('a');continue;
+      output.push('<a href="'+linkUrl(match[1]??match[2]).replace(/&/g,'&amp;')+'">');stack.push('a');continue;
     }
     match=part.match(/^<([a-z0-9]+)\s*(\/?)>$/i);
     if(match){
@@ -42,5 +42,5 @@ export function sanitizeRichHtml(input){
     throw new Error('HTML לא נתמך: יש להסיר סקריפטים, מאפיינים וסגנונות');
   }
   if(stack.length)throw new Error('יש לסגור את כל תגיות ה-HTML');
-  return output.join('');
+  const result=output.join('');if(result.length>50000)throw new Error('תוכן HTML ארוך מדי');return result;
 }

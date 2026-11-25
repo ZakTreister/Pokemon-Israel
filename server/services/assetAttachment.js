@@ -17,7 +17,8 @@ export function youtubeId(url){
  return id;
 }
 export async function attachAsset(req,owner,purpose){
- const {uploadId,youtubeUrl,caption='',cover=false}=req.body;
+ const {uploadId,youtubeUrl,caption='',cover=false,showInGallery=false}=req.body;
+ if(typeof showInGallery!=='boolean')fail(400,'סימון גלריה לא תקין');
  if(typeof caption!=='string'||caption.length>240) fail(400,'כיתוב ארוך מדי');
  if(cover!==false&&cover!==true) fail(400,'סימון תמונת שער לא חוקי');
  if(Boolean(uploadId)===Boolean(youtubeUrl)) fail(400,'יש לבחור סרטון YouTube או קובץ אחד');
@@ -33,6 +34,7 @@ export async function attachAsset(req,owner,purpose){
   if (!['image/jpeg','image/png','image/webp'].includes(grant.contentType)) fail(400,'ניתן להעלות תמונות בלבד. לסרטון הוסיפו קישור YouTube');
   item={kind:'image',media:{storageKey:grant.storageKey,contentType:grant.contentType,size:grant.size},caption};
  }
+ item.showInGallery=purpose==='gallery-media'||showInGallery;
  owner.mediaItems.push(item);
  if(cover) owner.coverMedia=item.media;
  await owner.save();
@@ -45,7 +47,14 @@ export async function removeAsset(owner,assetId){
  if(!item) fail(404,'פריט המדיה לא נמצא');
  const key=item.media?.storageKey;
  item.deleteOne();
- if(owner.coverMedia?.storageKey===key) owner.coverMedia=null;
+ if(key&&owner.coverMedia?.storageKey===key) owner.coverMedia=null;
  await owner.save();
  return owner;
+}
+
+export async function changeAssetVisibility(owner,assetId,value){
+ if(typeof value!=='boolean')fail(400,'סימון גלריה לא תקין');
+ if(!idOK(assetId))fail(404,'פריט המדיה לא נמצא');
+ const item=owner.mediaItems.id(assetId);if(!item)fail(404,'פריט המדיה לא נמצא');
+ item.showInGallery=value;await owner.save();return owner;
 }

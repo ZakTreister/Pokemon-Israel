@@ -7,7 +7,7 @@ import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
 import { publicTournament } from '../services/publicTournament.js';
 import { fail } from '../utils/httpError.js';
-import { attachAsset,removeAsset } from '../services/assetAttachment.js';
+import { attachAsset,removeAsset,changeAssetVisibility } from '../services/assetAttachment.js';
 const valid = id => typeof id === 'string' && mongoose.isValidObjectId(id) && /^[a-f0-9]{24}$/i.test(id);
 const limit = (value, max = 100) => Math.max(1, Math.min(max, parseInt(value, 10) || 20));
 function categoryFor(type) { return type === 'inter_team' ? 'all_stars' : 'club'; }
@@ -130,3 +130,5 @@ export const unlinkTournament = asyncHandler(async (req,res) => {
 });
 export const addEventAsset=asyncHandler(async(req,res)=>res.status(201).json(await attachAsset(req,await findEvent(req.params.id),'event-media')));
 export const deleteEventAsset=asyncHandler(async(req,res)=>res.json(await removeAsset(await findEvent(req.params.id),req.params.assetId)));
+
+export const changeEventAsset=asyncHandler(async(req,res)=>res.json(await changeAssetVisibility(await findEvent(req.params.id),req.params.assetId,req.body.showInGallery)));
