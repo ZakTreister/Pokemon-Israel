@@ -24,6 +24,7 @@ const updateSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    descriptionHtml: { type: String, default: undefined },
     date: {
       type: Date,
       default: Date.now,

@@ -7,6 +7,7 @@ export interface Update {
   title: string;
   content: string;
   description?: string;
+  descriptionHtml?: string;
   image?: string;
   mediaItems?: import('./event').EventMedia[];
   ctaText?: string;
@@ -15,7 +16,8 @@ export interface Update {
 }
 export interface UpdateInput {
   title: string;
-  description: string;
+  description?: string;
+  descriptionHtml?: string;
   ctaText: string;
   ctaUrl: string;
   imageUploadId?: string | null;

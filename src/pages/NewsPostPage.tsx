@@ -1,3 +1,4 @@
+import SafeHtml from '../components/content/SafeHtml';
 import UpdateAction from '../features/updates/components/UpdateAction';
 import { MediaGallery } from '../components/media/MediaGallery';
 import { useEffect, useState } from 'react';
@@ -53,7 +54,7 @@ export default function NewsPostPage() {
           {post.eventId&&<Link to={'/events/'+post.eventId} className="block font-bold text-blue-500 mb-4">לאירוע המשויך ←</Link>}
           {!!post.mediaItems?.length&&<MediaGallery carousel items={post.mediaItems}/>}
           <UpdateAction update={post} />
-          <div className="whitespace-pre-wrap break-words leading-8">
+          {post.descriptionHtml !== undefined ? <SafeHtml html={post.descriptionHtml}/> : <div className="whitespace-pre-wrap break-words leading-8">
             {(post.description ?? post.content ?? '')
               .split(/(https?:\/\/[^\s<>]+)/g)
               .map((part, index) =>
@@ -71,7 +72,7 @@ export default function NewsPostPage() {
                   part
                 ),
               )}
-          </div>
+          </div>}
         </article>
       )}
       {!post && !error && <p className="mt-6">טוען עדכון...</p>}

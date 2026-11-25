@@ -6,7 +6,7 @@ import SafeHtml from './SafeHtml';
 import { richHtmlClassName } from './richHtmlStyles';
 import { serializeEditor } from './serializeEditor';
 
-type Props = { value: string; onChange: (value: string) => void };
+type Props = { value: string; onChange: (value: string) => void; label?: string };
 const actions = [
   { command: 'undo', label: 'בטל פעולה', Icon: Undo2 },
   { command: 'redo', label: 'שחזר פעולה', Icon: Redo2 },
@@ -18,7 +18,7 @@ const actions = [
   { command: 'unlink', label: 'הסר קישור', Icon: Unlink },
 ] as const;
 
-export default function RichHtmlField({ value, onChange }: Props) {
+export default function RichHtmlField({ value, onChange, label = 'תוכן' }: Props) {
   const id = useId();
   const editor = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
@@ -135,7 +135,7 @@ export default function RichHtmlField({ value, onChange }: Props) {
   return (
     <div className="space-y-2" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span id={id} className="font-bold">תוכן</span>
+        <span id={id} className="font-bold">{label}</span>
         <div className="flex gap-1" aria-label="מצב עריכת תוכן">
           <Button type="button" size="sm" contextual variant={mode === 'visual' ? 'secondary' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => switchMode('visual')}>עריכה ויזואלית</Button>
           <Button type="button" size="sm" contextual variant={mode === 'source' ? 'secondary' : 'outline'} aria-pressed={mode === 'source'} onClick={() => switchMode('source')}>HTML</Button>
