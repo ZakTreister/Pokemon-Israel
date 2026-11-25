@@ -1058,6 +1058,11 @@ try {
   api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[{...team,leaguePosition:null,openInternalTournament:{id:'open'}},{...team,id:'other',name:'אחרת',leaguePosition:null}]}};};
   await mount(provided(route(el(TeacherOverview),'/manage')));
   assert.equal(renderer.root.findAllByType(StatCard).length,6,'three metrics per assigned team');assert.equal(renderer.root.findAllByType('article').length,2,'operational team cards preserved');
+  assert.ok(renderer.root.findByType('section').props.className.split(' ').includes('mt-8'),'teacher teams have top spacing');
+  unmount();
+  api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[]}};};
+  await mount(provided(route(el(TeacherOverview),'/manage')));
+  assert.equal(renderer.toJSON(),null,'hide entire teacher section for empty assignments');
   unmount();state.auth.user.role='admin';
   // Full profile hierarchy and graceful missing-media state.
   api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands','Eevee','Mew','Pidgey','Charizard'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});
