@@ -11,6 +11,7 @@ import {useFavoriteSelection} from '../features/teams/hooks/useFavoriteTeam';
 import {updateForTeam} from '../features/home/utils/favoriteContent';
 import PublicBadgeProgram from '../features/badges/components/PublicBadgeProgram';
 import SafeHtml from '../components/content/SafeHtml';
+import { PageHero } from '../components/ui/PageHero';
 import {staticPageTextsService,type StaticPageText} from '../services/staticPageTexts';
 import RankingFreshness from '../components/rankings/RankingFreshness';
 import { requestError } from '../utils/requestError';
@@ -39,8 +40,9 @@ export default function AllStarsPage(){
    const preferred=(u:Update)=>Number(!!favorite&&updateForTeam(u,favorite,fixtures));
    return preferred(b)-preferred(a)||new Date(b.date).getTime()-new Date(a.date).getTime();
  });
- return <div className="container py-8 sm:py-12 space-y-10">
- <header><h1 className="text-4xl font-black text-purple-800 dark:text-purple-300">{pageText?.title??'ליגת האולסטארז'}</h1>{(pageText===null||pageText.subtitle)&&<p className="text-muted-foreground mt-2">{pageText?.subtitle??'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.'}</p>}</header>
+ return <div>
+ <PageHero variant="all-stars" title={pageText?.title??'ליגת האולסטארז'} subtitle={pageText?.subtitle??'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.'}/>
+ <div className="container py-8 sm:py-12 space-y-10">
  {textError&&<p role="alert" className="text-destructive">לא ניתן לטעון את טקסטי העמוד: {textError}</p>}
  {error&&<p role="alert" className="text-destructive">{error}</p>}
  {loading?<p role="status">טוען פעילות ליגה...</p>:<>
@@ -63,5 +65,5 @@ export default function AllStarsPage(){
  {!displayed.length&&<p>אין טורנירים להצגה.</p>}
  <p className="text-sm text-muted-foreground">תוצאות אלה קובעות את הדירוג בתוך כל נבחרת, בנפרד מטבלת הנבחרות.</p></section>
  <section className="space-y-3"><h2 className="text-2xl font-extrabold">מה חדש בליגה?</h2><div className="grid gap-3 sm:grid-cols-2">{events.map(ev=><Link key={ev.id} className="cs-public-card p-4" to={'/events/'+ev.id}><h3 className="font-bold">{ev.title}</h3><p className="line-clamp-2 text-muted-foreground">{ev.description}</p></Link>)}</div>{leagueUpdates.slice(0,6).map(u=><Link key={u.id} to={"/news/"+u.id} className="block border rounded-lg p-3"><strong>{u.title}</strong>{u.image&&<img className="mt-2 w-full max-w-xs aspect-video object-cover rounded-lg" src={u.image} alt="" loading="lazy"/>}</Link>)}</section>
- </>}</div>;
+ </>}</div></div>;
 }
