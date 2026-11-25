@@ -6,7 +6,7 @@ import {publicTeams} from '../services/publicTeams';
 import type {Team} from '../types/team';
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Newspaper, Images, ArrowUpLeft } from 'lucide-react';
+import { Calendar, Newspaper, ArrowUpLeft } from 'lucide-react';
 import ActivePublicTournaments from '../features/home/components/ActivePublicTournaments';
 import { useAppDispatch,useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
@@ -56,7 +56,6 @@ export default function HomePage(){
  <ActivePublicTournaments/>
  <LeagueSections leaders={leaders} standings={overview?.standings??[]} events={future} error={error}/>
  <AllStarsTeamsSection teams={teams} favorite={favorite}/>
- <section className="container pb-8"><Link to="/gallery" className="cs-public-card p-5 flex items-center gap-3 font-bold"><Images size={30}/> גלריה — תמונות ועדכונים מקארדסקול ←</Link></section>
  <section className="bg-navy-700 text-white py-9"><div className="container flex items-center justify-between flex-wrap gap-4"><div><h2 className="text-2xl font-extrabold">מצטרפים לחוג הפוקימון</h2><p>לימוד, משחק וחברים קרוב לבית</p></div><Button asChild variant="cta"><a href={TRIAL_REGISTRATION_URL} target="_blank" rel="noopener noreferrer">להרשמה לחוג</a></Button></div></section>
  </div>;
 }
