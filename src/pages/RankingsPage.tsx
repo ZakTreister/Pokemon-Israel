@@ -7,7 +7,7 @@ import RankingFreshness from '../components/rankings/RankingFreshness';
 import { eventsService } from '../services/events';
 import type { EventSummary } from '../types/event';
 import Badge from '../components/ui/Badge';
-import { PageHero } from '../components/ui/PageHero';
+import ManagedPageIntro from '../components/content/ManagedPageIntro';
 import {
   getNationalRankings,
   type NationalRanking,
@@ -83,11 +83,7 @@ export default function RankingsPage() {
 
   return (
     <div>
-      <PageHero
-        title="הליגה הישראלית"
-        highlightWord="הישראלית"
-        subtitle="הדירוג הארצי המצטבר של שחקני החוגים — לאורך כל שנות הפעילות"
-      />
+      <ManagedPageIntro pageId="rankings"/>
       <div className="container py-12">
         <section className="mb-7"><h2 className="text-xl font-extrabold mb-3">מובילי הדירוג הארצי</h2><RankingPodium leaders={leaders}/></section>
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

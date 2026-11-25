@@ -1,6 +1,9 @@
 import api from './api';
 
-export const staticTextPages = [{ id: 'all-stars', label: 'עמוד האולסטארז' }] as const;
+export const staticTextPages = [
+  { id: 'all-stars', label: 'עמוד האולסטארז' },
+  { id: 'rankings', label: 'עמוד הליגה הישראלית' },
+] as const;
 export type StaticPageTextKey = typeof staticTextPages[number]['id'];
 export interface StaticPageText {
   title: string;

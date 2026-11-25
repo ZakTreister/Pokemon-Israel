@@ -13,7 +13,8 @@ const suites = [
   "scripts/verify-version-2026-10-2.mjs",
   "scripts/verify-pairings-fullscreen.mjs",
   "scripts/verify-rich-html-editor.mjs",
-  "scripts/verify-public-card-wrappers.mjs"
+  "scripts/verify-public-card-wrappers.mjs",
+  "scripts/verify-managed-page-intro.mjs"
 ];
 const failures = [];
 for (const suite of suites) {
