@@ -16,7 +16,7 @@ export const normalizeRankingName = (value = '') =>
 
 const nameCompare = (a, b) => a.playerName.localeCompare(b.playerName, 'he');
 const canonicalCompare = (a, b) =>
-  b.points - a.points || nameCompare(a, b) || a.playerId.localeCompare(b.playerId);
+  b.points - a.points || b.tournaments - a.tournaments || nameCompare(a, b) || a.playerId.localeCompare(b.playerId);
 
 export function buildNationalRanking(historicalRows, postImportTournamentRows, options = {}) {
   const { includeAllStars = false, search = '', page = 1, pageSize = 25,
@@ -65,13 +65,7 @@ export function buildNationalRanking(historicalRows, postImportTournamentRows, o
   // Ranking order and rank calculation precede search/pagination.
   const eligible = [...totals.values()].filter(row => includeAllStars || !row.isAllStars);
   eligible.sort(canonicalCompare);
-  let precedingPoints = null;
-  let precedingPosition = 0;
-  eligible.forEach((row, index) => {
-    if (row.points !== precedingPoints) precedingPosition = index + 1;
-    row.position = precedingPosition;
-    precedingPoints = row.points;
-  });
+  eligible.forEach((row, index) => { row.position = index + 1; });
   let topMovers = [];
   if (Array.isArray(previousTournamentRows)) {
     const previous = buildNationalRanking(historicalRows, previousTournamentRows, { includeAllStars, allRows: true }).rankings;

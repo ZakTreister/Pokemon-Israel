@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Tournament from '../models/tournamentModel.js';
 import HistoricalRanking from '../models/historicalRankingModel.js';
 import Player from '../models/playerModel.js';
+import { hasRankingResults, nationalRankingFreshness } from '../services/rankingFreshness.js';
 import {
   buildNationalRanking,
   HISTORICAL_CUTOFF,
@@ -11,7 +12,7 @@ import {
 
 export const getNationalRankings = asyncHandler(async (req, res) => {
   const historical = await HistoricalRanking.find({ source: HISTORICAL_RANKING_SOURCE })
-    .select('playerName points tournaments isAllStars player legacyUser')
+    .select('playerName points tournaments isAllStars player legacyUser updatedAt createdAt')
     .lean();
   // Never publish a partially applied historical import as the canonical baseline.
   const hasHistoricalSnapshot = historical.length === 337 && historical.every(row => !!row.player);
@@ -28,11 +29,14 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
   // Only completed regular tournaments affect this ranking. Team-internal
   // and inter-team scores remain exclusively in their own competitions.
   const query = regularTournamentFilter(hasHistoricalSnapshot);
-  const tournaments = await Tournament.find(query)
-    .select('results finalStandings engineVersion type closedAt date')
+  // Retain archived results solely for their deletion timestamp. They never
+  // contribute to points, participation, movers or the latest included event.
+  const sourceTournaments = await Tournament.find(query).setOptions({includeDeleted:true})
+    .select('title results finalStandings engineVersion type closedAt date createdAt updatedAt deletedAt')
     .lean();
+  const tournaments=sourceTournaments.filter(row=>!row.deletedAt);
   const tournamentRows = [];
-  const latest = [...tournaments].sort((a,b) => new Date(b.closedAt || b.date).getTime() - new Date(a.closedAt || a.date).getTime() || String(b._id).localeCompare(String(a._id)))[0];
+  const latest = tournaments.filter(hasRankingResults).sort((a,b) => new Date(b.closedAt || b.date).getTime() - new Date(a.closedAt || a.date).getTime() || String(b._id).localeCompare(String(a._id)))[0];
   for (const tournament of tournaments) {
     if (tournament.engineVersion === 'swiss-v1') {
       for (const result of tournament.finalStandings || []) {
@@ -72,5 +76,5 @@ export const getNationalRankings = asyncHandler(async (req, res) => {
     sort: typeof req.query.sort === 'string' ? req.query.sort : 'position',
     descending: req.query.descending === 'true',
   });
-  res.json({ ...result, tournamentCount: tournaments.length });
+  res.json({ ...result, tournamentCount: tournaments.length, ...nationalRankingFreshness(historical,sourceTournaments) });
 });

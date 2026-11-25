@@ -212,6 +212,7 @@ test('scheduled inter-team creation creates a real upcoming tournament without r
  assert.equal(created.rounds.length,0);
  assert.equal((await ok('/events/management/'+event.id,'GET',undefined,'admin')).tournaments.length,1);
  const overview=await ok('/all-stars/overview');
+ assert.ok('lastUpdatedAt' in overview);
  assert.equal(overview.fixtures.filter(f=>f.eventId===event.id).length,1);
  assert.equal(overview.fixtures.find(f=>f.eventId===event.id).tournamentId,created.id);
  assert.equal((await ok('/inter-team/active','GET',undefined,'admin')).some(t=>t.id===created.id),false);

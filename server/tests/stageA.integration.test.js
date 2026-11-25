@@ -2034,6 +2034,17 @@ test('historical ordinary points for an All-Stars Player stay independent of tea
     { ...event, type: 'quarterly', date: new Date('2026-11-15'), finalStandings: standings(12) },
   ]);
   const visible = await ok('/rankings?includeAllStars=true&search=Fixture0%20Child', 'GET', undefined, null);
+  assert.ok(visible.lastUpdatedAt);
+  // Coverage belongs to the whole national league, not the searched player.
+  const all=await ok('/rankings?includeAllStars=true','GET',undefined,null);
+  assert.deepEqual(visible.resultsThrough,all.resultsThrough);
+  assert.ok(visible.resultsThrough.date.slice(0,10)>='2026-11-17');
+  const latestSource=await Tournament.findOne({status:'completed',type:{$in:[null,'quarterly']},date:{$gt:new Date('2026-11-16T21:59:59.999Z')},$or:[{engineVersion:'swiss-v1','finalStandings.player':{$exists:true}},{engineVersion:{$ne:'swiss-v1'},'results.player':{$exists:true}}]}).sort({date:-1,_id:-1});
+  assert.equal(visible.resultsThrough.date,latestSource.date.toISOString());
+  assert.equal(visible.resultsThrough.title,latestSource.title);
+  const repeat=await ok('/rankings?includeAllStars=true&search=Fixture0%20Child','GET',undefined,null);
+  assert.equal(repeat.lastUpdatedAt,visible.lastUpdatedAt);
+  assert.deepEqual(repeat.resultsThrough,visible.resultsThrough);
   assert.equal(visible.total, 1);
   assert.equal(visible.rankings[0].points, 29);
   assert.equal(visible.rankings[0].tournaments, 7);

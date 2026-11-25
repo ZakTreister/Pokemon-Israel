@@ -130,6 +130,17 @@ try {
   assert.equal(renderer.root.findAllByType('article').length,3);
   assert.equal(renderer.root.findAllByType('form').length,0);
   unmount();
+  const {default:Freshness}=await load('components/rankings/RankingFreshness.tsx');
+  await act(async()=>{renderer=TestRenderer.create(el(Freshness,{showCoverage:true,showLastUpdated:false,resultsThrough:{date:'2026-07',precision:'month',title:'אליפות ישראל'}}));});
+  assert.equal(renderer.root.findAllByType('p').length,1);
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('כולל תוצאות מטורנירים עד:'));
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('אליפות ישראל'));
+  assert.ok(!JSON.stringify(renderer.toJSON()).includes('הדירוג עודכן לאחרונה'));
+  unmount();
+  await act(async()=>{renderer=TestRenderer.create(el(Freshness,{}));});
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('הדירוג עודכן לאחרונה'));
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('טרם עודכן'));
+  unmount();
   console.log('Public card checks passed: actual shared background/frame, event body, one linked-content panel, individual tournament cards and empty-section hiding.');
 } finally {
   if(renderer) act(()=>renderer.unmount());

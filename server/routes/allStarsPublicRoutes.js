@@ -5,16 +5,19 @@ import Tournament from '../models/tournamentModel.js';
 import Event from '../models/eventModel.js';
 import { publicTournament } from '../services/publicTournament.js';
 import { calculateInterTeamScore } from '../services/interTeamScore.js';
-import { teamLeagueStandings,leagueYearStart } from '../services/teamLeagueStandings.js';
+import { teamLeagueStandings,leagueYearStart,isCountedLeagueMeeting } from '../services/teamLeagueStandings.js';
+import { leagueRankingFreshness } from '../services/rankingFreshness.js';
 const router=express.Router();
 router.get('/overview',asyncHandler(async(req,res)=>{
- const [teams,meetings,internals,events]=await Promise.all([
+ const [teams,sourceMeetings,internals,events]=await Promise.all([
    Team.find({isActive:true}).sort({normalizedName:1}),
-   Tournament.find({type:'inter_team',status:'completed',date:{$gte:leagueYearStart()}}).select('interTeamSides playerParticipants rounds phase status type date eventId').sort({date:-1}),
+   Tournament.find({type:'inter_team',status:'completed',date:{$gte:leagueYearStart()}}).setOptions({includeDeleted:true}).select('interTeamSides playerParticipants rounds phase status type date eventId updatedAt createdAt closedAt deletedAt').sort({date:-1}),
    Tournament.find({type:'team_internal',status:'completed'}).sort({date:-1}).limit(12),
    Event.find({status:'published',category:'all_stars'}).select('title fixtures startDate openingRound').sort({startDate:-1}).limit(30),
  ]);
  const byId=new Map(teams.map(t=>[String(t._id),t]));
+ const meetings=sourceMeetings.filter(t=>!t.deletedAt);
+ const lastUpdatedAt=leagueRankingFreshness(sourceMeetings.filter(t=>isCountedLeagueMeeting(t,byId)));
  const eventById=new Map(events.map(ev=>[String(ev._id),ev]));
  const scheduled=await Tournament.find({type:'inter_team',eventId:{$in:events.map(ev=>ev._id)}}).select('interTeamSides date location eventId').sort({date:1});
  const teamSummary=(side)=>({id:String(side.team),name:byId.get(String(side.team))?.name||side.nameSnapshot||'',logo:byId.get(String(side.team))?.toJSON().logo||side.logoSnapshot||''});
@@ -37,7 +40,7 @@ router.get('/overview',asyncHandler(async(req,res)=>{
    return {id:t.id,date:t.date,eventId:t.eventId?String(t.eventId):null,
     teams:sides,gameWins:scores.map(s=>s.gameWins),matchWins:scores.map(s=>s.matchWins)};
  });
- res.json({standings:teamLeagueStandings(teams,meetings),
+ res.json({standings:teamLeagueStandings(teams,meetings),lastUpdatedAt,
   fixtures,recentMeetings,internalTournaments:internals.map(t=>publicTournament(t))});
 }));
 export default router;

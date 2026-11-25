@@ -29,7 +29,7 @@ For existing players:
 
 - Normal national rankings hide source-marked All-Stars. A checkbox `הצג שחקני All-Stars` includes them as muted rows with an All-Stars label. This does not create an overall All-Stars team-player league ranking.
 - The national ranking page has **server-side** search, global sort and pagination (default 25/page), independent of current table page state.
-- Canonical position comes from the cumulative points among the chosen cohort, and is calculated **before** search or pagination. Equal points share a position.
+- Canonical position comes from the cumulative points among the chosen cohort, and is calculated **before** search or pagination. Equal points use descending participation count, then Hebrew alphabetical display name and stable ID; every rank is unique.
 - The baseline is treated as a snapshot through **2026-11-16** Israel time; only later completed regular tournaments contribute. Confirm the date before deployment; otherwise adjust the code/data contract deliberately.
 - Source names on the public leaderboard follow the canonical linked Player name, including subsequent edits. Historical points/participations remain unchanged unless the owner explicitly authorizes a correction.
 - The public ranking displays only place, name, cumulative points and counted participations. No old original ordinal/serial is stored or shown.
