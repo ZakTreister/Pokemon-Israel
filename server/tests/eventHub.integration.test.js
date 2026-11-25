@@ -15,6 +15,8 @@ import Player from '../models/playerModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
 import allStarsPublicRoutes from '../routes/allStarsPublicRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
+import contentPageRoutes from '../routes/contentPageRoutes.js';
+import ContentPage from '../models/contentPageModel.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import mediaRoutes from '../routes/mediaRoutes.js';
 import MediaUpload from '../models/mediaUploadModel.js';
@@ -46,7 +48,7 @@ before(async()=>{
   tokens[role]=jwt.sign({id:u.id},process.env.JWT_SECRET);
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
- app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
+ app.use('/api/content-pages',contentPageRoutes);app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
  app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
  registerSeoEndpoints(app);
  const serveSpa=createSpaSeoHandler(fileURLToPath(new URL('../../index.html',import.meta.url)));
@@ -242,6 +244,16 @@ test('next ranking event skips empty, draft, past and All-Stars events and respe
 });
 
 
+test('admin can open a draft directly in the content editor without exposing it publicly',async()=>{
+ const page=await ContentPage.create({title:'Draft editor route',status:'draft'});
+ try {
+  assert.equal((await call('/content-pages/'+page.id)).status,404);
+  assert.equal((await call('/content-pages/management/'+page.id)).status,401);
+  assert.equal((await call('/content-pages/management/'+page.id,'GET',undefined,'judge')).status,403);
+  const managed=await ok('/content-pages/management/'+page.id,'GET',undefined,'admin');
+  assert.equal(managed.title,page.title);assert.equal(managed.status,'draft');
+  assert.equal((await call('/content-pages/management/not-a-page','GET',undefined,'admin')).status,404);
+ }finally{await page.deleteOne();}
 test('production-style SEO HTML and sitemap respect publication and exclude personal pages',async()=>{
  const published=await ok('/events','POST',{title:'SEO public event',description:'Public event description',category:'club',status:'published'},'admin',201);
  const draft=await ok('/events','POST',{title:'SEO private event',category:'club',status:'draft'},'admin',201);
