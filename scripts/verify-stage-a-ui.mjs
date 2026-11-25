@@ -101,7 +101,6 @@ try {
     'אירועים',
     'חדשות',
     'חנות',
-    'על הליגה',
     'הזמנת יום הולדת',
   ];
   let last = -1;
@@ -111,16 +110,18 @@ try {
     last = index;
   }
   assert.ok(!publicHeader.includes('href="/manage"'));
-  assert.equal((publicHeader.match(/בהקמה/g) || []).length, 3);
+  assert.ok(!publicHeader.includes('href="/about"'));
+  assert.ok(!publicHeader.includes('על הליגה'));
+  assert.equal((publicHeader.match(/בהקמה/g) || []).length, 2);
   assert.equal(
     (
       publicHeader.match(
         /absolute -top-1 left-0 whitespace-nowrap rounded-\[3px\] border border-blue-200/g,
       ) || []
     ).length,
-    3,
+    2,
   );
-  assert.equal((publicHeader.match(/class="cs-nav-link"/g) || []).length, 7);
+  assert.equal((publicHeader.match(/class="cs-nav-link"/g) || []).length, 6);
   assert.ok(
     !publicHeader.includes('shadow-button'),
     'Header controls use contextual styling',
