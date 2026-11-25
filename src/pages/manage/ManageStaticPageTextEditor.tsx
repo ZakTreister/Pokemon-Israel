@@ -43,7 +43,7 @@ function Editor({ id, label }: { id: StaticPageTextKey; label: string }) {
       <fieldset disabled={busy} className="space-y-3">
         <label className="block">כותרת<input required maxLength={180} className="block w-full p-2 border rounded bg-card" value={input.title} onChange={e => setInput({ ...input, title: e.target.value })}/></label>
         <label className="block">כותרת משנה<textarea maxLength={5000} className="block w-full p-2 border rounded bg-card" value={input.subtitle} onChange={e => setInput({ ...input, subtitle: e.target.value })}/></label>
-        <p className="text-sm font-medium">מהי ליגת האולסטארז?</p>
+        <p className="text-sm font-medium">התוכן יוצג בכרטיס מיד מתחת להירו.</p>
         <RichHtmlField value={input.bodyHtml} onChange={bodyHtml => { if (!busy) setInput({ ...input, bodyHtml }); }}/>
       </fieldset>
       <div className="flex gap-2 flex-wrap">

@@ -10,9 +10,7 @@ import {TeamFanCards} from '../components/teams/AllStarsTeamsSection';
 import {useFavoriteSelection} from '../features/teams/hooks/useFavoriteTeam';
 import {updateForTeam} from '../features/home/utils/favoriteContent';
 import PublicBadgeProgram from '../features/badges/components/PublicBadgeProgram';
-import SafeHtml from '../components/content/SafeHtml';
-import { PageHero } from '../components/ui/PageHero';
-import {staticPageTextsService,type StaticPageText} from '../services/staticPageTexts';
+import ManagedPageIntro from '../components/content/ManagedPageIntro';
 import RankingFreshness from '../components/rankings/RankingFreshness';
 import { requestError } from '../utils/requestError';
 import updatesService from '../features/updates/updatesService';
@@ -22,9 +20,6 @@ interface RecentMeeting {id:string;date:string;eventId:string|null;teams:Array<{
 interface Fixture {openingRound?:boolean;eventStartDate?:string|null;id:string;eventId:string;date:string;location:string;firstTeam:{id:string;name:string};secondTeam:{id:string;name:string};tournamentId:string|null;}
 export default function AllStarsPage(){
  const [lastUpdatedAt,setLastUpdatedAt]=useState<string|null>(null);
- const [pageText,setPageText]=useState<StaticPageText|null>(null);
- const [textError,setTextError]=useState('');
- useEffect(()=>{let active=true;staticPageTextsService.get('all-stars').then(value=>{if(active)setPageText(value);}).catch(e=>{if(active)setTextError(requestError(e));});return()=>{active=false};},[]);
  const [updates,setUpdates]=useState<Update[]>([]),[recentMeetings,setRecentMeetings]=useState<RecentMeeting[]>([]),[teams,setTeams]=useState<Team[]>([]),[table,setTable]=useState<LeagueRow[]>([]),[fixtures,setFixtures]=useState<Fixture[]>([]),[internals,setInternals]=useState<PublicTournamentSummary[]>([]),[events,setEvents]=useState<EventSummary[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[filter,setFilter]=useState('all');
  useEffect(()=>{let active=true;Promise.all([
  publicTeams.list(),
@@ -41,9 +36,8 @@ export default function AllStarsPage(){
    return preferred(b)-preferred(a)||new Date(b.date).getTime()-new Date(a.date).getTime();
  });
  return <div>
- <PageHero variant="all-stars" title={pageText?.title??'ליגת האולסטארז'} subtitle={pageText?.subtitle??'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.'}/>
+ <ManagedPageIntro pageId="all-stars"/>
  <div className="container py-8 sm:py-12 space-y-10">
- {textError&&<p role="alert" className="text-destructive">לא ניתן לטעון את טקסטי העמוד: {textError}</p>}
  {error&&<p role="alert" className="text-destructive">{error}</p>}
  {loading?<p role="status">טוען פעילות ליגה...</p>:<>
  <section id="matches" className="scroll-mt-24 space-y-3"><h2 className="text-2xl font-extrabold">המשחקים הקרובים</h2>
@@ -58,7 +52,6 @@ export default function AllStarsPage(){
  <div className="hidden sm:block"><table className="w-full text-sm sm:text-base"><thead><tr className="bg-navy-700 text-white">{['מקום','נבחרת','מפגשים ששוחקו','ניצחונות','נקודות','הפרש משחקונים'].map(h=><th key={h} className="p-2 text-start">{h==='הפרש משחקונים'?<details><summary className="cursor-pointer">{h}</summary><span className="text-xs font-normal">מספר הניצחונות פחות מספר ההפסדים במשחקונים האישיים</span></details>:h}</th>)}</tr></thead><tbody>{table.map(t=><tr key={t.id} className="border-b"><td className="p-2">{t.position}</td><td className="p-2 font-bold"><Link to={'/teams/'+t.id}>{t.name}</Link></td><td className="p-2">{t.played}</td><td className="p-2">{t.wins}</td><td className="p-2 font-bold">{t.leaguePoints}</td><td className="p-2" dir="ltr">{t.gameDifference>0?'+':''}{t.gameDifference}</td></tr>)}</tbody></table></div>
  <p className="text-sm text-muted-foreground">ניצחון במפגש: 3 נקודות · תיקו: נקודה אחת</p><details className="text-sm"><summary className="cursor-pointer font-bold">איך נקבע הדירוג?</summary><p>הפסד במפגש: 0 נקודות. שוויון מוכרע לפי הפרש ניצחונות פחות הפסדים במשחקונים האישיים. טורנירי אימון לא נכללים.</p></details></section>
  <section className="space-y-4"><h2 className="text-2xl font-extrabold">איזו נבחרת אתם מעודדים?</h2><TeamFanCards teams={teams} favorite={fan}/></section>
- {pageText?.bodyHtml&&<section className="space-y-3" aria-label="מהי ליגת האולסטארז?"><h2 className="text-2xl font-extrabold">מהי ליגת האולסטארז?</h2><SafeHtml html={pageText.bodyHtml}/></section>}
  <PublicBadgeProgram/>
  <section className="space-y-3"><div className="flex flex-wrap justify-between gap-3"><h2 className="text-2xl font-extrabold">תוצאות האימונים השבועיים</h2><select aria-label="סינון לפי נבחרת" className="p-2 border rounded-md bg-card" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">כל הנבחרות</option>{teams.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></div>
  {displayed.map(t=><article key={t.id} className="border rounded-lg p-4 flex gap-2 justify-between items-center"><div><strong>{t.title}</strong><p className="text-sm text-muted-foreground">{teams.find(x=>x.id===t.team)?.name||''} · {new Date(t.date).toLocaleDateString('he-IL')}</p></div><Link className="text-blue-500 font-bold" to={'/tournaments/'+t.id}>לתוצאות ←</Link></article>)}

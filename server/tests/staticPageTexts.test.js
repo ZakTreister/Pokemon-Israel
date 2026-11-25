@@ -4,8 +4,9 @@ import { staticPageDefaults, staticPageTextFields, legacyBadgeHtml } from '../se
 import { sanitizeRichHtml } from '../../shared/richHtml.js';
 
 test('fixed page defaults do not create arbitrary pages', () => {
-  assert.ok(staticPageDefaults('all-stars').title);
-  assert.equal(staticPageDefaults('all-stars').bodyHtml, '');
+  for (const key of ['all-stars', 'rankings']) {
+    assert.deepEqual(staticPageDefaults(key), { title: '', subtitle: '', bodyHtml: '' });
+  }
   assert.throws(() => staticPageDefaults('other'), { statusCode: 404 });
   assert.throws(() => staticPageDefaults('constructor'), { statusCode: 404 });
 });

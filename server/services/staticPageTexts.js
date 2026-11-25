@@ -1,17 +1,11 @@
 import { richBody } from './contentFields.js';
 import { fail } from '../utils/httpError.js';
 
-const defaults = {
-  'all-stars': {
-    title: 'ליגת האולסטארז',
-    subtitle: 'נבחרות המתקדמים של קארדסקול: הכירו את השחקנים ועקבו אחר המשחקים והתוצאות.',
-    bodyHtml: '',
-  },
-};
+const pageKeys = new Set(['all-stars', 'rankings']);
 
 export function staticPageDefaults(key) {
-  if (!Object.hasOwn(defaults, key)) fail(404, 'עמוד לא נמצא');
-  return { ...defaults[key] };
+  if (!pageKeys.has(key)) fail(404, 'עמוד לא נמצא');
+  return { title: '', subtitle: '', bodyHtml: '' };
 }
 
 export function staticPageTextFields(input) {
