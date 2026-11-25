@@ -1,4 +1,6 @@
 import express from 'express';
+import asyncHandler from 'express-async-handler';
+import {recordFavorite,favoriteRateLimit} from '../services/teamFavorites.js';
 import { resolveTrialPlayer } from '../controllers/trialPlayerController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
@@ -23,6 +25,7 @@ router.get('/teachers', protect, authorize('admin'), getTeachers);
 router.get('/overview', protect, authorize('admin', 'judge'), getOverview);
 router.get('/mine', protect, authorize('admin', 'judge'), getMyTeams);
 router.get('/public', getPublicTeams);
+router.post('/public/favorite',favoriteRateLimit,asyncHandler(async(req,res)=>res.json({counts:await recordFavorite(req.body)})));
 router.get('/public/:id', getPublicTeam);
 router.post('/:teamId/players', protect, authorize('admin'), loadTeamPlayers);
 router.get('/', protect, authorize('admin', 'judge'), getTeams);

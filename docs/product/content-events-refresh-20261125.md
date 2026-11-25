@@ -25,8 +25,10 @@ Approved scope requested 2026-11-25. Implementation is incremental; this documen
 - Independent show-in-field-news checkbox for Update, Event and ContentPage; unified feed with canonical links and no duplicates. Existing updates remain visible by default.
 - Per-media show-in-gallery checkbox on Event/Update/ContentPage uploads; admin-managed standalone gallery media, editable title/subtitle; public gallery only published and explicitly selected media. Use shared S3 images and YouTube link flow (no new video file uploads). Homepage gallery button points to gallery.
 
-## Batch 5 — anonymous team fan counts (pending)
+## Batch 5 — anonymous team fan counts (implemented, pending verification)
 - Existing localStorage favorite button explanation: סמנו וקבלו עדכונים בעמוד הראשי. Count selection, removal and switches on server without account or identity; idempotency and abuse limits, nonnegative atomic counts, no PII. Display in All-Stars and team page. Without durable anonymous identifier cannot guarantee unique fans or undo browser-storage clearing; label appropriately.
 
 ## Verification
 Targeted tests per batch, then full server/UI/lint/build after implementation. No direct pushes to main.
+
+Favorite changes use one atomic append-only action (selection, removal or switch), with random per-operation UUID for safe retries, never a user or device identifier. Legacy local preferences are not retroactively counted; removal is logged without subtracting a nonexistent vote. Counts are net actions, clamped to zero for display. A transient IP rate limit is not stored in MongoDB; no guarantee against intentional manipulation, browser resets or multi-tab races. Field news connected to the favorite team's published events sorts first.

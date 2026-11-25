@@ -1,3 +1,4 @@
+import {fanCounts} from '../services/teamFavorites.js';
 import {adminOverview} from '../services/overview.js';
 import {tournamentQuery} from '../services/pagination.js';
 import {
@@ -63,7 +64,8 @@ export const getTeachers = asyncHandler(async (req, res) => {
 });
 async function summaryCounts(teams) {
   const ids = teams.map((t) => t._id);
-  const [members, completed] = await Promise.all([
+  const [fans,members, completed] = await Promise.all([
+    fanCounts(ids),
     Player.aggregate([
       {
         $match: {
@@ -92,6 +94,7 @@ async function summaryCounts(teams) {
     completed.map((row) => [String(row._id), row.count]),
   );
   return (team) => ({
+    fanCount:fans.get(team.id)||0,
     playerCount: memberMap.get(team.id) || 0,
     completedInternalTournamentCount: completedMap.get(team.id) || 0,
   });
@@ -123,7 +126,8 @@ export const getMyTeams = asyncHandler(async (req, res) => {
   );
 });
 async function counts(team) {
-  const [playerCount, completedInternalTournamentCount] = await Promise.all([
+  const [fans,playerCount, completedInternalTournamentCount] = await Promise.all([
+    fanCounts([team._id]),
     Player.countDocuments({
       team: team._id,
       isActive: true,
@@ -135,7 +139,7 @@ async function counts(team) {
       ...tournamentQuery({status:'completed'}),
     }),
   ]);
-  return { playerCount, completedInternalTournamentCount };
+  return { playerCount, completedInternalTournamentCount,fanCount:fans.get(team.id)||0 };
 }
 const publicTeam = async (team) => ({
   id: team.id,

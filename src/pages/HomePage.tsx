@@ -21,15 +21,19 @@ export default function HomePage(){
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
  const [fieldNews,setFieldNews]=useState<FieldNewsItem[]>([]);
  useEffect(()=>{api.get<FieldNewsItem[]>('/api/field-news').then(r=>setFieldNews(Array.isArray(r.data)?r.data:[])).catch(e=>setError(requestError(e)));},[]);
+ const favorite=window.localStorage.getItem('cardschool.favoriteTeam');
  const [heroFixtures,setHeroFixtures]=useState<Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>>([]);
  useEffect(()=>{dispatch(fetchUpdates());eventsService.list({pageSize:16}).then(r=>setEvents(r.items)).catch(e=>setError(requestError(e)));getNationalRankings({pageSize:3}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[dispatch]);
  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const future=events.filter(e=>e.startDate&&e.startDate.slice(0,10)>=today).sort((a,b)=>new Date(a.startDate!).getTime()-new Date(b.startDate!).getTime());
  const featured=future.find(e=>e.featured)||events.find(e=>e.featured)||future[0]||events[0];
- useEffect(()=>{if(featured?.category!=='all_stars'){setHeroFixtures([]);return;}let active=true;
-   api.get<{fixtures:Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>}>('/api/all-stars/overview').then(({data})=>{if(active)setHeroFixtures((data.fixtures||[]).filter(f=>f.eventId===featured.id));}).catch(()=>{});
+ useEffect(()=>{if(featured?.category!=='all_stars'&&!favorite){setHeroFixtures([]);return;}let active=true;
+   api.get<{fixtures:Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>}>('/api/all-stars/overview').then(({data})=>{if(active)setHeroFixtures(data.fixtures||[]);}).catch(()=>{});
    return ()=>{active=false};
- },[featured?.id,featured?.category]);
+ },[featured?.id,featured?.category,favorite]);
+ const favoriteEvents=new Set(heroFixtures.filter(f=>f.firstTeam.id===favorite||f.secondTeam.id===favorite).map(f=>f.eventId));
+ const preferred=(u:FieldNewsItem)=>Number((u.eventIds||[]).some(id=>favoriteEvents.has(id)));
+ const prioritizedNews=[...fieldNews].sort((a,b)=>preferred(b)-preferred(a)||new Date(b.date).getTime()-new Date(a.date).getTime());
  const featuredFixtures=featured?.category==='all_stars'?heroFixtures.filter(f=>f.eventId===featured.id).sort((a,b)=>new Date(a.date).getTime()-new Date(b.date).getTime()):[];
  const sortedUpdates=[...updates].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime());
  return <div>
@@ -49,7 +53,7 @@ export default function HomePage(){
  </section>
  <section className="bg-section-light py-10"><div className="container space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl sm:text-3xl font-extrabold">חדשות מהשטח</h2><Link to="/news" className="text-blue-500 font-bold">כל העדכונים ←</Link></div>
  <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4" aria-label="גלגלת עדכונים">
- {fieldNews.slice(0,10).map(u=><article key={u.kind+u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
+ {prioritizedNews.slice(0,10).map(u=><article key={u.kind+u.id} className="cs-public-card min-w-[245px] max-w-[310px] flex-[0_0_78%] sm:flex-[0_0_300px] snap-start overflow-hidden flex flex-col">
  <UpdateCarouselMedia update={u}/>
  <div className="p-4 flex flex-col flex-1 gap-2"><p className="text-xs text-blue-500">{new Date(u.date).toLocaleDateString('he-IL')}</p><h3 className="font-bold text-lg">{u.title}</h3><p className="line-clamp-2 text-muted-foreground">{u.description||u.content}</p><div className="mt-auto flex gap-3 flex-wrap"><Link to={u.href} className="text-blue-500 font-bold">לסיפור המלא ←</Link>{u.eventId&&<Link to={'/events/'+u.eventId} className="text-blue-500">לאירוע</Link>}</div>{u.kind==='update'&&<UpdateAction update={u}/>}</div></article>)}
  </div>{!fieldNews.length&&<p>חדשות, תמונות וסרטונים יופיעו כאן לאחר הפרסום.</p>}</div></section>

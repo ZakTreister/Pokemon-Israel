@@ -36,6 +36,7 @@ export default function TeamCard({ team }: { team: Team }) {
           טורנירי אימון
         </div>
       </div>
+      <p className="font-bold text-blue-500">{team.fanCount??0} אוהדים</p>
       {team.officialStats && (
         <p>
           מקום {team.officialStats.position} · {team.officialStats.gamesPlayed}{" "}
