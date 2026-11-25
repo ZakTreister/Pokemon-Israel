@@ -46,13 +46,19 @@ test('search and pagination are applied server-side without renumbering canonica
   assert.deepEqual(paged.rankings.map(r => r.position), [3,4]);
 });
 
-test('equal points share position and later positions skip ranks', () => {
-  const result = buildNationalRanking([
+test('equal points use participation descending, then Hebrew name, then stable ID; ranks are unique before paging', () => {
+  const rows = [
     { _id: '1', playerName: 'א', points: 9, tournaments: 1 },
-    { _id: '2', playerName: 'ב', points: 9, tournaments: 1 },
-    { _id: '3', playerName: 'ג', points: 8, tournaments: 1 },
-  ], []);
-  assert.deepEqual(result.rankings.map(r => r.position), [1,1,3]);
+    { _id: '2', playerName: 'ב', points: 9, tournaments: 3 },
+    { _id: '3', playerName: 'ג', points: 8, tournaments: 9 },
+    { _id: '4', playerName: 'א', points: 9, tournaments: 3 },
+    { _id: '5', playerName: 'א', points: 9, tournaments: 3 },
+  ];
+  const result=buildNationalRanking(rows,[]);
+  assert.deepEqual(result.rankings.map(r=>r.playerId),['historical:4','historical:5','historical:2','historical:1','historical:3']);
+  assert.deepEqual(result.rankings.map(r=>r.position),[1,2,3,4,5]);
+  assert.deepEqual(buildNationalRanking(rows,[],{search:'א'}).rankings.map(r=>r.position),[1,2,4]);
+  assert.deepEqual(buildNationalRanking(rows,[],{offset:2,pageSize:2}).rankings.map(r=>r.position),[3,4]);
 });
 test('national ranking query accepts only regular tournaments, not All-Stars team events', () => {
   const before = regularTournamentFilter();

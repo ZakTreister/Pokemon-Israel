@@ -3,7 +3,7 @@
 Approved scope requested 2026-11-25. Implementation is incremental; this document is not a claim that all items are developed.
 
 ## Batch 1 — ranking and public layout
-- Shared three-player podium on homepage and ranking; preserve canonical shared ranks on ties.
+- Shared three-player podium on homepage and ranking; show canonical unique national ranks (owner clarification supersedes earlier shared places).
 - National ranking initially displays 25 rows; More appends up to 25 using server offset; search/filter/sort reset; next club event CTA in points explanation below search.
 - Rank movers derive from full canonical ranking before and after the latest completed regular tournament (closedAt, falling back to date). Compare existing players only, keep historical snapshot and league separation; show up to three positive movers, even when outside the first visible rows.
 - Homepage quick links have larger icons on the left; upcoming events in individual cards in a horizontal carousel below the heading, without an enclosing card; events directory falls back to first image when cover is absent.

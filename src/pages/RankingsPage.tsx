@@ -3,6 +3,7 @@ import DataTable from '../components/ui/DataTable';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import RankingPodium from '../components/rankings/RankingPodium';
+import RankingFreshness from '../components/rankings/RankingFreshness';
 import { eventsService } from '../services/events';
 import type { EventSummary } from '../types/event';
 import Badge from '../components/ui/Badge';
@@ -110,13 +111,14 @@ export default function RankingsPage() {
             <span>הצג שחקני All-Stars</span>
           </label>
         </div>
-        <details className="mb-6 border rounded-lg p-4"><summary className="font-bold cursor-pointer">איך צוברים נקודות?</summary><p className="mt-3">הנקודות בדירוג הארצי מצטברות מטורנירי החוגים. צבירת הנקודות תהיה באירוע הבא.</p>{nextEvent&&<Button asChild variant="outline" className="mt-3"><Link to={'/events/'+nextEvent.id}>{nextEvent.title}</Link></Button>}</details>
+        <details className="mb-6 border rounded-lg p-4"><summary className="font-bold cursor-pointer">איך צוברים נקודות?</summary><p className="mt-3">הנקודות בדירוג הארצי מצטברות מטורנירי החוגים. בשוויון נקודות הדירוג נקבע לפי מספר ההשתתפויות (מהגבוה לנמוך), ואז לפי סדר א״ב של השם. צבירת הנקודות תהיה באירוע הבא.</p>{nextEvent&&<Button asChild variant="outline" className="mt-3"><Link to={'/events/'+nextEvent.id}>{nextEvent.title}</Link></Button>}</details>
         {!!data?.topMovers?.length&&<section className="cs-public-card p-4 mb-6"><h2 className="font-bold text-lg mb-2">העלייה הגדולה בדירוג</h2><div className="flex flex-wrap gap-3">{data.topMovers.map(row=><span key={row.playerId} className="font-bold">{row.playerName} <span className="text-emerald-600">↑ {row.rankChange} מקומות</span></span>)}</div></section>}
         {error && <p role="alert" className="text-destructive mb-4">{error}</p>}
         {data === null && busy ? (
           <p role="status">טוען דירוג...</p>
         ) : (
           <div aria-busy={busy}>
+            {data&&<RankingFreshness lastUpdatedAt={data.lastUpdatedAt} resultsThrough={data.resultsThrough} showCoverage/>}
             <DataTable<NationalRanking>
               headerClassName="bg-navy-700 text-white"
               rows={data?.rankings ?? []}

@@ -2034,6 +2034,12 @@ test('historical ordinary points for an All-Stars Player stay independent of tea
     { ...event, type: 'quarterly', date: new Date('2026-11-15'), finalStandings: standings(12) },
   ]);
   const visible = await ok('/rankings?includeAllStars=true&search=Fixture0%20Child', 'GET', undefined, null);
+  assert.ok(visible.lastUpdatedAt);
+  assert.equal(visible.resultsThrough.date.slice(0,10),'2026-11-17');
+  assert.equal(visible.resultsThrough.title,'Synthetic scoring boundary');
+  const repeat=await ok('/rankings?includeAllStars=true&search=Fixture0%20Child','GET',undefined,null);
+  assert.equal(repeat.lastUpdatedAt,visible.lastUpdatedAt);
+  assert.deepEqual(repeat.resultsThrough,visible.resultsThrough);
   assert.equal(visible.total, 1);
   assert.equal(visible.rankings[0].points, 29);
   assert.equal(visible.rankings[0].tournaments, 7);

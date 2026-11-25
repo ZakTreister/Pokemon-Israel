@@ -11,7 +11,11 @@ export interface NationalRanking {
   rankChange?: number;
 }
 
+export interface RankingCoverage {date:string;precision:'day'|'month';title:string}
+
 export interface NationalRankingsResponse {
+  lastUpdatedAt?: string | null;
+  resultsThrough?: RankingCoverage | null;
   rankings: NationalRanking[];
   tournamentCount: number;
   total: number;
