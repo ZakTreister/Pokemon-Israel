@@ -1,5 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Link,useLocation} from 'react-router-dom';
+import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
+import {pageActive} from '../../../shared/siteSettings';
 import {staticContentLinkTarget} from '../../../shared/contentLinkTargets';
 import {contentPagesService} from '../../services/contentPages';
 import Button from '../ui/Button';
@@ -24,5 +26,6 @@ function PageLinks({target}:{target:string}){
 export function StaticContentPageLinks(){
  const {pathname}=useLocation();
  const target=staticContentLinkTarget(pathname);
- return target?<ContentPageLinks target={target}/>:null;
+ const {settings,status}=useSiteSettings();
+ return target&&status==='ready'&&pageActive(settings,target)?<ContentPageLinks target={target}/>:null;
 }

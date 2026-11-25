@@ -147,6 +147,40 @@ try {
   const footer=render(Footer);
   assert.ok(footer.indexOf('href="/login"')<footer.indexOf('href="/store"'));
   assert.ok(footer.indexOf('href="/store"')<footer.indexOf('href="/birthday"'));
+  const SiteSettingsProvider=await load('features/siteSettings/SiteSettingsProvider.tsx');
+  const SettingsEditor=await load('pages/manage/ManageSiteSettings.tsx');
+  const Layout=await load('components/layout/Layout.tsx');
+  const {siteSettingsService}=await vite.ssrLoadModule('/src/services/siteSettings.ts');
+  const {defaultSiteSettings}=await vite.ssrLoadModule('/shared/siteSettings.js');
+  let stored=defaultSiteSettings();
+  siteSettingsService.get=async()=>stored;
+  siteSettingsService.manage=async()=>structuredClone(stored);
+  siteSettingsService.save=async value=>{stored=structuredClone(value);return stored;};
+  const wrap=(child,path)=>element(Provider,{store:menuStore},element(MemoryRouter,{initialEntries:[path],future:{v7_startTransition:true,v7_relativeSplatPath:true}},child));
+  await act(async()=>{
+   headerRenderer=TestRenderer.create(wrap(element(SiteSettingsProvider,{},element(Header),element(SettingsEditor),element(Footer)),'/manage/site-settings'));
+   await new Promise(resolve=>setImmediate(resolve));
+  });
+  const checkbox=label=>headerRenderer.root.findAllByType('input').find(n=>n.props['aria-label']===label);
+  const click=label=>headerRenderer.root.findAllByType('button').find(n=>n.children.join('')===label).props.onClick();
+  assert.equal(checkbox('דף הבית פעיל').props.disabled,true);
+  act(()=>checkbox('אירועים פעיל').props.onChange({target:{checked:false}}));
+  act(()=>checkbox('גלריה בתפריט').props.onChange({target:{checked:true}}));
+  act(()=>click('רשתות חברתיות'));
+  const instagram=headerRenderer.root.findAllByType('label').find(n=>n.children.includes('Instagram'));
+  act(()=>instagram.findByType('input').props.onChange({target:{checked:true}}));
+  act(()=>checkbox('Instagram כתובת').props.onChange({target:{value:'https://www.instagram.com/cardschool/'}}));
+  await act(async()=>{click('שמור הגדרות');await new Promise(resolve=>setImmediate(resolve));});
+  const navLinks=headerRenderer.root.findByProps({'aria-label':'ניווט ראשי'}).findAllByType('a').map(n=>n.props.href);
+  assert.ok(navLinks.includes('/gallery'));assert.ok(!navLinks.includes('/tournaments'));assert.deepEqual(navLinks.slice(-2),['/store','/birthday']);
+  assert.ok(!headerRenderer.root.findByType('footer').findAllByType('a').some(n=>n.props.href==='/tournaments'));
+  const social=headerRenderer.root.findByProps({'aria-label':'רשתות חברתיות'}).findByType('a');
+  assert.equal(social.props.href,'https://www.instagram.com/cardschool/');assert.equal(social.props.rel,'noopener noreferrer');
+  act(()=>headerRenderer.unmount());
+  await act(async()=>{headerRenderer=TestRenderer.create(wrap(element(Layout,{},element('p',{'data-fixture':'disabled-page'},'Never render')),'/events'));await new Promise(resolve=>setImmediate(resolve));});
+  assert.ok(!headerRenderer.root.findAllByProps({'data-fixture':'disabled-page'}).length);
+  assert.ok(headerRenderer.root.findAllByType('h1').some(n=>n.children.join('')==='404'));
+  act(()=>headerRenderer.unmount());
   const Manage = await load('pages/manage/ManageDashboardPage.tsx');
   for (const role of ['admin', 'judge']) {
     const markup = render(Manage, '/manage', role);
@@ -158,6 +192,7 @@ try {
     assert.ok(!markup.includes('href="/manage/internal-tournaments"'));
     assert.ok(!markup.includes('href="/manage/historical"'));
     assert.equal(markup.includes('href="/manage/badges"'), role === 'admin');
+    assert.equal(markup.includes('href="/manage/site-settings"'), role === 'admin');
     assert.ok(markup.includes('סגור תפריט ניהול'));
   }
   const nested = render(
@@ -458,11 +493,11 @@ try {
   );
   assert.ok(!home.includes('Must not feature internal'));
   assert.ok(home.includes('/news/news-fixture'));
-  assert.ok(home.includes('מובילי הליגה הישראלית'));
+  assert.ok(home.includes('דירוג השחקנים הארצי'));
   assert.ok(home.includes('מצטרפים לחוג הפוקימון'));
   assert.ok(!home.includes('הדקים המובילים'));
   const Construction = await load('pages/ConstructionPage.tsx');
-  for (const title of ['חנות', 'על הליגה', 'הזמנת יום הולדת'])
+  for (const title of ['חנות', 'הזמנת יום הולדת'])
     assert.ok(render(Construction, '/', null, {}, { title }).includes('בהקמה'));
   console.log(
     'Stage A UI checks passed: public menu, role-aware management, nested team context, homepage sources, shared button surfaces, duplicate-save protection, pending/failure/cancelled saves and canonical result recovery.',

@@ -6,13 +6,12 @@ export const STATIC_CONTENT_LINK_TARGETS=Object.freeze([
  {path:'/tournaments',label:'אירועים'},
  {path:'/news',label:'חדשות'},
  {path:'/gallery',label:'גלריה'},
- {path:'/deck-stats',label:'סטטיסטיקות דקים'},
- {path:'/about',label:'על הליגה'},
  {path:'/store',label:'חנות'},
  {path:'/birthday',label:'הזמנת יום הולדת'},
 ]);
+export function isRetiredPublicPage(path){return ['/deck-stats','/about'].includes(path.toLowerCase().replace(/\/+$/,''));}
 export function staticContentLinkTarget(path){
- const normalized=path.replace(/\/+$/,'')||'/';
+ const normalized=path.toLowerCase().replace(/\/+$/,'')||'/';
  const canonical=normalized==='/events'?'/tournaments':normalized;
  return STATIC_CONTENT_LINK_TARGETS.some(target=>target.path===canonical)?canonical:null;
 }

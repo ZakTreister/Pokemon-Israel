@@ -7,6 +7,7 @@ import { createServer } from 'vite';
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.localStorage = storage;
 globalThis.window = {
+  addEventListener() {}, removeEventListener() {}, dispatchEvent() { return true; },
   localStorage: storage,
   location: { origin: 'http://localhost:5173' },
 };
@@ -91,7 +92,6 @@ try {
     '/all-stars/players/player',
     '/tournaments/event',
     '/news',
-    '/about',
     '/store',
     '/birthday',
   ]) {
@@ -105,6 +105,8 @@ try {
     renderer = null;
   }
   for (const path of [
+    '/about',
+    '/deck-stats',
     '/manage',
     '/manage/teams',
     '/manage/tournaments/live',

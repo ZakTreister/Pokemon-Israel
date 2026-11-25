@@ -10,6 +10,7 @@ const originalAxiosPost = axios.post;
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.localStorage = storage;
 globalThis.window = {
+  addEventListener() {}, removeEventListener() {}, dispatchEvent() { return true; },
   localStorage: storage,
   location: { origin: 'http://localhost:5173' },
   setInterval,
@@ -578,20 +579,21 @@ try {
   };
   const {badgeProgramService}=await load('features/badges/badgeProgramService.ts');
   const {default:ProgramEditor}=await load('features/badges/components/BadgeProgramEditor.tsx');
-  const program={id:'000000000000000000000001',description:'הסבר קודם',image:''};
+  const program={id:'000000000000000000000001',description:'הסבר קודם',descriptionHtml:'<p>הסבר קודם</p>',image:''};
   let savedProgram;
   badgeProgramService.get=async()=>program;
-  badgeProgramService.save=async input=>{savedProgram=input;return {...program,description:input.description,image:image.url};};
+  badgeProgramService.save=async input=>{savedProgram=input;return {...program,descriptionHtml:input.descriptionHtml,image:image.url};};
   const { default: ManageBadges } = await load('pages/manage/ManageBadges.tsx');
   await mount(provided(route(el(ManageBadges), '/manage/badges')));
   assert.ok(text(renderer.toJSON()).includes('עונת סתיו'));
   const programEditor=renderer.root.findByType(ProgramEditor);
-  act(()=>programEditor.findByType('textarea').props.onChange({target:{value:'הסבר חדש על מערך התגים'}}));
+  const {default:RichHtmlField}=await load('components/content/RichHtmlField.tsx');
+  act(()=>programEditor.findByType(RichHtmlField).props.onChange('<p>הסבר חדש על מערך התגים</p>'));
   await act(async()=>{programEditor.findByProps({type:'file'}).props.onChange({target:{files:[file],value:'program'}});await flush();});
   assert.equal(uploadTarget.purpose,'badge-program-image');
   assert.equal(uploadTarget.entityId,program.id);
   await act(async()=>{button('שמור הסבר תגים').props.onClick();await flush();});
-  assert.deepEqual(savedProgram,{description:'הסבר חדש על מערך התגים',imageUploadId:'upload'});
+  assert.deepEqual(savedProgram,{descriptionHtml:'<p>הסבר חדש על מערך התגים</p>',imageUploadId:'upload'});
   assert.ok(
     renderer.root
       .findAllByType('img')

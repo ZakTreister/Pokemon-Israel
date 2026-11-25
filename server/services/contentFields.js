@@ -1,6 +1,6 @@
 import { sanitizeRichHtml } from '../../shared/richHtml.js';
 import { fail } from '../utils/httpError.js';
-import {normalizeContentLinkTarget} from '../../shared/contentLinkTargets.js';
+import {normalizeContentLinkTarget,isRetiredPublicPage} from '../../shared/contentLinkTargets.js';
 export function richBody(input){
  try{return sanitizeRichHtml(input);}catch(error){fail(400,error.message);}
 }
@@ -20,6 +20,12 @@ export function contentPageFields(input,current={}){
   const targets=data.buttonTargets.map(normalizeContentLinkTarget);
   if(targets.some(target=>!target))fail(400,'יעד כפתור לא תקין');
   data.buttonTargets=[...new Set(targets)];
+ }
+ // Legacy records may still contain retired host routes. Repair those on save
+ // without invalidating unrelated edits; new requests cannot add retired hosts.
+ if(data.buttonTargets===undefined&&current.buttonTargets?.some(isRetiredPublicPage)){
+  data.buttonTargets=current.buttonTargets.filter(path=>!isRetiredPublicPage(path));
+  if(!data.buttonTargets.length&&data.showAsButton===undefined)data.showAsButton=false;
  }
  if((data.showAsButton??current.showAsButton)&&(!(data.buttonLabel??current.buttonLabel)||!(data.buttonTargets??current.buttonTargets)?.length))fail(400,'יש להזין כיתוב לכפתור ולבחור לפחות עמוד אחד');
  if(current._id&&(data.buttonTargets??current.buttonTargets??[]).includes('/content/'+String(current._id)))fail(400,'לא ניתן להציג כפתור בעמוד עצמו');

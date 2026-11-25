@@ -1,6 +1,8 @@
 import Event from '../models/eventModel.js';
 import ContentPage from '../models/contentPageModel.js';
 import Update from '../models/updateModel.js';
+import {defaultSiteSettings,pageActive} from '../../shared/siteSettings.js';
+import {getSiteSettings} from './siteSettings.js';
 
 export const SITE_ORIGIN = 'https://cardschool.co.il';
 export const SITE_NAME = 'CardSchool – קארדסקול';
@@ -14,7 +16,6 @@ const publicPages = {
   '/all-stars': ['נבחרות All Stars | קארדסקול', 'הכירו את נבחרות המתקדמים של קארדסקול ועקבו אחר מפגשי נבחרות הפוקימון.'],
   '/news': ['חדשות הפוקימון והליגה | קארדסקול', 'חדשות, עדכונים והכרזות מקהילת הפוקימון של קארדסקול.'],
   '/gallery': ['גלריית אירועי פוקימון | קארדסקול', 'תמונות וסרטונים מאירועי קארדסקול ומפעילות ליגת הפוקימון.'],
-  '/deck-stats': ['סטטיסטיקות דקים בפוקימון | קארדסקול', 'נתוני דקים וסטטיסטיקות של משחקי קלפי פוקימון בליגה הישראלית.'],
 };
 
 const escape = value => String(value).replace(/[&<>"']/g, char => ({
@@ -50,8 +51,9 @@ async function publishedNews(id) {
 // are deliberately excluded in the first SEO phase.
 export async function resolveSeo(path, sources = {
   event:publishedEvent, content:publishedContent, news:publishedNews,
-}) {
+}, settings=defaultSiteSettings()) {
   const normalized = canonicalPath(path);
+  if(!pageActive(settings,normalized))return {...excluded(),disabled:true};
   if (Object.hasOwn(publicPages, normalized)) return publicMeta(normalized,...publicPages[normalized]);
   const match = /^\/(events|content|news)\/([a-f0-9]{24})$/i.exec(normalized);
   if (!match || !['events','content','news'].includes(match[1])) return excluded();
@@ -103,9 +105,9 @@ export function injectSeo(html, meta) {
 
 export const ROBOTS = 'User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: '+SITE_ORIGIN+'/sitemap.xml\n';
 
-export function sitemapXml({events=[],pages=[],updates=[]}={}) {
+export function sitemapXml({events=[],pages=[],updates=[],settings=defaultSiteSettings()}={}) {
   const ids = new Set(events.map(event=>String(event._id)));
-  const paths = [...Object.keys(publicPages),
+  const paths = [...Object.keys(publicPages).filter(path=>pageActive(settings,path)),
     ...events.map(event=>'/events/'+String(event._id)),
     ...pages.map(page=>'/content/'+String(page._id)),
     ...updates.filter(update=>!update.eventId||ids.has(String(update.eventId))).map(update=>'/news/'+String(update._id))];
@@ -113,10 +115,11 @@ export function sitemapXml({events=[],pages=[],updates=[]}={}) {
     [...new Set(paths)].map(path=>'  <url><loc>'+escape(SITE_ORIGIN+path)+'</loc></url>').join('\n')+'\n</urlset>\n';
 }
 export async function buildSitemap() {
-  const [events,pages,updates] = await Promise.all([
+  const [events,pages,updates,settings] = await Promise.all([
     Event.find({status:'published'}).select('_id').lean(),
     ContentPage.find({status:'published'}).select('_id').lean(),
     Update.find({}).select('_id eventId').lean(),
+    getSiteSettings(),
   ]);
-  return sitemapXml({events,pages,updates});
+  return sitemapXml({events,pages,updates,settings});
 }

@@ -1,5 +1,7 @@
 import { useEffect,useState } from 'react';
 import { Link, NavLink, useNavigate,useLocation } from 'react-router-dom';
+import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
+import {navigationPages,TRAILING_PAGES} from '../../../shared/siteSettings';
 import {contentPagesService} from '../../services/contentPages';
 import { X, LogOut, Sun, Moon, Menu as MenuIcon, Zap } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
@@ -25,17 +27,15 @@ export default function Header() {
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
   const isStaff =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'judge');
+  const {settings}=useSiteSettings();
+  const fixed=navigationPages(settings,'menu');
   const links = [
     ...(isStaff
       ? [{ to: '/manage', label: 'ניהול', construction: false }]
       : []),
-    { to: '/rankings', label: 'הליגה הישראלית', construction: false },
-    { to: '/all-stars', label: 'All Stars', construction: false },
-    { to: '/tournaments', label: 'אירועים', construction: false },
-    { to: '/news', label: 'חדשות', construction: false },
+    ...fixed.filter(link=>!TRAILING_PAGES.includes(link.to)),
     ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
-    { to: '/store', label: 'חנות', construction: true },
-    { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
+    ...fixed.filter(link=>TRAILING_PAGES.includes(link.to)),
   ];
   const actions = (
     <>

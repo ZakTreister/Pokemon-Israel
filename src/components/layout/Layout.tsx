@@ -1,4 +1,9 @@
 import { ReactNode } from 'react';
+import {useLocation} from 'react-router-dom';
+import SiteSettingsProvider,{useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
+import {pageActive} from '../../../shared/siteSettings';
+import {staticContentLinkTarget} from '../../../shared/contentLinkTargets';
+import NotFoundPage from '../../pages/NotFoundPage';
 import RouteScroll from './RouteScroll';
 import Header from './Header';
 import Footer from './Footer';
@@ -9,7 +14,14 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({children}:LayoutProps){return <SiteSettingsProvider><LayoutContent>{children}</LayoutContent></SiteSettingsProvider>;}
+function LayoutContent({ children }: LayoutProps) {
+  const {pathname}=useLocation();
+  const {settings,status}=useSiteSettings();
+  const target=staticContentLinkTarget(pathname);
+  const waiting=!!target&&target!=='/'&&status==='loading';
+  const unavailable=!!target&&target!=='/'&&status==='error';
+  const disabled=!pageActive(settings,pathname);
   return (
     <div className="flex min-h-screen flex-col">
       <RouteScroll />
@@ -25,11 +37,10 @@ export default function Layout({ children }: LayoutProps) {
         className="min-w-0 flex-1"
         tabIndex={-1}
       >
-        {children}
-        <StaticContentPageLinks />
+        {waiting?<p role="status" className="container py-8">טוען עמוד...</p>:unavailable?<p role="alert" className="container py-8">לא ניתן לטעון את הגדרות האתר. נסו לרענן את העמוד.</p>:disabled?<NotFoundPage/>:<>{children}<StaticContentPageLinks /></>}
       </main>
       <Footer />
-      <FloatingTrialCTA />
+      {!disabled&&!waiting&&!unavailable&&<FloatingTrialCTA />}
     </div>
   );
 }

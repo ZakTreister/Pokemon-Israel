@@ -15,6 +15,8 @@ import Player from '../models/playerModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
 import allStarsPublicRoutes from '../routes/allStarsPublicRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
+import siteSettingsRoutes from '../routes/siteSettingsRoutes.js';
+import {defaultSiteSettings} from '../../shared/siteSettings.js';
 import contentPageRoutes from '../routes/contentPageRoutes.js';
 import ContentPage from '../models/contentPageModel.js';
 import updateRoutes from '../routes/updateRoutes.js';
@@ -47,11 +49,11 @@ before(async()=>{
   tokens[role]=jwt.sign({id:u.id},process.env.JWT_SECRET);
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
- app.use('/api/content-pages',contentPageRoutes);app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
+ app.use('/api/site-settings',siteSettingsRoutes);app.use('/api/content-pages',contentPageRoutes);app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
  app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
  registerSeoEndpoints(app);
  const serveSpa=createSpaSeoHandler(fileURLToPath(new URL('../../index.html',import.meta.url)));
- app.get(['/', '/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
+ app.get(['/', '/rankings','/gallery','/events','/tournaments','/deck-stats','/about','/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -354,4 +356,40 @@ test('content-page footer buttons validate target selection, expose only publish
   assert.deepEqual(await links('/content/'+published.id),[]);
   await ok(root+'/'+source.id,'PUT',{title:'Still editable'},'admin');
  }finally{await ContentPage.deleteMany({_id:{$in:[published.id,draft.id,source.id,hidden.id,disabled.id]}});}
+});
+
+
+test('site settings preserve defaults, authorize writes and synchronize fixed routes, sitemap and CMS buttons',async()=>{
+ const root='/site-settings',management=root+'/management';
+ const defaults=defaultSiteSettings();
+ assert.deepEqual(await ok(root),defaults);
+ for(const path of ['/deck-stats','/about']){assert.ok(!defaults.pages.some(p=>p.path===path));const res=await fetch(origin+path);assert.equal(res.status,404);assert.equal(res.headers.get('x-robots-tag'),'noindex, follow');assert.equal((await call('/content-pages/buttons?target='+encodeURIComponent(path))).status,400);}
+ assert.equal((await call(management)).status,401);
+ assert.equal((await call(management,'GET',undefined,'judge')).status,403);
+ assert.equal((await call(management,'PUT',defaults,'judge')).status,403);
+ const next=structuredClone(defaults);
+ next.pages.find(p=>p.path==='/tournaments').active=false;
+ next.pages.find(p=>p.path==='/rankings').menu=false;
+ next.socials.find(s=>s.key==='instagram').url='https://www.instagram.com/cardschool/';
+ next.socials.find(s=>s.key==='instagram').enabled=true;
+ next.socials.find(s=>s.key==='facebook').url='https://www.facebook.com/cardschool/';
+ const source=await ok('/content-pages','POST',{title:'Settings rules',status:'published',showAsButton:true,buttonLabel:'Rules',buttonTargets:['/tournaments']},'admin',201);
+ try{
+  const invalid=structuredClone(next);invalid.pages.find(p=>p.path==='/').active=false;
+  assert.equal((await call(management,'PUT',invalid,'admin')).status,400);
+  const unsafe=structuredClone(next);unsafe.socials.find(s=>s.key==='instagram').url='https://instagram.com.evil.example/';
+  assert.equal((await call(management,'PUT',unsafe,'admin')).status,400);
+  assert.deepEqual(await ok(management,'PUT',next,'admin'),next);
+  assert.deepEqual(await ok(management,'GET',undefined,'admin'),next);
+  const publicData=await ok(root);
+  assert.equal(publicData.socials.find(s=>s.key==='facebook').url,'');
+  assert.equal(publicData.socials.find(s=>s.key==='instagram').url,'https://www.instagram.com/cardschool/');
+  for(const path of ['/events','/tournaments','/EVENTS']){const res=await fetch(origin+path);assert.equal(res.status,404,path);assert.equal(res.headers.get('x-robots-tag'),'noindex, follow');}
+  assert.equal((await fetch(origin+'/rankings')).status,200,'menu-hidden page remains accessible');
+  const xml=await (await fetch(origin+'/sitemap.xml')).text();assert.ok(!xml.includes('<loc>https://cardschool.co.il/tournaments</loc>'));assert.ok(xml.includes('<loc>https://cardschool.co.il/rankings</loc>'));
+  assert.deepEqual(await ok('/content-pages/buttons?target=/events'),[]);
+  await ok(management,'PUT',defaults,'admin');
+  assert.equal((await fetch(origin+'/events')).status,200);
+  assert.deepEqual(await ok('/content-pages/buttons?target=/events'),[{id:source.id,label:'Rules'}]);
+ }finally{await ok(management,'PUT',defaults,'admin');await ContentPage.deleteOne({_id:source.id});}
 });

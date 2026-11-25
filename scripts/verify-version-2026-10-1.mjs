@@ -9,6 +9,7 @@ const storage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.localStorage = storage;
 const scrolls = [];
 globalThis.window = {
+  addEventListener() {}, removeEventListener() {}, dispatchEvent() { return true; },
   localStorage: storage,
   location: { origin: 'http://localhost:5173' },
   history: { scrollRestoration: 'auto' },
