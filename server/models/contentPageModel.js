@@ -8,6 +8,7 @@ const schema=new mongoose.Schema({
  showInNavigation:{type:Boolean,default:false},
  navigationLabel:{type:String,default:'',trim:true,maxlength:80},
  showInFieldNews:{type:Boolean,default:false},
+ isAllStars:{type:Boolean,default:false},
  showAsButton:{type:Boolean,default:false},
  buttonLabel:{type:String,default:'',trim:true,maxlength:80},
  buttonTargets:{type:[String],default:[]},

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import RichHtmlField from '../../components/content/RichHtmlField';
-import BadgeProgramEditor from '../../features/badges/components/BadgeProgramEditor';
 import { staticTextPages, staticPageTextsService, type StaticPageText, type StaticPageTextKey } from '../../services/staticPageTexts';
 import { requestError } from '../../utils/requestError';
 import { useToast } from '../../components/ui/ToastProvider';
@@ -51,6 +50,5 @@ function Editor({ id, label }: { id: StaticPageTextKey; label: string }) {
         <Button asChild variant="outline"><Link to="/manage/texts">סגור</Link></Button>
       </div>
     </form>}
-    {id === 'all-stars' && <BadgeProgramEditor/>}
   </div>;
 }

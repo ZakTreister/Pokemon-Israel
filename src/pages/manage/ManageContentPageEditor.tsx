@@ -11,10 +11,10 @@ import Button from '../../components/ui/Button';
 import {requestError} from '../../utils/requestError';
 
 const listPath='/manage/content-pages';
-const empty=():ContentPageInput=>({title:'',subtitle:'',bodyHtml:'',status:'draft',showInNavigation:false,navigationLabel:'',showInFieldNews:false,showAsButton:false,buttonLabel:'',buttonTargets:[]});
+const empty=():ContentPageInput=>({title:'',subtitle:'',bodyHtml:'',status:'draft',showInNavigation:false,navigationLabel:'',showInFieldNews:false,isAllStars:false,showAsButton:false,buttonLabel:'',buttonTargets:[]});
 const fromPage=(page:ContentPage):ContentPageInput=>({
  title:page.title,subtitle:page.subtitle||'',bodyHtml:page.bodyHtml||'',status:page.status,
- showInNavigation:!!page.showInNavigation,navigationLabel:page.navigationLabel||'',showInFieldNews:!!page.showInFieldNews,
+ showInNavigation:!!page.showInNavigation,navigationLabel:page.navigationLabel||'',showInFieldNews:!!page.showInFieldNews,isAllStars:!!page.isAllStars,
  showAsButton:!!page.showAsButton&&!!page.buttonTargets?.some(path=>!isRetiredPublicPage(path)),buttonLabel:page.buttonLabel||'',buttonTargets:(page.buttonTargets||[]).filter(path=>!isRetiredPublicPage(path)),
 });
 
@@ -58,6 +58,7 @@ function ContentPageEditor({id}:{id:string}){
  <section className="border rounded-lg p-4 space-y-4"><form id={formId} className="space-y-3" onSubmit={e=>{e.preventDefault();void save()}}>
  <label className="block">כותרת<input required maxLength={180} className="block w-full p-2 border rounded bg-card" value={input.title} onChange={e=>setInput({...input,title:e.target.value})}/></label>
  <label className="block">כותרת משנה להירו<textarea maxLength={5000} className="block w-full p-2 border rounded bg-card" value={input.subtitle} onChange={e=>setInput({...input,subtitle:e.target.value})}/></label>
+ <label className="flex gap-2 items-center"><input type="checkbox" checked={!!input.isAllStars} onChange={e=>setInput({...input,isAllStars:e.target.checked})}/> עמוד All Stars (הירו ולוגו של ליגת הנבחרות)</label>
  <RichHtmlField value={input.bodyHtml} onChange={bodyHtml=>setInput({...input,bodyHtml})}/>
  <label className="flex gap-2 items-center"><input type="checkbox" checked={input.showInNavigation} onChange={e=>setInput({...input,showInNavigation:e.target.checked})}/> הצג בתפריט</label>
  {input.showInNavigation&&<label className="block">שם פריט ניווט<input required maxLength={80} className="block w-full p-2 border rounded bg-card" value={input.navigationLabel} onChange={e=>setInput({...input,navigationLabel:e.target.value})}/></label>}
