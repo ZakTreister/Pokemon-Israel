@@ -1,5 +1,6 @@
 import {useEffect,useState,useRef,useId} from 'react';
 import {useNavigate,useParams} from 'react-router-dom';
+import {isRetiredPublicPage} from '../../../shared/contentLinkTargets';
 import type {ContentPage,ContentPageInput} from '../../types/contentPage';
 import {contentPagesService} from '../../services/contentPages';
 import ContentPageAddress from '../../components/content/ContentPageAddress';
@@ -14,7 +15,7 @@ const empty=():ContentPageInput=>({title:'',subtitle:'',bodyHtml:'',status:'draf
 const fromPage=(page:ContentPage):ContentPageInput=>({
  title:page.title,subtitle:page.subtitle||'',bodyHtml:page.bodyHtml||'',status:page.status,
  showInNavigation:!!page.showInNavigation,navigationLabel:page.navigationLabel||'',showInFieldNews:!!page.showInFieldNews,
- showAsButton:!!page.showAsButton,buttonLabel:page.buttonLabel||'',buttonTargets:page.buttonTargets||[],
+ showAsButton:!!page.showAsButton&&!!page.buttonTargets?.some(path=>!isRetiredPublicPage(path)),buttonLabel:page.buttonLabel||'',buttonTargets:(page.buttonTargets||[]).filter(path=>!isRetiredPublicPage(path)),
 });
 
 export default function ManageContentPageEditor(){

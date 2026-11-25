@@ -1,3 +1,4 @@
+import {isRetiredPublicPage} from '../../shared/contentLinkTargets.js';
 import {getSiteSettings} from './siteSettings.js';
 import {readFile} from 'node:fs/promises';
 import {buildSitemap,injectSeo,noIndexSeo,resolveSeo,ROBOTS} from './seo.js';
@@ -5,6 +6,7 @@ import {buildSitemap,injectSeo,noIndexSeo,resolveSeo,ROBOTS} from './seo.js';
 // Independent of the API and of the React router; no redirects or changes to
 // public/private authorization. A slow metadata lookup cannot block the SPA.
 async function resolveWithin(path, timeoutMs=800) {
+  if(isRetiredPublicPage(path))return {...noIndexSeo(),disabled:true};
   let timer;
   try {
     return await Promise.race([

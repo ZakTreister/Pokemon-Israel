@@ -11,3 +11,5 @@ Approved: minimum non-disruptive SEO for cardschool.co.il. Preserve the React SP
 - Search Console ownership verification and sitemap submission require account access after deploy. Google determines indexing, titles, ranking and snippets; no guarantees.
 
 Verification: automated metadata and sitemap tests; full configured CI; after deployment verify /robots.txt, /sitemap.xml and view-source of public and noindex pages.
+
+Owner update: /deck-stats and /about are retired public URLs, excluded from the sitemap and served as 404/noindex.

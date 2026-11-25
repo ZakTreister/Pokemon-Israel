@@ -15,7 +15,6 @@ import GalleryPage from './pages/GalleryPage';
 import ContentPage from './pages/ContentPage';
 import TournamentDetailsPage from './pages/TournamentDetailsPage';
 import RankingsPage from './pages/RankingsPage';
-import DeckStatsPage from './pages/DeckStatsPage';
 import LoginPage from './pages/LoginPage';
 import { LegacyAdminRedirect } from './pages/manage/ManageDashboardPage';
 import TeamPage from './pages/TeamPage';
@@ -52,14 +51,12 @@ function App() {
           <Route path="/content/:id" element={<ContentPage />} />
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
-          <Route path="/deck-stats" element={<DeckStatsPage />} />
           <Route path="/teams/:id" element={<TeamPage />} />
           <Route path="/all-stars/players/:playerId" element={<AllStarsPlayerPage />} />
           <Route path="/all-stars" element={<AllStarsPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/news/:id" element={<NewsPostPage />} />
           <Route path="/store" element={<ConstructionPage title="חנות" />} />
-          <Route path="/about" element={<ConstructionPage title="על הליגה" />} />
           <Route path="/birthday" element={<ConstructionPage title="הזמנת יום הולדת" />} />
           <Route path="/login" element={<LoginPage />} />
           

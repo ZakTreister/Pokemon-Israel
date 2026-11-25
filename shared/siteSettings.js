@@ -1,4 +1,4 @@
-import {STATIC_CONTENT_LINK_TARGETS,staticContentLinkTarget} from './contentLinkTargets.js';
+import {STATIC_CONTENT_LINK_TARGETS,staticContentLinkTarget,isRetiredPublicPage} from './contentLinkTargets.js';
 export const SOCIAL_PLATFORMS=Object.freeze([
  {key:'facebook',label:'Facebook',hosts:['facebook.com','fb.com','fb.me']},
  {key:'instagram',label:'Instagram',hosts:['instagram.com']},
@@ -6,14 +6,15 @@ export const SOCIAL_PLATFORMS=Object.freeze([
  {key:'tiktok',label:'TikTok',hosts:['tiktok.com']},
  {key:'whatsapp',label:'WhatsApp',hosts:['whatsapp.com','wa.me']},
 ]);
-export const HEADER_ORDER=['/rankings','/all-stars','/tournaments','/news','/','/gallery','/deck-stats','/about','/store','/birthday'];
-export const FOOTER_ORDER=['/','/tournaments','/rankings','/all-stars','/news','/gallery','/deck-stats','/about','/store','/birthday'];
+export const HEADER_ORDER=['/rankings','/all-stars','/tournaments','/news','/','/gallery','/store','/birthday'];
+export const FOOTER_ORDER=['/','/tournaments','/rankings','/all-stars','/news','/gallery','/store','/birthday'];
 export const TRAILING_PAGES=['/store','/birthday'];
 export function defaultSiteSettings(){
  return {pages:STATIC_CONTENT_LINK_TARGETS.map(({path})=>({path,active:true,menu:['/rankings','/all-stars','/tournaments','/news','/store','/birthday'].includes(path),footer:['/','/tournaments','/rankings','/all-stars','/news','/store','/birthday'].includes(path)})),
  socials:SOCIAL_PLATFORMS.map(({key})=>({key,enabled:false,url:''}))};
 }
 export function pageActive(settings,path){
+ if(isRetiredPublicPage(path))return false;
  const target=staticContentLinkTarget(path);
  return !target||target==='/'||settings.pages.find(p=>p.path===target)?.active!==false;
 }
