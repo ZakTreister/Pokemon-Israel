@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encounterBalance } from '../services/overview.js';
+import { encounterBalance, tournamentManagementPath } from '../services/overview.js';
 const teams = [
   { id: 'a', name: 'אש' },
   { id: 'b', name: 'ברק' },
@@ -66,4 +66,16 @@ test('internal meeting year uses Jerusalem September boundaries, including the U
     encounterBalance([], { competitionYear: '2026-2027', counts: [] }),
     { status: 'empty', competitionYear: '2026-2027' },
   );
+});
+
+
+test('dashboard management paths distinguish tournament types sharing the Swiss engine', () => {
+  const id='example';
+  for (const [type,engineVersion,path] of [
+    ['inter_team','swiss-v1','/manage/inter-team/example'],
+    ['team_internal','swiss-v1','/manage/tournaments/example'],
+    ['quarterly','swiss-v1','/manage/tournaments/regular/example'],
+    ['quarterly',null,'/manage/tournaments/regular/example'],
+    [null,null,'/manage/tournaments/regular/example'],
+  ]) assert.equal(tournamentManagementPath({id,type,engineVersion}),path);
 });

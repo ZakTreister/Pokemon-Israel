@@ -2489,3 +2489,15 @@ test('club-only public Events pagination includes legacy null types and excludes
   assert.ok([...first.items, ...second.items].every(row => row.type === 'quarterly'));
   assert.ok(![...first.items, ...second.items].some(row => row.title.endsWith('internal')));
 });
+
+
+test('admin overview returns the inter-team workspace for the nearest Swiss meeting',async()=>{
+ const {adminOverview}=await import('../services/overview.js');
+ const date=new Date('2000-01-01T12:00:00Z');
+ const fixture=await Tournament.create({title:'Overview route fixture',description:'Test',date,location:'Test',registrationDeadline:date,image:'/event.png',type:'inter_team',engineVersion:'swiss-v1',source:'live',status:'upcoming',phase:'setup',maxParticipants:128});
+ try {
+  const overview=await adminOverview(new Date('1999-12-31T12:00:00Z'));
+  assert.equal(overview.nearest.id,fixture.id);
+  assert.equal(overview.nearest.managementPath,`/manage/inter-team/${fixture.id}`);
+ } finally {await fixture.deleteOne();}
+});
