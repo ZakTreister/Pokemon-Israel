@@ -1,11 +1,12 @@
 import express from 'express';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import {
- listEvents,manageEvents,getEvent,getManagedEvent,createEvent,changeEvent,removeEvent,
+ listEvents,nextRankingEvent,manageEvents,getEvent,getManagedEvent,createEvent,changeEvent,removeEvent,
  linkTournament,unlinkTournament,addEventAsset,deleteEventAsset,changeEventAsset
 } from '../controllers/eventController.js';
 const router=express.Router();
 router.get('/',listEvents);
+router.get('/next-ranking-event',nextRankingEvent);
 router.get('/management',protect,admin,manageEvents);
 router.get('/management/:id',protect,admin,getManagedEvent);
 router.get('/:id',getEvent);

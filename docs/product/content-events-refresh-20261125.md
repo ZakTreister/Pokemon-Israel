@@ -38,3 +38,6 @@ Favorite changes use one atomic append-only action (selection, removal or switch
 
 ## Follow-up — public card wrappers
 Use the shared `Card` public variant (background, border and shadow frame), not the clipping-only `cs-public-card` CSS class, for content body, event body, each event tournament and legacy fixture, the single stacked linked-content panel and each event in the homepage upcoming-events carousel. The heading and carousel must not have an enclosing Card (owner clarification). Keep event tournament section hidden when no tournaments or legacy fixtures exist. Keep the event body/media two-column layout and horizontal upcoming carousel.
+
+## Follow-up — next points-earning event
+Rankings selects the earliest published club event on or after the Israel-local calendar date with at least one linked quarterly tournament. Events without linked tournaments, past and draft events, and All-Stars events do not qualify. Filter server-side before choosing the next event; do not use the featured sort or an arbitrary page limit.

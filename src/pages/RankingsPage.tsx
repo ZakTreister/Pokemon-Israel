@@ -34,10 +34,7 @@ export default function RankingsPage() {
   useEffect(()=>{
     let active=true;
     getNationalRankings({pageSize:3,sort:'position'}).then(r=>{if(active)setLeaders(r.rankings)}).catch(()=>{});
-    eventsService.list({category:'club',pageSize:100}).then(r=>{
-      const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-      if(active)setNextEvent(r.items.filter(e=>e.startDate && e.startDate.slice(0,10)>=today).sort((a,b)=>a.startDate!.localeCompare(b.startDate!))[0]);
-    }).catch(()=>{});
+    eventsService.nextRankingEvent().then(event=>{if(active)setNextEvent(event??undefined)}).catch(()=>{});
     return ()=>{active=false};
   },[]);
   useEffect(() => {
