@@ -848,3 +848,5 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 **Scope:** [Detailed specification and implementation status](product/content-events-refresh-20261125.md).
 
 **Verification:** New focused test cases for ranking offsets/movers, HTML allow-list, event-backed inter-team creation and anonymous favorite validation; homepage UI fixture updated for the field-news API. Local execution unavailable; no passing CI result verified. Do not merge before full server tests, UI scripts, lint, build and review of TypeScript regression. Existing legacy fixture conversion remains manual; no production database changes made. Review websocket and any remaining legacy inter-team entry points.
+
+**2026-11-25 owner clarification:** national ranking initially loads 25 rows (not two); each More click appends another 25, without resetting existing rows. Ranking pagination tests adjusted accordingly.

@@ -89,12 +89,13 @@ test('rank movers compare full canonical positions before the latest tournament,
   assert.equal(result.topMovers[0].rankChange,2);
   assert.equal(result.topMovers.length,1);
 });
-test('offset supports initial two rows followed by batches without overlapping', () => {
+test('offset supports initial 25 rows followed by batches without overlapping', () => {
   const rows=Array.from({length:60},(_,i)=>({_id:String(i),playerName:String(i),points:60-i,tournaments:1}));
-  const initial=buildNationalRanking(rows,[],{pageSize:2,offset:0});
-  const next=buildNationalRanking(rows,[],{pageSize:25,offset:2});
-  assert.equal(initial.rankings.length,2);
+  const initial=buildNationalRanking(rows,[],{pageSize:25,offset:0});
+  const next=buildNationalRanking(rows,[],{pageSize:25,offset:25});
+  assert.equal(initial.rankings.length,25);
   assert.equal(next.rankings.length,25);
-  assert.equal(next.rankings[0].position,3);
-  assert.equal(next.rankings[24].position,27);
+  assert.equal(next.rankings[0].position,26);
+  assert.equal(next.rankings[24].position,50);
+  assert.equal(buildNationalRanking(rows,[],{pageSize:25,offset:50}).rankings.length,10);
 });

@@ -54,7 +54,7 @@ export default function RankingsPage() {
       search: debouncedSearch,
       includeAllStars,
       offset: 0,
-      pageSize: 2,
+      pageSize: 25,
       sort: sort.key,
       descending: sort.descending,
     })
