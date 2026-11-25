@@ -118,7 +118,7 @@ export default function RankingsPage() {
           <p role="status">טוען דירוג...</p>
         ) : (
           <div aria-busy={busy}>
-            {data&&<RankingFreshness lastUpdatedAt={data.lastUpdatedAt} resultsThrough={data.resultsThrough} showCoverage/>}
+            {data&&<RankingFreshness resultsThrough={data.resultsThrough} showCoverage showLastUpdated={false}/>}
             <DataTable<NationalRanking>
               headerClassName="bg-navy-700 text-white"
               rows={data?.rankings ?? []}
