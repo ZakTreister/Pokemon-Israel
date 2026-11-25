@@ -16,7 +16,7 @@ function Upcoming({events,allStars}:{events:EventSummary[];allStars?:boolean}){
 export default function LeagueSections({leaders,standings,events,error}:{leaders:NationalRanking[];standings:LeagueRow[];events:EventSummary[];error:string}){
  return <section className="container py-8 space-y-3">
  {error&&<p role="alert">{error}</p>}
- <div className="grid gap-5 lg:grid-cols-2 items-start">
+ <div className="grid gap-5 lg:grid-cols-2 items-stretch">
   <Card variant="public" className="min-w-0 overflow-hidden">
    <header className="bg-blue-800 text-white p-5 flex items-center gap-3"><Trophy className="text-yellow-300 shrink-0" size={42}/><div><h2 className="text-2xl font-black">הליגה הישראלית לילדים</h2><p>חוגים וטורנירי ילדים ונוער</p></div></header>
    <div className="p-5 space-y-4"><h3 className="text-xl font-bold">דירוג השחקנים הארצי</h3><RankingPodium leaders={leaders}/>{!leaders.length&&<p>הדירוג יופיע כשיהיו תוצאות.</p>}<Button asChild variant="outline"><Link to="/rankings">מצאו את עצמכם בדירוג ←</Link></Button><hr/><Upcoming events={events.filter(e=>e.category==='club')}/></div>
