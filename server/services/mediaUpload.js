@@ -253,10 +253,10 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update'].map(
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update','ContentPage','Gallery'].map(
         (name, index) =>
-          mongoose.model(name).exists({
-            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media'][index]}.storageKey`]:
+          mongoose.models[name]?.exists({
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media','mediaItems.media','mediaItems.media'][index]}.storageKey`]:
               key,
           }),
       ),

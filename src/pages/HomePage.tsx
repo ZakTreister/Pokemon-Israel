@@ -21,7 +21,7 @@ export default function HomePage(){
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
  const [fieldNews,setFieldNews]=useState<FieldNewsItem[]>([]);
  useEffect(()=>{api.get<FieldNewsItem[]>('/api/field-news').then(r=>setFieldNews(Array.isArray(r.data)?r.data:[])).catch(e=>setError(requestError(e)));},[]);
- const favorite=window.localStorage.getItem('cardschool.favoriteTeam');
+ const favorite=typeof window==='undefined'?null:window.localStorage?.getItem('cardschool.favoriteTeam')||null;
  const [heroFixtures,setHeroFixtures]=useState<Array<{eventId:string;date:string;firstTeam:{id:string;name:string;logo:string};secondTeam:{id:string;name:string;logo:string}}>>([]);
  useEffect(()=>{dispatch(fetchUpdates());eventsService.list({pageSize:16}).then(r=>setEvents(r.items)).catch(e=>setError(requestError(e)));getNationalRankings({pageSize:3}).then(r=>setLeaders(r.rankings)).catch(()=>{});},[dispatch]);
  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());

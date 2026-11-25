@@ -953,11 +953,13 @@ try {
   updatesService.getUpdates = async () => state.updates.updates;
   api.get = async (path) => ({
     data:
-      path === '/api/teams/public' ? [] : { rankings: [], tournamentCount: 0 },
+      path === '/api/teams/public' ? [] : path === '/api/field-news' ? state.updates.updates.map(u=>({...u,kind:'update',href:'/news/'+u.id,eventIds:[]})) : { rankings: [], tournamentCount: 0 },
   });
   await mount(provided(route(el(Home))));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
   assert.ok(text(renderer.toJSON()).includes('Configured description'));
+  assert.ok(text(renderer.toJSON()).includes('גלריה'));
+  assert.ok(renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'));
   assert.equal(homepageRequests[0].pageSize, 16);
   assert.equal(homepageRequests[0].category, undefined);
   assert.ok(

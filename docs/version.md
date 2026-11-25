@@ -836,3 +836,15 @@ Code is verified for PR review and merge; **do not run historical import yet**. 
 - team ranking only accumulates the chosen team's internal tournament results
 
 **Verification:** GitHub Actions passed for implementation commit `3bc62d24e6806097c29231e93e93192b6cd48697`: full `npm run lint`, `npm run build`, `npm run test:stage-a`, `npm run test:stage-a:ui`, and the independent historical-ranking workflow's TypeScript regression comparison to `main`. Regression coverage includes trial admission/confirmation/dismissal preserving tournament history, club-only paginated Events, and read-only matchup cards. **Known gaps:** production/live-browser visual acceptance has not been performed; keep PR for owner review.
+
+
+---
+
+## Version 2026.11.3 — managed content, unified events, rankings, gallery and fans
+
+**Status:** `READY_FOR_DEVELOPMENT` — implementation commits in draft PR; verification and legacy migration review pending.  
+**Implementation PR:** https://github.com/ZakTreister/Pokemon-Israel/pull/42  
+**Implementation branch:** `feature/content-events-rankings-20261125`  
+**Scope:** [Detailed specification and implementation status](product/content-events-refresh-20261125.md).
+
+**Verification:** New focused test cases for ranking offsets/movers, HTML allow-list, event-backed inter-team creation and anonymous favorite validation; homepage UI fixture updated for the field-news API. Local execution unavailable; no passing CI result verified. Do not merge before full server tests, UI scripts, lint, build and review of TypeScript regression. Existing legacy fixture conversion remains manual; no production database changes made. Review websocket and any remaining legacy inter-team entry points.
