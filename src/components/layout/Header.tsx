@@ -1,5 +1,6 @@
 import { useEffect,useState } from 'react';
 import { Link, NavLink, useNavigate,useLocation } from 'react-router-dom';
+import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
 import {navigationPages,TRAILING_PAGES} from '../../../shared/siteSettings';
 import {contentPagesService} from '../../services/contentPages';
@@ -94,9 +95,7 @@ export default function Header() {
             onClick={() => setIsMenuOpen(false)}
             aria-label="CardSchool — דף הבית"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold-gradient">
-              <Zap size={24} fill="currentColor" />
-            </span>
+            <LeagueLogo league={/^\/(all-stars|teams)(\/|$)/.test(location.pathname)?'allStars':'kids'} decorative className="h-12 w-12 shrink-0" fallback={<span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold-gradient"><Zap size={24} fill="currentColor"/></span>}/>
             <span>
               <span
                 dir="ltr"

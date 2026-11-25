@@ -6,7 +6,6 @@ import {getSiteSettings} from './siteSettings.js';
 
 export const SITE_ORIGIN = 'https://cardschool.co.il';
 export const SITE_NAME = 'CardSchool – קארדסקול';
-const LOGO = SITE_ORIGIN + '/pokemon_kids_logo.png';
 export const HOME_TITLE = 'קארדסקול | חוגי פוקימון וליגת הפוקימון הישראלית';
 export const HOME_DESCRIPTION = 'קארדסקול (CardSchool) – חוגי קלפי פוקימון לילדים, אירועים וטורנירים, דירוג הליגה הישראלית ונבחרות All Stars. הכירו את קהילת הפוקימון והצטרפו לחוג.';
 const publicPages = {
@@ -34,7 +33,7 @@ const publicMeta = (path, title, description) => ({
 });
 
 async function publishedEvent(id) {
-  return Event.findOne({_id:id,status:'published'}).select('title description').lean().maxTimeMS(600);
+  return Event.findOne({_id:id,status:'published'}).select('title description category').lean().maxTimeMS(600);
 }
 async function publishedContent(id) {
   return ContentPage.findOne({_id:id,status:'published'}).select('title subtitle bodyHtml').lean().maxTimeMS(600);
@@ -54,7 +53,8 @@ export async function resolveSeo(path, sources = {
 }, settings=defaultSiteSettings()) {
   const normalized = canonicalPath(path);
   if(!pageActive(settings,normalized))return {...excluded(),disabled:true};
-  if (Object.hasOwn(publicPages, normalized)) return publicMeta(normalized,...publicPages[normalized]);
+  const image=normalized==='/all-stars'?settings.logos?.allStars:settings.logos?.kids;
+  if (Object.hasOwn(publicPages, normalized)) return {...publicMeta(normalized,...publicPages[normalized]),image};
   const match = /^\/(events|content|news)\/([a-f0-9]{24})$/i.exec(normalized);
   if (!match || !['events','content','news'].includes(match[1])) return excluded();
   const [,kind,id] = match;
@@ -62,7 +62,7 @@ export async function resolveSeo(path, sources = {
   if (!entity) return excluded();
   const title = text(entity.title, 100) || 'קארדסקול';
   const description = text(entity.description || entity.subtitle || entity.content || entity.bodyHtml, 170) || HOME_DESCRIPTION;
-  return publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description);
+  return {...publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description),image:settings.logos?.[kind==='events'&&entity.category==='all_stars'?'allStars':'kids']};
 }
 
 export const noIndexSeo = excluded;
@@ -77,18 +77,17 @@ export function renderSeoHead(meta) {
     '<meta property="og:locale" content="he_IL" />',
     '<meta property="og:title" content="'+escape(meta.title)+'" />',
     '<meta property="og:description" content="'+escape(meta.description)+'" />',
-    '<meta property="og:image" content="'+LOGO+'" />',
     '<meta name="twitter:card" content="summary" />',
     '<meta name="twitter:title" content="'+escape(meta.title)+'" />',
     '<meta name="twitter:description" content="'+escape(meta.description)+'" />',
-    '<meta name="twitter:image" content="'+LOGO+'" />',
   ];
+  if(meta.image){tags.push('<meta property="og:image" content="'+escape(meta.image)+'" />','<meta name="twitter:image" content="'+escape(meta.image)+'" />','<link rel="icon" href="'+escape(meta.image)+'" />');}
   if (meta.indexable && meta.canonical) {
     tags.push('<link rel="canonical" href="'+escape(meta.canonical)+'" />');
     tags.push('<meta property="og:url" content="'+escape(meta.canonical)+'" />');
   }
   if (meta.canonical === SITE_ORIGIN+'/') {
-    const organization={'@context':'https://schema.org','@type':'Organization',name:'CardSchool',alternateName:'קארדסקול',url:SITE_ORIGIN+'/',logo:LOGO};
+    const organization={'@context':'https://schema.org','@type':'Organization',name:'CardSchool',alternateName:'קארדסקול',url:SITE_ORIGIN+'/',...(meta.image?{logo:meta.image}:{})};
     const website={'@context':'https://schema.org','@type':'WebSite',name:'קארדסקול',alternateName:'CardSchool',url:SITE_ORIGIN+'/'};
     tags.push('<script type="application/ld+json">'+JSON.stringify(organization)+'</script>');
     tags.push('<script type="application/ld+json">'+JSON.stringify(website)+'</script>');

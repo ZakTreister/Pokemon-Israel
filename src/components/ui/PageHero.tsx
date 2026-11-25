@@ -1,8 +1,11 @@
 import { ReactNode } from 'react';
+import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
+import type {LeagueLogoKey} from '../../../shared/siteSettings';
 import { cn } from '../../utils/cn';
 
 interface PageHeroProps {
   title: string;
+  league?: LeagueLogoKey;
   subtitle?: string;
   highlightWord?: string;
   children?: ReactNode;
@@ -12,6 +15,7 @@ interface PageHeroProps {
 
 export function PageHero({
   title,
+  league,
   subtitle,
   highlightWord,
   children,
@@ -59,6 +63,7 @@ export function PageHero({
       />
       <div className="container relative py-12 md:py-16">
         <div className="max-w-3xl">
+          {league&&<LeagueLogo league={league} decorative className="mb-4 h-20 sm:h-28 max-w-[14rem]"/>}
           <p className={cn("mb-4 text-xs font-bold tracking-[.2em]", allStars ? "text-amber-300" : "text-blue-cyan")}>
             CARDSCHOOL IL / POKÉMON TCG
           </p>

@@ -1,3 +1,4 @@
+import {LeagueLogo} from '../../siteSettings/LeagueLogo';
 import {Shield,Trophy} from 'lucide-react';
 import {Link} from 'react-router-dom';
 import {Card} from '../../../components/ui/Card';
@@ -18,11 +19,11 @@ export default function LeagueSections({leaders,standings,events,error}:{leaders
  {error&&<p role="alert">{error}</p>}
  <div className="grid gap-5 lg:grid-cols-2 items-stretch">
   <Card variant="public" className="min-w-0 overflow-hidden flex flex-col">
-   <header className="bg-blue-800 text-white p-5 flex items-center gap-3"><Trophy className="text-yellow-300 shrink-0" size={42}/><div><h2 className="text-2xl font-black">הליגה הישראלית לילדים</h2><p>חוגים וטורנירי ילדים ונוער</p></div></header>
+   <header className="bg-blue-800 text-white p-5 flex items-center gap-3"><LeagueLogo league="kids" decorative className="size-16 shrink-0" fallback={<Trophy className="text-yellow-300 shrink-0" size={42}/>}/><div><h2 className="text-2xl font-black">הליגה הישראלית לילדים</h2><p>חוגים וטורנירי ילדים ונוער</p></div></header>
    <div className="flex flex-1 flex-col gap-4 p-5"><div className="space-y-4"><h3 className="text-xl font-bold">דירוג השחקנים הארצי</h3><RankingPodium leaders={leaders}/>{!leaders.length&&<p>הדירוג יופיע כשיהיו תוצאות.</p>}<Button asChild variant="outline"><Link to="/rankings">מצאו את עצמכם בדירוג ←</Link></Button></div><div className="mt-auto space-y-4"><hr/><Upcoming events={events.filter(e=>e.category==='club')}/></div></div>
   </Card>
   <Card variant="public" className="min-w-0 overflow-hidden flex flex-col">
-   <header className="bg-purple-800 text-white p-5 flex items-center gap-3"><Shield className="text-amber-300 shrink-0" size={42}/><div><h2 className="text-2xl font-black">ליגת האולסטארז</h2><p>נבחרות למתקדמים</p></div></header>
+   <header className="bg-purple-800 text-white p-5 flex items-center gap-3"><LeagueLogo league="allStars" decorative className="size-16 shrink-0" fallback={<Shield className="text-amber-300 shrink-0" size={42}/>}/><div><h2 className="text-2xl font-black">ליגת האולסטארז</h2><p>נבחרות למתקדמים</p></div></header>
    <div className="flex flex-1 flex-col gap-4 p-5"><div className="space-y-4"><h3 className="text-xl font-bold">טבלת הנבחרות</h3>{standings.length?<table className="w-full text-sm"><thead><tr className="border-b"><th className="text-start p-2">מקום</th><th className="text-start p-2">נבחרת</th><th className="text-start p-2">נקודות</th></tr></thead><tbody>{standings.map(t=><tr key={t.id} className="border-b"><td className="p-2">{t.played?t.position:'—'}</td><td className="p-2"><Link to={'/teams/'+t.id} className="flex items-center gap-2 font-bold">{t.logo&&<img className="size-8 object-contain" src={t.logo} alt=""/>}{t.name}</Link></td><td className="p-2 font-bold">{t.leaguePoints}</td></tr>)}</tbody></table>:<p>טבלת הנבחרות תופיע לאחר טעינת הנתונים.</p>}<Button asChild variant="outline"><Link to="/all-stars#standings">עקבו אחר הנבחרות ←</Link></Button></div><div className="mt-auto space-y-4"><hr/><Upcoming allStars events={events.filter(e=>e.category==='all_stars')}/><Link className="block font-bold" to="/all-stars">לטורנירי האימון השבועיים ←</Link></div></div>
   </Card>
  </div></section>;
