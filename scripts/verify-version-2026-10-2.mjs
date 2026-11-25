@@ -957,6 +957,12 @@ try {
   });
   await mount(provided(route(el(Home))));
   assert.ok(text(renderer.toJSON()).includes('Nearest club event'));
+  const upcomingCard = renderer.root.findAllByType('div').find(n=>n.props['aria-label']==='אירועים קרובים' && n.props.role==='region');
+  assert.ok(upcomingCard.props.className.includes('bg-card'));
+  assert.ok(upcomingCard.parent.props.className.includes('cs-card-frame'));
+  const upcomingCarousel = upcomingCard.findByProps({'aria-label':'גלגלת אירועים קרובים'});
+  assert.ok(upcomingCarousel.props.className.includes('overflow-x-auto'));
+  assert.ok(upcomingCarousel.findAllByType('a').some(a=>a.props.href==='/events/featured'));
   assert.ok(text(renderer.toJSON()).includes('Configured description'));
   assert.ok(text(renderer.toJSON()).includes('גלריה'));
   assert.ok(renderer.root.findAllByType('a').some(link=>link.props.href==='/gallery'));
