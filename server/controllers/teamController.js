@@ -395,6 +395,6 @@ export const loadTeamPlayers = asyncHandler(async (req, res) => {
 
 export const getOverview = asyncHandler(async(req,res)=>{
   if(req.user.role==='admin') { res.json(await adminOverview());return; }
-  const teams=await Team.find({teacher:req.user._id}).select('name logo logoMedia isActive teacher').sort({normalizedName:1,_id:1});
+  const teams=await Team.find({teacher:req.user._id}).select('name logo logoMedia isActive teacher').populate('teacher','name role').sort({normalizedName:1,_id:1});
   res.json({role:'judge',teams:(await managementTeams(teams)).map(team=>({...team,leaguePosition:null}))});
 });

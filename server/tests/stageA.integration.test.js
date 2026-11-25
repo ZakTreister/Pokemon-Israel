@@ -1941,6 +1941,9 @@ test('2026.10.4 overview counts are canonical, archival-safe and role/team scope
   const judge=await ok('/teams/overview?teacher='+staffIds.admin);
   assert.equal(judge.role,'judge');assert.ok(!('activeTeams' in judge));
   const first=judge.teams.find(team=>team.id===assigned.id);
+  const teacher=await User.findById(staffIds.judge).select('name role');
+  assert.deepEqual(first.teacher,{id:String(teacher._id),name:teacher.name,role:'judge'});
+  for(const team of judge.teams) assert.equal(team.teacher.id,String(staffIds.judge));
   assert.equal(first.playerCount,1);assert.equal(first.completedInternalTournamentCount,1);assert.equal(first.leaguePosition,null);
   assert.ok(judge.teams.some(team=>team.id===another.id));assert.ok(!judge.teams.some(team=>team.id===foreign.id));
   const admin=await ok('/teams/overview','GET',undefined,'admin');
