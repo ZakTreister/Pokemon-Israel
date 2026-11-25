@@ -22,6 +22,9 @@ import mediaRoutes from '../routes/mediaRoutes.js';
 import MediaUpload from '../models/mediaUploadModel.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
+import { fileURLToPath } from 'node:url';
+import ContentPage from '../models/contentPageModel.js';
+import {registerSeoEndpoints,createSpaSeoHandler} from '../services/seoRoutes.js';
 let server, origin, tokens = {};
 const dbName = 'events_integration_' + randomUUID().replaceAll('-', '');
 const call = async (path, method='GET', body, role=null) => {
@@ -47,6 +50,9 @@ before(async()=>{
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
  app.use('/api/content-pages',contentPageRoutes);app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
  app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
+ registerSeoEndpoints(app);
+ const serveSpa=createSpaSeoHandler(fileURLToPath(new URL('../../index.html',import.meta.url)));
+ app.get(['/', '/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -248,4 +254,39 @@ test('admin can open a draft directly in the content editor without exposing it 
   assert.equal(managed.title,page.title);assert.equal(managed.status,'draft');
   assert.equal((await call('/content-pages/management/not-a-page','GET',undefined,'admin')).status,404);
  }finally{await page.deleteOne();}
+test('production-style SEO HTML and sitemap respect publication and exclude personal pages',async()=>{
+ const published=await ok('/events','POST',{title:'SEO public event',description:'Public event description',category:'club',status:'published'},'admin',201);
+ const draft=await ok('/events','POST',{title:'SEO private event',category:'club',status:'draft'},'admin',201);
+ const [page,hiddenPage]=await ContentPage.create([{title:'SEO public page',status:'published'},{title:'SEO private page',status:'draft'}]);
+ const publicNews=await ok('/updates','POST',{title:'SEO public news',description:'Public news',eventId:published.id},'admin',201);
+ const hiddenNews=await ok('/updates','POST',{title:'SEO private news',description:'Private news',eventId:draft.id},'admin',201);
+ const get=async path=>{const res=await fetch(origin+path);assert.equal(res.status,200,path);return {html:await res.text(),res};};
+ try {
+  const home=await get('/');
+  assert.match(home.html,/קארדסקול.*חוגי פוקימון/);
+  assert.equal(home.res.headers.get('x-robots-tag'),null);
+  for(const [path,title] of [['/events/'+published.id,'SEO public event'],['/content/'+page.id,'SEO public page'],['/news/'+publicNews.id,'SEO public news']]){
+   const {html,res}=await get(path);
+   assert.ok(html.includes('<title>'+title+' | קארדסקול</title>'),path);
+   assert.ok(html.includes('https://cardschool.co.il'+path));
+   assert.equal(res.headers.get('x-robots-tag'),null);
+  }
+  for(const [path,title] of [['/events/'+draft.id,'SEO private event'],['/content/'+hiddenPage.id,'SEO private page'],['/news/'+hiddenNews.id,'SEO private news'],['/manage',''],['/all-stars/players/'+page.id,'']]){
+   const {html,res}=await get(path);
+   assert.equal(res.headers.get('x-robots-tag'),'noindex, follow',path);
+   assert.ok(html.includes('name="robots" content="noindex, follow"'));
+   assert.ok(!html.includes('rel="canonical"'));
+   if(title)assert.ok(!html.includes(title));
+  }
+  const sitemap=await get('/sitemap.xml');
+  assert.match(sitemap.res.headers.get('content-type'),/application\/xml/);
+  for(const path of ['/events/'+published.id,'/content/'+page.id,'/news/'+publicNews.id])assert.ok(sitemap.html.includes(path));
+  for(const path of ['/events/'+draft.id,'/content/'+hiddenPage.id,'/news/'+hiddenNews.id,'/manage','/all-stars/players/'])assert.ok(!sitemap.html.includes(path));
+  const robots=await get('/robots.txt');
+  assert.ok(robots.html.includes('Sitemap: https://cardschool.co.il/sitemap.xml'));
+ }finally{
+  await Update.deleteMany({_id:{$in:[publicNews.id,hiddenNews.id]}});
+  await Event.deleteMany({_id:{$in:[published.id,draft.id]}});
+  await ContentPage.deleteMany({_id:{$in:[page.id,hiddenPage.id]}});
+ }
 });

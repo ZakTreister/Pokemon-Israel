@@ -28,6 +28,7 @@ import badgeRoutes from './routes/badgeRoutes.js';
 import { getNationalRankings } from './controllers/rankingController.js';
 import mediaRoutes from './routes/mediaRoutes.js';
 import { configureTournamentLive } from './services/tournamentLive.js';
+import { createSpaSeoHandler, registerSeoEndpoints } from './services/seoRoutes.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -120,12 +121,16 @@ app.use('/api/all-stars',allStarsPublicRoutes);
 app.get('/api/all-stars/rankings', getAllStarsRankings);
 app.get('/api/rankings', getNationalRankings);
 
+registerSeoEndpoints(app);
+
 // Serve static files from the React app build directory
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '../dist');
   
-  // Serve static files
-  app.use(express.static(buildPath));
+  const serveSpa = createSpaSeoHandler(path.join(buildPath, 'index.html'));
+  // Handle the HTML entry points before static files, which otherwise bypass SEO.
+  app.get(['/', '/index.html'], serveSpa);
+  app.use(express.static(buildPath, { index: false }));
   
   // Handle React routing - send all non-API requests to index.html
   app.get('*', (req, res) => {
@@ -134,7 +139,7 @@ if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({ message: 'API endpoint not found' });
     }
     
-    res.sendFile(path.join(buildPath, 'index.html'));
+    return serveSpa(req, res);
   });
 } else {
   // Development mode - just show a message for non-API routes
