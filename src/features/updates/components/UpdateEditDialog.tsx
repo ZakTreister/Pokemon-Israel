@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { eventsService } from '../../../services/events';
+import { publicTeams } from '../../../services/publicTeams';
+import type { Team } from '../../../types/team';
 import type { EventSummary } from '../../../types/event';
 import type { Update } from '../../../types/update';
 import Modal from '../../../components/ui/Modal';
@@ -30,6 +32,8 @@ export default function UpdateEditDialog({
   const [imageInGallery,setImageInGallery]=useState(!!update?.imageInGallery);
   const [eventId,setEventId] = useState(update?.eventId ?? defaultEventId ?? null);
   const [events,setEvents] = useState<EventSummary[]>([]);
+  const [teams,setTeams]=useState<Team[]>([]),[teamIds,setTeamIds]=useState<string[]>(update?.teamIds??[]);
+  useEffect(()=>{let active=true;publicTeams.list().then(rows=>{if(active)setTeams(rows);}).catch(()=>{});return()=>{active=false};},[]);
   useEffect(()=>{eventsService.manage().then(rows=>setEvents(Array.isArray(rows)?rows:[])).catch(()=>{});},[]);
   const [image, setImage] = useState(update?.image || '');
   const [imageUploadId, setImageUploadId] = useState<string | null>();
@@ -46,7 +50,7 @@ export default function UpdateEditDialog({
     setBusy(true);
     setError('');
     try {
-      const input = { ...parsed.data, imageUploadId, eventId,showInFieldNews,imageInGallery };
+      const input = { ...parsed.data, imageUploadId, eventId,teamIds,showInFieldNews,imageInGallery };
       if (update) await updatesService.updateUpdate(update.id, input);
       else await updatesService.createUpdate(input);
       await onSaved();
@@ -116,6 +120,7 @@ export default function UpdateEditDialog({
         )}
         {update && <MediaManager owner="update" id={update.id} items={update.mediaItems||[]} onChanged={onSaved}/>}
         {!defaultEventId && <label className="block">אירוע משויך (אופציונלי)<select className="block w-full border rounded-md p-2 bg-background" value={eventId||""} onChange={e=>setEventId(e.target.value||null)}><option value="">עדכון רגיל ללא אירוע</option>{events.map(ev=><option key={ev.id} value={ev.id}>{ev.title}</option>)}</select></label>}
+        <fieldset className="space-y-2"><legend className="font-bold">נבחרות משויכות (אופציונלי)</legend><p className="text-sm text-muted-foreground">העדכון יוצג לאוהדי הנבחרות שנבחרו.</p>{teams.map(t=><label key={t.id} className="flex gap-2"><input type="checkbox" checked={teamIds.includes(t.id)} onChange={e=>setTeamIds(old=>e.target.checked?[...old,t.id]:old.filter(id=>id!==t.id))}/>{t.name}</label>)}</fieldset>
         <label className="flex gap-2"><input type="checkbox" checked={showInFieldNews} onChange={e=>setShowInFieldNews(e.target.checked)}/> הצג בחדשות מהשטח</label>
         <label className="flex gap-2"><input type="checkbox" checked={imageInGallery} onChange={e=>setImageInGallery(e.target.checked)}/> הצג את תמונת העדכון בגלריה</label>
         <ImageUpload
