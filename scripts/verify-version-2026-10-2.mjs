@@ -961,7 +961,7 @@ try {
   assert.ok(upcomingSection);
   assert.ok(!upcomingSection.props.className.includes('bg-card'));
   const upcomingCarousel = upcomingSection.findByProps({'aria-label':'גלגלת אירועים קרובים'});
-  assert.ok(upcomingCarousel.props.className.includes('overflow-x-auto'));
+  assert.ok(upcomingCarousel.findAllByType('div').some(n=>n.props.className?.includes('cs-content-swiper-cards')));
   assert.ok(!upcomingCarousel.props.className.includes('bg-card'));
   assert.ok(!upcomingCarousel.findAllByType('h2').length);
   const upcomingLinks=upcomingCarousel.findAllByType('a');
