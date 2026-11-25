@@ -6,7 +6,7 @@ interface PageHeroProps {
   subtitle?: string;
   highlightWord?: string;
   children?: ReactNode;
-  variant?: 'dark' | 'light';
+  variant?: 'dark' | 'light' | 'all-stars';
   className?: string;
 }
 
@@ -18,6 +18,8 @@ export function PageHero({
   variant = 'dark',
   className,
 }: PageHeroProps) {
+  const allStars = variant === 'all-stars';
+  const dark = variant !== 'light';
   const renderTitle = () => {
     if (!highlightWord || !title.includes(highlightWord)) {
       return title;
@@ -26,7 +28,7 @@ export function PageHero({
     return (
       <>
         {parts[0]}
-        <span className={variant === 'dark' ? 'text-gold' : 'text-blue-500'}>
+        <span className={allStars ? 'text-amber-300' : dark ? 'text-gold' : 'text-blue-500'}>
           {highlightWord}
         </span>
         {parts[1]}
@@ -38,15 +40,15 @@ export function PageHero({
     <section
       className={cn(
         'relative overflow-hidden',
-        variant === 'dark'
-          ? 'bg-hero-navy text-white'
-          : 'bg-section-light text-foreground',
+        allStars
+          ? 'bg-gradient-to-br from-purple-950 via-purple-900 to-purple-800 text-white'
+          : dark ? 'bg-hero-navy text-white' : 'bg-section-light text-foreground',
         className,
       )}
     >
-      {variant === 'dark' && (
+      {dark && (
         <>
-          <div className="absolute inset-0 bg-hero-glow" />
+          <div aria-hidden="true" className={cn("absolute inset-0", allStars ? "bg-[radial-gradient(ellipse_at_80%_20%,rgba(251,191,36,0.12),transparent_50%)]" : "bg-hero-glow")} />
           <div className="absolute inset-0 halftone-dots opacity-40" />
           <div className="absolute inset-0 diagonal-lines" />
         </>
@@ -57,7 +59,7 @@ export function PageHero({
       />
       <div className="container relative py-12 md:py-16">
         <div className="max-w-3xl">
-          <p className="mb-4 text-xs font-bold tracking-[.2em] text-blue-cyan">
+          <p className={cn("mb-4 text-xs font-bold tracking-[.2em]", allStars ? "text-amber-300" : "text-blue-cyan")}>
             CARDSCHOOL IL / POKÉMON TCG
           </p>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-4">
@@ -67,7 +69,7 @@ export function PageHero({
             <p
               className={cn(
                 'text-base md:text-lg mb-6',
-                variant === 'dark' ? 'text-blue-200' : 'text-muted-foreground',
+                allStars ? 'text-purple-100' : dark ? 'text-blue-200' : 'text-muted-foreground',
               )}
             >
               {subtitle}

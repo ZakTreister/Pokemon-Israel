@@ -1,4 +1,3 @@
-import BadgeProgramEditor from '../../features/badges/components/BadgeProgramEditor';
 import BadgeDefinitionFields from '../../features/badges/components/BadgeDefinitionFields';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import { requestError } from '../../utils/requestError';
@@ -162,7 +161,6 @@ export default function ManageBadges() {
           עונות התגים אינן משנות את הדירוגים ואינן נועלות נבחרות או טורנירים.
         </p>
       </div>
-      <BadgeProgramEditor />
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">ניהול תגים</h2>
         {!showCreateForm && (

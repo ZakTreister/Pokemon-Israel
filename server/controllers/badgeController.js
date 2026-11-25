@@ -4,6 +4,8 @@ import BadgeDefinition, {
 } from '../models/badgeDefinitionModel.js';
 import BadgeAward from '../models/badgeAwardModel.js';
 import BadgeProgram,{BADGE_PROGRAM_ID} from '../models/badgeProgramModel.js';
+import { richBody } from '../services/contentFields.js';
+import { legacyBadgeHtml } from '../services/staticPageTexts.js';
 import {publicMediaUrl} from '../services/storage/mediaMetadata.js';
 import Player from '../models/playerModel.js';
 import Season from '../models/seasonModel.js';
@@ -168,14 +170,19 @@ export const revokeBadgeAward = asyncHandler(async (req, res) => {
   res.json({ id: award.id, revokedAt: award.revokedAt });
 });
 
-const programView=record=>({id:BADGE_PROGRAM_ID,description:record?.description||'',image:publicMediaUrl(record?.imageMedia)});
+const programView=record=>({id:BADGE_PROGRAM_ID,description:record?.description||'',descriptionHtml:record?.descriptionHtml??legacyBadgeHtml(record?.description),image:publicMediaUrl(record?.imageMedia)});
 export const getBadgeProgram=asyncHandler(async(_req,res)=>res.json(programView(await BadgeProgram.findById(BADGE_PROGRAM_ID))));
 export const updateBadgeProgram=asyncHandler(async(req,res)=>{
- const {description}=req.body;
- if(typeof description!=='string'||description.length>5000)fail(400,'תיאור מערך התגים עד 5000 תווים');
+ const {description,descriptionHtml}=req.body;
+ let fields;
+ if(descriptionHtml!==undefined){fields={descriptionHtml:richBody(descriptionHtml)};}
+ else{
+  if(typeof description!=='string'||description.length>5000)fail(400,'תיאור מערך התגים עד 5000 תווים');
+  fields={description:description.trim(),descriptionHtml:null};
+ }
  const previous=await BadgeProgram.findById(BADGE_PROGRAM_ID);
  const attachment=await resolveUpload(req,'badge-program-image',BADGE_PROGRAM_ID,previous?.imageMedia);
- const record=await BadgeProgram.findOneAndUpdate({_id:BADGE_PROGRAM_ID},{$set:{description:description.trim(),...(attachment?{imageMedia:attachment.media}:{})}},{upsert:true,new:true,runValidators:true,setDefaultsOnInsert:true});
+ const record=await BadgeProgram.findOneAndUpdate({_id:BADGE_PROGRAM_ID},{$set:{...fields,...(attachment?{imageMedia:attachment.media}:{})}},{upsert:true,new:true,runValidators:true,setDefaultsOnInsert:true});
  await finishAttachment(req,attachment,previous?.imageMedia);
  res.json(programView(record));
 });

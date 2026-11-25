@@ -23,6 +23,8 @@ import ManageEventPage from './ManageEventPage';
 import ManageGallery from './ManageGallery';
 import ManageContentPages from './ManageContentPages';
 import ManageContentPageEditor from './ManageContentPageEditor';
+import ManageStaticPageTexts from './ManageStaticPageTexts';
+import ManageStaticPageTextEditor from './ManageStaticPageTextEditor';
 import AdminTournaments from '../admin/AdminTournaments';
 import AdminUsers from '../admin/AdminUsers';
 import AdminOverview from '../admin/AdminOverview';
@@ -77,7 +79,7 @@ export default function ManageDashboardPage() {
     ['', 'סקירה כללית'],
     ['teams', 'נבחרות All-Stars'],
     ['tournaments', 'טורנירים'],
-    ...(admin ? [['events', 'אירועים'],['content-pages','עמודי תוכן'],['gallery','גלריה']] : []),
+    ...(admin ? [['events', 'אירועים'],['content-pages','עמודי תוכן'],['texts','ניהול טקסטים'],['gallery','גלריה']] : []),
     ...(admin
       ? [
           ['players', 'שחקנים'],
@@ -185,7 +187,7 @@ export default function ManageDashboardPage() {
                       ? location.pathname.split('/').filter(Boolean).length > 3
                         ? `/${teamParent}`
                         : '/manage/teams'
-                      : location.pathname.startsWith('/manage/events/') ? '/manage/events' : location.pathname.startsWith('/manage/content-pages/') ? '/manage/content-pages' : '/manage/tournaments'
+                      : location.pathname.startsWith('/manage/events/') ? '/manage/events' : location.pathname.startsWith('/manage/content-pages/') ? '/manage/content-pages' : location.pathname.startsWith('/manage/texts/') ? '/manage/texts' : '/manage/tournaments'
                   }
                 >
                   → חזרה ל
@@ -193,7 +195,7 @@ export default function ManageDashboardPage() {
                     ? location.pathname.split('/').filter(Boolean).length > 3
                       ? 'נבחרת'
                       : 'נבחרות All-Stars'
-                    : location.pathname.startsWith('/manage/events/') ? 'אירועים' : location.pathname.startsWith('/manage/content-pages/') ? 'עמודי תוכן' : 'טורנירים'}
+                    : location.pathname.startsWith('/manage/events/') ? 'אירועים' : location.pathname.startsWith('/manage/content-pages/') ? 'עמודי תוכן' : location.pathname.startsWith('/manage/texts/') ? 'ניהול טקסטים' : 'טורנירים'}
                 </Link>
               </Button>
             )}
@@ -231,6 +233,8 @@ export default function ManageDashboardPage() {
               {admin && <Route path="gallery" element={<ManageGallery />} />}
               {admin && <Route path="content-pages" element={<ManageContentPages />} />}
               {admin && <Route path="content-pages/:id" element={<ManageContentPageEditor />} />}
+              {admin && <Route path="texts" element={<ManageStaticPageTexts />} />}
+              {admin && <Route path="texts/:id" element={<ManageStaticPageTextEditor />} />}
               {admin && <Route path="events/:id" element={<ManageEventPage />} />}
               <Route
                 path="tournaments/:id"

@@ -3,15 +3,12 @@ import RouteScroll from './RouteScroll';
 import Header from './Header';
 import Footer from './Footer';
 import FloatingTrialCTA from './FloatingTrialCTA';
-import { isPublicPage } from '../../config/publicSite';
-import { useLocation } from 'react-router-dom';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const publicPage = isPublicPage(useLocation().pathname);
   return (
     <div className="flex min-h-screen flex-col">
       <RouteScroll />
@@ -24,7 +21,7 @@ export default function Layout({ children }: LayoutProps) {
       </a>
       <main
         id="main-content"
-        className={`min-w-0 flex-1 ${publicPage ? 'pb-24' : ''}`}
+        className="min-w-0 flex-1"
         tabIndex={-1}
       >
         {children}
