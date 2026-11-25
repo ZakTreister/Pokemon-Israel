@@ -9,7 +9,6 @@ import { useAppSelector } from '../../hooks/redux';
 import { requestError } from '../../utils/requestError';
 import { useConfirm } from '../../components/ui/ConfirmProvider';
 import Button from '../../components/ui/Button';
-import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
 interface Entry {
   id: string;
   title: string;
@@ -61,7 +60,6 @@ export default function ManageTournaments() {
     <div className="space-y-5">
       <h2 className="text-2xl font-bold">טורנירים</h2>
       <div className="flex flex-wrap gap-3">
-        <InterTeamLaunch />
         {user?.role === 'admin' && (
           <Button asChild>
             <Link to="/manage/tournaments/regular">צור טורניר חוגים</Link>

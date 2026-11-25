@@ -15,12 +15,22 @@ router.get('/overview',asyncHandler(async(req,res)=>{
    Event.find({status:'published',category:'all_stars'}).select('title fixtures startDate openingRound').sort({startDate:-1}).limit(30),
  ]);
  const byId=new Map(teams.map(t=>[String(t._id),t]));
- const fixtures=events.flatMap(ev=>(ev.fixtures||[]).map(f=>({
+ const eventById=new Map(events.map(ev=>[String(ev._id),ev]));
+ const scheduled=await Tournament.find({type:'inter_team',eventId:{$in:events.map(ev=>ev._id)}}).select('interTeamSides date location eventId').sort({date:1});
+ const teamSummary=(side)=>({id:String(side.team),name:byId.get(String(side.team))?.name||side.nameSnapshot||'',logo:byId.get(String(side.team))?.toJSON().logo||side.logoSnapshot||''});
+ const canonical=scheduled.filter(t=>t.interTeamSides.length===2).map(t=>{
+   const ev=eventById.get(String(t.eventId));
+   return {id:t.id,eventId:ev.id,eventTitle:ev.title,openingRound:!!ev.openingRound,eventStartDate:ev.startDate,date:t.date,location:t.location||'',
+     firstTeam:teamSummary(t.interTeamSides[0]),secondTeam:teamSummary(t.interTeamSides[1]),tournamentId:t.id};
+ });
+ // Only unconverted legacy fixtures are retained as a temporary read fallback.
+ const legacy=events.flatMap(ev=>(ev.fixtures||[]).filter(f=>!f.tournament).map(f=>({
   id:String(f._id),eventId:ev.id,eventTitle:ev.title,openingRound:!!ev.openingRound,eventStartDate:ev.startDate,date:f.date,location:f.location||'',
   firstTeam:{id:String(f.firstTeam),name:byId.get(String(f.firstTeam))?.name||'',logo:byId.get(String(f.firstTeam))?.toJSON().logo||''},
   secondTeam:{id:String(f.secondTeam),name:byId.get(String(f.secondTeam))?.name||'',logo:byId.get(String(f.secondTeam))?.toJSON().logo||''},
   tournamentId:f.tournament?String(f.tournament):null,
- }))).filter(f=>f.firstTeam.name&&f.secondTeam.name).sort((a,b)=>new Date(a.date)-new Date(b.date));
+ }))).filter(f=>f.firstTeam.name&&f.secondTeam.name);
+ const fixtures=[...canonical,...legacy].sort((a,b)=>new Date(a.date)-new Date(b.date));
  const recentMeetings=meetings.filter(t=>t.phase==='completed').slice(0,20).map(t=>{
    const sides=t.interTeamSides.map(s=>({id:String(s.team),name:byId.get(String(s.team))?.name||s.nameSnapshot||''}));
    const scores=calculateInterTeamScore(t);

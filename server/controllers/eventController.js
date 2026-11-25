@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import Event from '../models/eventModel.js';
 import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
-import Team from '../models/teamModel.js';
 import { publicTournament } from '../services/publicTournament.js';
 import { fail } from '../utils/httpError.js';
 import { attachAsset,removeAsset } from '../services/assetAttachment.js';
@@ -109,46 +108,9 @@ export const unlinkTournament = asyncHandler(async (req,res) => {
   if (!valid(req.params.tournamentId)) fail(404,'הטורניר לא נמצא');
   const result=await Tournament.updateOne({_id:req.params.tournamentId,eventId:event._id},{$set:{eventId:null}});
   if (!result.matchedCount) fail(404,'הטורניר אינו משויך לאירוע');
-  await Event.updateOne({_id:event._id},{$set:{'fixtures.$[fixture].tournament':null}},{arrayFilters:[{'fixture.tournament':req.params.tournamentId}]});
+  // Do not resurrect a detached legacy fixture as a phantom meeting.
+  await Event.updateOne({_id:event._id},{$pull:{fixtures:{tournament:req.params.tournamentId}}});
   res.json({message:'הטורניר הוסר מהאירוע'});
 });
-export const appendFixture = asyncHandler(async (req,res) => {
-  const event = await findEvent(req.params.id);
-  if (event.category !== 'all_stars') fail(400,'תכנון מפגשים אפשרי רק באולסטארז');
-  const {firstTeam,secondTeam,date:input,location=''} = req.body;
-  if (!valid(firstTeam)||!valid(secondTeam)||firstTeam===secondTeam) fail(400,'בחר שתי נבחרות שונות');
-  const date=new Date(input);
-  if (!input || !Number.isFinite(date.getTime()) || date <= new Date()) fail(400,'יש לבחור מועד עתידי');
-  if (typeof location!=='string'||location.length>200) fail(400,'מיקום לא חוקי');
-  if (await Team.countDocuments({_id:{$in:[firstTeam,secondTeam]},isActive:true})!==2) fail(400,'יש לבחור נבחרות פעילות');
-  const updated=await Event.findOneAndUpdate({_id:event._id,category:'all_stars','fixtures.79':{$exists:false}},{$push:{fixtures:{firstTeam,secondTeam,date,location}}},{new:true,runValidators:true});
-  if (!updated) fail(409,'לא ניתן להוסיף מפגש נוסף לאירוע');
-  res.status(201).json(updated);
-});
-export const changeFixtures = asyncHandler(async (req,res) => {
-  const event = await findEvent(req.params.id);
-  if (event.category !== 'all_stars') fail(400,'תכנון מפגשים אפשרי רק באולסטארז');
-  const fixtures=req.body.fixtures;
-  if (!Array.isArray(fixtures) || fixtures.length>80) fail(400,'רשימת המפגשים אינה חוקית');
-  const ids=new Set();
-  const normalized=fixtures.map(f=>{
-    if (!valid(f.firstTeam)||!valid(f.secondTeam)||f.firstTeam===f.secondTeam) fail(400,'בחר שתי נבחרות שונות');
-    const date=new Date(f.date);
-    if (Number.isNaN(date.getTime())) fail(400,'מועד מפגש לא חוקי');
-    if (typeof f.location!=='string' && f.location!==undefined) fail(400,'מיקום לא חוקי');
-    ids.add(f.firstTeam);ids.add(f.secondTeam);
-    return {...(valid(f.id)&&event.fixtures.id(f.id)?{_id:f.id}:{}),firstTeam:f.firstTeam,secondTeam:f.secondTeam,date,location:(f.location||'').slice(0,200),
-      ...(valid(f.tournamentId)?{tournament:f.tournamentId}:{})};
-  });
-  const teams=await Team.countDocuments({_id:{$in:[...ids]},isActive:true});
-  if (teams!==ids.size) fail(400,'יש לבחור נבחרות פעילות');
-  for(const f of normalized) if(f.tournament) {
-    const t=await Tournament.findOne({_id:f.tournament,eventId:event._id,type:'inter_team'});
-    if(!t || !t.interTeamSides.some(s=>String(s.team)===f.firstTeam) || !t.interTeamSides.some(s=>String(s.team)===f.secondTeam))
-      fail(400,'המפגש המשויך אינו תואם את שתי הנבחרות');
-  }
-  event.fixtures=normalized;await event.save();res.json(event);
-});
-
 export const addEventAsset=asyncHandler(async(req,res)=>res.status(201).json(await attachAsset(req,await findEvent(req.params.id),'event-media')));
 export const deleteEventAsset=asyncHandler(async(req,res)=>res.json(await removeAsset(await findEvent(req.params.id),req.params.assetId)));

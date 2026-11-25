@@ -13,6 +13,7 @@ import { getRoundTimer, updateRoundTimer } from '../controllers/roundTimerContro
 import { calculateInterTeamScore } from '../services/interTeamScore.js';
 
 const router = express.Router();
+const israelDay = value => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(value);
 const validId = value => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 const fail = (code, message) => { const error = new Error(message); error.statusCode = code; throw error; };
 const serial = doc => ({
@@ -44,7 +45,9 @@ const snapshot = player => ({
 
 router.use(protect,authorize('admin','judge'));
 router.get('/',asyncHandler(async(req,res)=>{
-  const rows=await Tournament.find({type:'inter_team',engineVersion:'swiss-v1'})
+  const assigned=req.user.role==='admin'?null:await Team.find({teacher:req.user._id}).distinct('_id');
+  const rows=await Tournament.find({type:'inter_team',engineVersion:'swiss-v1',
+    ...(assigned?{'interTeamSides.team':{$in:assigned}}:{})})
     .select('title date type phase status interTeamSides revision').sort({date:-1}).limit(100);
   res.json(rows);
 }));
@@ -53,6 +56,8 @@ router.post('/',asyncHandler(async(req,res)=>{
   if (!Array.isArray(teamIds)||teamIds.length!==2||!teamIds.every(validId)||teamIds[0]===teamIds[1])
     fail(400,'יש לבחור שתי נבחרות שונות');
 
+  if(req.user.role!=='admin') fail(403,'רק מנהל יכול ליצור מפגש מתוך אירוע');
+  if(!validId(req.body.eventId)) fail(400,'יש ליצור מפגש מתוך אירוע אולסטארז');
   let event=null,fixture=null;
   const scheduled=req.body.scheduledDate!==undefined;
   const scheduledDate=scheduled?new Date(req.body.scheduledDate):null;
@@ -63,7 +68,7 @@ router.post('/',asyncHandler(async(req,res)=>{
     event=await Event.findById(req.body.eventId);
     if(!event||event.category!=='all_stars') fail(400,'אירוע אולסטארז לא נמצא');
   }
-  if(!scheduled&&(req.body.eventId!==undefined || req.body.fixtureId!==undefined)){
+  if(!scheduled){
     if(!validId(req.body.eventId)||!validId(req.body.fixtureId))
       fail(400,'אירוע ומפגש מתוכנן נדרשים');
     event=await Event.findById(req.body.eventId);
@@ -117,10 +122,12 @@ router.post('/',asyncHandler(async(req,res)=>{
   res.status(201).json(serial(doc));
 }));
 router.get('/active',asyncHandler(async(req,res)=>{
+  const assigned=req.user.role==='admin'?null:await Team.find({teacher:req.user._id}).distinct('_id');
   const rows=await Tournament.find({
     type:'inter_team',engineVersion:'swiss-v1',source:'live',status:'upcoming',
     phase:{$in:['setup','running']},
-    $or:[{phase:'running'},{date:{$lte:new Date()}}],
+    $or:[{phase:'running'},{$expr:{$eq:[{$dateToString:{format:'%Y-%m-%d',date:'$date',timezone:'Asia/Jerusalem'}},israelDay(new Date())]}}],
+    ...(assigned?{'interTeamSides.team':{$in:assigned}}:{})
   }).select('title phase interTeamSides rounds.number updatedAt')
     .sort({updatedAt:-1,_id:-1}).limit(30);
   res.json(rows.map(row=>({
@@ -128,6 +135,14 @@ router.get('/active',asyncHandler(async(req,res)=>{
     teamNames:row.interTeamSides.map(side=>side.nameSnapshot),
     roundNumber:row.rounds.length ? row.rounds[row.rounds.length-1].number : 0,
   })));
+}));
+router.use('/:id',asyncHandler(async(req,res,next)=>{
+  if(req.user.role==='admin') return next();
+  const doc=await get(req.params.id);
+  const assigned=await Team.exists({_id:{$in:doc.interTeamSides.map(s=>s.team)},teacher:req.user._id});
+  if(!assigned) fail(403,'ניתן לנהל רק מפגשים של הנבחרות שלך');
+  if(doc.phase==='setup'&&israelDay(doc.date)>israelDay(new Date())) fail(403,'מועד המפגש טרם הגיע');
+  next();
 }));
 const interTeamTimerScope = (req, res, next) => { req.timerType = 'inter_team'; next(); };
 router.get('/:id/rounds/:roundNumber/timer', interTeamTimerScope, getRoundTimer);
@@ -149,7 +164,7 @@ router.put('/:id/participants',asyncHandler(async(req,res)=>{
 }));
 router.post('/:id/rounds',asyncHandler(async(req,res)=>{
   const doc=await get(req.params.id);
-  if (doc.phase==='setup'&&doc.date>new Date()) fail(400,'מועד המפגש טרם הגיע');
+  if (doc.phase==='setup'&&israelDay(doc.date)>israelDay(new Date())) fail(400,'מועד המפגש טרם הגיע');
   if (doc.rounds.length>=16) fail(400,'ניתן לקיים עד 16 סבבים');
   let plan;
   try {

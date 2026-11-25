@@ -8,9 +8,10 @@ Approved scope requested 2026-11-25. Implementation is incremental; this documen
 - Rank movers derive from full canonical ranking before and after the latest completed regular tournament (closedAt, falling back to date). Compare existing players only, keep historical snapshot and league separation; show up to three positive movers, even when outside the first visible rows.
 - Homepage quick links have larger icons on the left; upcoming events inside one card with horizontally scrollable cards; events directory falls back to first image when cover is absent.
 
-## Batch 2 — canonical event tournaments (pending)
+## Batch 2 — canonical event tournaments (partially implemented)
 - Tournament is the sole authoritative inter-team competition, with eventId, date, teams, optional location, setup lifecycle. No independent fixture creation or optional official tournament selector.
 - Audit event fixtures, public All-Stars overview, homepage hero, teacher/admin dashboard, event editor, all inter-team launch endpoints, tests and MD. Migrate existing unlinked fixtures idempotently, preserve linked tournament IDs, results and old URLs; do not invent duplicates. Do not delete legacy records until audited/migrated.
+- Implemented: new official meetings are created only inside Event management; legacy writes disabled, admin can convert an existing legacy fixture in place. Public overview derives meetings from Tournament and temporarily retains only unconverted legacy fixtures. Existing production fixtures have not yet been migrated; operational authorization outside the inter-team HTTP routes and full CI require review.
 - New official meetings are created only inside Event management; assigned teachers and system admin can operate scheduled tournaments on the Israel-local event date, not before. Preserve active sessions and permissions. Unified public tournament cards, hide empty section.
 
 ## Batch 3 — managed content and rich events (pending)

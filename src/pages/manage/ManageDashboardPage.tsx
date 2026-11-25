@@ -1,5 +1,4 @@
 import TeacherTeams from './TeacherTeams';
-import InterTeamLaunch from '../../components/tournaments/InterTeamLaunch';
 import InterTeamManagePage from './InterTeamManagePage';
 import LiveClubTournaments from './LiveClubTournaments';
 import ActiveInterTeamMeetings from './ActiveInterTeamMeetings';
@@ -200,7 +199,6 @@ export default function ManageDashboardPage() {
                 index
                 element={
                   <>
-                    <div className="mb-5"><InterTeamLaunch /></div>
                     <ActiveInterTeamMeetings />
                     <LiveClubTournaments />
                     {admin && <AdminOverview />}
