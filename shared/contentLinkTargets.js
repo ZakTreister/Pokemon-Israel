@@ -12,7 +12,7 @@ export const STATIC_CONTENT_LINK_TARGETS=Object.freeze([
  {path:'/birthday',label:'הזמנת יום הולדת'},
 ]);
 export function staticContentLinkTarget(path){
- const normalized=path.replace(/\/+$/,'')||'/';
+ const normalized=path.toLowerCase().replace(/\/+$/,'')||'/';
  const canonical=normalized==='/events'?'/tournaments':normalized;
  return STATIC_CONTENT_LINK_TARGETS.some(target=>target.path===canonical)?canonical:null;
 }

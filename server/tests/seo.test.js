@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import {defaultSiteSettings,navigationPages,validSocialUrl} from '../../shared/siteSettings.js';
 import {resolveSeo,renderSeoHead,injectSeo,sitemapXml,ROBOTS,SITE_ORIGIN} from '../services/seo.js';
 
 const id='6b05ea478f45378a9ed8dfaa';
@@ -55,4 +56,19 @@ test('built HTML retains the SEO injection boundary when a build exists',async()
  assert.match(html,/<title>דירוג ליגת הפוקימון הישראלית \| קארדסקול<\/title>/);
  assert.ok(html.includes('rel="canonical" href="'+SITE_ORIGIN+'/rankings"'));
  assert.equal((html.match(/<title>/g)||[]).length,1);
+});
+
+
+test('fixed visibility and navigation settings are independent, aliases canonical and social URLs safe',async()=>{
+ const settings=defaultSiteSettings();
+ assert.deepEqual(navigationPages(settings,'menu').map(p=>p.to),['/rankings','/all-stars','/tournaments','/news','/store','/birthday']);
+ settings.pages.find(p=>p.path==='/tournaments').active=false;
+ settings.pages.find(p=>p.path==='/rankings').menu=false;
+ assert.ok(!navigationPages(settings,'menu').some(p=>p.to==='/rankings'||p.to==='/tournaments'));
+ assert.ok(navigationPages(settings,'footer').some(p=>p.to==='/rankings'));
+ for(const path of ['/events','/EVENTS','/tournaments/'])assert.equal((await resolveSeo(path,sources,settings)).disabled,true);
+ assert.equal((await resolveSeo('/rankings',sources,settings)).indexable,true);
+ assert.ok(!sitemapXml({settings}).includes('<loc>'+SITE_ORIGIN+'/tournaments</loc>'));
+ for(const url of ['javascript:alert(1)','http://instagram.com/a','https://instagram.com.evil.test/a','https://user:pass@instagram.com/a'])assert.equal(validSocialUrl('instagram',url),false);
+ assert.equal(validSocialUrl('instagram','https://www.instagram.com/a/'),true);
 });

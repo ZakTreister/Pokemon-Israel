@@ -25,6 +25,7 @@ export default function ContentPageButtonFields({value,onChange,id,disabled}:{va
  <div className="space-y-2"><h3 className="font-bold">עמודי תוכן קיימים</h3>
  {error?<p role="alert" className="text-destructive">{error}</p>:!pages?<p role="status">טוען עמודים...</p>:<div className="grid gap-2 sm:grid-cols-2">{pages.filter(p=>p.id!==id).map(p=>checkbox('/content/'+p.id,p.title+(p.status==='draft'?' (טיוטה)':'')))}</div>}
  {pages&&!pages.some(p=>p.id!==id)&&<p className="text-sm text-muted-foreground">אין עמודי תוכן נוספים.</p>}</div>
+ {targets.some(t=>!pageActive(settings,t))&&<p className="text-sm text-muted-foreground">שיוכים לעמודים מושבתים נשמרים ולא יוצגו עד להפעלה מחדש.</p>}
  {!targets.length&&<p className="text-sm text-muted-foreground">יש לבחור לפחות עמוד אחד.</p>}
  </>}
  </fieldset>;

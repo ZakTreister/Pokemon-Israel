@@ -40,7 +40,7 @@ function LayoutContent({ children }: LayoutProps) {
         {waiting?<p role="status" className="container py-8">טוען עמוד...</p>:unavailable?<p role="alert" className="container py-8">לא ניתן לטעון את הגדרות האתר. נסו לרענן את העמוד.</p>:disabled?<NotFoundPage/>:<>{children}<StaticContentPageLinks /></>}
       </main>
       <Footer />
-      <FloatingTrialCTA />
+      {!disabled&&!waiting&&!unavailable&&<FloatingTrialCTA />}
     </div>
   );
 }
