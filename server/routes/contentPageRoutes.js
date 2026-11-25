@@ -18,6 +18,7 @@ router.get('/navigation',asyncHandler(async(_req,res)=>{
  res.json(pages.map(page=>({id:page.id,label:page.navigationLabel})));
 }));
 router.get('/management',protect,admin,asyncHandler(async(_req,res)=>res.json(await ContentPage.find({}).sort({updatedAt:-1}))));
+router.get('/management/:id',protect,admin,asyncHandler(async(req,res)=>res.json(await find(req.params.id))));
 router.get('/:id',asyncHandler(async(req,res)=>{
  const page=await find(req.params.id);
  if(page.status!=='published')fail(404,'עמוד התוכן לא נמצא');
