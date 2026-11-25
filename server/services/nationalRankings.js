@@ -20,7 +20,7 @@ const canonicalCompare = (a, b) =>
 
 export function buildNationalRanking(historicalRows, postImportTournamentRows, options = {}) {
   const { includeAllStars = false, search = '', page = 1, pageSize = 25,
-    sort = 'position', descending = false } = options;
+    sort = 'position', descending = false, offset, previousTournamentRows, allRows = false } = options;
   const totals = new Map();
   const linkedPlayers = new Map();
   const linkedUsers = new Map();
@@ -72,6 +72,16 @@ export function buildNationalRanking(historicalRows, postImportTournamentRows, o
     row.position = precedingPosition;
     precedingPoints = row.points;
   });
+  let topMovers = [];
+  if (Array.isArray(previousTournamentRows)) {
+    const previous = buildNationalRanking(historicalRows, previousTournamentRows, { includeAllStars, allRows: true }).rankings;
+    const positions = new Map(previous.map(row => [row.playerId, row.position]));
+    for (const row of eligible) {
+      if (positions.has(row.playerId)) row.rankChange = positions.get(row.playerId) - row.position;
+    }
+    topMovers = eligible.filter(row => row.rankChange > 0)
+      .sort((a,b) => b.rankChange - a.rankChange || a.position - b.position || nameCompare(a,b)).slice(0,3);
+  }
   const normalizedSearch = normalizeRankingName(search);
   const filtered = normalizedSearch
     ? eligible.filter(row => normalizeRankingName(row.playerName).includes(normalizedSearch))
@@ -89,8 +99,10 @@ export function buildNationalRanking(historicalRows, postImportTournamentRows, o
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / validSize));
   const validPage = Number.isInteger(page) ? Math.max(1, Math.min(page, totalPages)) : 1;
+  const start = Number.isSafeInteger(offset) && offset >= 0 ? offset : (validPage - 1) * validSize;
   return {
-    rankings: filtered.slice((validPage - 1) * validSize, validPage * validSize),
+    rankings: allRows ? filtered : filtered.slice(start, start + validSize),
+    ...(Array.isArray(previousTournamentRows) ? { topMovers } : {}),
     total, page: validPage, pageSize: validSize, totalPages,
   };
 }
