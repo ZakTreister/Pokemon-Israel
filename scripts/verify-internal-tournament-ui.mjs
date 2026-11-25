@@ -13,6 +13,7 @@ import { createServer } from 'vite';
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.localStorage = storage;
 globalThis.window = {
+  addEventListener() {}, removeEventListener() {}, dispatchEvent() { return true; },
   location: { origin: 'http://localhost:5173' },
   localStorage: storage,
   setInterval,

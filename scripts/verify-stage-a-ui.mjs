@@ -493,11 +493,11 @@ try {
   );
   assert.ok(!home.includes('Must not feature internal'));
   assert.ok(home.includes('/news/news-fixture'));
-  assert.ok(home.includes('מובילי הליגה הישראלית'));
+  assert.ok(home.includes('דירוג השחקנים הארצי'));
   assert.ok(home.includes('מצטרפים לחוג הפוקימון'));
   assert.ok(!home.includes('הדקים המובילים'));
   const Construction = await load('pages/ConstructionPage.tsx');
-  for (const title of ['חנות', 'על הליגה', 'הזמנת יום הולדת'])
+  for (const title of ['חנות', 'הזמנת יום הולדת'])
     assert.ok(render(Construction, '/', null, {}, { title }).includes('בהקמה'));
   console.log(
     'Stage A UI checks passed: public menu, role-aware management, nested team context, homepage sources, shared button surfaces, duplicate-save protection, pending/failure/cancelled saves and canonical result recovery.',

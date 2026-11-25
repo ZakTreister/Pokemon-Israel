@@ -177,7 +177,7 @@ try {
   for(const title of ['טורנירים ואירועים קרובים','מפגשי נבחרות ואירועים קרובים']){
     const heading=renderer.root.findAllByType('h3').find(n=>n.children.join('')===title);
     assert.ok(heading,title);
-    const group=heading.parent.parent;
+    const group=heading.parent.parent.parent;
     assert.match(group.props.className,/\bmt-auto\b/);
     assert.match(group.parent.props.className,/\bflex-1\b/);
     assert.match(group.parent.parent.props.className,/\bflex-col\b/);

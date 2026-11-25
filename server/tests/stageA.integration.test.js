@@ -2529,7 +2529,8 @@ test('badge program public explanation and verified image are independent of ind
  const saved=await ok(path,'PUT',{description:'מערך התגים',imageUploadId:image.uploadId},'admin');
  assert.equal(saved.image,image.url);
  assert.deepEqual(await ok(path,'GET',undefined,null),saved);
- assert.deepEqual(Object.keys(saved).sort(),['description','id','image']);
+ assert.deepEqual(Object.keys(saved).sort(),['description','descriptionHtml','id','image']);
+ assert.equal(saved.descriptionHtml,'<p>מערך התגים</p>');
  const changed=await ok(path,'PUT',{description:'הסבר חדש'},'admin');
  assert.equal(changed.image,image.url);
  const wrong=await uploaded('badge-image');

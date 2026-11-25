@@ -53,7 +53,7 @@ before(async()=>{
  app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
  registerSeoEndpoints(app);
  const serveSpa=createSpaSeoHandler(fileURLToPath(new URL('../../index.html',import.meta.url)));
- app.get(['/', '/rankings','/gallery','/events','/tournaments','/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
+ app.get(['/', '/rankings','/gallery','/events','/tournaments','/deck-stats','/about','/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -363,6 +363,7 @@ test('site settings preserve defaults, authorize writes and synchronize fixed ro
  const root='/site-settings',management=root+'/management';
  const defaults=defaultSiteSettings();
  assert.deepEqual(await ok(root),defaults);
+ for(const path of ['/deck-stats','/about']){assert.ok(!defaults.pages.some(p=>p.path===path));const res=await fetch(origin+path);assert.equal(res.status,404);assert.equal(res.headers.get('x-robots-tag'),'noindex, follow');assert.equal((await call('/content-pages/buttons?target='+encodeURIComponent(path))).status,400);}
  assert.equal((await call(management)).status,401);
  assert.equal((await call(management,'GET',undefined,'judge')).status,403);
  assert.equal((await call(management,'PUT',defaults,'judge')).status,403);

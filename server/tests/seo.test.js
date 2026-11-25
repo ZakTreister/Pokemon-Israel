@@ -72,3 +72,14 @@ test('fixed visibility and navigation settings are independent, aliases canonica
  for(const url of ['javascript:alert(1)','http://instagram.com/a','https://instagram.com.evil.test/a','https://user:pass@instagram.com/a'])assert.equal(validSocialUrl('instagram',url),false);
  assert.equal(validSocialUrl('instagram','https://www.instagram.com/a/'),true);
 });
+
+
+test('retired public routes are not configurable or indexable',async()=>{
+ const settings=defaultSiteSettings();
+ for(const path of ['/deck-stats','/about','/ABOUT/']){
+  assert.equal((await resolveSeo(path,sources,settings)).disabled,true);
+  assert.ok(!settings.pages.some(p=>p.path===path));
+ }
+ assert.ok(!sitemapXml({settings}).includes('/deck-stats'));
+ assert.ok(!sitemapXml({settings}).includes('/about'));
+});
