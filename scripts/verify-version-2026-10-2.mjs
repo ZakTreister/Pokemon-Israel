@@ -4,6 +4,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { createServer } from 'vite';
+import { fileURLToPath } from 'node:url';
 import axios from 'axios';
 const originalAxiosPost = axios.post;
 const storage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -17,6 +18,7 @@ globalThis.window = {
   clearTimeout,
 };
 const vite = await createServer({
+  resolve:{alias:[{find:/^swiper\/react$/,replacement:fileURLToPath(new URL('./test-support/swiper-react.mjs',import.meta.url))}]},
   server: { middlewareMode: true },
   appType: 'custom',
   logLevel: 'error',
@@ -961,7 +963,13 @@ try {
   assert.ok(upcomingSection);
   assert.ok(!upcomingSection.props.className.includes('bg-card'));
   const upcomingCarousel = upcomingSection.findByProps({'aria-label':'גלגלת אירועים קרובים'});
-  assert.ok(upcomingCarousel.findAllByType('div').some(n=>n.props.className?.includes('cs-content-swiper-cards')));
+  const upcomingSwiper=upcomingCarousel.findAllByType('div').find(n=>n.props.className?.includes('cs-content-swiper-cards'));
+  assert.ok(upcomingSwiper);
+  assert.equal(upcomingSwiper.props.dir,'rtl');
+  assert.equal(upcomingSwiper.props['data-navigation'],true);
+  assert.equal(upcomingSwiper.props['data-pagination'],true);
+  assert.equal(upcomingSwiper.props['data-touch'],true);
+  assert.equal(upcomingSwiper.findAllByType('div').filter(n=>n.props.className==='swiper-slide').length,2);
   assert.ok(!upcomingCarousel.props.className.includes('bg-card'));
   assert.ok(!upcomingCarousel.findAllByType('h2').length);
   const upcomingLinks=upcomingCarousel.findAllByType('a');
@@ -1072,6 +1080,17 @@ try {
   api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[{...team,leaguePosition:null,openInternalTournament:{id:'open'}},{...team,id:'other',name:'אחרת',leaguePosition:null}]}};};
   await mount(provided(route(el(TeacherOverview),'/manage')));
   assert.equal(renderer.root.findAllByType(StatCard).length,6,'three metrics per assigned team');assert.equal(renderer.root.findAllByType('article').length,2,'operational team cards preserved');
+  assert.ok(renderer.root.findByType('section').props.className.split(' ').includes('mt-8'),'teacher teams have top spacing');
+  unmount();
+  api.get=async path=>{assert.equal(path,'/api/teams/overview');return {data:{role:'judge',teams:[]}};};
+  await mount(provided(route(el(TeacherOverview),'/manage')));
+  // The harness includes ToastProvider, which always renders an empty live overlay.
+  // Assert absence of TeacherTeams' own DOM, not absence of the entire provider tree.
+  const teacherSection=renderer.root.findByType(TeacherOverview);
+  assert.equal(teacherSection.children.length,0,'hide entire teacher section for empty assignments');
+  assert.equal(renderer.root.findAllByType('section').length,0);
+  assert.ok(!text(renderer.toJSON()).includes('הנבחרות שלי'));
+  assert.ok(!text(renderer.toJSON()).includes('אין נבחרות המשויכות'));
   unmount();state.auth.user.role='admin';
   // Full profile hierarchy and graceful missing-media state.
   api.get=async()=>({data:{id:'v4',firstName:'לביא',lastName:'כהן',team:{id:'team',name:'נבחרת',logo:'https://example.com/team.png'},photoUrl:image.url,pokemon:['Pikachu','Iron Hands','Eevee','Mew','Pidgey','Charizard'],age:10,description:'ביוגרפיה',deckUrl:'https://example.com/deck.png',teamRanking:{position:1,points:3,tournaments:1},badges:[{name:'תג',description:'',awardedAt:'2026-10-13',icon:''}]}});

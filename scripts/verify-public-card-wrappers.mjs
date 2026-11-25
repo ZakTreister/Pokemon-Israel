@@ -3,13 +3,14 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { createServer } from 'vite';
+import { fileURLToPath } from 'node:url';
 
 const storage={getItem:()=>null,setItem(){},removeItem(){}};
 globalThis.localStorage=storage;
 globalThis.window={localStorage:storage,location:{origin:'https://cardschool.co.il'},setTimeout,clearTimeout,setInterval,clearInterval};
 let copied='';
 Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'node-test',clipboard:{writeText:async value=>{copied=value;}}}});
-const vite = await createServer({server:{middlewareMode:true},appType:'custom',logLevel:'error',optimizeDeps:{noDiscovery:true,include:[]}});
+const vite = await createServer({resolve:{alias:[{find:/^swiper\/react$/,replacement:fileURLToPath(new URL('./test-support/swiper-react.mjs',import.meta.url))}]},server:{middlewareMode:true},appType:'custom',logLevel:'error',optimizeDeps:{noDiscovery:true,include:[]}});
 const el=React.createElement;
 let renderer;
 try {
@@ -77,7 +78,12 @@ try {
   assert.equal(slides.length,2);
   assert.equal(slides[0].findByType('img').props.src,'/a.jpg');
   assert.equal(slides[1].findByType('iframe').props.title,'סרטון');
-  assert.ok(divs().some(n=>n.props.className?.includes('cs-content-swiper-media')));
+  const swiper=divs().find(n=>n.props.className?.includes('cs-content-swiper-media'));
+  assert.equal(swiper.props.dir,'rtl');
+  assert.equal(swiper.props['data-slides-per-view'],1);
+  assert.equal(swiper.props['data-navigation'],true);
+  assert.equal(swiper.props['data-pagination'],true);
+  assert.equal(swiper.props['data-touch'],true);
   unmount();
   console.log('Public card checks passed: actual shared background/frame, event body, one linked-content panel, individual tournament cards and empty-section hiding.');
 } finally {

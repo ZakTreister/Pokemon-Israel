@@ -105,6 +105,15 @@ export async function internalMeetingBalance(teams, now = new Date()) {
     counts: counts.map((row) => ({ teamId: row._id, count: row.count })),
   });
 }
+// Match the canonical staff routes, not just the shared Swiss engine.
+export function tournamentManagementPath(tournament) {
+  const { id, type, engineVersion } = tournament;
+  if (type === 'inter_team' && engineVersion === 'swiss-v1')
+    return `/manage/inter-team/${id}`;
+  if (type === 'team_internal' && engineVersion === 'swiss-v1')
+    return `/manage/tournaments/${id}`;
+  return `/manage/tournaments/regular/${id}`;
+}
 export async function adminOverview(now = new Date()) {
   const [
     activeTeams,
@@ -125,7 +134,7 @@ export async function adminOverview(now = new Date()) {
     ),
     Tournament.findOne(tournamentQuery({ status: 'upcoming' }, now))
       .select(
-        'title date location currentParticipants maxParticipants engineVersion',
+        'title date location currentParticipants maxParticipants engineVersion type',
       )
       .sort({ date: 1, _id: 1 }),
   ]);
@@ -150,10 +159,7 @@ export async function adminOverview(now = new Date()) {
           location: nearest.location,
           currentParticipants: nearest.currentParticipants,
           maxParticipants: nearest.maxParticipants,
-          managementPath:
-            nearest.engineVersion === 'swiss-v1'
-              ? `/manage/tournaments/${nearest.id}`
-              : `/manage/tournaments/regular/${nearest.id}`,
+          managementPath: tournamentManagementPath(nearest),
         }
       : null,
   };

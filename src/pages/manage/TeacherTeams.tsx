@@ -31,8 +31,10 @@ export default function TeacherTeams() {
       active = false;
     };
   }, [judge]);
+  if (!error && teams?.length === 0) return null;
+
   return (
-    <section className="space-y-3 mb-8">
+    <section className="space-y-3 mt-8 mb-8">
       <h2 className="text-2xl font-bold">הנבחרות שלי</h2>
       {error ? (
         <p role="alert" className="text-destructive">
@@ -40,8 +42,6 @@ export default function TeacherTeams() {
         </p>
       ) : teams === null ? (
         <p>טוען נבחרות…</p>
-      ) : !teams.length ? (
-        <p>אין נבחרות המשויכות אליכם כמורה.</p>
       ) : (
         teams.map((team) => (
           <div key={team.id}>

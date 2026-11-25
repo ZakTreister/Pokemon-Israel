@@ -253,3 +253,6 @@ A trial is attached to the selected team with `teamMembershipStatus: trial`, and
 The administrator may **confirm** the trial into permanent team membership (requiring the approved player number) or **dismiss** it from the team, leaving the canonical Player active and unassigned, with a `dismissed` membership marker. Dismissals are blocked until the team's live internal tournament closes to avoid clashes with in-progress pairings. Dismissed players disappear from the current team roster and team ranking, but their Player record, historical matches, completed standings and tie-break evidence remain intact. Team ranking totals must only aggregate internal tournaments **belonging to the selected team**, never carry another team's past results across a transfer.
 
 Ordinary remove/unassign must not silently bypass the trial approval/dismissal flow; use the explicit trial-resolution route.
+
+### Teacher overview response
+The authenticated judge overview (`/api/teams/overview`) resolves the assigned teacher reference to the same `{id, name, role}` shape as the management team list. Return only the requesting judge's assigned teams; never expose credentials or change the public team DTO. The shared operational card must display the actual assigned teacher rather than a missing-assignment message.

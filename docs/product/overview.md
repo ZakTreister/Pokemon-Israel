@@ -54,3 +54,9 @@ Tournament and result records are the source of truth. Rankings and statistics a
 
 ## Product phases
 The current implementation target is Stage A. Product specs include future features as well, but Codex must implement only what the active execution plan requests.
+
+### Admin nearest-tournament link
+The nearest tournament is selected from persisted upcoming tournaments, not browsing history. Staff navigation must use the tournament type as well as its engine: Swiss inter-team goes to `/manage/inter-team/:id`, Swiss team-internal to `/manage/tournaments/:id`, and club/legacy to `/manage/tournaments/regular/:id`. Keep selection and scheduling behavior unchanged.
+
+### Teacher dashboard section
+Show the personal teams section with 32px top spacing when it contains assigned teams. After a successful empty assignment response, hide the entire section including its heading and spacing, for both admins and judges. Preserve loading and error handling.

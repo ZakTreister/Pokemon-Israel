@@ -1941,6 +1941,9 @@ test('2026.10.4 overview counts are canonical, archival-safe and role/team scope
   const judge=await ok('/teams/overview?teacher='+staffIds.admin);
   assert.equal(judge.role,'judge');assert.ok(!('activeTeams' in judge));
   const first=judge.teams.find(team=>team.id===assigned.id);
+  const teacher=await User.findById(staffIds.judge).select('name role');
+  assert.deepEqual(first.teacher,{id:String(teacher._id),name:teacher.name,role:'judge'});
+  for(const team of judge.teams) assert.equal(team.teacher.id,String(staffIds.judge));
   assert.equal(first.playerCount,1);assert.equal(first.completedInternalTournamentCount,1);assert.equal(first.leaguePosition,null);
   assert.ok(judge.teams.some(team=>team.id===another.id));assert.ok(!judge.teams.some(team=>team.id===foreign.id));
   const admin=await ok('/teams/overview','GET',undefined,'admin');
@@ -2488,4 +2491,16 @@ test('club-only public Events pagination includes legacy null types and excludes
   assert.equal(second.items.length, 1);
   assert.ok([...first.items, ...second.items].every(row => row.type === 'quarterly'));
   assert.ok(![...first.items, ...second.items].some(row => row.title.endsWith('internal')));
+});
+
+
+test('admin overview returns the inter-team workspace for the nearest Swiss meeting',async()=>{
+ const {adminOverview}=await import('../services/overview.js');
+ const date=new Date('2000-01-01T12:00:00Z');
+ const fixture=await Tournament.create({title:'Overview route fixture',description:'Test',date,location:'Test',registrationDeadline:date,image:'/event.png',type:'inter_team',engineVersion:'swiss-v1',source:'live',status:'upcoming',phase:'setup',maxParticipants:128});
+ try {
+  const overview=await adminOverview(new Date('1999-12-31T12:00:00Z'));
+  assert.equal(overview.nearest.id,fixture.id);
+  assert.equal(overview.nearest.managementPath,`/manage/inter-team/${fixture.id}`);
+ } finally {await fixture.deleteOne();}
 });
