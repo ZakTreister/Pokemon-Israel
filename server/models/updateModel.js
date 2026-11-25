@@ -8,6 +8,7 @@ import { mediaAssetSchema, publicAssets } from './mediaAssetSchema.js';
 const updateSchema = new mongoose.Schema(
   {
     eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null, index: true },
+    teamIds: { type:[{type:mongoose.Schema.Types.ObjectId,ref:'Team'}], default:[] },
     mediaItems: { type:[mediaAssetSchema], default:[] },
     title: {
       type: String,
@@ -38,6 +39,7 @@ updateSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
     ret.eventId = ret.eventId ? String(ret.eventId) : null;
+    ret.teamIds = (ret.teamIds || []).map(String);
     ret.description = ret.content || '';
     ret.image = publicMediaUrl(doc.imageMedia);
     ret.mediaItems = publicAssets(doc.mediaItems || []);
