@@ -42,3 +42,6 @@ Admin can plan a full season or a single encounter. Planned fixtures are not com
 
 ## Deferred, no invention
 Mixed-category events, ranking momentum/history snapshots, parental-consent application workflow, and cross-device favorites.
+
+## Public copy and opening round (2026-11-25)
+Use טורנירי אימון for public team-internal tournaments, distinguish within-team ranking from official league standings, expose scoring explanation on demand, and use the approved introductory copy and event-specific actions. All-Stars events have an optional admin openingRound checkbox (default false), persisted and exposed publicly; upcoming fixtures show מחזור הפתיחה with the event start date, never a hard-coded date. Preserve player numbers and navigation layout. News campaign copy is editorial data, not hard-coded UI.

@@ -16,6 +16,7 @@ const eventSchema = new mongoose.Schema({
   endDate: { type: Date, default: null },
   status: { type: String, enum: ['draft', 'published'], default: 'draft' },
   featured: { type: Boolean, default: false },
+  openingRound: { type: Boolean, default: false },
   coverMedia: { type: mediaSchema, default: null },
   mediaItems: { type: [mediaAssetSchema], default: [] },
   fixtures: { type: [fixtureSchema], default: [] },

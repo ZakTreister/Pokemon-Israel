@@ -21,7 +21,7 @@ export default function TeamCard({ team }: { team: Team }) {
     >
       <TeamEmblem team={team} />
       <h3 className="text-xl font-extrabold">{team.name}</h3>
-      {team.region && <p className="text-sm text-muted-foreground">{team.region}</p>}
+      {team.region && <p className="text-sm text-muted-foreground">אזור פעילות: {team.region}</p>}
       <div className="w-full grid grid-cols-2 gap-2 border-t pt-4 text-sm">
         <div>
           <strong className="block text-2xl text-blue-500">
@@ -33,7 +33,7 @@ export default function TeamCard({ team }: { team: Team }) {
           <strong className="block text-2xl text-blue-500">
             {team.completedInternalTournamentCount ?? 0}
           </strong>
-          טורנירים פנימיים שהסתיימו
+          טורנירי אימון
         </div>
       </div>
       {team.officialStats && (
@@ -42,6 +42,7 @@ export default function TeamCard({ team }: { team: Team }) {
           משחקים · {Math.round(team.officialStats.winRate * 100)}% ניצחונות
         </p>
       )}
+      <span className="mt-3 font-bold text-blue-500">הכירו את הנבחרת ←</span>
     </Link>
   );
 }

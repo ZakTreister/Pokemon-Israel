@@ -210,8 +210,7 @@ export default function TeamPage() {
               {!management&&<button type="button" className="mt-3 border rounded-lg p-2 font-bold" aria-pressed={favorite} onClick={()=>{if(favorite){window.localStorage.removeItem("cardschool.favoriteTeam");setFavorite(false);}else{window.localStorage.setItem("cardschool.favoriteTeam",id);setFavorite(true);}}}>{favorite?"⭐ זו הנבחרת שלי":"☆ זו הנבחרת שלי"}</button>}
               <p className="mt-2">
                 {team.playerCount} שחקנים פעילים ·{' '}
-                {team.completedInternalTournamentCount ?? 0} טורנירים פנימיים
-                שהסתיימו
+                {team.completedInternalTournamentCount ?? 0} טורנירי אימון
               </p>
               {!team.isActive && <p>הנבחרת אינה פעילה</p>}
             </div>
@@ -228,8 +227,8 @@ export default function TeamPage() {
           )}
           <nav aria-label="תוכן נבחרת" className="flex flex-wrap gap-2 mb-6">
             {[
-              ['members', 'חברי נבחרת'],
-              ['history', 'היסטוריית טורנירים'],
+              ['members', management ? 'חברי נבחרת' : 'דירוג שחקני הנבחרת'],
+              ['history', 'טורנירי אימון ותוצאות'],
               ...(management && admin ? [['settings', 'הגדרות נבחרת']] : []),
             ].map(([key, label]) => (
               <Button
@@ -248,7 +247,7 @@ export default function TeamPage() {
           )}
           {section === 'history' && (
             <section className="space-y-3">
-              <h2 className="text-2xl font-bold">היסטוריית טורנירים</h2>
+              <h2 className="text-2xl font-bold">טורנירי אימון ותוצאות</h2>
               {management && staff && (
                 <Button asChild variant="outline">
                   <Link to={`/manage/teams/${id}/history`}>
@@ -423,7 +422,8 @@ export default function TeamPage() {
           )}
           {section === 'members' && (
             <section>
-              <h2 className="text-2xl font-bold mb-4">חברי נבחרת</h2>
+              <h2 className="text-2xl font-bold mb-4">{management ? 'חברי נבחרת' : 'דירוג שחקני הנבחרת'}</h2>
+              {!management && <p className="text-muted-foreground mb-4">הניקוד נצבר בטורנירי האימון של הנבחרת.</p>}
               <TeamMembersTable
                 team={team}
                 rankings={rankings}
