@@ -1,6 +1,7 @@
 export interface Update {
   id: string;
   eventId?: string | null;
+  teamIds?: string[];
   showInFieldNews?:boolean;
   imageInGallery?:boolean;
   title: string;
@@ -19,6 +20,7 @@ export interface UpdateInput {
   ctaUrl: string;
   imageUploadId?: string | null;
   eventId?: string | null;
+  teamIds?: string[];
   showInFieldNews?:boolean;
   imageInGallery?:boolean;
 }

@@ -120,3 +120,7 @@ The public **אירועים** tournament list uses the shared server-side tourna
 - filtering/search happens before pagination on the server
 - display current page/total-page context and next/previous navigation
 - never fetch the complete tournament archive merely to render the Events list
+
+
+## Team-specific updates (2026-11-25)
+Updates support optional teamIds (one or more existing teams), editable via the shared admin update form. Explicit team links take priority over legacy event-based inference for the favorite-team homepage card and All-Stars feed. Existing event linkage/publication rules remain unchanged. Updates can be team-specific without an event.

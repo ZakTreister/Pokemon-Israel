@@ -3,6 +3,7 @@ import { resolveUpload, finishAttachment } from '../services/mediaUpload.js';
 import asyncHandler from 'express-async-handler';
 import Update from '../models/updateModel.js';
 import Event from '../models/eventModel.js';
+import Team from '../models/teamModel.js';
 import { fail } from '../utils/httpError.js';
 import { attachAsset,removeAsset,changeAssetVisibility } from '../services/assetAttachment.js';
 const linkedEvent = async (input, existing) => {
@@ -10,6 +11,14 @@ const linkedEvent = async (input, existing) => {
   if (id === null || id === '') return null;
   if (!/^[a-f0-9]{24}$/i.test(String(id)) || !await Event.exists({ _id:id })) fail(400,'האירוע המשויך לא נמצא');
   return id;
+};
+
+const linkedTeams=async(input,existing)=>{
+ if(input.teamIds===undefined)return existing?.teamIds??[];
+ if(!Array.isArray(input.teamIds)||input.teamIds.length>50||input.teamIds.some(id=>typeof id!=='string'||!/^[a-f0-9]{24}$/i.test(id)))fail(400,'שיוך נבחרות אינו תקין');
+ const ids=[...new Set(input.teamIds.map(id=>id.toLowerCase()))];
+ if(await Team.countDocuments({_id:{$in:ids}})!==ids.length)fail(400,'נבחרת משויכת לא נמצאה');
+ return ids;
 };
 
 // @desc    Get all updates
@@ -27,6 +36,7 @@ export const getUpdates = asyncHandler(async (req, res) => {
 export const createUpdate = asyncHandler(async (req, res) => {
   const fields = updateFields(req.body);
   fields.eventId = await linkedEvent(req.body);
+  fields.teamIds = await linkedTeams(req.body);
   const attachment = await resolveUpload(req, 'update-image');
   const update = await Update.create({
     ...fields,
@@ -47,6 +57,7 @@ export const updateUpdate = asyncHandler(async (req, res) => {
   if (update) {
     Object.assign(update, updateFields(req.body, update));
     update.eventId = await linkedEvent(req.body,update);
+    update.teamIds = await linkedTeams(req.body,update);
     const previous = update.imageMedia;
     const attachment = await resolveUpload(
       req,

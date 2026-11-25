@@ -19,12 +19,12 @@ router.get('/overview',asyncHandler(async(req,res)=>{
  const meetings=sourceMeetings.filter(t=>!t.deletedAt);
  const lastUpdatedAt=leagueRankingFreshness(sourceMeetings.filter(t=>isCountedLeagueMeeting(t,byId)));
  const eventById=new Map(events.map(ev=>[String(ev._id),ev]));
- const scheduled=await Tournament.find({type:'inter_team',eventId:{$in:events.map(ev=>ev._id)}}).select('interTeamSides date location eventId').sort({date:1});
+ const scheduled=await Tournament.find({type:'inter_team',eventId:{$in:events.map(ev=>ev._id)}}).select('interTeamSides date location eventId phase').sort({date:1});
  const teamSummary=(side)=>({id:String(side.team),name:byId.get(String(side.team))?.name||side.nameSnapshot||'',logo:byId.get(String(side.team))?.toJSON().logo||side.logoSnapshot||''});
  const canonical=scheduled.filter(t=>t.interTeamSides.length===2).map(t=>{
    const ev=eventById.get(String(t.eventId));
    return {id:t.id,eventId:ev.id,eventTitle:ev.title,openingRound:!!ev.openingRound,eventStartDate:ev.startDate,date:t.date,location:t.location||'',
-     firstTeam:teamSummary(t.interTeamSides[0]),secondTeam:teamSummary(t.interTeamSides[1]),tournamentId:t.id};
+     firstTeam:teamSummary(t.interTeamSides[0]),secondTeam:teamSummary(t.interTeamSides[1]),tournamentId:t.id,phase:t.phase};
  });
  // Only unconverted legacy fixtures are retained as a temporary read fallback.
  const legacy=events.flatMap(ev=>(ev.fixtures||[]).filter(f=>!f.tournament).map(f=>({
@@ -42,5 +42,14 @@ router.get('/overview',asyncHandler(async(req,res)=>{
  });
  res.json({standings:teamLeagueStandings(teams,meetings),lastUpdatedAt,
   fixtures,recentMeetings,internalTournaments:internals.map(t=>publicTournament(t))});
+}));
+// Public aggregate scores only; never expose player participants, pairings or management data.
+router.get('/live',asyncHandler(async(req,res)=>{
+ const events=await Event.find({status:'published',category:'all_stars'}).select('_id').lean();
+ const rows=await Tournament.find({type:'inter_team',status:'upcoming',phase:'running',eventId:{$in:events.map(e=>e._id)}}).select('interTeamSides playerParticipants rounds date eventId');
+ res.json(rows.filter(t=>t.interTeamSides?.length===2).map(t=>{
+  const scores=calculateInterTeamScore(t);
+  return {id:t.id,date:t.date,eventId:String(t.eventId),teams:t.interTeamSides.map(s=>({id:String(s.team),name:s.nameSnapshot||''})),gameWins:scores.map(s=>s.gameWins),matchWins:scores.map(s=>s.matchWins)};
+ }));
 }));
 export default router;
