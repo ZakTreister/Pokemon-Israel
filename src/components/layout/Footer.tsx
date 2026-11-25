@@ -31,7 +31,6 @@ export default function Footer() {
                 ['/all-stars', 'All Stars'],
                 ['/news', 'חדשות'],
                 ['/store', 'חנות · בהקמה'],
-                ['/about', 'על הליגה · בהקמה'],
                 ['/birthday', 'הזמנת יום הולדת · בהקמה'],
                 ['/login', 'כניסת צוות'],
               ].map(([to, label]) => (

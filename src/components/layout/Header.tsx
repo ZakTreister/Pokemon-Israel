@@ -34,7 +34,6 @@ export default function Header() {
     { to: '/tournaments', label: 'אירועים', construction: false },
     { to: '/news', label: 'חדשות', construction: false },
     { to: '/store', label: 'חנות', construction: true },
-    { to: '/about', label: 'על הליגה', construction: true },
     { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
     ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
   ];

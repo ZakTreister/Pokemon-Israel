@@ -11,6 +11,7 @@ import { protect, admin, authorize } from '../middleware/authMiddleware.js';
 import {
   getTournaments,
   getTournamentSummary,
+  getLiveClubTournaments,
   getOwnRegistration,
   getLegacyManagedTournaments,
   getLegacyManagedTournament,
@@ -46,6 +47,7 @@ router.get(
 );
 
 router.get('/summary', getTournamentSummary);
+router.get('/live', getLiveClubTournaments);
 const clubRoundScope = (req, res, next) => { req.clubSwiss = true; next(); };
 const staff = [protect, authorize('admin', 'judge')];
 router.get('/:id/club-participants', ...staff, getClubParticipants);

@@ -14,7 +14,6 @@ The header/menu should contain:
 - **אירועים** — links to the events/tournaments page
 - **חדשות** — links to the news feed
 - **חנות** — show **בהקמה** in Stage A
-- **על הליגה** — repository-managed static HTML/content page; show **בהקמה** in Stage A
 - **הזמנת יום הולדת** — repository-managed static HTML/content page; show **בהקמה** in Stage A
 
 Do not expose child/player login navigation in Stage A.
@@ -158,3 +157,6 @@ All public registration/trial CTAs that represent the same enrollment action use
 This is the approved registration URL.
 
 Do not duplicate it independently in homepage or other public components. Keep one shared configuration value.
+
+## Owner update — remove About navigation (2026-11-25)
+Remove the built-in על הליגה item from desktop/mobile header and footer navigation. Retain the existing /about route for old direct links; dynamic admin-managed content navigation is unaffected.

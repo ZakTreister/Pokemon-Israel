@@ -49,6 +49,13 @@ export const getTournaments = asyncHandler(async (req, res) => {
   );
   res.json({ ...result, items: result.items.map((t) => publicTournament(t)) });
 });
+// A date-based active status is not proof of a running public competition.
+// Expose only the minimal data required by the live homepage cards.
+export const getLiveClubTournaments = asyncHandler(async (_req,res)=>{
+  const rows=await Tournament.find({type:'quarterly',engineVersion:'swiss-v1',phase:'running',status:'upcoming'})
+    .select('title location date').sort({date:1,_id:1}).lean();
+  res.set('Cache-Control','no-store').json(rows.map(row=>({id:String(row._id),title:row.title,location:row.location,date:row.date})));
+});
 export const getTournamentById = asyncHandler(async (req, res) => {
   if (!/^[a-f\d]{24}$/i.test(req.params.id)) {
     res.status(404);

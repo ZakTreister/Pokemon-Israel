@@ -47,3 +47,6 @@ Use one shared real Swiper React component for homepage field-news cards and upc
 
 ## Follow-up — hide empty event updates
 Render the entire public event updates section only if at least one update is returned. No empty-state heading or placeholder; existing update links and layout are preserved.
+
+## Follow-up — public homepage live tournaments and simpler navigation
+See homepage.md: show only actually running public club competitions, remove the homepage field-news carousel (not the ticker or news page), and remove the built-in About link from public header/footer.

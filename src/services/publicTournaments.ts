@@ -41,7 +41,9 @@ export interface PublicTournament extends PublicTournamentSummary {
   standings: (Standing & { deck?: Deck | null })[];
   teamPlayers: boolean;
 }
+export interface LiveTournamentSummary {id:string;title:string;location:string;date:string;}
 export const publicTournaments = {
+  live: async () => (await api.get<LiveTournamentSummary[]>('/api/tournaments/live')).data,
   summary: async (type?: string) =>
     (
       await api.get<{
