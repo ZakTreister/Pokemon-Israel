@@ -72,7 +72,8 @@ The existing **ניהול עדכונים** page must provide working CRUD:
 
 Form behavior:
 - title is required and trimmed
-- description is optional plain text
+- description is optional rich HTML, using the shared visual/source HTML editor; sanitize on the server and render via SafeHtml in the full post. Keep a plain-text excerpt in legacy content for cards and feeds. Legacy plain-text posts remain readable and editable without a migration.
+- no event selector or event details in the update form. New updates inherit event context from the event page or selected management event filter; otherwise they are unlinked. Editing preserves the existing event association. Update-owned team selection, CTA, media and visibility settings remain available.
 - image is optional and uses the shared managed-image upload flow
 - CTA text is optional
 - CTA destination URL is optional

@@ -1,7 +1,23 @@
+import { richBody } from './contentFields.js';
 import { fail } from '../utils/httpError.js';
+// Keep a plain-text excerpt for cards, feeds and legacy clients.
+function htmlExcerpt(html) {
+  const entities = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+  return html.replace(/<\/?(?:p|h2|h3|h4|li|blockquote|ul|ol|br|hr)>/g, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (match, entity) => {
+      const key = entity.toLowerCase();
+      if (key[0] !== '#') return entities[key] ?? match;
+      const code = key[1] === 'x' ? parseInt(key.slice(2), 16) : Number(key.slice(1));
+      return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : '\uFFFD';
+    }).replace(/\n{2,}/g, '\n').trim();
+}
 export function updateFields(input, existing = {}) {
   const title = input.title ?? existing.title ?? '';
-  const content = input.description ?? input.content ?? existing.content ?? '';
+  const hasHtml = input.descriptionHtml !== undefined;
+  const hasPlain = input.description !== undefined || input.content !== undefined;
+  const descriptionHtml = hasHtml ? richBody(input.descriptionHtml) : undefined;
+  const content = hasHtml ? htmlExcerpt(descriptionHtml) : input.description ?? input.content ?? existing.content ?? '';
   const ctaText = input.ctaText ?? existing.ctaText ?? '';
   const ctaUrl = input.ctaUrl ?? existing.ctaUrl ?? '';
   if (typeof title !== 'string' || !title.trim())
@@ -26,6 +42,7 @@ export function updateFields(input, existing = {}) {
     ...(input.imageInGallery!==undefined?{imageInGallery:input.imageInGallery}:{}),
     title: title.trim(),
     content: content.trim(),
+    ...(hasHtml ? { descriptionHtml } : hasPlain && existing.descriptionHtml !== undefined ? { descriptionHtml: undefined } : {}),
     ctaText: ctaText.trim(),
     ctaUrl: ctaUrl.trim(),
   };
