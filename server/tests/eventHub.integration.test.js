@@ -314,3 +314,44 @@ test('public live discovery includes only running club Swiss competitions and st
   assert.deepEqual((await ok('/tournaments/live')).filter(row=>ids.has(row.id)).map(row=>row.id),[rows[1].id]);
  }finally{await Tournament.deleteMany({_id:{$in:rows.map(row=>row._id)}}).setOptions({includeDeleted:true});}
 });
+
+
+test('content-page footer buttons validate target selection, expose only published links and clean deleted hosts',async()=>{
+ const root='/content-pages';
+ const published=await ok(root,'POST',{title:'Host published',status:'published'},'admin',201);
+ const draft=await ok(root,'POST',{title:'Host draft'},'admin',201);
+ const targets=['/all-stars','/events','/tournaments','/content/'+published.id,'/content/'+draft.id];
+ const input={title:'Related rules',status:'published',showAsButton:true,buttonLabel:'Rules',buttonTargets:targets};
+ const source=await ok(root,'POST',input,'admin',201);
+ const hidden=await ok(root,'POST',{...input,title:'Draft rules',status:'draft'},'admin',201);
+ const disabled=await ok(root,'POST',{...input,title:'Disabled rules',showAsButton:false},'admin',201);
+ const links=target=>ok(root+'/buttons?target='+encodeURIComponent(target));
+ try{
+  const expected=[{id:source.id,label:'Rules'}];
+  assert.deepEqual(source.buttonTargets,['/all-stars','/tournaments','/content/'+published.id,'/content/'+draft.id]);
+  assert.deepEqual(await links('/all-stars'),expected);
+  assert.deepEqual(await links('/events'),expected);
+  assert.deepEqual(await links('/content/'+published.id),expected);
+  assert.deepEqual(await links('/content/'+draft.id),[]);
+  assert.deepEqual(await links('/news'),[]);
+  assert.equal((await call(root+'/buttons?target=/manage')).status,400);
+  assert.equal((await call(root+'/buttons?target=')).status,400);
+  assert.equal((await call(root,'POST',{...input,buttonTargets:['/manage']},'admin')).status,400);
+  assert.equal((await call(root,'POST',{...input,buttonTargets:['/content/ffffffffffffffffffffffff']},'admin')).status,400);
+  assert.equal((await call(root,'POST',{...input,buttonLabel:''},'admin')).status,400);
+  assert.equal((await call(root,'POST',{...input,buttonTargets:[]},'admin')).status,400);
+  assert.equal((await call(root+'/'+source.id,'PUT',{buttonTargets:['/content/'+source.id]},'admin')).status,400);
+  assert.equal((await call(root+'/'+source.id,'PUT',{buttonLabel:'Denied'},'judge')).status,403);
+  assert.ok(!('buttonTargets' in await ok(root+'/'+source.id)));
+  await ok(root+'/'+source.id,'PUT',{title:'Renamed rules'},'admin');
+  assert.deepEqual(await links('/all-stars'),expected);
+  await ok(root+'/'+source.id,'PUT',{status:'draft'},'admin');
+  assert.deepEqual(await links('/all-stars'),[]);
+  await ok(root+'/'+source.id,'PUT',{status:'published',buttonTargets:['/content/'+published.id]},'admin');
+  await ok(root+'/'+published.id,'DELETE',undefined,'admin');
+  const cleaned=await ok(root+'/management/'+source.id,'GET',undefined,'admin');
+  assert.deepEqual(cleaned.buttonTargets,[]);assert.equal(cleaned.showAsButton,false);
+  assert.deepEqual(await links('/content/'+published.id),[]);
+  await ok(root+'/'+source.id,'PUT',{title:'Still editable'},'admin');
+ }finally{await ContentPage.deleteMany({_id:{$in:[published.id,draft.id,source.id,hidden.id,disabled.id]}});}
+});

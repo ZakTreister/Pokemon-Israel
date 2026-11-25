@@ -36,7 +36,9 @@ router.get('/management/:id',protect,admin,asyncHandler(async(req,res)=>res.json
 router.get('/:id',asyncHandler(async(req,res)=>{
  const page=await find(req.params.id);
  if(page.status!=='published')fail(404,'עמוד התוכן לא נמצא');
- res.json(page);
+ const publicPage=page.toJSON();
+ delete publicPage.showAsButton;delete publicPage.buttonLabel;delete publicPage.buttonTargets;
+ res.json(publicPage);
 }));
 router.post('/',protect,admin,asyncHandler(async(req,res)=>{const fields=contentPageFields(req.body);await validateButtonTargets(fields);res.status(201).json(await ContentPage.create(fields));}));
 router.put('/:id',protect,admin,asyncHandler(async(req,res)=>{
@@ -46,7 +48,9 @@ router.delete('/:id',protect,admin,asyncHandler(async(req,res)=>{
  const page=await find(req.params.id);
  if(await Event.exists({contentPageIds:page._id}))fail(409,'יש להסיר את שיוך העמוד מהאירועים לפני מחיקה');
  await page.deleteOne();
- await ContentPage.updateMany({buttonTargets:'/content/'+page.id},{$pull:{buttonTargets:'/content/'+page.id}});
+ const target='/content/'+page.id;
+ await ContentPage.updateMany({buttonTargets:{$all:[target],$size:1}},{$pull:{buttonTargets:target},$set:{showAsButton:false}});
+ await ContentPage.updateMany({buttonTargets:target},{$pull:{buttonTargets:target}});
  res.json({message:'עמוד התוכן נמחק'});
 }));
 router.post('/:id/media',protect,admin,asyncHandler(async(req,res)=>res.status(201).json(await attachAsset(req,await find(req.params.id),'content-page-media'))));

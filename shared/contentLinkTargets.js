@@ -17,6 +17,6 @@ export function staticContentLinkTarget(path){
  return STATIC_CONTENT_LINK_TARGETS.some(target=>target.path===canonical)?canonical:null;
 }
 export function normalizeContentLinkTarget(path){
- if(typeof path!=='string')return null;
+ if(typeof path!=='string'||!path.startsWith('/'))return null;
  return staticContentLinkTarget(path)||(/^\/content\/[a-f0-9]{24}$/i.test(path)?'/content/'+path.slice(9).toLowerCase():null);
 }
