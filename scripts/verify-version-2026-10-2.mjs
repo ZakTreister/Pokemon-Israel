@@ -867,7 +867,7 @@ try {
   });
   assert.equal(listRequests.at(-1).params.page, 2);
   await act(async () => {
-    button('חוגים').props.onClick();
+    button('אירועי הליגה הישראלית').props.onClick();
     await flush();
   });
   assert.equal(listRequests.at(-1).params.page,1);
