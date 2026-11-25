@@ -187,3 +187,5 @@ Remove `/deck-stats` (סטטיסטיקות דקים) and `/about` (על הליג
 
 ## League branding
 Site settings include two independently managed league logos, kids and All Stars. Use verified S3 uploads (dedicated purpose and singleton entity IDs), optional replacement/removal, save with settings. No bundled logo fallback; show text or neutral icons when unset. Public projection includes URLs only. The page settings table must keep row labels legible in light and dark themes. Preserve team and player media.
+
+Managed logo placement: home trading cards and league panels, league-specific page heroes and public events/tournaments, All Stars fan section, context-aware header, both footer logos, kids trial CTA, site favicon and social sharing metadata. Existing historical tournament artwork and per-team logos remain unchanged. The old bundled PNG remains available for historical URL snapshots but is no longer selected by the branding UI or SEO. No image is shown until an administrator uploads and saves a logo.

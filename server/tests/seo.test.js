@@ -83,3 +83,18 @@ test('retired public routes are not configurable or indexable',async()=>{
  assert.ok(!sitemapXml({settings}).includes('/deck-stats'));
  assert.ok(!sitemapXml({settings}).includes('/about'));
 });
+
+
+test('configured league logos drive sharing metadata and no bundled fallback is emitted',async()=>{
+ const settings=defaultSiteSettings();
+ assert.ok(!renderSeoHead(await resolveSeo('/',sources,settings)).includes('pokemon_kids_logo.png'));
+ settings.logos={kids:'https://example.com/kids.png',allStars:'https://example.com/stars.png'};
+ const home=renderSeoHead(await resolveSeo('/',sources,settings));
+ assert.ok(home.includes('property="og:image" content="'+settings.logos.kids+'"'));
+ assert.ok(home.includes('"logo":"'+settings.logos.kids+'"'));
+ const stars=renderSeoHead(await resolveSeo('/all-stars',sources,settings));
+ assert.ok(stars.includes('property="og:image" content="'+settings.logos.allStars+'"'));
+ assert.ok(stars.includes('rel="icon" href="'+settings.logos.kids+'"'));
+ const event=await resolveSeo('/events/'+id,{...sources,event:async()=>({title:'Event',category:'all_stars'})},settings);
+ assert.equal(event.image,settings.logos.allStars);
+});

@@ -54,7 +54,7 @@ export async function resolveSeo(path, sources = {
   const normalized = canonicalPath(path);
   if(!pageActive(settings,normalized))return {...excluded(),disabled:true};
   const image=normalized==='/all-stars'?settings.logos?.allStars:settings.logos?.kids;
-  if (Object.hasOwn(publicPages, normalized)) return {...publicMeta(normalized,...publicPages[normalized]),image};
+  if (Object.hasOwn(publicPages, normalized)) return {...publicMeta(normalized,...publicPages[normalized]),image,favicon:settings.logos?.kids};
   const match = /^\/(events|content|news)\/([a-f0-9]{24})$/i.exec(normalized);
   if (!match || !['events','content','news'].includes(match[1])) return excluded();
   const [,kind,id] = match;
@@ -62,7 +62,7 @@ export async function resolveSeo(path, sources = {
   if (!entity) return excluded();
   const title = text(entity.title, 100) || 'קארדסקול';
   const description = text(entity.description || entity.subtitle || entity.content || entity.bodyHtml, 170) || HOME_DESCRIPTION;
-  return {...publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description),image:settings.logos?.[kind==='events'&&entity.category==='all_stars'?'allStars':'kids']};
+  return {...publicMeta('/'+kind+'/'+id.toLowerCase(), title+' | קארדסקול', description),image:settings.logos?.[kind==='events'&&entity.category==='all_stars'?'allStars':'kids'],favicon:settings.logos?.kids};
 }
 
 export const noIndexSeo = excluded;
@@ -81,7 +81,8 @@ export function renderSeoHead(meta) {
     '<meta name="twitter:title" content="'+escape(meta.title)+'" />',
     '<meta name="twitter:description" content="'+escape(meta.description)+'" />',
   ];
-  if(meta.image){tags.push('<meta property="og:image" content="'+escape(meta.image)+'" />','<meta name="twitter:image" content="'+escape(meta.image)+'" />','<link rel="icon" href="'+escape(meta.image)+'" />');}
+  if(meta.image){tags.push('<meta property="og:image" content="'+escape(meta.image)+'" />','<meta name="twitter:image" content="'+escape(meta.image)+'" />');}
+  if(meta.favicon)tags.push('<link rel="icon" href="'+escape(meta.favicon)+'" />');
   if (meta.indexable && meta.canonical) {
     tags.push('<link rel="canonical" href="'+escape(meta.canonical)+'" />');
     tags.push('<meta property="og:url" content="'+escape(meta.canonical)+'" />');

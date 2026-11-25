@@ -17,9 +17,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Link to="/" className="mb-4 flex items-center gap-3 text-white">
-              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold text-navy-700">
-                <Zap size={23} fill="currentColor" />
-              </span>
+              {!settings.logos?.kids&&!settings.logos?.allStars&&<span className="flex h-10 w-10 items-center justify-center rounded-md bg-gold text-navy-700"><Zap size={23} fill="currentColor"/></span>}
               <span dir="ltr" className="text-2xl font-black">
                 CardSchool <span className="text-gold">IL</span>
               </span>
