@@ -8,8 +8,12 @@ const schema=new mongoose.Schema({
  showInNavigation:{type:Boolean,default:false},
  navigationLabel:{type:String,default:'',trim:true,maxlength:80},
  showInFieldNews:{type:Boolean,default:false},
+ showAsButton:{type:Boolean,default:false},
+ buttonLabel:{type:String,default:'',trim:true,maxlength:80},
+ buttonTargets:{type:[String],default:[]},
  mediaItems:{type:[mediaAssetSchema],default:[]},
 },{timestamps:true});
+schema.index({buttonTargets:1,status:1,showAsButton:1});
 schema.set('toJSON',{transform:(doc,ret)=>{
  ret.id=String(doc._id);ret.mediaItems=publicAssets(doc.mediaItems||[]);
  delete ret._id;delete ret.__v;return ret;

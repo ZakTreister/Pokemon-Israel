@@ -59,3 +59,6 @@ The shared create/edit editor displays Save and Close together at the bottom, af
 
 ## Follow-up — larger Pokémon and badge-program information
 Keep the selected Pokémon in one responsive full-width row of the player hero card, not constrained by portrait width; use 5rem maximum frames and 94% image fill with zero minimum width/height. Badge-program settings and navigation ordering follow badges-seasons.md and navigation-content.md.
+
+## Follow-up — related content buttons
+See navigation-content.md: administrator selects public host pages for each CMS page, with independent button text and publication controls. Render links at the bottom of the host content, before the footer, using the shared public component; no empty section.
