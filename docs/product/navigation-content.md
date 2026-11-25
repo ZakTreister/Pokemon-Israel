@@ -172,3 +172,6 @@ Use the shared full-width PageHero on the public All Stars page, with its existi
 
 ## Owner update — All-Stars section cards (2026-11-25)
 On the public All Stars page, wrap each complete upcoming matches, team standings, weekly training results and league news section (heading and all existing content) in its own shared public Card, with consistent responsive padding. Preserve section order, matches/standings anchor IDs, internal controls and content. Do not change homepage, favorite team chooser or badge area.
+
+## Owner update — All-Stars weekly training pagination (2026-11-25)
+Weekly training results show three completed team-internal tournaments at a time, newest first. Reuse the public paginated tournament list with team/status filtering on the server (not the overview's limited twelve results). The supported favorite team is the default filter; if none is selected or it is unavailable, default to all teams. A manual filter remains usable and resets the list to three; a change of favorite resets the default. Each More click appends the next three; hide More when no further pages exist. Keep loading, retry and empty states; do not alter homepage or ranking rules.

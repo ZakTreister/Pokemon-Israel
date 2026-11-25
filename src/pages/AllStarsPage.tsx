@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { eventsService } from '../services/events';
 import { publicTeams } from '../services/publicTeams';
-import type { PublicTournamentSummary } from '../services/publicTournaments';
+import WeeklyTrainingResults from '../features/teams/components/WeeklyTrainingResults';
 import type { EventSummary } from '../types/event';
 import type { Team } from '../types/team';
 import {TeamFanCards} from '../components/teams/AllStarsTeamsSection';
@@ -21,15 +21,14 @@ interface RecentMeeting {id:string;date:string;eventId:string|null;teams:Array<{
 interface Fixture {openingRound?:boolean;eventStartDate?:string|null;id:string;eventId:string;date:string;location:string;firstTeam:{id:string;name:string};secondTeam:{id:string;name:string};tournamentId:string|null;}
 export default function AllStarsPage(){
  const [lastUpdatedAt,setLastUpdatedAt]=useState<string|null>(null);
- const [updates,setUpdates]=useState<Update[]>([]),[recentMeetings,setRecentMeetings]=useState<RecentMeeting[]>([]),[teams,setTeams]=useState<Team[]>([]),[table,setTable]=useState<LeagueRow[]>([]),[fixtures,setFixtures]=useState<Fixture[]>([]),[internals,setInternals]=useState<PublicTournamentSummary[]>([]),[events,setEvents]=useState<EventSummary[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true),[filter,setFilter]=useState('all');
+ const [updates,setUpdates]=useState<Update[]>([]),[recentMeetings,setRecentMeetings]=useState<RecentMeeting[]>([]),[teams,setTeams]=useState<Team[]>([]),[table,setTable]=useState<LeagueRow[]>([]),[fixtures,setFixtures]=useState<Fixture[]>([]),[events,setEvents]=useState<EventSummary[]>([]),[error,setError]=useState(''),[loading,setLoading]=useState(true);
  useEffect(()=>{let active=true;Promise.all([
  publicTeams.list(),
- api.get<{standings:LeagueRow[];lastUpdatedAt?:string|null;fixtures:Fixture[];recentMeetings:RecentMeeting[];internalTournaments:PublicTournamentSummary[]}>('/api/all-stars/overview').then(r=>r.data),
+ api.get<{standings:LeagueRow[];lastUpdatedAt?:string|null;fixtures:Fixture[];recentMeetings:RecentMeeting[]}>('/api/all-stars/overview').then(r=>r.data),
  eventsService.list({category:'all_stars',pageSize:20}),
  updatesService.getUpdates(),
- ]).then(([t,overview,e,u])=>{if(active){setTeams(t);setTable(overview.standings);setLastUpdatedAt(overview.lastUpdatedAt??null);setFixtures(overview.fixtures);setRecentMeetings(overview.recentMeetings||[]);setInternals(overview.internalTournaments);setEvents(e.items);setUpdates(u);}}).catch(e=>{if(active)setError(requestError(e));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false};},[]);
+ ]).then(([t,overview,e,u])=>{if(active){setTeams(t);setTable(overview.standings);setLastUpdatedAt(overview.lastUpdatedAt??null);setFixtures(overview.fixtures);setRecentMeetings(overview.recentMeetings||[]);setEvents(e.items);setUpdates(u);}}).catch(e=>{if(active)setError(requestError(e));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false};},[]);
  const now=Date.now(),upcoming=fixtures.filter(f=>new Date(f.date).getTime()>=now),recent=fixtures.filter(f=>new Date(f.date).getTime()<now).reverse();
- const displayed=filter==='all'?internals:internals.filter(t=>t.team===filter);
  const fan=useFavoriteSelection();
  const favorite=fan.selected;
  const leagueUpdates=updates.filter(u=>u.teamIds?.length||u.eventId&&events.some(ev=>ev.id===u.eventId)).sort((a,b)=>{
@@ -54,10 +53,7 @@ export default function AllStarsPage(){
  <p className="text-sm text-muted-foreground">ניצחון במפגש: 3 נקודות · תיקו: נקודה אחת</p><details className="text-sm"><summary className="cursor-pointer font-bold">איך נקבע הדירוג?</summary><p>הפסד במפגש: 0 נקודות. שוויון מוכרע לפי הפרש ניצחונות פחות הפסדים במשחקונים האישיים. טורנירי אימון לא נכללים.</p></details></Card></section>
  <section className="space-y-4"><h2 className="text-2xl font-extrabold">איזו נבחרת אתם מעודדים?</h2><TeamFanCards teams={teams} favorite={fan}/></section>
  <PublicBadgeProgram/>
- <section><Card variant="public" className="space-y-3 p-4 sm:p-6"><div className="flex flex-wrap justify-between gap-3"><h2 className="text-2xl font-extrabold">תוצאות האימונים השבועיים</h2><select aria-label="סינון לפי נבחרת" className="p-2 border rounded-md bg-card" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">כל הנבחרות</option>{teams.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></div>
- {displayed.map(t=><article key={t.id} className="border rounded-lg p-4 flex gap-2 justify-between items-center"><div><strong>{t.title}</strong><p className="text-sm text-muted-foreground">{teams.find(x=>x.id===t.team)?.name||''} · {new Date(t.date).toLocaleDateString('he-IL')}</p></div><Link className="text-blue-500 font-bold" to={'/tournaments/'+t.id}>לתוצאות ←</Link></article>)}
- {!displayed.length&&<p>אין טורנירים להצגה.</p>}
- <p className="text-sm text-muted-foreground">תוצאות אלה קובעות את הדירוג בתוך כל נבחרת, בנפרד מטבלת הנבחרות.</p></Card></section>
+ <WeeklyTrainingResults teams={teams} favoriteId={favorite}/>
  <section><Card variant="public" className="space-y-3 p-4 sm:p-6"><h2 className="text-2xl font-extrabold">מה חדש בליגה?</h2><div className="grid gap-3 sm:grid-cols-2">{events.map(ev=><Link key={ev.id} className="cs-public-card p-4" to={'/events/'+ev.id}><h3 className="font-bold">{ev.title}</h3><p className="line-clamp-2 text-muted-foreground">{ev.description}</p></Link>)}</div>{leagueUpdates.slice(0,6).map(u=><Link key={u.id} to={"/news/"+u.id} className="block border rounded-lg p-3"><strong>{u.title}</strong>{u.image&&<img className="mt-2 w-full max-w-xs aspect-video object-cover rounded-lg" src={u.image} alt="" loading="lazy"/>}</Link>)}</Card></section>
  </>}</div></div>;
 }

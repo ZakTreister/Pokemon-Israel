@@ -498,6 +498,43 @@ try {
       .some((a) => a.props.href === '/teams/team'),
   );
   unmount();
+  const { default: WeeklyTrainingResults } = await load('features/teams/components/WeeklyTrainingResults.tsx');
+  const { publicTournaments } = await load('services/publicTournaments.ts');
+  const trainingCalls = [];
+  const trainingTeams = [{ id: 'a', name: 'א' }, { id: 'b', name: 'ב' }];
+  publicTournaments.list = async query => {
+    trainingCalls.push(query);
+    const total = query.teamId === 'b' ? 2 : 7;
+    const count = Math.min(query.pageSize, Math.max(0, total - (query.page - 1) * query.pageSize));
+    return { total, page: query.page, pageSize: query.pageSize, totalPages: Math.ceil(total / query.pageSize),
+      items: Array.from({ length: count }, (_, index) => {
+        const id = (query.teamId || 'all') + '-' + ((query.page - 1) * query.pageSize + index);
+        return { id, team: query.teamId || 'a', title: id, date: '2026-11-20' };
+      }) };
+  };
+  await mount(router(el(WeeklyTrainingResults, { teams: trainingTeams, favoriteId: 'a' })));
+  const trainingSelect = () => renderer.root.findByProps({ 'aria-label': 'סינון לפי נבחרת' });
+  const trainingRows = () => renderer.root.findAllByType('article').length;
+  assert.equal(trainingSelect().props.value, 'a');
+  assert.deepEqual(trainingCalls.at(-1), { type: 'team_internal', status: 'completed', page: 1, pageSize: 3, teamId: 'a' });
+  assert.equal(trainingRows(), 3);
+  await act(async () => { button('עוד').props.onClick(); await flush(); });
+  assert.equal(trainingRows(), 6);
+  assert.equal(trainingCalls.at(-1).page, 2);
+  await act(async () => { button('עוד').props.onClick(); await flush(); });
+  assert.equal(trainingRows(), 7);
+  assert.ok(!button('עוד'));
+  await act(async () => { trainingSelect().props.onChange({ target: { value: 'b' } }); await flush(); });
+  assert.equal(trainingRows(), 2);
+  assert.equal(trainingCalls.at(-1).teamId, 'b');
+  assert.equal(trainingCalls.at(-1).page, 1);
+  assert.ok(!button('עוד'));
+  unmount();
+  await mount(router(el(WeeklyTrainingResults, { teams: trainingTeams, favoriteId: null })));
+  assert.equal(trainingSelect().props.value, 'all');
+  assert.equal(trainingRows(), 3);
+  assert.ok(!('teamId' in trainingCalls.at(-1)));
+  unmount();
   // API responses are mocked above; this suite makes no server/socket requests.
   assert.ok(api);
   console.log(
