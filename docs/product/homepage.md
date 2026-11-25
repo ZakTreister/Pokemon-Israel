@@ -131,3 +131,6 @@ Supersedes the separate homepage team/ranking/event areas. Keep the shared featu
 
 ## Owner clarification — layout spacing and equal league heights (2026-11-25)
 Remove the shared main element's extra bottom padding; keep each page's own spacing and the floating registration CTA. The two homepage league cards stretch to equal height when side by side on desktop, with natural content height when stacked on mobile. Do not set a fixed pixel height.
+
+## Owner clarification — hide homepage gallery shortcut (2026-11-25)
+Remove the standalone gallery link/card from the homepage for now; preserve the public gallery route and all other gallery access and functionality.
