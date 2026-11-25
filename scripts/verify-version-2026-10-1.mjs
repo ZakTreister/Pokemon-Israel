@@ -464,7 +464,7 @@ try {
   await mount(router(el(Events)));
   assert.equal(renderer.root.findAllByType('article').length,1);
   assert.equal(renderer.root.findAllByType('img').length,0);
-  assert.ok(text(renderer.toJSON()).includes('לאירוע, למשחקים ולעדכונים'));
+  assert.ok(renderer.root.findAllByType('a').some(link => link.props.href === '/events/event' && text(link) === 'למשחקים ולעדכונים'));
   assert.ok(!button('מחק'));
   unmount();
   const { publicTeams } = await load('services/publicTeams.ts');
