@@ -2,6 +2,7 @@ import { fail } from '../utils/httpError.js';
 import mongoose from 'mongoose';
 import { randomUUID } from 'node:crypto';
 import MediaUpload from '../models/mediaUploadModel.js';
+import {LEAGUE_LOGOS} from '../../shared/siteSettings.js';
 import {BADGE_PROGRAM_ID} from '../models/badgeProgramModel.js';
 import { s3Storage } from './storage/s3Storage.js';
 import { publicMediaUrl } from './storage/mediaMetadata.js';
@@ -42,6 +43,7 @@ export function uploadNamespace(purpose, playerType) {
   if (purpose === 'content-page-media') return 'public/content-pages';
   if (purpose === 'player-deck' && playerType === 'team')
     return 'public/players';
+  if (LEAGUE_LOGOS.some(logo=>logo.purpose===purpose)) return 'public/site-logos';
   if (purpose === 'badge-image' || purpose === 'badge-program-image') return 'public/badges';
   if (purpose === 'player-photo' && playerType === 'team')
     return 'public/players';
@@ -76,6 +78,7 @@ export async function presignUpload(req) {
   const { purpose, entityId, contentType, size } = req.body;
   if (
     ![
+      ...LEAGUE_LOGOS.map(logo=>logo.purpose),
       'team-logo',
       'team-cover',
       'player-photo',
@@ -94,7 +97,11 @@ export async function presignUpload(req) {
   if (!Object.hasOwn(IMAGE_TYPES,contentType) || !Number.isInteger(size) || size<1 || size>MAX_IMAGE_BYTES)
     fail(400, 'ניתן להעלות תמונות PNG, JPEG או WebP עד 5MB בלבד. לסרטונים יש להוסיף קישור YouTube');
   let entity, id;
-  if (purpose === 'badge-program-image') {
+  const leagueLogo=LEAGUE_LOGOS.find(logo=>logo.purpose===purpose);
+  if(leagueLogo){
+    if(entityId!==leagueLogo.entityId)fail(400,'מזהה לוגו לא חוקי');
+    id=new mongoose.Types.ObjectId(leagueLogo.entityId);
+  } else if (purpose === 'badge-program-image') {
     if (entityId !== BADGE_PROGRAM_ID) fail(400, 'מזהה מערך תגים לא חוקי');
     id = new mongoose.Types.ObjectId(BADGE_PROGRAM_ID);
   } else if (entityId !== undefined) {
@@ -197,7 +204,9 @@ export async function completeUpload(req) {
 }
 export async function resolveUpload(req, purpose, id, currentMedia) {
   const field =
-    purpose === 'team-logo'
+    purpose === 'league-kids-logo' ? 'kidsLogoUploadId'
+    : purpose === 'league-all-stars-logo' ? 'allStarsLogoUploadId'
+    : purpose === 'team-logo'
       ? 'logoUploadId'
       : purpose === 'team-cover'
         ? 'coverUploadId'
@@ -258,10 +267,10 @@ export async function finishAttachment(req, attachment, previous) {
   try {
     const key = previous.storageKey;
     const referenced = await Promise.all(
-      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update','ContentPage','Gallery','BadgeProgram'].map(
+      ['Team', 'Player', 'BadgeDefinition', 'Update', 'Player', 'Team', 'Event', 'Event', 'Update','ContentPage','Gallery','BadgeProgram','SiteSettings','SiteSettings'].map(
         (name, index) =>
           mongoose.models[name]?.exists({
-            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media','mediaItems.media','mediaItems.media','imageMedia'][index]}.storageKey`]:
+            [`${['logoMedia', 'photoMedia', 'imageMedia', 'imageMedia', 'deckMedia', 'coverMedia', 'coverMedia', 'mediaItems.media', 'mediaItems.media','mediaItems.media','mediaItems.media','imageMedia','kidsLogoMedia','allStarsLogoMedia'][index]}.storageKey`]:
               key,
           }),
       ),

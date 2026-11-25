@@ -1,6 +1,8 @@
 import axios from 'axios';
 import api from './api';
 export type UploadPurpose =
+  | 'league-kids-logo'
+  | 'league-all-stars-logo'
   | 'team-logo'
   | 'player-photo'
   | 'player-deck'

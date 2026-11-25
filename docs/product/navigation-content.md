@@ -184,3 +184,6 @@ Admin-only management /manage/site-settings, tabs for static page availability/h
 
 ## Owner update — permanently retire unused fixed public pages
 Remove `/deck-stats` (סטטיסטיקות דקים) and `/about` (על הליגה) from the router, fixed page settings, menu/footer order, CMS host allow-list and sitemap. Old direct URLs return HTTP 404/noindex; no management toggle to re-enable. Existing deck data and management/API flows are unchanged. Retired CMS host assignments are filtered from the editor and cleaned on save; a source with no remaining host is disabled. Earlier retention of About as a direct URL is superseded.
+
+## League branding
+Site settings include two independently managed league logos, kids and All Stars. Use verified S3 uploads (dedicated purpose and singleton entity IDs), optional replacement/removal, save with settings. No bundled logo fallback; show text or neutral icons when unset. Public projection includes URLs only. The page settings table must keep row labels legible in light and dark themes. Preserve team and player media.
