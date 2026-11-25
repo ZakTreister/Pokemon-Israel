@@ -134,3 +134,6 @@ Remove the shared main element's extra bottom padding; keep each page's own spac
 
 ## Owner clarification — hide homepage gallery shortcut (2026-11-25)
 Remove the standalone gallery link/card from the homepage for now; preserve the public gallery route and all other gallery access and functionality.
+
+## Owner clarification — homepage league card footers (2026-11-25)
+Rename the national league upcoming-events heading to **טורנירים ואירועים קרובים**. Keep equal-height desktop cards and push each card's upcoming-events group (including separator and related links) to the bottom via flex layout, without fixed heights; preserve natural stacked layout on mobile.
