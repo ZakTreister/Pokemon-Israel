@@ -1,19 +1,175 @@
-import {useState} from 'react';
-import {escapeRichText,sanitizeRichHtml} from '../../../shared/richHtml.js';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2 } from 'lucide-react';
+import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
 import SafeHtml from './SafeHtml';
-export default function RichHtmlField({value,onChange}:{value:string;onChange:(value:string)=>void}){
- const [text,setText]=useState(''),[url,setUrl]=useState(''),[error,setError]=useState('');
- const addLink=()=>{
-  try{
-   if(!text.trim()||!url.trim())throw new Error('יש להזין מלל וקישור');
-   const link=sanitizeRichHtml('<a href="'+escapeRichText(url)+'">'+escapeRichText(text)+'</a>');
-   onChange(value+link);setText('');setUrl('');setError('');
-  }catch(e){setError(e instanceof Error?e.message:'קישור לא תקין')}
- };
- return <div className="space-y-2"><label className="block font-bold">תוכן (HTML)<textarea maxLength={50000} rows={8} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="auto" value={value} onChange={e=>onChange(e.target.value)}/></label>
- <p className="text-xs text-muted-foreground">אפשר להוסיף מלל, כותרות, הדגשה, רשימות וקישורים. סקריפטים, תמונות בקוד וסגנונות חופשיים אינם נתמכים.</p>
- <div className="grid gap-2 sm:grid-cols-2"><label>מלל הקישור<input className="block w-full border rounded p-2 bg-card" value={text} onChange={e=>setText(e.target.value)}/></label><label>כתובת הקישור<input className="block w-full border rounded p-2 bg-card" dir="ltr" value={url} onChange={e=>setUrl(e.target.value)}/></label></div>
- <Button type="button" variant="outline" size="sm" onClick={addLink}>הוסף קישור לתוכן</Button>{error&&<p role="alert" className="text-destructive">{error}</p>}
- {value&&<details className="border rounded p-3"><summary className="cursor-pointer">תצוגה מקדימה</summary><SafeHtml html={value}/></details>}</div>;
+import { richHtmlClassName } from './richHtmlStyles';
+import { serializeEditor } from './serializeEditor';
+
+type Props = { value: string; onChange: (value: string) => void };
+const actions = [
+  { command: 'undo', label: 'בטל פעולה', Icon: Undo2 },
+  { command: 'redo', label: 'שחזר פעולה', Icon: Redo2 },
+  { command: 'bold', label: 'הדגשה', Icon: Bold },
+  { command: 'italic', label: 'כתב נטוי', Icon: Italic },
+  { command: 'underline', label: 'קו תחתון', Icon: Underline },
+  { command: 'insertUnorderedList', label: 'רשימת תבליטים', Icon: List },
+  { command: 'insertOrderedList', label: 'רשימה ממוספרת', Icon: ListOrdered },
+  { command: 'unlink', label: 'הסר קישור', Icon: Unlink },
+] as const;
+
+export default function RichHtmlField({ value, onChange }: Props) {
+  const id = useId();
+  const editor = useRef<HTMLDivElement>(null);
+  const savedRange = useRef<Range | null>(null);
+  const lastValue = useRef<string | null>(null);
+  const [mode, setMode] = useState<'visual' | 'source'>(() => {
+    try { sanitizeRichHtml(value); return 'visual'; } catch { return 'source'; }
+  });
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  // Do not overwrite the live DOM on every keystroke: that loses selection and undo history.
+  useEffect(() => {
+    if (mode !== 'visual' || !editor.current || lastValue.current === value) return;
+    try {
+      editor.current.innerHTML = sanitizeRichHtml(value);
+      lastValue.current = value;
+      savedRange.current = null;
+    } catch {
+      setMode('source');
+      setError('יש לתקן את קוד ה-HTML לפני מעבר לעריכה ויזואלית.');
+    }
+  }, [value, mode]);
+
+  const rememberSelection = () => {
+    const selection = editor.current?.ownerDocument.getSelection();
+    if (selection?.rangeCount && editor.current?.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      savedRange.current = selection.getRangeAt(0).cloneRange();
+    }
+  };
+  const restoreSelection = () => {
+    const node = editor.current;
+    if (!node) return false;
+    node.focus();
+    const selection = node.ownerDocument.getSelection();
+    if (selection && savedRange.current && node.contains(savedRange.current.commonAncestorContainer)) {
+      selection.removeAllRanges();
+      selection.addRange(savedRange.current);
+    }
+    return true;
+  };
+  const publish = () => {
+    const node = editor.current;
+    if (!node) return;
+    try {
+      const html = serializeEditor(node);
+      lastValue.current = html;
+      onChange(html);
+      setError('');
+      rememberSelection();
+    } catch (e) {
+      // Keep the parent value and visible editor consistent if a browser operation exceeds the limit.
+      node.innerHTML = sanitizeRichHtml(lastValue.current ?? '');
+      savedRange.current = null;
+      setError(e instanceof Error ? e.message : 'לא ניתן לעדכן את התוכן');
+    }
+  };
+  const command = (name: string, argument?: string) => {
+    if (!restoreSelection()) return;
+    const doc = editor.current!.ownerDocument;
+    try {
+      doc.execCommand('styleWithCSS', false, 'false');
+      doc.execCommand('defaultParagraphSeparator', false, 'p');
+      if (!doc.execCommand(name, false, argument)) {
+        setError('הפעולה אינה זמינה במיקום זה או בדפדפן הנוכחי.');
+        return;
+      }
+      publish();
+    } catch {
+      setError('הפעולה אינה נתמכת בדפדפן הנוכחי.');
+    }
+  };
+  const switchMode = (next: 'visual' | 'source') => {
+    if (next === mode) return;
+    if (next === 'visual') {
+      try {
+        const html = sanitizeRichHtml(value);
+        onChange(html);
+        lastValue.current = null;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'HTML לא תקין');
+        return;
+      }
+    }
+    setLinkUrl(null);
+    savedRange.current = null;
+    setError('');
+    setMode(next);
+  };
+  const openLink = () => {
+    rememberSelection();
+    const range = savedRange.current;
+    if (!range || range.collapsed || !editor.current?.contains(range.commonAncestorContainer)) {
+      setError('יש לסמן את הטקסט שברצונך להפוך לקישור.');
+      return;
+    }
+    const element = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
+    const anchor = element?.closest('a');
+    setLinkUrl(anchor?.getAttribute('href') ?? '');
+    setError('');
+  };
+  const applyLink = () => {
+    if (linkUrl === null) return;
+    try {
+      const url = linkUrl.trim();
+      sanitizeRichHtml('<a href="' + escapeRichText(url) + '">קישור</a>');
+      if (!savedRange.current || savedRange.current.collapsed) throw new Error('יש לסמן טקסט לקישור.');
+      command('createLink', url);
+      setLinkUrl(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'קישור לא תקין');
+    }
+  };
+
+  return (
+    <div className="space-y-2" dir="rtl">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span id={id} className="font-bold">תוכן</span>
+        <div className="flex gap-1" aria-label="מצב עריכת תוכן">
+          <Button type="button" size="sm" contextual variant={mode === 'visual' ? 'secondary' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => switchMode('visual')}>עריכה ויזואלית</Button>
+          <Button type="button" size="sm" contextual variant={mode === 'source' ? 'secondary' : 'outline'} aria-pressed={mode === 'source'} onClick={() => switchMode('source')}>HTML</Button>
+        </div>
+      </div>
+      {mode === 'visual' ? (
+        <div className="border rounded-md bg-card">
+          <div role="group" aria-label="עיצוב תוכן" className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30">
+            <select aria-label="סוג פסקה" value="" className="border rounded p-2 bg-card" onChange={e => command('formatBlock', e.target.value)} onMouseDown={rememberSelection}>
+              <option value="" disabled>סוג פסקה</option>
+              <option value="p">פסקה</option>
+              <option value="h2">כותרת 2</option>
+              <option value="h3">כותרת 3</option>
+              <option value="h4">כותרת 4</option>
+            </select>
+            {actions.map(({ command: name, label, Icon }) => (
+              <Button key={name} type="button" variant="ghost" size="icon" aria-label={label} title={label} onMouseDown={e => e.preventDefault()} onClick={() => command(name)}><Icon size={18}/></Button>
+            ))}
+            <Button type="button" variant="ghost" size="icon" aria-label="הוסף או ערוך קישור" title="הוסף או ערוך קישור" onMouseDown={e => e.preventDefault()} onClick={openLink}><Link2 size={18}/></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="ציטוט" title="ציטוט" onMouseDown={e => e.preventDefault()} onClick={() => command('formatBlock', 'blockquote')}><Quote size={18}/></Button>
+          </div>
+          {linkUrl !== null && <div className="flex flex-wrap items-end gap-2 p-2 border-b">
+            <label className="flex-1 min-w-40">כתובת הקישור<input autoFocus type="text" maxLength={2000} dir="ltr" className="block w-full border rounded p-2 bg-card" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink(); } if (e.key === 'Escape') { e.preventDefault(); setLinkUrl(null); restoreSelection(); } }}/></label>
+            <Button type="button" size="sm" onClick={applyLink}>החל</Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => { setLinkUrl(null); restoreSelection(); }}>ביטול</Button>
+          </div>}
+          <div ref={editor} role="textbox" aria-labelledby={id} aria-multiline="true" contentEditable suppressContentEditableWarning dir="rtl" className={richHtmlClassName + ' min-h-48 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'} onInput={publish} onKeyUp={rememberSelection} onMouseUp={rememberSelection} onBlur={rememberSelection} onPaste={e => { e.preventDefault(); rememberSelection(); command('insertText', e.clipboardData.getData('text/plain')); }} onDrop={e => e.preventDefault()} onClick={e => { if ((e.target as Element).closest('a')) e.preventDefault(); }}/>
+        </div>
+      ) : (
+        <textarea aria-labelledby={id} maxLength={50000} rows={10} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="ltr" value={value} onChange={e => { onChange(e.target.value); setError(''); }}/>
+      )}
+      <p className="text-xs text-muted-foreground">סמנו טקסט ולחצו על סמל הקישור כדי להוסיף כתובת. תמונות וסרטונים מוסיפים בנפרד באזור המדיה.</p>
+      {error && <p role="alert" className="text-destructive">{error}</p>}
+      {mode === 'source' && value && <details className="border rounded p-3"><summary className="cursor-pointer">תצוגה מקדימה</summary><SafeHtml html={value}/></details>}
+    </div>
+  );
 }
