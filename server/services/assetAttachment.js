@@ -1,5 +1,6 @@
 import MediaUpload from '../models/mediaUploadModel.js';
 import { fail } from '../utils/httpError.js';
+import {uploadNamespace} from './mediaUpload.js';
 const idOK=x=>typeof x==='string'&&/^[a-f0-9]{24}$/i.test(x);
 export function youtubeId(url){
  if(typeof url!=='string') fail(400,'קישור YouTube לא תקין');
@@ -26,7 +27,7 @@ export async function attachAsset(req,owner,purpose){
   if(!idOK(uploadId)) fail(400,'מזהה העלאה לא חוקי');
   grant=await MediaUpload.findOne({_id:uploadId,entityId:owner._id,createdBy:req.user._id,
    purpose,status:'verified',consumed:false,expiresAt:{$gt:new Date()}});
-  if(!grant || !grant.storageKey.startsWith((purpose==='event-media'?'public/events/':'public/updates/')+owner.id+'/'))
+  if(!grant || !grant.storageKey.startsWith(uploadNamespace(purpose)+'/'+owner.id+'/'))
     fail(400,'קובץ לא אומת עבור הרשומה הזו');
   // Prevent attaching video grants created before image-only upload enforcement.
   if (!['image/jpeg','image/png','image/webp'].includes(grant.contentType)) fail(400,'ניתן להעלות תמונות בלבד. לסרטון הוסיפו קישור YouTube');

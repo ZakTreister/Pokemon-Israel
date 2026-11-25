@@ -11,6 +11,7 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import TournamentsPage from './pages/TournamentsPage';
 import EventDetailsPage from './pages/EventDetailsPage';
+import ContentPage from './pages/ContentPage';
 import TournamentDetailsPage from './pages/TournamentDetailsPage';
 import RankingsPage from './pages/RankingsPage';
 import DeckStatsPage from './pages/DeckStatsPage';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/tournaments" element={<TournamentsPage />} />
           <Route path="/events" element={<TournamentsPage />} />
           <Route path="/events/:id" element={<EventDetailsPage />} />
+          <Route path="/content/:id" element={<ContentPage />} />
           <Route path="/tournaments/:id" element={<TournamentDetailsPage />} />
           <Route path="/rankings" element={<RankingsPage />} />
           <Route path="/deck-stats" element={<DeckStatsPage />} />

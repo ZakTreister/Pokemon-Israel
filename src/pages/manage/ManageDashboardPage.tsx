@@ -20,6 +20,7 @@ import ManageBadges from './ManageBadges';
 import ManageTournaments from './ManageTournaments';
 import ManageEvents from './ManageEvents';
 import ManageEventPage from './ManageEventPage';
+import ManageContentPages from './ManageContentPages';
 import AdminTournaments from '../admin/AdminTournaments';
 import AdminUsers from '../admin/AdminUsers';
 import AdminOverview from '../admin/AdminOverview';
@@ -74,7 +75,7 @@ export default function ManageDashboardPage() {
     ['', 'סקירה כללית'],
     ['teams', 'נבחרות All-Stars'],
     ['tournaments', 'טורנירים'],
-    ...(admin ? [['events', 'אירועים']] : []),
+    ...(admin ? [['events', 'אירועים'],['content-pages','עמודי תוכן']] : []),
     ...(admin
       ? [
           ['players', 'שחקנים'],
@@ -225,6 +226,7 @@ export default function ManageDashboardPage() {
               />
               <Route path="tournaments" element={<ManageTournaments />} />
               {admin && <Route path="events" element={<ManageEvents />} />}
+              {admin && <Route path="content-pages" element={<ManageContentPages />} />}
               {admin && <Route path="events/:id" element={<ManageEventPage />} />}
               <Route
                 path="tournaments/:id"

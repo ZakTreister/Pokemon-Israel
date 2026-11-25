@@ -5,15 +5,15 @@ import type { EventMedia } from '../../types/event';
 import { MediaGallery } from './MediaGallery';
 import Button from '../ui/Button';
 import { requestError } from '../../utils/requestError';
-export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'update';id:string;items:EventMedia[];onChanged:()=>Promise<void>}){
+export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'update'|'content-page';id:string;items:EventMedia[];onChanged:()=>Promise<void>}){
  const [local,setLocal]=useState(items),[file,setFile]=useState<File|null>(null),[youtubeUrl,setYoutubeUrl]=useState(''),[caption,setCaption]=useState(''),[cover,setCover]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[progress,setProgress]=useState(0);
- const path=owner==='event'?'events':'updates';
+ const path=owner==='event'?'events':owner==='update'?'updates':'content-pages';
  const add=async()=>{if(!file&&!youtubeUrl)return;setBusy(true);setError('');
  try{
  let uploadId:string|undefined;
  if(file){
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024||file.size===0) throw new Error('יש לבחור תמונה מסוג JPEG, PNG או WebP עד 5MB');
-  const uploaded=await uploadImage(file,{purpose:owner==='event'?'event-media':'update-media',entityId:id},setProgress);
+  const uploaded=await uploadImage(file,{purpose:owner==='event'?'event-media':owner==='update'?'update-media':'content-page-media',entityId:id},setProgress);
   uploadId=uploaded.uploadId;
  }
  const {data}=await api.post<{mediaItems:EventMedia[]}>(`/api/${path}/${id}/media`,{uploadId,youtubeUrl:youtubeUrl||undefined,caption,cover:owner==='event'&&cover});
@@ -28,7 +28,7 @@ export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'
  {owner==='event'&&<label className="flex gap-2"><input type="checkbox" checked={cover} disabled={busy} onChange={e=>setCover(e.target.checked)}/> השתמש בתמונה כתמונת שער</label>}
  {error&&<p role="alert" className="text-destructive">{error}</p>}
  <p role="status" className="text-sm">{busy?`מעלה ושומר... ${progress}%`:''}</p>
- <Button disabled={busy||(!file&&!youtubeUrl)||Boolean(file&&youtubeUrl)} onClick={()=>void add()}>הוסף למדיה</Button>
- {local.map(item=><div key={item.id} className="flex justify-between items-center gap-2"><span className="text-sm truncate">{item.caption||item.kind}</span><Button disabled={busy} size="sm" variant="outline" onClick={()=>void remove(item.id)}>הסר</Button></div>)}
+ <Button type="button" disabled={busy||(!file&&!youtubeUrl)||Boolean(file&&youtubeUrl)} onClick={()=>void add()}>הוסף למדיה</Button>
+ {local.map(item=><div key={item.id} className="flex justify-between items-center gap-2"><span className="text-sm truncate">{item.caption||item.kind}</span><Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void remove(item.id)}>הסר</Button></div>)}
  </div>;
 }

@@ -8,7 +8,8 @@ export type UploadPurpose =
   | 'update-image'
   | 'team-cover'
   | 'event-media'
-  | 'update-media';
+  | 'update-media'
+  | 'content-page-media';
 export interface UploadTarget {
   purpose: UploadPurpose;
   entityId?: string;
