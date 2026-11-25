@@ -160,3 +160,6 @@ Do not duplicate it independently in homepage or other public components. Keep o
 
 ## Owner update — remove About navigation (2026-11-25)
 Remove the built-in על הליגה item from desktop/mobile header and footer navigation. Retain the existing /about route for old direct links; dynamic admin-managed content navigation is unaffected.
+
+## Owner clarification — trailing construction links
+Keep dynamic content-page links before the final two built-in header links: חנות and הזמנת יום הולדת, in that order, for all roles and desktop/mobile. Keep the same final two links in footer navigation. Preserve construction indicators.

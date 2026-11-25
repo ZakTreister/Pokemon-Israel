@@ -2,6 +2,8 @@ import express from 'express';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import {
   getBadges,
+  getBadgeProgram,
+  updateBadgeProgram,
   createBadge,
   updateBadge,
   getBadgeAwards,
@@ -12,6 +14,8 @@ import {
 const router = express.Router();
 
 // /awards must be declared before /:id pattern conflicts
+router.get('/program', getBadgeProgram);
+router.put('/program', protect, authorize('admin'), updateBadgeProgram);
 router.get('/', protect, authorize('admin'), getBadges);
 router.get('/awards', protect, authorize('admin'), getBadgeAwards);
 router.delete('/awards/:id', protect, authorize('admin'), revokeBadgeAward);

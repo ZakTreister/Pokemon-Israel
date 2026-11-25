@@ -33,9 +33,9 @@ export default function Header() {
     { to: '/all-stars', label: 'All Stars', construction: false },
     { to: '/tournaments', label: 'אירועים', construction: false },
     { to: '/news', label: 'חדשות', construction: false },
+    ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
     { to: '/store', label: 'חנות', construction: true },
     { to: '/birthday', label: 'הזמנת יום הולדת', construction: true },
-    ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
   ];
   const actions = (
     <>
