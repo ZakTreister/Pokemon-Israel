@@ -15,11 +15,15 @@ import Player from '../models/playerModel.js';
 import interTeamRoutes from '../routes/interTeamRoutes.js';
 import allStarsPublicRoutes from '../routes/allStarsPublicRoutes.js';
 import eventRoutes from '../routes/eventRoutes.js';
+import contentPageRoutes from '../routes/contentPageRoutes.js';
+import ContentPage from '../models/contentPageModel.js';
 import updateRoutes from '../routes/updateRoutes.js';
 import mediaRoutes from '../routes/mediaRoutes.js';
 import MediaUpload from '../models/mediaUploadModel.js';
 import tournamentRoutes from '../routes/tournamentRoutes.js';
 import { errorHandler } from '../middleware/errorMiddleware.js';
+import { fileURLToPath } from 'node:url';
+import {registerSeoEndpoints,createSpaSeoHandler} from '../services/seoRoutes.js';
 let server, origin, tokens = {};
 const dbName = 'events_integration_' + randomUUID().replaceAll('-', '');
 const call = async (path, method='GET', body, role=null) => {
@@ -43,8 +47,11 @@ before(async()=>{
   tokens[role]=jwt.sign({id:u.id},process.env.JWT_SECRET);
  }
  const app=express();app.use(express.json());app.use('/api/events',eventRoutes);
- app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
+ app.use('/api/content-pages',contentPageRoutes);app.use('/api/updates',updateRoutes);app.use('/api/tournaments',tournamentRoutes);
  app.use('/api/all-stars',allStarsPublicRoutes);app.use('/api/inter-team',interTeamRoutes);app.use('/api/media',mediaRoutes);
+ registerSeoEndpoints(app);
+ const serveSpa=createSpaSeoHandler(fileURLToPath(new URL('../../index.html',import.meta.url)));
+ app.get(['/', '/events/:id', '/content/:id', '/news/:id', '/manage', '/all-stars/players/:id'],serveSpa);
  app.use(errorHandler);
  server=createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  origin='http://127.0.0.1:'+server.address().port;
@@ -204,6 +211,7 @@ test('scheduled inter-team creation creates a real upcoming tournament without r
  assert.equal(created.rounds.length,0);
  assert.equal((await ok('/events/management/'+event.id,'GET',undefined,'admin')).tournaments.length,1);
  const overview=await ok('/all-stars/overview');
+ assert.ok('lastUpdatedAt' in overview);
  assert.equal(overview.fixtures.filter(f=>f.eventId===event.id).length,1);
  assert.equal(overview.fixtures.find(f=>f.eventId===event.id).tournamentId,created.id);
  assert.equal((await ok('/inter-team/active','GET',undefined,'admin')).some(t=>t.id===created.id),false);
@@ -232,6 +240,56 @@ test('next ranking event skips empty, draft, past and All-Stars events and respe
  }finally{
   await Tournament.deleteMany({_id:{$in:tournaments.map(t=>t._id)}});
   await Event.deleteMany({_id:{$in:[past,empty,draft,stars,next,later].map(e=>e.id)}});
+ }
+});
+
+
+test('admin can open a draft directly in the content editor without exposing it publicly',async()=>{
+ const page=await ContentPage.create({title:'Draft editor route',status:'draft'});
+ try {
+  assert.equal((await call('/content-pages/'+page.id)).status,404);
+  assert.equal((await call('/content-pages/management/'+page.id)).status,401);
+  assert.equal((await call('/content-pages/management/'+page.id,'GET',undefined,'judge')).status,403);
+  const managed=await ok('/content-pages/management/'+page.id,'GET',undefined,'admin');
+  assert.equal(managed.title,page.title);assert.equal(managed.status,'draft');
+  assert.equal((await call('/content-pages/management/not-a-page','GET',undefined,'admin')).status,404);
+ }finally{await page.deleteOne();}
+});
+
+test('production-style SEO HTML and sitemap respect publication and exclude personal pages',async()=>{
+ const published=await ok('/events','POST',{title:'SEO public event',description:'Public event description',category:'club',status:'published'},'admin',201);
+ const draft=await ok('/events','POST',{title:'SEO private event',category:'club',status:'draft'},'admin',201);
+ const [page,hiddenPage]=await ContentPage.create([{title:'SEO public page',status:'published'},{title:'SEO private page',status:'draft'}]);
+ const publicNews=await ok('/updates','POST',{title:'SEO public news',description:'Public news',eventId:published.id},'admin',201);
+ const hiddenNews=await ok('/updates','POST',{title:'SEO private news',description:'Private news',eventId:draft.id},'admin',201);
+ const get=async path=>{const res=await fetch(origin+path);assert.equal(res.status,200,path);return {html:await res.text(),res};};
+ try {
+  const home=await get('/');
+  assert.match(home.html,/קארדסקול.*חוגי פוקימון/);
+  assert.equal(home.res.headers.get('x-robots-tag'),null);
+  for(const [path,title] of [['/events/'+published.id,'SEO public event'],['/content/'+page.id,'SEO public page'],['/news/'+publicNews.id,'SEO public news']]){
+   const {html,res}=await get(path);
+   assert.ok(html.includes('<title>'+title+' | קארדסקול</title>'),path);
+   assert.ok(html.includes('https://cardschool.co.il'+path));
+   assert.equal(res.headers.get('x-robots-tag'),null);
+  }
+  for(const [path,title] of [['/events/'+draft.id,'SEO private event'],['/content/'+hiddenPage.id,'SEO private page'],['/news/'+hiddenNews.id,'SEO private news'],['/manage',''],['/all-stars/players/'+page.id,'']]){
+   const {html,res}=await get(path);
+   assert.equal(res.headers.get('x-robots-tag'),'noindex, follow',path);
+   assert.ok(html.includes('name="robots" content="noindex, follow"'));
+   assert.ok(!html.includes('rel="canonical"'));
+   if(title)assert.ok(!html.includes(title));
+  }
+  const sitemap=await get('/sitemap.xml');
+  assert.match(sitemap.res.headers.get('content-type'),/application\/xml/);
+  for(const path of ['/events/'+published.id,'/content/'+page.id,'/news/'+publicNews.id])assert.ok(sitemap.html.includes(path));
+  for(const path of ['/events/'+draft.id,'/content/'+hiddenPage.id,'/news/'+hiddenNews.id,'/manage','/all-stars/players/'])assert.ok(!sitemap.html.includes(path));
+  const robots=await get('/robots.txt');
+  assert.ok(robots.html.includes('Sitemap: https://cardschool.co.il/sitemap.xml'));
+ }finally{
+  await Update.deleteMany({_id:{$in:[publicNews.id,hiddenNews.id]}});
+  await Event.deleteMany({_id:{$in:[published.id,draft.id]}});
+  await ContentPage.deleteMany({_id:{$in:[page.id,hiddenPage.id]}});
  }
 });
 

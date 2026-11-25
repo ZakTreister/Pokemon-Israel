@@ -3,7 +3,7 @@
 Approved scope requested 2026-11-25. Implementation is incremental; this document is not a claim that all items are developed.
 
 ## Batch 1 — ranking and public layout
-- Shared three-player podium on homepage and ranking; preserve canonical shared ranks on ties.
+- Shared three-player podium on homepage and ranking; show canonical unique national ranks (owner clarification supersedes earlier shared places).
 - National ranking initially displays 25 rows; More appends up to 25 using server offset; search/filter/sort reset; next club event CTA in points explanation below search.
 - Rank movers derive from full canonical ranking before and after the latest completed regular tournament (closedAt, falling back to date). Compare existing players only, keep historical snapshot and league separation; show up to three positive movers, even when outside the first visible rows.
 - Homepage quick links have larger icons on the left; upcoming events in individual cards in a horizontal carousel below the heading, without an enclosing card; events directory falls back to first image when cover is absent.
@@ -47,6 +47,9 @@ Use one shared real Swiper React component for homepage field-news cards and upc
 
 ## Follow-up — hide empty event updates
 Render the entire public event updates section only if at least one update is returned. No empty-state heading or placeholder; existing update links and layout are preserved.
+
+## Follow-up — routed content editing and creation
+Admin list `/manage/content-pages` shows only the list. Edit navigates to `/manage/content-pages/:id`, New to `/manage/content-pages/new`. Both use the same editor and hide the list; initial save replaces the new URL with the saved ID, keeps the editor open for media and copy address, and subsequent saves stay in the editor. Close/back navigates to the list. Direct refresh supports drafts through an admin-only detail endpoint, never changes public draft access.
 
 ## Follow-up — public homepage live tournaments and simpler navigation
 See homepage.md: show only actually running public club competitions, remove the homepage field-news carousel (not the ticker or news page), and remove the built-in About link from public header/footer.

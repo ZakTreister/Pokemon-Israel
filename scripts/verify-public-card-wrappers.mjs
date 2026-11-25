@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { createServer } from 'vite';
 import { fileURLToPath } from 'node:url';
 
@@ -84,6 +84,62 @@ try {
   assert.equal(swiper.props['data-navigation'],true);
   assert.equal(swiper.props['data-pagination'],true);
   assert.equal(swiper.props['data-touch'],true);
+  unmount();
+  const {default:ManageList}=await load('pages/manage/ManageContentPages.tsx');
+  const {default:ManageEditor}=await load('pages/manage/ManageContentPageEditor.tsx');
+  const first={id:'first',title:'עמוד ראשון',subtitle:'',bodyHtml:'<p>תוכן</p>',status:'draft',showInNavigation:false,navigationLabel:'',showInFieldNews:false,mediaItems:[]};
+  const second={...first,id:'second',title:'עמוד שני'};
+  const managed=[first,second];
+  contentPagesService.manage=async()=>managed;
+  contentPagesService.getManaged=async id=>managed.find(page=>page.id===id);
+  contentPagesService.create=async input=>{const page={...input,id:'created',mediaItems:[]};managed.push(page);return page;};
+  let navigate,pathname;
+  function RouteProbe(){navigate=useNavigate();pathname=useLocation().pathname;return null;}
+  await act(async()=>{
+   renderer=TestRenderer.create(el(MemoryRouter,{initialEntries:['/manage/content-pages'],future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(RouteProbe),el(Routes,{},el(Route,{path:'/manage/content-pages',element:el(ManageList)}),el(Route,{path:'/manage/content-pages/:id',element:el(ManageEditor)}))));
+   await new Promise(resolve=>setImmediate(resolve));
+  });
+  const go=async to=>{await act(async()=>{navigate(to);await new Promise(resolve=>setImmediate(resolve));});};
+  const clickLink=async href=>{
+   const link=renderer.root.findAllByType('a').find(a=>a.props.href===href);
+   assert.ok(link,href);
+   await act(async()=>{link.props.onClick({button:0,defaultPrevented:false,preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));});
+  };
+  assert.equal(renderer.root.findAllByType('article').length,2);
+  assert.equal(renderer.root.findAllByType('form').length,0);
+  await clickLink('/manage/content-pages/first');
+  assert.equal(pathname,'/manage/content-pages/first');
+  assert.equal(renderer.root.findAllByType('article').length,0);
+  const titleField=()=>renderer.root.findByType('form').findAllByType('input').find(n=>n.props.maxLength===180);
+  assert.equal(titleField().props.value,'עמוד ראשון');
+  await go('/manage/content-pages/second');
+  assert.equal(titleField().props.value,'עמוד שני');
+  await go('/manage/content-pages');
+  await clickLink('/manage/content-pages/new');
+  assert.equal(pathname,'/manage/content-pages/new');
+  assert.equal(titleField().props.value,'');
+  assert.equal(renderer.root.findAllByType('article').length,0);
+  await act(async()=>{titleField().props.onChange({target:{value:'עמוד חדש'}});});
+  await act(async()=>{renderer.root.findByType('form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));});
+  assert.equal(pathname,'/manage/content-pages/created');
+  assert.equal(titleField().props.value,'עמוד חדש');
+  assert.equal(renderer.root.findAllByType('input').find(n=>n.props.type==='file')?.props.type,'file');
+  assert.ok(renderer.root.findAllByType('input').some(n=>n.props.value==='https://cardschool.co.il/content/created'));
+  await act(async()=>{renderer.root.findAllByType('button').find(n=>n.children.join('')==='סגור').props.onClick();await new Promise(resolve=>setImmediate(resolve));});
+  assert.equal(pathname,'/manage/content-pages');
+  assert.equal(renderer.root.findAllByType('article').length,3);
+  assert.equal(renderer.root.findAllByType('form').length,0);
+  unmount();
+  const {default:Freshness}=await load('components/rankings/RankingFreshness.tsx');
+  await act(async()=>{renderer=TestRenderer.create(el(Freshness,{showCoverage:true,showLastUpdated:false,resultsThrough:{date:'2026-07',precision:'month',title:'אליפות ישראל'}}));});
+  assert.equal(renderer.root.findAllByType('p').length,1);
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('כולל תוצאות מטורנירים עד:'));
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('אליפות ישראל'));
+  assert.ok(!JSON.stringify(renderer.toJSON()).includes('הדירוג עודכן לאחרונה'));
+  unmount();
+  await act(async()=>{renderer=TestRenderer.create(el(Freshness,{}));});
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('הדירוג עודכן לאחרונה'));
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('טרם עודכן'));
   unmount();
   console.log('Public card checks passed: actual shared background/frame, event body, one linked-content panel, individual tournament cards and empty-section hiding.');
 } finally {

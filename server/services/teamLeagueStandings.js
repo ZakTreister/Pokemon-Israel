@@ -1,12 +1,16 @@
 import { calculateInterTeamScore } from './interTeamScore.js';
 const id=x=>String(x?._id??x);
+export function isCountedLeagueMeeting(meeting, teamIds){
+ return meeting.type==='inter_team'&&meeting.status==='completed'&&meeting.phase==='completed'&&
+  meeting.interTeamSides?.length===2&&meeting.interTeamSides.every(side=>teamIds.has(id(side.team)));
+}
 export function teamLeagueStandings(teams,completedMeetings){
  const table=new Map(teams.map(t=>[id(t._id),{
   id:id(t._id),name:t.name,logo:t.toJSON?.().logo||'',played:0,wins:0,draws:0,losses:0,
   leaguePoints:0,gameWins:0,gameLosses:0,gameDifference:0,position:0,
  }]));
  for(const meeting of completedMeetings){
-  if(meeting.type!=='inter_team' || meeting.status!=='completed' || meeting.phase!=='completed')continue;
+  if(!isCountedLeagueMeeting(meeting,table))continue;
   const results=calculateInterTeamScore(meeting);
   if(results.length!==2)continue;
   const [a,b]=results;

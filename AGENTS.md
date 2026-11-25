@@ -24,6 +24,7 @@ For any frontend work, UI work, React refactor, component work, or page implemen
 Current product decisions override older code, comments, and earlier implementation assumptions.
 
 ## Working rules
+- Maintain at most one open implementation pull request at a time. Check open PRs before starting work; add approved follow-up changes to the existing implementation PR, or wait for the owner to merge/close it before opening another. Start from current main, synchronize and verify CI before reporting ready; never merge to main without explicit owner approval.
 - Keep the existing React + TypeScript + Redux Toolkit + Tailwind frontend and Node/Express + MongoDB backend unless a spec explicitly requires otherwise.
 - Preserve the existing CardSchool visual system and RTL Hebrew UX unless a task says otherwise.
 - Follow `docs/architecture/frontend-standards.md` for frontend structure, reuse, testing, accessibility, state ownership, forms, TypeScript, and refactoring boundaries.
