@@ -37,10 +37,10 @@ test('SEO does not expose private routes, child names or unpublished content, an
  assert.ok(html.includes('&quot;quoted&quot;'));
  assert.ok(html.includes('&amp; title'));
 });
-test('sitemap lists published entities and excludes updates whose events are not public',()=>{
+test('sitemap lists published entities and excludes all standalone update URLs',()=>{
  const xml=sitemapXml({events:[{_id:'event'}],pages:[{_id:'content'}],updates:[{_id:'standalone'},{_id:'linked',eventId:'event'},{_id:'hidden',eventId:'draft'}]});
- for(const path of ['/','/tournaments','/rankings','/events/event','/content/content','/news/standalone','/news/linked'])assert.ok(xml.includes('<loc>'+SITE_ORIGIN+path+'</loc>'),path);
- assert.ok(!xml.includes('/news/hidden'));
+ for(const path of ['/','/tournaments','/rankings','/events/event','/content/content'])assert.ok(xml.includes('<loc>'+SITE_ORIGIN+path+'</loc>'),path);
+ for(const id of ['standalone','linked','hidden'])assert.ok(!xml.includes('/news/'+id));
  assert.ok(!xml.includes('/manage'));
  assert.ok(!xml.includes('/all-stars/players/'));
  assert.ok(!xml.includes('<loc>'+SITE_ORIGIN+'/events</loc>'));
