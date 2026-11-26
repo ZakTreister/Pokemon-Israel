@@ -2,7 +2,7 @@ import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 
 const tags = new Set(['p', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'a', 'span']);
 const blocks = new Set(['div', 'p', 'h2', 'h3', 'h4', 'ul', 'ol', 'blockquote']);
-const discarded = new Set(['script', 'style', 'iframe', 'object', 'embed', 'img', 'svg', 'video', 'audio', 'template']);
+const discarded = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 'video', 'audio', 'template']);
 
 // Browser editing commands can emit divs, fonts and spans with style attributes.
 // Convert to the existing restricted HTML grammar; never serialize arbitrary attributes.
@@ -14,6 +14,12 @@ export function serializeEditor(root: HTMLElement): string {
     const tag = element.tagName.toLowerCase();
     if (discarded.has(tag)) return '';
     if (tag === 'br' || tag === 'hr') return '<' + tag + '>';
+    if (tag === 'img') {
+      const src=element.getAttribute('src');
+      if(!src)return '';
+      const attr=(value:string)=>escapeRichText(value.replace(/&/g,'&amp;'));
+      return '<img src="'+attr(src)+'" alt="'+attr(element.getAttribute('alt')??'')+'">';
+    }
     let content = Array.from(node.childNodes).map(serialize).join('');
     if (tag === 'a') {
       const href = element.getAttribute('href');
@@ -22,6 +28,10 @@ export function serializeEditor(root: HTMLElement): string {
     }
     const align = (tag==='center'?'center':element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
     const attr = ['center','right','left'].includes(align) ? ' style="text-align: '+align+'"' : '';
+    if (tag === 'div') {
+      const visibility=element.getAttribute('class');
+      if(visibility==='mobile-only'||visibility==='desktop-only')return '<div class="'+visibility+'">'+content+'</div>';
+    }
     if (tag === 'div' || tag === 'center') {
       if (Array.from(element.children).some(child => blocks.has(child.tagName.toLowerCase()))) {
         // Browser commands may wrap selected paragraphs in an aligned div.
