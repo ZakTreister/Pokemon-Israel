@@ -1,6 +1,5 @@
 import AllStarsPlayerPage from './pages/AllStarsPlayerPage';
 import NewsPage from './pages/NewsPage';
-import NewsPostPage from './pages/NewsPostPage';
 import ConstructionPage from './pages/ConstructionPage';
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -55,7 +54,6 @@ function App() {
           <Route path="/all-stars/players/:playerId" element={<AllStarsPlayerPage />} />
           <Route path="/all-stars" element={<AllStarsPage />} />
           <Route path="/news" element={<NewsPage />} />
-          <Route path="/news/:id" element={<NewsPostPage />} />
           <Route path="/store" element={<ConstructionPage title="חנות" />} />
           <Route path="/birthday" element={<ConstructionPage title="הזמנת יום הולדת" />} />
           <Route path="/login" element={<LoginPage />} />
