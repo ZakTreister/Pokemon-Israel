@@ -25,6 +25,10 @@ try {
   assert.equal(serializeEditor(root), '<p>שלום &amp; &lt;עולם&gt;</p><b>מודגש</b><em>נטוי</em><a href="/events/123?x=1&amp;y=2">קישור</a>');
   assert.throws(()=>serializeEditor(element('div',[element('a',[text('bad')],{href:'javascript:alert(1)'})])));
   assert.equal(serializeEditor(element('div',[element('div',[text('מרכז')],{align:'center'}),element('h2',[text('כותרת')],{style:{textAlign:'center'}})])),'<p style="text-align: center">מרכז</p><h2 style="text-align: center">כותרת</h2>');
+  const mobile=element('div',[element('img',[],{src:'https://example.com/a.jpg',alt:'תמונה'})],{class:'mobile-only'});
+  const desktop=element('div',[element('p',[text('מחשב')])],{class:'desktop-only'});
+  const responsive='<div class="mobile-only"><img src="https://example.com/a.jpg" alt="תמונה"></div><div class="desktop-only"><p>מחשב</p></div>';
+  assert.equal(serializeEditor(element('div',[mobile,desktop])),responsive);
   const el = React.createElement;
   const Harness = () => {
     const [value,setValue] = React.useState('<p>תוכן קיים</p>');
@@ -36,7 +40,11 @@ try {
   assert.equal(renderer.root.findAllByType('input').length,0,'no permanent link fields');
   assert.equal(renderer.root.findAllByType('textarea').length,0);
   assert.equal(fake.innerHTML,'<p>תוכן קיים</p>');
-  for(const label of ['הדגשה','כתב נטוי','קו תחתון','מרכז טקסט','יישור לימין','הוסף או ערוך קישור','הסר קישור','בטל פעולה','שחזר פעולה']) assert.ok(button(label),label);
+  for(const label of ['הדגשה','כתב נטוי','קו תחתון','מרכז טקסט','יישור לימין','הוסף או ערוך קישור','הסר קישור','בטל פעולה','שחזר פעולה','הוסף תמונה','מובייל בלבד','דסקטופ בלבד']) assert.ok(button(label),label);
+  act(()=>button('הוסף תמונה').props.onClick());
+  assert.equal(renderer.root.findAllByType('input').length,2);
+  act(()=>button('ביטול').props.onClick());
+  assert.equal(renderer.root.findAllByType('input').length,0);
   act(()=>button('הוסף או ערוך קישור').props.onClick());
   assert.equal(renderer.root.findAllByType('input').length,0,'link requires selected text');
   assert.ok(renderer.root.findByProps({role:'alert'}));
@@ -51,6 +59,10 @@ try {
   assert.equal(renderer.root.findAllByType('textarea').length,0);
   assert.equal(fake.innerHTML,'<h2>כותרת</h2><a href="/events/123">אירוע</a>');
   assert.equal(renderer.root.findAllByType('input').length,0);
+  act(()=>button('HTML').props.onClick());
+  act(()=>renderer.root.findByType('textarea').props.onChange({target:{value:responsive}}));
+  act(()=>button('עריכה ויזואלית').props.onClick());
+  assert.equal(fake.innerHTML,responsive);
   console.log('Rich HTML editor checks passed: safe serialization, visual/source roundtrip, invalid source rejection and no permanent link fields.');
 } finally {
   if(renderer) act(()=>renderer.unmount());
