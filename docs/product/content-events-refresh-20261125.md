@@ -69,3 +69,7 @@ New updates created through the editor start as draft unless פרסם is checked
 
 ## Owner follow-up — inline updates (2026-11-26)
 Event media is followed by published updates (heading עדכונים), then the existing rich event body. Reuse bodyHtml and its existing editor. Update cards retain a fixed overall height of 380px with sanitized rich HTML in an internally scrolling region and plain-text fallback. Admin can unlink an update without deleting it or permanently delete it after confirmation. Remove standalone news detail route and SEO entries; ticker links point to cards on the news listing. Preserve publication flags and independent CTA.
+
+
+## Follow-up — discoverable event rich content
+The event management edit panel opens by default and stays open after successful save. The existing bodyHtml rich editor is explicitly labeled תוכן עשיר של האירוע and explains that it appears below updates on the public event page. The panel can still be collapsed; no new field or duplicate editor.

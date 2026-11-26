@@ -14,7 +14,8 @@ export default function EventEditor({initial,onSave,busy}:{initial?:EventSummary
  return <form onSubmit={e=>void save(e)} className="grid gap-3 max-w-xl">
  <label>שם האירוע<input required maxLength={180} className="block w-full p-3 border rounded-md bg-card" value={data.title} onChange={e=>setData({...data,title:e.target.value})}/></label>
  <label>כותרת משנה (להירו)<textarea maxLength={5000} rows={4} className="block w-full p-3 border rounded-md bg-card" value={data.description} onChange={e=>setData({...data,description:e.target.value})}/></label>
- <RichHtmlField value={data.bodyHtml||''} onChange={bodyHtml=>setData({...data,bodyHtml})}/>
+ <RichHtmlField label="תוכן עשיר של האירוע" value={data.bodyHtml||''} onChange={bodyHtml=>setData({...data,bodyHtml})}/>
+ <p className="text-sm text-muted-foreground">תוכן זה יוצג בעמוד האירוע הציבורי מתחת לעדכונים.</p>
  <fieldset className="space-y-2 border rounded-md p-3"><legend className="font-bold">עמודי תוכן משויכים</legend>{pages.map(page=><label key={page.id} className="flex gap-2"><input type="checkbox" checked={data.contentPageIds?.includes(page.id)||false} onChange={e=>setData({...data,contentPageIds:e.target.checked?[...(data.contentPageIds||[]),page.id]:(data.contentPageIds||[]).filter(id=>id!==page.id)})}/>{page.title}{page.status==='draft'?' (טיוטה)':''}</label>)}{!pages.length&&<p className="text-sm">אין עמודים לבחירה.</p>}</fieldset>
  <label className="flex gap-2"><input type="checkbox" checked={!!data.showInFieldNews} onChange={e=>setData({...data,showInFieldNews:e.target.checked})}/> הצג בחדשות מהשטח</label>
  <label>סוג<select disabled={!!initial} className="block w-full p-3 border rounded-md bg-card" value={data.category} onChange={e=>setData({...data,category:e.target.value as EventInput['category'],openingRound:false})}><option value="club">חוגים</option><option value="all_stars">אולסטארז</option></select></label>
