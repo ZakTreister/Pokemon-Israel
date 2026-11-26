@@ -65,7 +65,12 @@ export function buildNationalRanking(historicalRows, postImportTournamentRows, o
   // Ranking order and rank calculation precede search/pagination.
   const eligible = [...totals.values()].filter(row => includeAllStars || !row.isAllStars);
   eligible.sort(canonicalCompare);
-  eligible.forEach((row, index) => { row.position = index + 1; });
+  let position=0,previous;
+  eligible.forEach(row=>{
+    if(!previous||row.points!==previous.points||row.tournaments!==previous.tournaments)position++;
+    row.position=position;
+    previous=row;
+  });
   let topMovers = [];
   if (Array.isArray(previousTournamentRows)) {
     const previous = buildNationalRanking(historicalRows, previousTournamentRows, { includeAllStars, allRows: true }).rankings;

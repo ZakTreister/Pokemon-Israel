@@ -20,8 +20,14 @@ export function serializeEditor(root: HTMLElement): string {
       if (!href) return content;
       return '<a href="' + escapeRichText(href.replace(/&/g, '&amp;')) + '">' + content + '</a>';
     }
+    const align = (element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
+    const attr = ['center','right','left'].includes(align) ? ' style="text-align: '+align+'"' : '';
     if (tag === 'div') {
-      return Array.from(element.children).some(child => blocks.has(child.tagName.toLowerCase())) ? content : '<p>' + content + '</p>';
+      if (Array.from(element.children).some(child => blocks.has(child.tagName.toLowerCase()))) {
+        // Browser commands may wrap selected paragraphs in an aligned div.
+        return attr ? content.replace(/<(p|h2|h3|h4|blockquote|li)(?: style="text-align: (?:center|right|left)")?>/g, '<$1'+attr+'>') : content;
+      }
+      return '<p'+attr+'>' + content + '</p>';
     }
     if (tag === 'span' || tag === 'font') {
       const style = element.style;
@@ -30,7 +36,7 @@ export function serializeEditor(root: HTMLElement): string {
       if (style.textDecorationLine.includes('underline') || style.textDecoration.includes('underline')) content = '<u>' + content + '</u>';
       return content;
     }
-    return tags.has(tag) ? '<' + tag + '>' + content + '</' + tag + '>' : content;
+    return tags.has(tag) ? '<' + tag + (['p','h2','h3','h4','blockquote','li'].includes(tag)?attr:'') + '>' + content + '</' + tag + '>' : content;
   };
   return sanitizeRichHtml(Array.from(root.childNodes).map(serialize).join(''));
 }

@@ -18,8 +18,10 @@ export default function DataTable<Row>({
   rowLink,
   rowClassName,
   externalSort,
+  showRowNumbers=false,
 }: {
   rows: Row[];
+  showRowNumbers?: boolean;
   columns: TableColumn<Row>[];
   rowKey: (row: Row) => string;
   defaultSort?: string;
@@ -47,6 +49,7 @@ export default function DataTable<Row>({
       <table className="w-full text-right">
         <thead className={headerClassName}>
           <tr>
+            {showRowNumbers&&<th scope="col" aria-label="מספר סידורי" className="p-3"/>}
             {columns.map(c => (
               <th
                 key={c.key}
@@ -66,12 +69,12 @@ export default function DataTable<Row>({
           </tr>
         </thead>
         <tbody>
-          {displayed.map(row => {
-            const cells = columns.map(c => (
+          {displayed.map((row,index) => {
+            const cells = [...(showRowNumbers?[<td key="row-number" className="p-3 tabular-nums text-muted-foreground">{index+1}</td>]:[]), ...columns.map(c => (
               <td key={c.key} className="p-3">
                 {c.render ? c.render(row) : (c.value(row) ?? '—')}
               </td>
-            ));
+            ))];
             const to = rowLink?.(row);
             const className = `border-t ${rowClassName?.(row) || ''}`;
             return to ? (

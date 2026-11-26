@@ -21,13 +21,15 @@ import Button from '../components/ui/Button';
 export default function HomePage(){
  const dispatch=useAppDispatch(),{updates}=useAppSelector(s=>s.updates);
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
+ const [leadersLoading,setLeadersLoading]=useState(true),[eventsLoading,setEventsLoading]=useState(true),[standingsLoading,setStandingsLoading]=useState(true);
+ const [leadersError,setLeadersError]=useState(''),[eventsError,setEventsError]=useState(''),[standingsError,setStandingsError]=useState('');
  const [overview,setOverview]=useState<Overview|null>(null),[teams,setTeams]=useState<Team[]>([]),[live,setLive]=useState<Meeting[]>([]);
  const favorite=useFavoriteSelection();
  useEffect(()=>{let active=true;dispatch(fetchUpdates());
-  Promise.all([eventsService.list({category:'club',pageSize:16}),eventsService.list({category:'all_stars',pageSize:16})]).then(([a,b])=>{if(active)setEvents([...a.items,...b.items]);}).catch(e=>{if(active)setError(requestError(e));});
-  getNationalRankings({pageSize:3}).then(r=>{if(active)setLeaders(r.rankings);}).catch(()=>{});
+  Promise.all([eventsService.list({category:'club',pageSize:16}),eventsService.list({category:'all_stars',pageSize:16})]).then(([a,b])=>{if(active)setEvents([...a.items,...b.items]);}).catch(e=>{if(active)setEventsError(requestError(e));}).finally(()=>{if(active)setEventsLoading(false);});
+  getNationalRankings({pageSize:3}).then(r=>{if(active)setLeaders(r.rankings);}).catch(e=>{if(active)setLeadersError(requestError(e));}).finally(()=>{if(active)setLeadersLoading(false);});
   publicTeams.list().then(t=>{if(active)setTeams(t);}).catch(e=>{if(active)setError(requestError(e));});
-  allStarsService.overview().then(o=>{if(active)setOverview(o);}).catch(e=>{if(active)setError(requestError(e));});
+  allStarsService.overview().then(o=>{if(active)setOverview(o);}).catch(e=>{if(active)setStandingsError(requestError(e));}).finally(()=>{if(active)setStandingsLoading(false);});
   return()=>{active=false};
  },[dispatch]);
  useEffect(()=>{if(!favorite.selected)return;let active=true,busy=false;
@@ -54,7 +56,7 @@ export default function HomePage(){
  </div></section>
  {selectedTeam&&<MyFavoriteTeam key={selectedTeam.id} team={{...selectedTeam,fanCount:favorite.counts[selectedTeam.id]??selectedTeam.fanCount}} overview={overview} live={live} updates={updates}/>}
  <ActivePublicTournaments/>
- <LeagueSections leaders={leaders} standings={overview?.standings??[]} events={future} error={error}/>
+ <LeagueSections leaders={leaders} standings={overview?.standings??[]} events={future} error={error} leadersLoading={leadersLoading} eventsLoading={eventsLoading} standingsLoading={standingsLoading} leadersError={leadersError} eventsError={eventsError} standingsError={standingsError}/>
  <AllStarsTeamsSection teams={teams} favorite={favorite}/>
  <section className="bg-navy-700 text-white py-9"><div className="container flex items-center justify-between flex-wrap gap-4"><div><h2 className="text-2xl font-extrabold">מצטרפים לחוג הפוקימון</h2><p>לימוד, משחק וחברים קרוב לבית</p></div><Button asChild variant="cta"><a href={TRIAL_REGISTRATION_URL} target="_blank" rel="noopener noreferrer">להרשמה לחוג</a></Button></div></section>
  </div>;
