@@ -21,3 +21,16 @@ test('published navigation pages require a label, including partial edits',()=>{
   assert.throws(()=>sanitizeRichHtml('<p style="text-align: center; color:red">x</p>'));
   assert.throws(()=>sanitizeRichHtml('<p align="center" onclick="x()">x</p>'));
  });
+
+test('safe inline images and device-only divs round trip',()=>{
+ const raw='<div class="mobile-only"><img src="https://example.com/a.jpg?x=1&y=2" alt="תמונה"></div><div class="desktop-only"><p>מחשב</p></div>';
+ const clean=sanitizeRichHtml(raw);
+ assert.equal(clean,raw.replace('&y=','&amp;y='));
+ assert.equal(sanitizeRichHtml(clean),clean);
+ assert.equal(sanitizeRichHtml('<img src="/a.jpg"/>'),'<img src="/a.jpg" alt="">');
+ for(const html of [
+   '<img src="javascript:alert(1)">','<img src="data:image/svg+xml;base64,x">','<img src="//evil.example/x">','<img src="http://example.com/x">',
+   '<img src="https://example.com/x" onerror="alert(1)">','<img src="https://example.com/x" srcset="x">',
+   '<div class="hidden">x</div>','<div class="mobile-only other">x</div>','<div class="desktop-only" style="display:none">x</div>','<style>div{display:none}</style>',
+ ])assert.throws(()=>sanitizeRichHtml(html),html);
+});
