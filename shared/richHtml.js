@@ -1,7 +1,7 @@
 // Deliberately restricted HTML grammar. Never return untrusted tags or attributes.
 // Reject unsupported HTML instead of attempting to parse arbitrary browser markup.
-const tags=new Set(['p','h2','h3','h4','strong','b','em','i','u','ul','ol','li','blockquote','a','br','hr','span']);
-const voidTags=new Set(['br','hr']);
+const tags=new Set(['p','h2','h3','h4','strong','b','em','i','u','ul','ol','li','blockquote','a','br','hr','span','div','img']);
+const voidTags=new Set(['br','hr','img']);
 export function escapeRichText(value) {
   return String(value).replace(/&(?!(?:amp|lt|gt|quot|apos|nbsp|#\d{1,7}|#x[\da-f]{1,6});)/gi,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -25,8 +25,20 @@ export function sanitizeRichHtml(input){
     let match=part.match(/^<\/([a-z0-9]+)\s*>$/i);
     if(match){
       const tag=match[1].toLowerCase();
-      if(!tags.has(tag)||stack.pop()!==tag)throw new Error('תגיות HTML אינן מאוזנות או אינן נתמכות');
+      if(!tags.has(tag)||voidTags.has(tag)||stack.pop()!==tag)throw new Error('תגיות HTML אינן מאוזנות או אינן נתמכות');
       output.push('</'+tag+'>');continue;
+    }
+    match=part.match(/^<img\s+src\s*=\s*(?:"([^"]*)"|'([^']*)')(?:\s+alt\s*=\s*(?:"([^"]*)"|'([^']*)'))?\s*\/?>$/i);
+    if(match){
+      const url=linkUrl(match[1]??match[2]);
+      if(!/^https:\/\//i.test(url)&&!/^\/(?!\/)/.test(url))throw new Error('תמונה חייבת להשתמש ב-HTTPS או בנתיב מקומי');
+      const alt=escapeRichText(match[3]??match[4]??'');
+      if(alt.length>1000)throw new Error('תיאור התמונה ארוך מדי');
+      output.push('<img src="'+url.replace(/&/g,'&amp;')+'" alt="'+alt+'">');continue;
+    }
+    match=part.match(/^<div\s+class\s*=\s*(?:"(mobile-only|desktop-only)"|'(mobile-only|desktop-only)')\s*>$/);
+    if(match){
+      output.push('<div class="'+(match[1]??match[2])+'">');stack.push('div');continue;
     }
     match=part.match(/^<a\s+href\s*=\s*(?:"([^"]*)"|'([^']*)')\s*>$/i);
     if(match){
@@ -41,7 +53,7 @@ export function sanitizeRichHtml(input){
     match=part.match(/^<([a-z0-9]+)\s*(\/?)>$/i);
     if(match){
       const tag=match[1].toLowerCase();
-      if(!tags.has(tag)||tag==='a'||(match[2]&&!voidTags.has(tag)))throw new Error('תגית HTML אינה נתמכת');
+      if(!tags.has(tag)||['a','img','div'].includes(tag)||(match[2]&&!voidTags.has(tag)))throw new Error('תגית HTML אינה נתמכת');
       output.push('<'+tag+'>');if(!voidTags.has(tag))stack.push(tag);continue;
     }
     throw new Error('HTML לא נתמך: יש להסיר סקריפטים, מאפיינים וסגנונות');
