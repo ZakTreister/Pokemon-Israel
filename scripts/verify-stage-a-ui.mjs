@@ -505,7 +505,7 @@ try {
     'homepage no longer advertises the field-news carousel',
   );
   assert.ok(!home.includes('Must not feature internal'));
-  assert.ok(home.includes('/news/news-fixture'));
+  assert.ok(home.includes('/news#update-news-fixture'));
   assert.ok(home.includes('דירוג השחקנים הארצי'));
   assert.ok(home.includes('מצטרפים לחוג הפוקימון'));
   assert.ok(!home.includes('הדקים המובילים'));
