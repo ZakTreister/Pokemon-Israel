@@ -84,10 +84,14 @@ try {
   assert.ok(!renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים'));
   assert.ok(!renderer.root.findAllByType('p').some(n=>n.children.join('')==='עדכונים יופיעו כאן לאחר פרסומם.'));
   unmount();
-  eventsService.get=async()=>({...event,updates:[{id:'news1',title:'עדכון ראשון',description:'פרטי העדכון',descriptionHtml:'<p>תוכן עשיר</p>'}]});
+  eventsService.get=async()=>({...event,coverUrl:'/event-cover.jpg',updates:[{id:'news1',title:'עדכון ראשון',description:'פרטי העדכון',descriptionHtml:'<p>תוכן עשיר</p>'}]});
   await mount(Event,'/events/event');
   assert.ok(renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים'));
   assert.ok(renderer.root.findByProps({id:'update-news1'}).props.className.includes('h-[380px]'));
+  const eventMarkup=JSON.stringify(renderer.toJSON());
+  assert.ok(eventMarkup.indexOf('/event-cover.jpg')>=0);
+  assert.ok(eventMarkup.indexOf('/event-cover.jpg')<eventMarkup.indexOf('תוכן האירוע'));
+  assert.ok(eventMarkup.indexOf('תוכן האירוע')<eventMarkup.indexOf('עדכון ראשון'));
   assert.ok(renderer.root.findByProps({'aria-label':'עדכונים'}).findByType('article').props.className.includes('cs-public-card'));
   unmount();
   eventsService.get=async()=>({...event,tournaments:[],fixtures:[],contentPages:[]});
