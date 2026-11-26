@@ -82,7 +82,7 @@ export const getEvent = asyncHandler(async (req,res) => {
   if (event.status !== 'published') fail(404, 'האירוע לא נמצא');
   const [tournaments, updates] = await Promise.all([
     Tournament.find({ eventId:event._id }).sort({date:1}),
-    Update.find({ eventId:event._id }).sort({date:-1}),
+    Update.find({ eventId:event._id,published:{$ne:false} }).sort({date:-1}),
   ]);
   res.json({ ...event.toJSON(), tournaments:tournaments.map(t=>publicTournament(t)),
     updates:updates.map(u=>u.toJSON()),contentPages:await linkedPages(event) });

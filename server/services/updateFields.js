@@ -36,8 +36,10 @@ export function updateFields(input, existing = {}) {
     if (!['http:', 'https:'].includes(url.protocol))
       fail(400, 'הקישור חייב להתחיל ב-http או https');
   }
-  for(const key of ['showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
+  for(const key of ['published','showInNews','showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
   return {
+    ...(input.published!==undefined?{published:input.published}:{}),
+    ...(input.showInNews!==undefined?{showInNews:input.showInNews}:{}),
     ...(input.showInFieldNews!==undefined?{showInFieldNews:input.showInFieldNews}:{}),
     ...(input.imageInGallery!==undefined?{imageInGallery:input.imageInGallery}:{}),
     title: title.trim(),

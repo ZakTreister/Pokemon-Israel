@@ -12,7 +12,7 @@ const managed=()=>Gallery.findOneAndUpdate({_id:galleryId},{$setOnInsert:gallery
 const selected=docs=>docs.flatMap(doc=>doc.toJSON().mediaItems.filter(a=>a.showInGallery&&a.url));
 router.get('/',asyncHandler(async(_req,res)=>{
  const [gallery,events,pages]=await Promise.all([Gallery.findById(galleryId),Event.find({status:'published'}).sort({updatedAt:-1}),ContentPage.find({status:'published'}).sort({updatedAt:-1})]);
- const updates=await Update.find({$or:[{eventId:null},{eventId:{$in:events.map(e=>e._id)}}]}).sort({date:-1});
+ const updates=await Update.find({published:{$ne:false},showInNews:{$ne:false},$or:[{eventId:null},{eventId:{$in:events.map(e=>e._id)}}]}).sort({date:-1});
  const primary=updates.filter(u=>u.imageInGallery).map(u=>({id:'update-image:'+u.id,kind:'image',url:u.toJSON().image,caption:u.title,showInGallery:true})).filter(a=>a.url);
  const data=gallery?.toJSON()||{id:galleryId,...galleryDefaults,mediaItems:[]};
  const items=[...data.mediaItems,...selected(events),...selected(pages),...selected(updates),...primary];

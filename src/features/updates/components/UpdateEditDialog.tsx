@@ -27,7 +27,8 @@ export default function UpdateEditDialog({
     ctaText: update?.ctaText || '',
     ctaUrl: update?.ctaUrl || '',
   });
-  const [showInFieldNews,setShowInFieldNews]=useState(update?.showInFieldNews!==false);
+  const [published,setPublished]=useState(update?update.published!==false:false);
+  const [showInNews,setShowInNews]=useState(update?.showInNews!==false);
   const [imageInGallery,setImageInGallery]=useState(!!update?.imageInGallery);
   const [teams,setTeams]=useState<Team[]>([]),[teamIds,setTeamIds]=useState<string[]>(update?.teamIds??[]);
   useEffect(()=>{let active=true;publicTeams.list().then(rows=>{if(active)setTeams(rows);}).catch(()=>{});return()=>{active=false};},[]);
@@ -47,7 +48,7 @@ export default function UpdateEditDialog({
     setError('');
     try {
       const { description, ...fields } = parsed.data;
-      const input = { ...fields, descriptionHtml: description, imageUploadId, teamIds,showInFieldNews,imageInGallery };
+      const input = { ...fields, descriptionHtml: description, imageUploadId, teamIds,published,showInNews,imageInGallery };
       if (update) await updatesService.updateUpdate(update.id, input);
       else await updatesService.createUpdate({ ...input, eventId: defaultEventId ?? null });
       await onSaved();
@@ -106,7 +107,9 @@ export default function UpdateEditDialog({
         ))}
         {update && <MediaManager owner="update" id={update.id} items={update.mediaItems||[]} onChanged={onSaved}/>}
         <fieldset className="space-y-2"><legend className="font-bold">נבחרות משויכות (אופציונלי)</legend><p className="text-sm text-muted-foreground">העדכון יוצג לאוהדי הנבחרות שנבחרו.</p>{teams.map(t=><label key={t.id} className="flex gap-2"><input type="checkbox" checked={teamIds.includes(t.id)} onChange={e=>setTeamIds(old=>e.target.checked?[...old,t.id]:old.filter(id=>id!==t.id))}/>{t.name}</label>)}</fieldset>
-        <label className="flex gap-2"><input type="checkbox" checked={showInFieldNews} onChange={e=>setShowInFieldNews(e.target.checked)}/> הצג בחדשות מהשטח</label>
+        <label className="flex gap-2"><input type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)}/> פרסם</label>
+        <label className="flex gap-2"><input type="checkbox" checked={showInNews} onChange={e=>setShowInNews(e.target.checked)}/> הצג בעמוד החדשות</label>
+        <p className="text-sm text-muted-foreground">{!published?'טיוטה — העדכון לא יוצג לציבור.':!showInNews?'העדכון יוצג רק באירוע המשויך (אם פורסם).':'העדכון יוצג בחדשות ובאירוע המשויך (אם פורסם).'}</p>
         <label className="flex gap-2"><input type="checkbox" checked={imageInGallery} onChange={e=>setImageInGallery(e.target.checked)}/> הצג את תמונת העדכון בגלריה</label>
         <ImageUpload
           purpose="update-image"

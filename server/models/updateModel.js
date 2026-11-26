@@ -15,6 +15,8 @@ const updateSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    published:{type:Boolean,default:true,index:true},
+    showInNews:{type:Boolean,default:true},
     showInFieldNews:{type:Boolean,default:true},
     imageInGallery:{type:Boolean,default:false},
     imageMedia: { type: mediaSchema, default: null },
