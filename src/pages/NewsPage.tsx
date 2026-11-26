@@ -1,9 +1,11 @@
 import PublicUpdateCard from '../features/updates/components/PublicUpdateCard';
+import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchUpdates } from '../features/updates/updatesSlice';
 import { PageHero } from '../components/ui/PageHero';
 export default function NewsPage() {
+  const {hash}=useLocation();
   const dispatch = useAppDispatch();
   const { updates, isLoading, hasLoaded, error } = useAppSelector(
     (state) => state.updates,
@@ -12,6 +14,7 @@ export default function NewsPage() {
     dispatch(fetchUpdates());
   }, [dispatch]);
   const loading=isLoading||(!hasLoaded&&!updates.length&&!error);
+  useEffect(()=>{if(hash.startsWith("#update-")&&!loading)document.getElementById(hash.slice(1))?.scrollIntoView({block:"start"});},[hash,loading,updates]);
   return (
     <div>
       <PageHero
