@@ -73,3 +73,7 @@ Event media is followed by published updates (heading עדכונים), then the 
 
 ## Follow-up — discoverable event rich content
 The event management edit panel opens by default and stays open after successful save. The existing bodyHtml rich editor is explicitly labeled תוכן עשיר של האירוע and explains that it appears below updates on the public event page. The panel can still be collapsed; no new field or duplicate editor.
+
+
+## Owner follow-up — permanent event form and public order
+Event details and rich content are always visible in the management page, without any expand/collapse control. The published-event public view button sits at the upper left (RTL header). Remove the linked-content selector from the event form and omit contentPageIds from form submissions so existing associations are not erased; preserve existing public linked-content panels. Public event order is media, nonempty rich body, published updates, then remaining sections. This supersedes earlier instructions placing the body below updates or making the editor collapsible.
