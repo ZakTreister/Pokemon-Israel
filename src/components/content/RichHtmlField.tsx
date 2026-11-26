@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight, ImagePlus, Smartphone, Monitor } from 'lucide-react';
 import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
 import SafeHtml from './SafeHtml';
@@ -29,6 +29,8 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     try { sanitizeRichHtml(value); return 'visual'; } catch { return 'source'; }
   });
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [imageUrl,setImageUrl]=useState<string|null>(null);
+  const [imageAlt,setImageAlt]=useState('');
   const [error, setError] = useState('');
 
   // Do not overwrite the live DOM on every keystroke: that loses selection and undo history.
@@ -105,6 +107,7 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
       }
     }
     setLinkUrl(null);
+    setImageUrl(null);
     savedRange.current = null;
     setError('');
     setMode(next);
@@ -118,6 +121,7 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     }
     const element = range.startContainer.nodeType === 1 ? range.startContainer as Element : range.startContainer.parentElement;
     const anchor = element?.closest('a');
+    setImageUrl(null);
     setLinkUrl(anchor?.getAttribute('href') ?? '');
     setError('');
   };
@@ -132,6 +136,61 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     } catch (e) {
       setError(e instanceof Error ? e.message : 'קישור לא תקין');
     }
+  };
+
+  const openImage=()=>{
+    rememberSelection();
+    setLinkUrl(null);
+    setImageUrl('');
+    setImageAlt('');
+    setError('');
+  };
+  const applyImage=()=>{
+    if(imageUrl===null||!editor.current)return;
+    try{
+      const attr=(input:string)=>escapeRichText(input.replace(/&/g,'&amp;'));
+      const html=sanitizeRichHtml('<img src="'+attr(imageUrl.trim())+'" alt="'+attr(imageAlt)+'">');
+      const node=editor.current;
+      const doc=node.ownerDocument;
+      const selection=doc.getSelection();
+      const range=savedRange.current?.cloneRange()??doc.createRange();
+      if(!savedRange.current||!node.contains(range.commonAncestorContainer)){
+        range.selectNodeContents(node);
+        range.collapse(false);
+      }
+      range.collapse(false);
+      const template=doc.createElement('template');
+      template.innerHTML=html;
+      const image=template.content.firstChild!;
+      range.insertNode(image);
+      range.setStartAfter(image);
+      range.collapse(true);
+      node.focus();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      publish();
+      setImageUrl(null);
+    }catch(e){setError(e instanceof Error?e.message:'כתובת תמונה לא תקינה');}
+  };
+  const addDeviceBlock=(visibility:'mobile-only'|'desktop-only')=>{
+    const node=editor.current;
+    if(!node)return;
+    const doc=node.ownerDocument;
+    const block=doc.createElement('div');
+    block.className=visibility;
+    const paragraph=doc.createElement('p');
+    paragraph.textContent=visibility==='mobile-only'?'תוכן למובייל':'תוכן לדסקטופ';
+    block.append(paragraph);
+    const after=doc.createElement('p');
+    after.append(doc.createElement('br'));
+    node.append(block,after);
+    node.focus();
+    const range=doc.createRange();
+    range.selectNodeContents(paragraph);
+    const selection=doc.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    publish();
   };
 
   return (
@@ -158,18 +217,27 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
             ))}
             <Button type="button" variant="ghost" size="icon" aria-label="הוסף או ערוך קישור" title="הוסף או ערוך קישור" onMouseDown={e => e.preventDefault()} onClick={openLink}><Link2 size={18}/></Button>
             <Button type="button" variant="ghost" size="icon" aria-label="ציטוט" title="ציטוט" onMouseDown={e => e.preventDefault()} onClick={() => command('formatBlock', 'blockquote')}><Quote size={18}/></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="הוסף תמונה" title="הוסף תמונה" onMouseDown={e=>e.preventDefault()} onClick={openImage}><ImagePlus size={18}/></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="מובייל בלבד" title="הוסף אזור למובייל בלבד" onMouseDown={e=>e.preventDefault()} onClick={()=>addDeviceBlock('mobile-only')}><Smartphone size={18}/></Button>
+            <Button type="button" variant="ghost" size="icon" aria-label="דסקטופ בלבד" title="הוסף אזור לדסקטופ בלבד" onMouseDown={e=>e.preventDefault()} onClick={()=>addDeviceBlock('desktop-only')}><Monitor size={18}/></Button>
           </div>
+          {imageUrl!==null&&<div className="flex flex-wrap items-end gap-2 p-2 border-b">
+            <label className="flex-1 min-w-40">כתובת תמונה<input autoFocus type="text" maxLength={2000} dir="ltr" className="block w-full border rounded p-2 bg-card" value={imageUrl} onChange={e=>setImageUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();applyImage();}if(e.key==='Escape'){e.preventDefault();setImageUrl(null);restoreSelection();}}}/></label>
+            <label className="flex-1 min-w-40">טקסט חלופי לתמונה<input type="text" maxLength={500} className="block w-full border rounded p-2 bg-card" value={imageAlt} onChange={e=>setImageAlt(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();applyImage();}}}/></label>
+            <Button type="button" size="sm" disabled={!imageUrl.trim()} onClick={applyImage}>הוסף תמונה</Button>
+            <Button type="button" size="sm" variant="outline" onClick={()=>{setImageUrl(null);restoreSelection();}}>ביטול</Button>
+          </div>}
           {linkUrl !== null && <div className="flex flex-wrap items-end gap-2 p-2 border-b">
             <label className="flex-1 min-w-40">כתובת הקישור<input autoFocus type="text" maxLength={2000} dir="ltr" className="block w-full border rounded p-2 bg-card" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink(); } if (e.key === 'Escape') { e.preventDefault(); setLinkUrl(null); restoreSelection(); } }}/></label>
             <Button type="button" size="sm" onClick={applyLink}>החל</Button>
             <Button type="button" size="sm" variant="outline" onClick={() => { setLinkUrl(null); restoreSelection(); }}>ביטול</Button>
           </div>}
-          <div ref={editor} role="textbox" aria-labelledby={id} aria-multiline="true" contentEditable suppressContentEditableWarning dir="rtl" className={richHtmlClassName + ' min-h-48 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'} onInput={publish} onKeyUp={rememberSelection} onMouseUp={rememberSelection} onBlur={rememberSelection} onPaste={e => { e.preventDefault(); rememberSelection(); command('insertText', e.clipboardData.getData('text/plain')); }} onDrop={e => e.preventDefault()} onClick={e => { if ((e.target as Element).closest('a')) e.preventDefault(); }}/>
+          <div ref={editor} role="textbox" aria-labelledby={id} aria-multiline="true" contentEditable suppressContentEditableWarning dir="rtl" className={richHtmlClassName + ' cs-rich-html-editor min-h-48 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'} onInput={publish} onKeyUp={rememberSelection} onMouseUp={rememberSelection} onBlur={rememberSelection} onPaste={e => { e.preventDefault(); rememberSelection(); command('insertText', e.clipboardData.getData('text/plain')); }} onDrop={e => e.preventDefault()} onClick={e => { if ((e.target as Element).closest('a')) e.preventDefault(); }}/>
         </div>
       ) : (
         <textarea aria-labelledby={id} maxLength={50000} rows={10} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="ltr" value={value} onChange={e => { onChange(e.target.value); setError(''); }}/>
       )}
-      <p className="text-xs text-muted-foreground">סמנו טקסט ולחצו על סמל הקישור כדי להוסיף כתובת. תמונות וסרטונים מוסיפים בנפרד באזור המדיה.</p>
+      <p className="text-xs text-muted-foreground">סמנו טקסט להוספת קישור. תמונה ניתן להוסיף באמצעות כתובת HTTPS או נתיב מקומי. כפתורי המכשירים מוסיפים בסוף התוכן אזורים למובייל (עד 680px) ולדסקטופ (מעל 680px); שני האזורים גלויים בעריכה. סרטונים מוסיפים באזור המדיה.</p>
       {error && <p role="alert" className="text-destructive">{error}</p>}
       {mode === 'source' && value && <details className="border rounded p-3"><summary className="cursor-pointer">תצוגה מקדימה</summary><SafeHtml html={value}/></details>}
     </div>
