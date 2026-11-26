@@ -88,6 +88,7 @@ try {
   await mount(Event,'/events/event');
   assert.ok(renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים מהאירוע'));
   assert.ok(renderer.root.findAllByType('a').some(n=>n.props.href==='/news/news1'));
+  assert.ok(renderer.root.findByProps({'aria-label':'עדכונים מהאירוע'}).findByType('article').props.className.includes('cs-public-card'));
   unmount();
   eventsService.get=async()=>({...event,tournaments:[],fixtures:[],contentPages:[]});
   await mount(Event,'/events/event');
@@ -195,7 +196,7 @@ try {
    const before=buttonRequests.length;
    await act(async()=>{renderer=TestRenderer.create(el(MemoryRouter,{initialEntries:[path],future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(StaticContentPageLinks)));await new Promise(resolve=>setImmediate(resolve));});
    assert.equal(renderer.root.findAllByType('nav').length,hasLinks?1:0);
-   if(path==='/events')assert.equal(buttonRequests.at(-1),'/tournaments');
+   if(path==='/events'){assert.equal(buttonRequests.at(-1),'/tournaments');const link=renderer.root.findByProps({href:'/content/rules'});assert.equal(link.children.join(''),'תקנון');assert.ok(link.props.className.includes('bg-blue-gradient'));}
    if(path==='/manage'||path==='/login'||path==='/content/info')assert.equal(buttonRequests.length,before);
    unmount();
   }
@@ -209,6 +210,16 @@ try {
     assert.match(group.parent.props.className,/\bflex-1\b/);
     assert.match(group.parent.parent.props.className,/\bflex-col\b/);
   }
+  unmount();
+  await act(async()=>{renderer=TestRenderer.create(el(MemoryRouter,{future:{v7_startTransition:true,v7_relativeSplatPath:true}},el(LeagueSections,{leaders:[],standings:[],events:[],error:'',leadersLoading:true,eventsLoading:true,standingsLoading:true})));});
+  assert.ok(JSON.stringify(renderer.toJSON()).includes('טוען דירוג...'));
+  assert.ok(!JSON.stringify(renderer.toJSON()).includes('הדירוג יופיע כשיהיו תוצאות'));
+  assert.ok(!JSON.stringify(renderer.toJSON()).includes('אירועים קרובים יופיעו לאחר פרסומם'));
+  unmount();
+  const {default:DataTable}=await load('components/ui/DataTable.tsx');
+  await act(async()=>{renderer=TestRenderer.create(el(DataTable,{showRowNumbers:true,rows:[{id:'a',position:1},{id:'b',position:1},{id:'c',position:2}],rowKey:r=>r.id,columns:[{key:'position',label:'מקום',value:r=>r.position}]}));});
+  assert.equal(renderer.root.findAllByType('th')[0].children.length,0);
+  assert.deepEqual(renderer.root.findByType('tbody').findAllByType('tr').map(row=>row.findAllByType('td').map(td=>td.children.join(''))),[['1','1'],['2','1'],['3','2']]);
   unmount();
   const {default:Freshness}=await load('components/rankings/RankingFreshness.tsx');
   await act(async()=>{renderer=TestRenderer.create(el(Freshness,{showCoverage:true,showLastUpdated:false,resultsThrough:{date:'2026-07',precision:'month',title:'אליפות ישראל'}}));});

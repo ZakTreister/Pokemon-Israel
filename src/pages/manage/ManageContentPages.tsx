@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useState} from 'react';
+import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
 import {Link} from 'react-router-dom';
 import type {ContentPage} from '../../types/contentPage';
 import {contentPagesService} from '../../services/contentPages';
@@ -7,13 +8,14 @@ import Button from '../../components/ui/Button';
 import {requestError} from '../../utils/requestError';
 
 export default function ManageContentPages(){
+ const {refresh}=useSiteSettings();
  const [pages,setPages]=useState<ContentPage[]|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const reload=useCallback(async()=>setPages(await contentPagesService.manage()),[]);
  useEffect(()=>{reload().catch(e=>setError(requestError(e)))},[reload]);
  const remove=async(id:string)=>{
   if(busy||!window.confirm('למחוק את עמוד התוכן?'))return;
   setBusy(true);setError('');
-  try{await contentPagesService.remove(id);await reload();}
+  try{await contentPagesService.remove(id);refresh();await reload();}
   catch(e){setError(requestError(e))}finally{setBusy(false)}
  };
  return <div className="space-y-5">

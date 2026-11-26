@@ -113,7 +113,7 @@ export default function RankingsPage() {
         {error && <p role="alert" className="text-destructive mb-4">{error}</p>}
         {data === null && busy ? (
           <p role="status">טוען דירוג...</p>
-        ) : (
+        ) : data ? (
           <div aria-busy={busy}>
             {data&&<RankingFreshness resultsThrough={data.resultsThrough} showCoverage showLastUpdated={false}/>}
             <DataTable<NationalRanking>
@@ -147,7 +147,7 @@ export default function RankingsPage() {
             />
             {data && data.rankings.length<data.total && <div className="flex justify-center mt-4"><Button variant="outline" disabled={busy||moreBusy} onClick={()=>void loadMore()}>{moreBusy?'טוען...':'עוד'}</Button></div>}
           </div>
-        )}
+        ) : null}
 
       </div>
     </div>

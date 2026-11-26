@@ -127,22 +127,8 @@ try {
     'Header controls use contextual styling',
   );
   assert.ok(render(Header, '/', 'judge').includes('href="/manage"'));
-  const {contentPagesService}=await vite.ssrLoadModule('/src/services/contentPages.ts');
-  contentPagesService.navigation=async()=>[{id:'dynamic',label:'עמוד תוכן'}];
   const menuStore={getState:()=>store.getState(),subscribe:()=>()=>{},dispatch:action=>action};
   let headerRenderer;
-  await act(async()=>{
-   headerRenderer=TestRenderer.create(element(Provider,{store:menuStore},element(MemoryRouter,{initialEntries:['/'],future:{v7_startTransition:true,v7_relativeSplatPath:true}},element(Header))));
-   await new Promise(resolve=>setImmediate(resolve));
-  });
-  const assertMenuEnd=label=>{
-   const links=headerRenderer.root.findByProps({'aria-label':label}).findAllByType('a').map(a=>a.props.href);
-   assert.deepEqual(links.slice(-3),['/content/dynamic','/store','/birthday']);
-  };
-  assertMenuEnd('ניווט ראשי');
-  act(()=>headerRenderer.root.findAllByType('button').find(n=>n.props['aria-label']==='פתיחת תפריט').props.onClick());
-  assertMenuEnd('ניווט ראשי בנייד');
-  act(()=>headerRenderer.unmount());
   const Footer=await load('components/layout/Footer.tsx');
   const footer=render(Footer);
   assert.ok(footer.indexOf('href="/login"')<footer.indexOf('href="/store"'));
@@ -151,12 +137,15 @@ try {
   const SettingsEditor=await load('pages/manage/ManageSiteSettings.tsx');
   const Layout=await load('components/layout/Layout.tsx');
   const {siteSettingsService}=await vite.ssrLoadModule('/src/services/siteSettings.ts');
-  const {defaultSiteSettings}=await vite.ssrLoadModule('/shared/siteSettings.js');
+  const {defaultSiteSettings,buildNavigation}=await vite.ssrLoadModule('/shared/siteSettings.js');
   let stored=defaultSiteSettings();
+  const dynamicPath='/content/012345678901234567890123';
+  stored.contentPages=[{path:dynamicPath,title:'עמוד תוכן לבדיקה',label:'עמוד תוכן',active:true,menu:true,footer:true,order:15}];
+  stored.navigation=buildNavigation(stored);
   siteSettingsService.get=async()=>stored;
   siteSettingsService.manage=async()=>structuredClone(stored);
   let savedUploads;
-  siteSettingsService.save=async (value,uploads)=>{savedUploads=uploads;stored=structuredClone(value);return stored;};
+  siteSettingsService.save=async (value,uploads)=>{savedUploads=uploads;stored=structuredClone(value);stored.navigation=buildNavigation(stored);return stored;};
   const wrap=(child,path)=>element(Provider,{store:menuStore},element(MemoryRouter,{initialEntries:[path],future:{v7_startTransition:true,v7_relativeSplatPath:true}},child));
   await act(async()=>{
    headerRenderer=TestRenderer.create(wrap(element(SiteSettingsProvider,{},element(Header),element(SettingsEditor),element(Footer)),'/manage/site-settings'));
@@ -164,7 +153,18 @@ try {
   });
   const checkbox=label=>headerRenderer.root.findAllByType('input').find(n=>n.props['aria-label']===label);
   const click=label=>headerRenderer.root.findAllByType('button').find(n=>n.children.join('')===label).props.onClick();
+  const assertMenu=label=>{
+   const links=headerRenderer.root.findByProps({'aria-label':label}).findAllByType('a').map(n=>n.props.href);
+   assert.ok(links.indexOf(dynamicPath)>links.indexOf('/rankings')&&links.indexOf(dynamicPath)<links.indexOf('/all-stars'));
+   assert.deepEqual(links.slice(-2),['/store','/birthday']);
+  };
+  assertMenu('ניווט ראשי');
+  act(()=>headerRenderer.root.findAllByType('button').find(n=>n.props['aria-label']==='פתיחת תפריט').props.onClick());
+  assertMenu('ניווט ראשי בנייד');
+  act(()=>headerRenderer.root.findAllByType('button').find(n=>n.props['aria-label']==='סגירת תפריט').props.onClick());
   assert.equal(checkbox('דף הבית פעיל').props.disabled,true);
+  assert.equal(checkbox('עמוד תוכן לבדיקה סדר בתפריט').props.value,15);
+  act(()=>checkbox('עמוד תוכן לבדיקה סדר בתפריט').props.onChange({target:{value:'1'}}));
   assert.ok(headerRenderer.root.findByType('table').props.className.includes('cs-site-settings-table'));
   assert.ok(headerRenderer.root.findAllByType('th').some(n=>n.props.scope==='row'&&n.children.includes('הליגה הישראלית')));
   act(()=>checkbox('אירועים פעיל').props.onChange({target:{checked:false}}));
@@ -185,7 +185,7 @@ try {
   assert.ok(headerRenderer.root.findByType('header').findAllByType('img').some(n=>n.props.src===stored.logos.kids));
   assert.deepEqual(headerRenderer.root.findByType('footer').findAllByType('img').map(n=>n.props.src),[stored.logos.kids,stored.logos.allStars]);
   const navLinks=headerRenderer.root.findByProps({'aria-label':'ניווט ראשי'}).findAllByType('a').map(n=>n.props.href);
-  assert.ok(navLinks.includes('/gallery'));assert.ok(!navLinks.includes('/tournaments'));assert.deepEqual(navLinks.slice(-2),['/store','/birthday']);
+  assert.equal(navLinks[0],dynamicPath);assert.ok(navLinks.includes('/gallery'));assert.ok(!navLinks.includes('/tournaments'));assert.deepEqual(navLinks.slice(-2),['/store','/birthday']);
   assert.ok(!headerRenderer.root.findByType('footer').findAllByType('a').some(n=>n.props.href==='/tournaments'));
   const social=headerRenderer.root.findByProps({'aria-label':'רשתות חברתיות'}).findByType('a');
   assert.equal(social.props.href,'https://www.instagram.com/cardschool/');assert.equal(social.props.rel,'noopener noreferrer');

@@ -24,3 +24,5 @@ test('legacy plain text and partial edits remain compatible', () => {
   assert.equal(replacement.content, 'new text');
   assert.equal(updateFields({ descriptionHtml: '' }, existing).content, '');
 });
+
+test('publication and news flags are explicit booleans and partial edits preserve flags',()=>{const fields=updateFields({title:'עדכון',published:false,showInNews:false});assert.equal(fields.published,false);assert.equal(fields.showInNews,false);assert.throws(()=>updateFields({title:'עדכון',published:'false'}));assert.throws(()=>updateFields({title:'עדכון',showInNews:1}));assert.ok(!Object.hasOwn(updateFields({title:'edited'},{published:false,showInNews:false}),'published'));});

@@ -62,3 +62,6 @@ Keep the selected Pokémon in one responsive full-width row of the player hero c
 
 ## Follow-up — related content buttons
 See navigation-content.md: administrator selects public host pages for each CMS page, with independent button text and publication controls. Render links at the bottom of the host content, before the footer, using the shared public component; no empty section.
+
+## Owner follow-up — update visibility, alignment and loading (2026-11-26)
+New updates created through the editor start as draft unless פרסם is checked. Existing updates without flags remain published and news-visible for compatibility. Independent הצג בעמוד החדשות flag controls inclusion in news feed, ticker, favorite/team news, gallery and legacy field-news/sitemap. Published event-only updates appear in a public event's card grid and remain readable via the card's detail link; no standalone listing or indexing. Draft or draft-event updates are excluded by server queries from public detail, feeds, galleries, event updates and SEO; admin lists retain drafts. Previously existing event links are preserved. The shared rich HTML editor supports center/right alignment, serialized and sanitized as a restricted text-align attribute only. No arbitrary CSS. Explicit loading states precede empty messages on public ranking and home data sections.

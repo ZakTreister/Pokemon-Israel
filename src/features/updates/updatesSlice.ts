@@ -6,12 +6,14 @@ import { Update } from '../../types/update';
 interface UpdatesState {
   updates: Update[];
   isLoading: boolean;
+  hasLoaded: boolean;
   error: string | null;
 }
 
 const initialState: UpdatesState = {
   updates: [],
   isLoading: false,
+  hasLoaded: false,
   error: null,
 };
 
@@ -44,10 +46,12 @@ const updatesSlice = createSlice({
       })
       .addCase(fetchUpdates.fulfilled, (state, action) => {
         state.isLoading = false;
+        state.hasLoaded = true;
         state.updates = action.payload;
       })
       .addCase(fetchUpdates.rejected, (state, action) => {
         state.isLoading = false;
+        state.hasLoaded = true;
         state.error = action.payload as string;
       });
   },

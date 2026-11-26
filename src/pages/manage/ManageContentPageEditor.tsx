@@ -1,4 +1,5 @@
 import {useEffect,useState,useRef,useId} from 'react';
+import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
 import {useNavigate,useParams} from 'react-router-dom';
 import {isRetiredPublicPage} from '../../../shared/contentLinkTargets';
 import type {ContentPage,ContentPageInput} from '../../types/contentPage';
@@ -25,6 +26,7 @@ export default function ManageContentPageEditor(){
 function ContentPageEditor({id}:{id:string}){
  const creating=id==='new',navigate=useNavigate();
  const formId=useId();
+ const {refresh}=useSiteSettings();
  const [current,setCurrent]=useState<ContentPage|null>(null),[input,setInput]=useState<ContentPageInput>(empty);
  const [loading,setLoading]=useState(!creating),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const mounted=useRef(true);
@@ -45,6 +47,7 @@ function ContentPageEditor({id}:{id:string}){
   setBusy(true);setError('');
   try{
    const result=creating?await contentPagesService.create(input):await contentPagesService.update(id,input);
+   refresh();
    if(!mounted.current)return;
    if(creating)navigate(listPath+'/'+result.id,{replace:true});
    else{setCurrent(result);setInput(fromPage(result));}
