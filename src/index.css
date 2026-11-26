@@ -558,3 +558,25 @@
 /* Row headings belong to the card body, not the dark table-header surface. */
 .cs-workspace .cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }
 .cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }
+
+/* Only public rendering hides device-specific blocks. Editors always show both. */
+.cs-rich-html-public .mobile-only { display: none !important; }
+@media (max-width: 680px) {
+  .cs-rich-html-public .mobile-only { display: block !important; }
+  .cs-rich-html-public .desktop-only { display: none !important; }
+}
+.cs-rich-html-editor .mobile-only, .cs-rich-html-editor .desktop-only {
+  border: 1px dashed currentColor;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin-block: 0.5rem;
+}
+.cs-rich-html-editor .mobile-only::before, .cs-rich-html-editor .desktop-only::before {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0.75;
+  user-select: none;
+}
+.cs-rich-html-editor .mobile-only::before { content: 'מובייל בלבד (עד 680px)'; }
+.cs-rich-html-editor .desktop-only::before { content: 'דסקטופ בלבד (מעל 680px)'; }
