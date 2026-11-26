@@ -29,10 +29,10 @@ function EventDetails({id}:{id:string}){
  <div>
  {event.mediaItems.length>0?<MediaGallery carousel items={event.mediaItems}/>:event.coverUrl?<img src={event.coverUrl} alt="" className="w-full max-h-96 object-cover rounded-xl" loading="lazy"/>:null}
  </div>
+ {event.bodyHtml&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml}/></Card>}
  {!!event.updates?.length&&<section className="space-y-4" aria-label="עדכונים"><h2 className="text-2xl font-extrabold">עדכונים</h2>
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{event.updates.map(u=><PublicUpdateCard key={u.id} update={u}/>)}</div>
  </section>}
- {event.bodyHtml&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml}/></Card>}
  <p className="text-sm font-bold text-blue-500">{event.category==='club'?'אירוע חוגים':'אירוע אולסטארז'} {event.startDate&&'· '+new Date(event.startDate).toLocaleDateString('he-IL')}</p>
  {(event.tournaments.length>0||event.fixtures?.some(f=>!f.tournamentId))&&<section className="space-y-3"><h2 className="text-2xl font-extrabold">טורנירי האירוע ותוצאות</h2>
  {event.tournaments.map(t=><Card key={t.id} variant="public" role="article" className="p-4 flex gap-3 flex-wrap justify-between items-center"><div><h3 className="font-bold">{t.title}</h3><p className="text-sm text-muted-foreground">{new Date(t.date).toLocaleDateString('he-IL')} · {t.lifecycle==='completed'?'הסתיים':t.lifecycle==='active'?'פעיל':'מתוכנן'}</p></div>{(t.type==='quarterly'||t.lifecycle==='completed')?<Button variant="outline" asChild><Link to={'/tournaments/'+t.id}>{t.lifecycle==='completed'?'צפו בתוצאות':'פרטים ומשחקים'}</Link></Button>:<span className="text-sm text-muted-foreground">התוצאות יפורסמו בסיום המפגש</span>}</Card>)}
