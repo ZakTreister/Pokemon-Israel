@@ -43,7 +43,7 @@ export default function HomePage(){
  const selectedTeam=teams?.find(t=>t.id===favorite.selected);
  const sortedUpdates=[...updates].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime());
  return <div>
- {!!sortedUpdates.length&&<aside aria-label="חדשות קארדסקול" className="cs-ticker py-3 text-white"><div className="container flex gap-4 items-center"><Newspaper className="shrink-0" size={20}/><strong className="shrink-0">חדשות קארדסקול</strong><div className="flex gap-6 overflow-x-auto whitespace-nowrap">{sortedUpdates.slice(0,6).map(u=><Link className="hover:text-gold" key={u.id} to={'/news/'+u.id}>{u.title} ←</Link>)}</div></div></aside>}
+ {!!sortedUpdates.length&&<aside aria-label="חדשות קארדסקול" className="cs-ticker py-3 text-white"><div className="container flex gap-4 items-center"><Newspaper className="shrink-0" size={20}/><strong className="shrink-0">חדשות קארדסקול</strong><div className="flex gap-6 overflow-x-auto whitespace-nowrap">{sortedUpdates.slice(0,6).map(u=><Link className="hover:text-gold" key={u.id} to={'/news#update-'+u.id}>{u.title} ←</Link>)}</div></div></aside>}
  <section className="relative overflow-hidden bg-hero-navy text-white">
  <div className="container grid items-center gap-4 lg:grid-cols-[1.5fr_0.5fr] py-7 sm:py-9">
  <div><p className="text-gold font-bold text-sm mb-2">מה קורה עכשיו ב־CardSchool?</p>

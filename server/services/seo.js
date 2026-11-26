@@ -1,6 +1,5 @@
 import Event from '../models/eventModel.js';
 import ContentPage from '../models/contentPageModel.js';
-import Update from '../models/updateModel.js';
 import {defaultSiteSettings,pageActive} from '../../shared/siteSettings.js';
 import {getSiteSettings} from './siteSettings.js';
 
@@ -38,25 +37,19 @@ async function publishedEvent(id) {
 async function publishedContent(id) {
   return ContentPage.findOne({_id:id,status:'published'}).select('title subtitle bodyHtml isAllStars').lean().maxTimeMS(600);
 }
-async function publishedNews(id) {
-  const update=await Update.findOne({_id:id,published:{$ne:false},showInNews:{$ne:false}}).select('title content eventId').lean().maxTimeMS(600);
-  if (!update) return null;
-  if (update.eventId && !await Event.exists({_id:update.eventId,status:'published'}).maxTimeMS(600)) return null;
-  return update;
-}
 
 // Only explicitly approved public routes can be indexed. Child profiles, team
 // roster/details, individual tournament results, QR, admin and unknown routes
 // are deliberately excluded in the first SEO phase.
 export async function resolveSeo(path, sources = {
-  event:publishedEvent, content:publishedContent, news:publishedNews,
+  event:publishedEvent, content:publishedContent,
 }, settings=defaultSiteSettings()) {
   const normalized = canonicalPath(path);
   if(!pageActive(settings,normalized))return {...excluded(),disabled:true};
   const image=normalized==='/all-stars'?settings.logos?.allStars:settings.logos?.kids;
   if (Object.hasOwn(publicPages, normalized)) return {...publicMeta(normalized,...publicPages[normalized]),image,favicon:settings.logos?.kids};
-  const match = /^\/(events|content|news)\/([a-f0-9]{24})$/i.exec(normalized);
-  if (!match || !['events','content','news'].includes(match[1])) return excluded();
+  const match = /^\/(events|content)\/([a-f0-9]{24})$/i.exec(normalized);
+  if (!match || !['events','content'].includes(match[1])) return excluded();
   const [,kind,id] = match;
   const entity = await sources[kind === 'events' ? 'event' : kind](id);
   if (!entity) return excluded();
@@ -105,21 +98,18 @@ export function injectSeo(html, meta) {
 
 export const ROBOTS = 'User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: '+SITE_ORIGIN+'/sitemap.xml\n';
 
-export function sitemapXml({events=[],pages=[],updates=[],settings=defaultSiteSettings()}={}) {
-  const ids = new Set(events.map(event=>String(event._id)));
+export function sitemapXml({events=[],pages=[],settings=defaultSiteSettings()}={}) {
   const paths = [...Object.keys(publicPages).filter(path=>pageActive(settings,path)),
     ...events.map(event=>'/events/'+String(event._id)),
-    ...pages.map(page=>'/content/'+String(page._id)),
-    ...updates.filter(update=>!update.eventId||ids.has(String(update.eventId))).map(update=>'/news/'+String(update._id))];
+    ...pages.map(page=>'/content/'+String(page._id))];
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+
     [...new Set(paths)].map(path=>'  <url><loc>'+escape(SITE_ORIGIN+path)+'</loc></url>').join('\n')+'\n</urlset>\n';
 }
 export async function buildSitemap() {
-  const [events,pages,updates,settings] = await Promise.all([
+  const [events,pages,settings] = await Promise.all([
     Event.find({status:'published'}).select('_id').lean(),
     ContentPage.find({status:'published'}).select('_id').lean(),
-    Update.find({published:{$ne:false},showInNews:{$ne:false}}).select('_id eventId').lean(),
     getSiteSettings(),
   ]);
-  return sitemapXml({events,pages,updates,settings});
+  return sitemapXml({events,pages,settings});
 }

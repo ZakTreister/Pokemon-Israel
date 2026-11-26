@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import EventEditor from '../../features/events/EventEditor';
 import FixtureEditor from '../../features/events/FixtureEditor';
 import MediaManager from '../../components/media/MediaManager';
+import updatesService from '../../features/updates/updatesService';
 import UpdateEditDialog from '../../features/updates/components/UpdateEditDialog';
 import { eventsService } from '../../services/events';
 import type { EventDetails,EventInput } from '../../types/event';
@@ -24,6 +25,12 @@ export default function ManageEventPage(){
  const save=async(data:EventInput)=>{setBusy(true);try{await eventsService.update(id,data);await reload();setShowEdit(false);}catch(e){setError(requestError(e));throw e;}finally{setBusy(false);}};
  const link=async()=>{if(!selected)return;setBusy(true);try{await eventsService.link(id,selected);await reload();setSelected('');}catch(e){setError(requestError(e));}finally{setBusy(false);}};
  const unlink=async(tid:string)=>{setBusy(true);try{await eventsService.unlink(id,tid);await reload();}catch(e){setError(requestError(e));}finally{setBusy(false);}};
+ const removeUpdate=async(uid:string,permanent:boolean)=>{
+   if(!window.confirm(permanent?'למחוק את העדכון לצמיתות מהמערכת?':'להסיר את שיוך העדכון לאירוע?'))return;
+   setBusy(true);setError('');
+   try{if(permanent)await updatesService.deleteUpdate(uid);else await api.put('/api/updates/'+uid,{eventId:null});await reload();}
+   catch(e){setError(requestError(e));}finally{setBusy(false);}
+ };
  const convertLegacyFixture=async(f:{id:string;firstTeam:string;secondTeam:string})=>{
    setBusy(true);setError('');try{
      const {data}=await api.post<{id:string}>('/api/inter-team',{teamIds:[f.firstTeam,f.secondTeam],eventId:id,fixtureId:f.id});
@@ -48,7 +55,7 @@ export default function ManageEventPage(){
  {event.fixtures.filter(f=>!f.tournamentId).map(f=><div key={f.id} className="flex flex-wrap justify-between items-center gap-2"><span>{new Date(f.date).toLocaleString('he-IL')} · {f.location}</span><Button size="sm" disabled={busy} onClick={()=>void convertLegacyFixture(f)}>הסב לטורניר</Button></div>)}</section>}
  {createDialog&&(event.category==='club'?<AdminTournaments embeddedCreate eventContext={{id,onClose:()=>setCreateDialog(false),onSaved:()=>void competitionSaved()}}/>:<Modal title="יצירת מפגש נבחרות עתידי" onClose={()=>setCreateDialog(false)} panelClassName="max-w-2xl"><FixtureEditor eventId={id} onSaved={competitionSaved}/></Modal>)}
  <section className="border rounded-lg p-4 space-y-3"><div className="flex justify-between items-center"><h3 className="text-xl font-bold">עדכוני האירוע</h3><Button onClick={()=>setEditing(null)}>עדכון חדש</Button></div>
- {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title} · {u.published===false?'טיוטה':u.showInNews===false?'מפורסם באירוע בלבד':'מפורסם'}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
+ {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title} · {u.published===false?'טיוטה':u.showInNews===false?'מפורסם באירוע בלבד':'מפורסם'}</span><div className="flex flex-wrap gap-2"><Button disabled={busy} variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button><Button disabled={busy} variant="outline" size="sm" onClick={()=>void removeUpdate(u.id,false)}>הסר מהאירוע</Button><Button disabled={busy} variant="destructive" size="sm" onClick={()=>void removeUpdate(u.id,true)}>מחק לצמיתות</Button></div></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}
  </section>
  <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תמונות וסרטונים</h3><MediaManager owner="event" id={id} items={event.mediaItems} onChanged={reload}/></section>
