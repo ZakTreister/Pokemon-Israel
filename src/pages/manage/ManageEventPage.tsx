@@ -48,7 +48,7 @@ export default function ManageEventPage(){
  {event.fixtures.filter(f=>!f.tournamentId).map(f=><div key={f.id} className="flex flex-wrap justify-between items-center gap-2"><span>{new Date(f.date).toLocaleString('he-IL')} · {f.location}</span><Button size="sm" disabled={busy} onClick={()=>void convertLegacyFixture(f)}>הסב לטורניר</Button></div>)}</section>}
  {createDialog&&(event.category==='club'?<AdminTournaments embeddedCreate eventContext={{id,onClose:()=>setCreateDialog(false),onSaved:()=>void competitionSaved()}}/>:<Modal title="יצירת מפגש נבחרות עתידי" onClose={()=>setCreateDialog(false)} panelClassName="max-w-2xl"><FixtureEditor eventId={id} onSaved={competitionSaved}/></Modal>)}
  <section className="border rounded-lg p-4 space-y-3"><div className="flex justify-between items-center"><h3 className="text-xl font-bold">עדכוני האירוע</h3><Button onClick={()=>setEditing(null)}>עדכון חדש</Button></div>
- {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
+ {event.updates.map(u=><div key={u.id} className="flex justify-between items-center"><span>{u.title} · {u.published===false?'טיוטה':u.showInNews===false?'מפורסם באירוע בלבד':'מפורסם'}</span><Button variant="outline" size="sm" onClick={()=>setEditing(u)}>ערוך</Button></div>)}
  {editing!==undefined&&<UpdateEditDialog update={editing||undefined} defaultEventId={id} onSaved={reload} onClose={()=>setEditing(undefined)}/>}
  </section>
  <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">תמונות וסרטונים</h3><MediaManager owner="event" id={id} items={event.mediaItems} onChanged={reload}/></section>

@@ -362,7 +362,8 @@ test('content-page footer buttons validate target selection, expose only publish
 test('site settings preserve defaults, authorize writes and synchronize fixed routes, sitemap and CMS buttons',async()=>{
  const root='/site-settings',management=root+'/management';
  const defaults=defaultSiteSettings();
- assert.deepEqual(await ok(root),defaults);
+ const initial=await ok(root);
+ assert.deepEqual(initial.pages,defaults.pages);assert.deepEqual(initial.socials,defaults.socials);assert.deepEqual(initial.logos,defaults.logos);
  for(const path of ['/deck-stats','/about']){assert.ok(!defaults.pages.some(p=>p.path===path));const res=await fetch(origin+path);assert.equal(res.status,404);assert.equal(res.headers.get('x-robots-tag'),'noindex, follow');assert.equal((await call('/content-pages/buttons?target='+encodeURIComponent(path))).status,400);}
  assert.equal((await call(management)).status,401);
  assert.equal((await call(management,'GET',undefined,'judge')).status,403);
@@ -379,8 +380,10 @@ test('site settings preserve defaults, authorize writes and synchronize fixed ro
   assert.equal((await call(management,'PUT',invalid,'admin')).status,400);
   const unsafe=structuredClone(next);unsafe.socials.find(s=>s.key==='instagram').url='https://instagram.com.evil.example/';
   assert.equal((await call(management,'PUT',unsafe,'admin')).status,400);
-  assert.deepEqual(await ok(management,'PUT',next,'admin'),next);
-  assert.deepEqual(await ok(management,'GET',undefined,'admin'),next);
+  const saved=await ok(management,'PUT',next,'admin');
+  assert.deepEqual(saved.pages,next.pages);assert.deepEqual(saved.socials,next.socials);assert.deepEqual(saved.logos,next.logos);
+  assert.ok(saved.contentPages.some(p=>p.path==='/content/'+source.id));
+  assert.deepEqual(await ok(management,'GET',undefined,'admin'),saved);
   const publicData=await ok(root);
   assert.equal(publicData.socials.find(s=>s.key==='facebook').url,'');
   assert.equal(publicData.socials.find(s=>s.key==='instagram').url,'https://www.instagram.com/cardschool/');
@@ -411,4 +414,50 @@ test('CMS All Stars hero flag persists, defaults off, and validates boolean inpu
   await ok(root+'/'+stars.id,'PUT',{isAllStars:false},'admin');
   assert.equal((await ok(root+'/'+stars.id)).isAllStars,false);
  }finally{await ContentPage.deleteMany({_id:{$in:[regular.id,stars.id]}});}
+});
+
+
+test('published event-only updates remain in event cards, drafts are excluded everywhere',async()=>{
+ const event=await ok('/events','POST',{title:'Club updates visibility',category:'club',status:'published'},'admin',201);
+ const draft=await ok('/updates','POST',{title:'Private draft',eventId:event.id,published:false,showInNews:true},'admin',201);
+ const local=await ok('/updates','POST',{title:'Event only',eventId:event.id,published:true,showInNews:false},'admin',201);
+ const global=await ok('/updates','POST',{title:'Public everywhere',eventId:event.id,published:true,showInNews:true},'admin',201);
+ try{
+  const detail=await ok('/events/'+event.id);
+  assert.deepEqual(new Set(detail.updates.map(u=>u.id)),new Set([local.id,global.id]));
+  const managed=await ok('/events/management/'+event.id,'GET',undefined,'admin');
+  assert.equal(managed.updates.length,3);
+  const news=await ok('/updates');assert.ok(news.some(u=>u.id===global.id));assert.ok(!news.some(u=>[draft.id,local.id].includes(u.id)));
+  assert.equal((await call('/updates/'+draft.id)).status,404);assert.equal((await call('/updates/'+local.id)).status,200);
+  assert.equal((await call('/updates/'+draft.id,'PUT',{published:'yes'},'admin')).status,400);
+  const sitemap=await (await fetch(origin+'/sitemap.xml')).text();assert.ok(sitemap.includes('/news/'+global.id));assert.ok(!sitemap.includes('/news/'+local.id));assert.ok(!sitemap.includes('/news/'+draft.id));
+  await ok('/updates/'+draft.id,'PUT',{published:true,showInNews:false},'admin');
+  assert.equal((await ok('/events/'+event.id)).updates.length,3);
+  await ok('/updates/'+global.id,'PUT',{published:false},'admin');
+  assert.equal((await call('/updates/'+global.id)).status,404);
+ }finally{await Update.deleteMany({eventId:event.id});await Event.deleteOne({_id:event.id});}
+});
+
+test('server navigation orders fixed and CMS pages together and hides drafts',async()=>{
+ const management='/site-settings/management';
+ const original=await ok(management,'GET',undefined,'admin');
+ const page=await ok('/content-pages','POST',{title:'Visible navigation page',status:'published'},'admin',201);
+ const draft=await ok('/content-pages','POST',{title:'Private navigation page',status:'draft',showInNavigation:true,navigationLabel:'Secret'},'admin',201);
+ try{
+  const next=await ok(management,'GET',undefined,'admin');
+  const row=next.contentPages.find(p=>p.path==='/content/'+page.id);
+  row.menu=true;row.footer=true;row.order=1;
+  next.pages.find(p=>p.path==='/news').order=2;
+  const saved=await ok(management,'PUT',next,'admin');
+  const menu=saved.navigation.menu.map(p=>p.to);
+  assert.deepEqual(menu.slice(0,2),[row.path,'/news']);assert.deepEqual(menu.slice(-2),['/store','/birthday']);
+  assert.ok(!menu.includes('/content/'+draft.id));
+  const publicSettings=await ok('/site-settings');
+  assert.deepEqual(publicSettings.navigation,saved.navigation);
+  assert.ok(!JSON.stringify(publicSettings).includes('Private navigation page'));
+  assert.equal((await ok('/content-pages/management/'+page.id,'GET',undefined,'admin')).showInNavigation,true);
+  assert.ok((await ok('/content-pages/navigation')).some(p=>p.id===page.id));
+  const invalid=structuredClone(saved);invalid.contentPages.find(p=>p.path===row.path).order=0;
+  assert.equal((await call(management,'PUT',invalid,'admin')).status,400);
+ }finally{await ContentPage.deleteMany({_id:{$in:[page.id,draft.id]}});await ok(management,'PUT',original,'admin');}
 });

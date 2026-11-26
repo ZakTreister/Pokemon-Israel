@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2 } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight } from 'lucide-react';
 import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
 import SafeHtml from './SafeHtml';
@@ -13,6 +13,8 @@ const actions = [
   { command: 'bold', label: 'הדגשה', Icon: Bold },
   { command: 'italic', label: 'כתב נטוי', Icon: Italic },
   { command: 'underline', label: 'קו תחתון', Icon: Underline },
+  { command: 'justifyCenter', label: 'מרכז טקסט', Icon: AlignCenter },
+  { command: 'justifyRight', label: 'יישור לימין', Icon: AlignRight },
   { command: 'insertUnorderedList', label: 'רשימת תבליטים', Icon: List },
   { command: 'insertOrderedList', label: 'רשימה ממוספרת', Icon: ListOrdered },
   { command: 'unlink', label: 'הסר קישור', Icon: Unlink },

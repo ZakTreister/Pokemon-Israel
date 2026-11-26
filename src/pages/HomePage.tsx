@@ -19,15 +19,17 @@ import AllStarsTeamsSection from '../components/teams/AllStarsTeamsSection';
 import HeroArtwork from '../features/home/components/HeroArtwork';
 import Button from '../components/ui/Button';
 export default function HomePage(){
- const dispatch=useAppDispatch(),{updates}=useAppSelector(s=>s.updates);
+ const dispatch=useAppDispatch(),{updates,isLoading:updatesBusy,hasLoaded:updatesLoaded,error:updatesError}=useAppSelector(s=>s.updates);
  const [events,setEvents]=useState<EventSummary[]>([]),[leaders,setLeaders]=useState<NationalRanking[]>([]),[error,setError]=useState('');
- const [overview,setOverview]=useState<Overview|null>(null),[teams,setTeams]=useState<Team[]>([]),[live,setLive]=useState<Meeting[]>([]);
+ const [leadersLoading,setLeadersLoading]=useState(true),[eventsLoading,setEventsLoading]=useState(true),[standingsLoading,setStandingsLoading]=useState(true);
+ const [leadersError,setLeadersError]=useState(''),[eventsError,setEventsError]=useState(''),[standingsError,setStandingsError]=useState('');
+ const [overview,setOverview]=useState<Overview|null>(null),[teams,setTeams]=useState<Team[]|null>(null),[live,setLive]=useState<Meeting[]>([]);
  const favorite=useFavoriteSelection();
  useEffect(()=>{let active=true;dispatch(fetchUpdates());
-  Promise.all([eventsService.list({category:'club',pageSize:16}),eventsService.list({category:'all_stars',pageSize:16})]).then(([a,b])=>{if(active)setEvents([...a.items,...b.items]);}).catch(e=>{if(active)setError(requestError(e));});
-  getNationalRankings({pageSize:3}).then(r=>{if(active)setLeaders(r.rankings);}).catch(()=>{});
+  Promise.all([eventsService.list({category:'club',pageSize:16}),eventsService.list({category:'all_stars',pageSize:16})]).then(([a,b])=>{if(active)setEvents([...a.items,...b.items]);}).catch(e=>{if(active)setEventsError(requestError(e));}).finally(()=>{if(active)setEventsLoading(false);});
+  getNationalRankings({pageSize:3}).then(r=>{if(active)setLeaders(r.rankings);}).catch(e=>{if(active)setLeadersError(requestError(e));}).finally(()=>{if(active)setLeadersLoading(false);});
   publicTeams.list().then(t=>{if(active)setTeams(t);}).catch(e=>{if(active)setError(requestError(e));});
-  allStarsService.overview().then(o=>{if(active)setOverview(o);}).catch(e=>{if(active)setError(requestError(e));});
+  allStarsService.overview().then(o=>{if(active)setOverview(o);}).catch(e=>{if(active)setStandingsError(requestError(e));}).finally(()=>{if(active)setStandingsLoading(false);});
   return()=>{active=false};
  },[dispatch]);
  useEffect(()=>{if(!favorite.selected)return;let active=true,busy=false;
@@ -38,7 +40,7 @@ export default function HomePage(){
  const future=events.filter(e=>e.startDate&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(e.startDate))>=today).sort((a,b)=>Date.parse(a.startDate!)-Date.parse(b.startDate!));
  const featured=future.find(e=>e.featured)||events.find(e=>e.featured)||future[0]||events[0];
  const featuredFixtures=featured?.category==='all_stars'?(overview?.fixtures??[]).filter(f=>f.eventId===featured.id).sort((a,b)=>Date.parse(a.date)-Date.parse(b.date)):[];
- const selectedTeam=teams.find(t=>t.id===favorite.selected);
+ const selectedTeam=teams?.find(t=>t.id===favorite.selected);
  const sortedUpdates=[...updates].sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime());
  return <div>
  {!!sortedUpdates.length&&<aside aria-label="חדשות קארדסקול" className="cs-ticker py-3 text-white"><div className="container flex gap-4 items-center"><Newspaper className="shrink-0" size={20}/><strong className="shrink-0">חדשות קארדסקול</strong><div className="flex gap-6 overflow-x-auto whitespace-nowrap">{sortedUpdates.slice(0,6).map(u=><Link className="hover:text-gold" key={u.id} to={'/news/'+u.id}>{u.title} ←</Link>)}</div></div></aside>}
@@ -52,10 +54,10 @@ export default function HomePage(){
  <div className="flex flex-wrap gap-3 mt-5"><Button asChild variant="cta"><Link to={featured?'/events/'+featured.id:'/tournaments'}>{featured?'למשחקים ולעדכונים':'לכל האירועים'} <ArrowUpLeft className="inline ms-2" size={17}/></Link></Button><Button asChild variant="outline" className="border-white/70 text-white bg-transparent hover:bg-white/10"><Link to="/all-stars">ליגת האולסטארז</Link></Button></div></div>
  <div className="hidden lg:block max-w-xs"><HeroArtwork/></div>
  </div></section>
- {selectedTeam&&<MyFavoriteTeam key={selectedTeam.id} team={{...selectedTeam,fanCount:favorite.counts[selectedTeam.id]??selectedTeam.fanCount}} overview={overview} live={live} updates={updates}/>}
+ {selectedTeam&&<MyFavoriteTeam key={selectedTeam.id} team={{...selectedTeam,fanCount:favorite.counts[selectedTeam.id]??selectedTeam.fanCount}} overview={overview} live={live} updates={updates} overviewLoading={standingsLoading} overviewError={standingsError} updatesLoading={updatesBusy||(!updatesLoaded&&!updates.length&&!updatesError)} updatesError={updatesError||''}/>}
  <ActivePublicTournaments/>
- <LeagueSections leaders={leaders} standings={overview?.standings??[]} events={future} error={error}/>
- <AllStarsTeamsSection teams={teams} favorite={favorite}/>
+ <LeagueSections leaders={leaders} standings={overview?.standings??[]} events={future} error={error} leadersLoading={leadersLoading} eventsLoading={eventsLoading} standingsLoading={standingsLoading} leadersError={leadersError} eventsError={eventsError} standingsError={standingsError}/>
+ <AllStarsTeamsSection teams={teams} loadError={error} favorite={favorite}/>
  <section className="bg-navy-700 text-white py-9"><div className="container flex items-center justify-between flex-wrap gap-4"><div><h2 className="text-2xl font-extrabold">מצטרפים לחוג הפוקימון</h2><p>לימוד, משחק וחברים קרוב לבית</p></div><Button asChild variant="cta"><a href={TRIAL_REGISTRATION_URL} target="_blank" rel="noopener noreferrer">להרשמה לחוג</a></Button></div></section>
  </div>;
 }

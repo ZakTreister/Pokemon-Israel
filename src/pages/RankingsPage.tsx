@@ -22,6 +22,7 @@ export default function RankingsPage() {
   const [data, setData] = useState<NationalRankingsResponse | null>(null);
   const [search, setSearch] = useState('');
   const [leaders,setLeaders]=useState<NationalRanking[]>([]);
+  const [leadersLoading,setLeadersLoading]=useState(true),[leadersError,setLeadersError]=useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [includeAllStars, setIncludeAllStars] = useState(false);
   const [nextEvent,setNextEvent] = useState<EventSummary | undefined>();
@@ -34,7 +35,7 @@ export default function RankingsPage() {
 
   useEffect(()=>{
     let active=true;
-    getNationalRankings({pageSize:3,sort:'position'}).then(r=>{if(active)setLeaders(r.rankings)}).catch(()=>{});
+    getNationalRankings({pageSize:3,sort:'position'}).then(r=>{if(active)setLeaders(r.rankings)}).catch(e=>{if(active)setLeadersError(requestError(e));}).finally(()=>{if(active)setLeadersLoading(false);});
     eventsService.nextRankingEvent().then(event=>{if(active)setNextEvent(event??undefined)}).catch(()=>{});
     return ()=>{active=false};
   },[]);
@@ -85,7 +86,7 @@ export default function RankingsPage() {
     <div>
       <ManagedPageIntro pageId="rankings"/>
       <div className="container py-12">
-        <section className="mb-7"><h2 className="text-xl font-extrabold mb-3">מובילי הדירוג הארצי</h2><RankingPodium leaders={leaders}/></section>
+        <section className="mb-7"><h2 className="text-xl font-extrabold mb-3">מובילי הדירוג הארצי</h2>{leadersLoading?<p role="status">טוען דירוג...</p>:leadersError?<p role="alert">{leadersError}</p>:<RankingPodium leaders={leaders}/>}</section>
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <label className="block font-bold sm:flex-1 sm:max-w-md">
             איפה אתם בדירוג? חפשו את השם שלכם
@@ -107,15 +108,16 @@ export default function RankingsPage() {
             <span>הצג שחקני All-Stars</span>
           </label>
         </div>
-        <details className="mb-6 border rounded-lg p-4"><summary className="font-bold cursor-pointer">איך צוברים נקודות?</summary><p className="mt-3">הנקודות בדירוג הארצי מצטברות מטורנירי החוגים. בשוויון נקודות הדירוג נקבע לפי מספר ההשתתפויות (מהגבוה לנמוך), ואז לפי סדר א״ב של השם. צבירת הנקודות תהיה באירוע הבא.</p>{nextEvent&&<Button asChild variant="outline" className="mt-3"><Link to={'/events/'+nextEvent.id}>{nextEvent.title}</Link></Button>}</details>
+        <details className="mb-6 border rounded-lg p-4"><summary className="font-bold cursor-pointer">איך צוברים נקודות?</summary><p className="mt-3">הנקודות בדירוג הארצי מצטברות מטורנירי החוגים. בשוויון נקודות הדירוג נקבע לפי מספר ההשתתפויות (מהגבוה לנמוך), ושחקנים עם ניקוד ומספר השתתפויות זהים חולקים מקום. המקום הבא עוקב ללא דילוג. צבירת הנקודות תהיה באירוע הבא.</p>{nextEvent&&<Button asChild variant="outline" className="mt-3"><Link to={'/events/'+nextEvent.id}>{nextEvent.title}</Link></Button>}</details>
         {!!data?.topMovers?.length&&<section className="cs-public-card p-4 mb-6"><h2 className="font-bold text-lg mb-2">העלייה הגדולה בדירוג</h2><div className="flex flex-wrap gap-3">{data.topMovers.map(row=><span key={row.playerId} className="font-bold">{row.playerName} <span className="text-emerald-600">↑ {row.rankChange} מקומות</span></span>)}</div></section>}
         {error && <p role="alert" className="text-destructive mb-4">{error}</p>}
         {data === null && busy ? (
           <p role="status">טוען דירוג...</p>
-        ) : (
+        ) : data ? (
           <div aria-busy={busy}>
             {data&&<RankingFreshness resultsThrough={data.resultsThrough} showCoverage showLastUpdated={false}/>}
             <DataTable<NationalRanking>
+              showRowNumbers
               headerClassName="bg-navy-700 text-white"
               rows={data?.rankings ?? []}
               rowKey={row => row.playerId}
@@ -145,7 +147,7 @@ export default function RankingsPage() {
             />
             {data && data.rankings.length<data.total && <div className="flex justify-center mt-4"><Button variant="outline" disabled={busy||moreBusy} onClick={()=>void loadMore()}>{moreBusy?'טוען...':'עוד'}</Button></div>}
           </div>
-        )}
+        ) : null}
 
       </div>
     </div>

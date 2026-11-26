@@ -19,7 +19,7 @@ function PageLinks({target}:{target:string}){
  },[target]);
  if(!links.length)return null;
  return <div className="container py-5"><Card variant="public" className="p-5 space-y-3"><nav aria-label="קישורים נוספים" className="space-y-3"><h2 className="text-xl font-extrabold">קישורים נוספים</h2><div className="flex flex-wrap gap-3">
- {links.map(link=><Button key={link.id} asChild variant="outline" className="max-w-full h-auto min-h-10 whitespace-normal text-start"><Link to={'/content/'+link.id}>{link.label} ←</Link></Button>)}
+ {links.map(link=><Button key={link.id} asChild variant="default" size="lg" className="max-w-full h-auto min-h-12 whitespace-normal text-center px-6 py-3"><Link to={'/content/'+link.id}>{link.label}</Link></Button>)}
  </div></nav></Card></div>;
 }
 // Fixed pages share the same footer placement. Dynamic content pages mount the

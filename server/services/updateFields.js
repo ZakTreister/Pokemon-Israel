@@ -3,7 +3,7 @@ import { fail } from '../utils/httpError.js';
 // Keep a plain-text excerpt for cards, feeds and legacy clients.
 function htmlExcerpt(html) {
   const entities = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-  return html.replace(/<\/?(?:p|h2|h3|h4|li|blockquote|ul|ol|br|hr)>/g, '\n')
+  return html.replace(/<\/?(?:p|h2|h3|h4|li|blockquote|ul|ol|br|hr)(?: style="text-align: (?:center|right|left)")?>/g, '\n')
     .replace(/<[^>]*>/g, '')
     .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (match, entity) => {
       const key = entity.toLowerCase();
@@ -36,8 +36,10 @@ export function updateFields(input, existing = {}) {
     if (!['http:', 'https:'].includes(url.protocol))
       fail(400, 'הקישור חייב להתחיל ב-http או https');
   }
-  for(const key of ['showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
+  for(const key of ['published','showInNews','showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
   return {
+    ...(input.published!==undefined?{published:input.published}:{}),
+    ...(input.showInNews!==undefined?{showInNews:input.showInNews}:{}),
     ...(input.showInFieldNews!==undefined?{showInFieldNews:input.showInFieldNews}:{}),
     ...(input.imageInGallery!==undefined?{imageInGallery:input.imageInGallery}:{}),
     title: title.trim(),

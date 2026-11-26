@@ -33,6 +33,11 @@ export function sanitizeRichHtml(input){
       if(stack.includes('a'))throw new Error('אין לקנן קישורים');
       output.push('<a href="'+linkUrl(match[1]??match[2]).replace(/&/g,'&amp;')+'">');stack.push('a');continue;
     }
+    match=part.match(/^<(p|h2|h3|h4|blockquote|li)\s+(?:style\s*=\s*(?:"text-align:\s*(center|right|left);?"|'text-align:\s*(center|right|left);?')|align\s*=\s*(?:"(center|right|left)"|'(center|right|left)'))\s*>$/i);
+    if(match){
+      const tag=match[1].toLowerCase(),align=(match[2]||match[3]||match[4]||match[5]).toLowerCase();
+      output.push('<'+tag+' style="text-align: '+align+'">');stack.push(tag);continue;
+    }
     match=part.match(/^<([a-z0-9]+)\s*(\/?)>$/i);
     if(match){
       const tag=match[1].toLowerCase();

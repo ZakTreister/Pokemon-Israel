@@ -26,7 +26,7 @@ const linkedTeams=async(input,existing)=>{
 // @access  Public
 export const getUpdates = asyncHandler(async (req, res) => {
   const published = await Event.find({ status:'published' }).select('_id').lean();
-  const updates = await Update.find({ $or: [{eventId:null},{eventId:{$in:published.map(e=>e._id)}}] }).sort('-date');
+  const updates = await Update.find({ published:{$ne:false},showInNews:{$ne:false}, $or: [{eventId:null},{eventId:{$in:published.map(e=>e._id)}}] }).sort('-date');
   res.json(updates);
 });
 
@@ -98,6 +98,7 @@ export const getUpdate = asyncHandler(async (req, res) => {
     throw new Error('Update not found');
   }
   const update = await Update.findById(req.params.id);
+  if (update?.published===false || (update?.showInNews===false&&!update.eventId)) fail(404,'Update not found');
   if (update?.eventId && !await Event.exists({_id:update.eventId,status:'published'})) fail(404,'Update not found');
   if (!update) {
     res.status(404);

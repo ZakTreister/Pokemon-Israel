@@ -39,7 +39,7 @@ async function publishedContent(id) {
   return ContentPage.findOne({_id:id,status:'published'}).select('title subtitle bodyHtml isAllStars').lean().maxTimeMS(600);
 }
 async function publishedNews(id) {
-  const update=await Update.findById(id).select('title content eventId').lean().maxTimeMS(600);
+  const update=await Update.findOne({_id:id,published:{$ne:false},showInNews:{$ne:false}}).select('title content eventId').lean().maxTimeMS(600);
   if (!update) return null;
   if (update.eventId && !await Event.exists({_id:update.eventId,status:'published'}).maxTimeMS(600)) return null;
   return update;
@@ -118,7 +118,7 @@ export async function buildSitemap() {
   const [events,pages,updates,settings] = await Promise.all([
     Event.find({status:'published'}).select('_id').lean(),
     ContentPage.find({status:'published'}).select('_id').lean(),
-    Update.find({}).select('_id eventId').lean(),
+    Update.find({published:{$ne:false},showInNews:{$ne:false}}).select('_id eventId').lean(),
     getSiteSettings(),
   ]);
   return sitemapXml({events,pages,updates,settings});

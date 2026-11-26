@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {STATIC_CONTENT_LINK_TARGETS} from '../../../shared/contentLinkTargets';
-import {LEAGUE_LOGOS,SOCIAL_PLATFORMS,validSocialUrl,type SiteSettings,type PageSetting,type SocialSetting,type LogoUploads,type LeagueLogoKey} from '../../../shared/siteSettings';
+import {LEAGUE_LOGOS,SOCIAL_PLATFORMS,validSocialUrl,type SiteSettings,type PageSetting,type ContentNavigationSetting,type SocialSetting,type LogoUploads,type LeagueLogoKey} from '../../../shared/siteSettings';
 import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
 import {siteSettingsService} from '../../services/siteSettings';
 import ImageUpload from '../../components/ui/ImageUpload';
@@ -15,6 +15,7 @@ export default function ManageSiteSettings(){
  const uploadBusy=Object.values(uploading).some(Boolean);
  useEffect(()=>{let active=true;siteSettingsService.manage().then(data=>{if(active)setValue(data);}).catch(e=>{if(active)setError(requestError(e));});return()=>{active=false};},[]);
  const changePage=(path:string,patch:Partial<PageSetting>)=>{setSaved(false);setValue(v=>v&&({...v,pages:v.pages.map(p=>p.path===path?{...p,...patch}:p)}));};
+ const changeContent=(path:string,patch:Partial<ContentNavigationSetting>)=>{setSaved(false);setValue(v=>v&&({...v,contentPages:v.contentPages?.map(p=>p.path===path?{...p,...patch}:p)}));};
  const changeSocial=(key:string,patch:Partial<SocialSetting>)=>{setSaved(false);setValue(v=>v&&({...v,socials:v.socials.map(s=>s.key===key?{...s,...patch}:s)}));};
  const invalid=value?.socials.some(s=>!validSocialUrl(s.key,s.url)||(s.enabled&&!s.url.trim()));
  const save=async()=>{if(!value||busy||invalid||uploadBusy)return;setBusy(true);setError('');setSaved(false);try{const data=await siteSettingsService.save(value,uploads);setValue(data);setUploads({});apply(data);setSaved(true);}catch(e){setError(requestError(e));}finally{setBusy(false);}};
@@ -28,12 +29,16 @@ export default function ManageSiteSettings(){
  {!value&&!error&&<p role="status">טוען הגדרות...</p>}
  {value&&<><Card className="p-4 space-y-4">
  {tab==='pages'?<><p className="text-sm text-muted-foreground">הסרה מהתפריט או מהפוטר משאירה את העמוד נגיש. השבתת עמוד מסתירה אותו משניהם וחוסמת את כתובתו הציבורית. ניתן להפעיל מחדש בלי לאבד תוכן. דף הבית תמיד פעיל.</p>
- <div className="overflow-x-auto"><table className="w-full text-sm cs-site-settings-table"><thead><tr className="border-b">{['עמוד','פעיל','בתפריט','בפוטר'].map(h=><th key={h} className="p-2 text-start">{h}</th>)}</tr></thead><tbody>
+ <div className="overflow-x-auto"><table className="w-full text-sm cs-site-settings-table"><thead><tr className="border-b">{['עמוד','פעיל','בתפריט','בפוטר','סדר בתפריט'].map(h=><th key={h} className="p-2 text-start">{h}</th>)}</tr></thead><tbody>
  {value.pages.map(p=>{const label=STATIC_CONTENT_LINK_TARGETS.find(t=>t.path===p.path)?.label||p.path;return <tr key={p.path} className="border-b"><th scope="row" className="p-2 text-start font-medium">{label}</th>
  <td className="p-2"><input type="checkbox" aria-label={label+' פעיל'} checked={p.active} disabled={busy||p.path==='/'} onChange={e=>changePage(p.path,{active:e.target.checked})}/></td>
  <td className="p-2"><input type="checkbox" aria-label={label+' בתפריט'} checked={p.active&&p.menu} disabled={busy||!p.active} onChange={e=>changePage(p.path,{menu:e.target.checked})}/></td>
- <td className="p-2"><input type="checkbox" aria-label={label+' בפוטר'} checked={p.active&&p.footer} disabled={busy||!p.active} onChange={e=>changePage(p.path,{footer:e.target.checked})}/></td></tr>;})}
- </tbody></table></div><p className="text-sm text-muted-foreground">חנות והזמנת יום הולדת תמיד אחרונות כשהן מוצגות. עמודי תוכן דינמיים מנוהלים בנפרד.</p></>:tab==='socials'?<>
+ <td className="p-2"><input type="checkbox" aria-label={label+' בפוטר'} checked={p.active&&p.footer} disabled={busy||!p.active} onChange={e=>changePage(p.path,{footer:e.target.checked})}/></td><td className="p-2"><input aria-label={label+' סדר בתפריט'} type="number" min={1} max={100000} value={p.order??10} disabled={busy||!p.active||!p.menu||['/store','/birthday'].includes(p.path)} onChange={e=>changePage(p.path,{order:Math.max(1,Math.min(100000,Math.trunc(Number(e.target.value)||1)))})} className="w-20 p-2 border rounded bg-card"/></td></tr>;})}
+ {(value.contentPages??[]).map(p=><tr key={p.path} className="border-b"><th scope="row" className="p-2 text-start font-medium">{p.title}<span className="block text-xs text-muted-foreground">עמוד תוכן · {p.active?'מפורסם':'טיוטה'}</span>{p.label!==p.title&&<span className="block text-xs">{p.label}</span>}</th>
+ <td className="p-2"><span>{p.active?'כן':'לא'}</span></td><td className="p-2"><input type="checkbox" aria-label={p.title+' בתפריט'} checked={p.menu} disabled={busy} onChange={e=>changeContent(p.path,{menu:e.target.checked})}/></td>
+ <td className="p-2"><input type="checkbox" aria-label={p.title+' בפוטר'} checked={p.footer} disabled={busy} onChange={e=>changeContent(p.path,{footer:e.target.checked})}/></td>
+ <td className="p-2"><input aria-label={p.title+' סדר בתפריט'} type="number" min={1} max={100000} value={p.order??1000} disabled={busy||!p.menu} onChange={e=>changeContent(p.path,{order:Math.max(1,Math.min(100000,Math.trunc(Number(e.target.value)||1)))})} className="w-20 p-2 border rounded bg-card"/></td></tr>)}
+ </tbody></table></div><p className="text-sm text-muted-foreground">מספר נמוך מופיע קודם בתפריט. חנות והזמנת יום הולדת תמיד אחרונות כשהן מוצגות. פרסום עמודי תוכן מנוהל בעורך העמוד; טיוטות לא מופיעות בניווט.</p></>:tab==='socials'?<>
  <p className="text-sm text-muted-foreground">הקישורים הפעילים יוצגו כאייקונים בפוטר. ניתן להשבית קישור בלי למחוק את הכתובת.</p>
  {value.socials.map(s=>{const label=SOCIAL_PLATFORMS.find(p=>p.key===s.key)?.label||s.key;return <div key={s.key} className="space-y-2 border-b pb-3"><label className="flex items-center gap-2 font-bold"><input type="checkbox" checked={s.enabled} disabled={busy} onChange={e=>changeSocial(s.key,{enabled:e.target.checked})}/>{label}</label><input aria-label={label+' כתובת'} type="url" dir="ltr" value={s.url} placeholder="https://..." disabled={busy} onChange={e=>changeSocial(s.key,{url:e.target.value})} className="block w-full p-2 border rounded bg-card"/>{(!validSocialUrl(s.key,s.url)||(s.enabled&&!s.url.trim()))&&<p className="text-sm text-destructive">יש להזין כתובת HTTPS תקינה של {label}</p>}</div>;})}
  </>:<>

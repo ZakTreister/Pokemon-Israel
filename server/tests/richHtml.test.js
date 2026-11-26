@@ -14,3 +14,10 @@ test('published navigation pages require a label, including partial edits',()=>{
  assert.equal(contentPageFields({title:'test',showInNavigation:true,navigationLabel:'ניווט'}).navigationLabel,'ניווט');
  assert.throws(()=>contentPageFields({navigationLabel:''},{title:'test',showInNavigation:true}));
 });
+
+ test('center alignment is normalized without allowing arbitrary CSS or attributes',()=>{
+  assert.equal(sanitizeRichHtml('<p align="center">שלום</p>'),'<p style="text-align: center">שלום</p>');
+  assert.equal(sanitizeRichHtml('<h2 style="text-align: center;">כותרת</h2>'),'<h2 style="text-align: center">כותרת</h2>');
+  assert.throws(()=>sanitizeRichHtml('<p style="text-align: center; color:red">x</p>'));
+  assert.throws(()=>sanitizeRichHtml('<p align="center" onclick="x()">x</p>'));
+ });
