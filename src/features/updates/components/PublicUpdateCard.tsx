@@ -1,15 +1,15 @@
-import {Link} from 'react-router-dom';
 import type {Update} from '../../../types/update';
-import Button from '../../../components/ui/Button';
+import SafeHtml from '../../../components/content/SafeHtml';
 import UpdateAction from './UpdateAction';
 export default function PublicUpdateCard({update}:{update:Update}){
  const image=update.image||update.mediaItems?.find(m=>m.kind==='image')?.url;
- return <article className="cs-public-card p-5 border-t-4 border-t-gold flex flex-col gap-3">
- {update.date&&<p className="text-sm text-blue-500 font-bold">{new Date(update.date).toLocaleDateString('he-IL')}</p>}
- {image&&<img src={image} alt="" loading="lazy" className="w-full h-44 object-cover rounded-md"/>}
- <h3 className="font-extrabold text-xl">{update.title}</h3>
- <p className="text-muted-foreground whitespace-pre-wrap line-clamp-4">{update.description??update.content}</p>
- <UpdateAction update={update}/>
- <Button asChild variant="outline" className="mt-auto"><Link to={'/news/'+update.id}>לעדכון המלא</Link></Button>
+ return <article id={'update-'+update.id} className="cs-public-card h-[380px] box-border p-5 border-t-4 border-t-gold flex flex-col gap-3 overflow-hidden min-w-0">
+ {update.date&&<p className="shrink-0 text-sm text-blue-500 font-bold">{new Date(update.date).toLocaleDateString('he-IL')}</p>}
+ {image&&<img src={image} alt="" loading="lazy" className="shrink-0 w-full h-28 object-cover rounded-md"/>}
+ <h3 className="shrink-0 font-extrabold text-xl line-clamp-2">{update.title}</h3>
+ <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden break-words overscroll-contain" tabIndex={0} role="region" aria-label={'תוכן העדכון: '+update.title}>
+ {update.descriptionHtml!==undefined?<SafeHtml html={update.descriptionHtml}/>:<p className="whitespace-pre-wrap">{update.description??update.content}</p>}
+ </div>
+ <div className="shrink-0 empty:hidden"><UpdateAction update={update}/></div>
  </article>;
 }
