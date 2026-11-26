@@ -17,7 +17,7 @@ import { requestError } from '../../utils/requestError';
 export default function ManageEventPage(){
  const {id=''}=useParams(),navigate=useNavigate();
  const [event,setEvent]=useState<EventDetails|null>(null),[available,setAvailable]=useState<PublicTournamentSummary[]>([]),[selected,setSelected]=useState('');
- const [editing,setEditing]=useState<Update|null|undefined>(undefined),[showEdit,setShowEdit]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [editing,setEditing]=useState<Update|null|undefined>(undefined),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [createDialog,setCreateDialog]=useState(false);
  const reload=useCallback(async()=>setEvent(await eventsService.getManaged(id)),[id]);
  useEffect(()=>{reload().catch(e=>setError(requestError(e)));api.get<{items:PublicTournamentSummary[]}>('/api/tournaments/management',{params:{pageSize:100}}).then(r=>setAvailable(r.data.items)).catch(()=>{});},[reload]);
@@ -41,10 +41,9 @@ export default function ManageEventPage(){
  if(!event)return <p role="status">{error||'טוען אירוע...'}</p>;
  const eligible=available.filter(t=>t.type!=='team_internal'&&(!t.eventId||t.eventId===id)&&(event.category==='club'?t.type==='quarterly':t.type==='inter_team'));
  return <div className="space-y-6">
- <header className="flex justify-between items-center flex-wrap gap-3"><div><h2 className="text-2xl font-bold">{event.title}</h2><p>{event.status==='draft'?'טיוטה':'מפורסם'}</p></div><Button variant="outline" aria-expanded={showEdit} aria-controls="event-edit-form" onClick={()=>setShowEdit(!showEdit)}>{showEdit?'סגור עריכת פרטי אירוע':'ערוך פרטי אירוע ותוכן'}</Button></header>
+ <header className="flex justify-between items-center flex-wrap gap-3"><div><h2 className="text-2xl font-bold">{event.title}</h2><p>{event.status==='draft'?'טיוטה':'מפורסם'}</p></div>{event.status==='published'&&<Button asChild variant="outline" className="ms-auto"><Link to={'/events/'+id}>צפייה באתר הציבורי ←</Link></Button>}</header>
  {error&&<p role="alert" className="text-destructive">{error}</p>}
- {showEdit&&<section id="event-edit-form" className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">עריכת פרטי אירוע ותוכן</h3><EventEditor key={event.id} initial={event} busy={busy} onSave={save}/></section>}
- {event.status==='published'&&<Link className="text-blue-500" to={'/events/'+id}>צפייה באתר הציבורי ←</Link>}
+ <section id="event-edit-form" className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">עריכת פרטי אירוע ותוכן</h3><EventEditor key={event.id} initial={event} busy={busy} onSave={save}/></section>
  <section className="border rounded-lg p-4 space-y-3"><h3 className="text-xl font-bold">טורנירי האירוע</h3>
  {event.tournaments.map(t=><div key={t.id} className="flex gap-3 justify-between items-center"><Link className="text-blue-500" to={'/tournaments/'+t.id}>{t.title}</Link><div className="flex gap-2">{t.type==='inter_team'&&<Button asChild size="sm" variant="outline"><Link to={'/manage/inter-team/'+t.id}>פתח ניהול מפגש</Link></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={()=>void unlink(t.id)}>הסר שיוך</Button></div></div>)}
  <div className="flex gap-2 flex-wrap"><select aria-label="בחר טורניר" className="border rounded p-2 bg-card" value={selected} onChange={e=>setSelected(e.target.value)}><option value="">בחר טורניר קיים</option>{eligible.map(t=><option value={t.id} key={t.id}>{t.title}</option>)}</select>
