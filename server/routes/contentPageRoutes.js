@@ -5,7 +5,7 @@ import Event from '../models/eventModel.js';
 import {protect,admin} from '../middleware/authMiddleware.js';
 import {fail} from '../utils/httpError.js';
 import {contentPageFields} from '../services/contentFields.js';
-import {getSiteSettings} from '../services/siteSettings.js';
+import {getSiteSettings,getNavigationSettings} from '../services/siteSettings.js';
 import {pageActive} from '../../shared/siteSettings.js';
 import {normalizeContentLinkTarget} from '../../shared/contentLinkTargets.js';
 import {attachAsset,removeAsset,changeAssetVisibility} from '../services/assetAttachment.js';
@@ -31,8 +31,8 @@ router.get('/buttons',asyncHandler(async(req,res)=>{
  res.json(pages.filter(page=>page.buttonLabel&&target!=='/content/'+page.id).map(page=>({id:page.id,label:page.buttonLabel})));
 }));
 router.get('/navigation',asyncHandler(async(_req,res)=>{
- const pages=await ContentPage.find({status:'published',showInNavigation:true}).select('navigationLabel').sort({createdAt:1,_id:1});
- res.json(pages.map(page=>({id:page.id,label:page.navigationLabel})));
+ const {navigation}=await getNavigationSettings();
+ res.json(navigation.menu.filter(link=>link.to.startsWith('/content/')).map(link=>({id:link.to.slice(9),label:link.label})));
 }));
 router.get('/management',protect,admin,asyncHandler(async(_req,res)=>res.json(await ContentPage.find({}).sort({updatedAt:-1}))));
 router.get('/management/:id',protect,admin,asyncHandler(async(req,res)=>res.json(await find(req.params.id))));

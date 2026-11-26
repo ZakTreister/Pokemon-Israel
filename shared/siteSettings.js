@@ -14,8 +14,10 @@ export const HEADER_ORDER=['/rankings','/all-stars','/tournaments','/news','/','
 export const FOOTER_ORDER=['/','/tournaments','/rankings','/all-stars','/news','/gallery','/store','/birthday'];
 export const TRAILING_PAGES=['/store','/birthday'];
 export function defaultSiteSettings(){
- return {pages:STATIC_CONTENT_LINK_TARGETS.map(({path})=>({path,active:true,menu:['/rankings','/all-stars','/tournaments','/news','/store','/birthday'].includes(path),footer:['/','/tournaments','/rankings','/all-stars','/news','/store','/birthday'].includes(path)})),
+ const pages=STATIC_CONTENT_LINK_TARGETS.map(({path})=>({path,order:(HEADER_ORDER.indexOf(path)+1)*10,active:true,menu:['/rankings','/all-stars','/tournaments','/news','/store','/birthday'].includes(path),footer:['/','/tournaments','/rankings','/all-stars','/news','/store','/birthday'].includes(path)}));
+ const settings={pages,contentPages:[],
  socials:SOCIAL_PLATFORMS.map(({key})=>({key,enabled:false,url:''})),logos:{kids:'',allStars:''}};
+ return {...settings,navigation:buildNavigation(settings)};
 }
 export function pageActive(settings,path){
  if(isRetiredPublicPage(path))return false;
@@ -24,11 +26,20 @@ export function pageActive(settings,path){
 }
 export function navigationPages(settings,placement){
  const order=placement==='menu'?HEADER_ORDER:FOOTER_ORDER;
- return order.flatMap(path=>{
+ const rows=order.flatMap(path=>{
   const page=settings.pages.find(p=>p.path===path);
   const target=STATIC_CONTENT_LINK_TARGETS.find(p=>p.path===path);
-  return page?.active&&page[placement]&&target?[{to:path,label:target.label,construction:TRAILING_PAGES.includes(path)}]:[];
+  return page?.active&&page[placement]&&target?[{to:path,label:target.label,construction:TRAILING_PAGES.includes(path),order:placement==='menu'?(page.order??(HEADER_ORDER.indexOf(path)+1)*10):(FOOTER_ORDER.indexOf(path)+1)*10}]:[];
  });
+ for(const page of settings.contentPages||[])if(page.active&&page[placement])rows.push({to:page.path,label:page.label,construction:false,order:page.order??1000});
+ const rank=link=>TRAILING_PAGES.includes(link.to)?TRAILING_PAGES.indexOf(link.to)+1:0;
+ return rows.sort((a,b)=>rank(a)-rank(b)||a.order-b.order||a.to.localeCompare(b.to)).map(({order,...link})=>link);
+}
+// Server computes both lists. Fixed staff navigation is not part of the public menu.
+export function buildNavigation(settings){
+ const footer=navigationPages(settings,'footer');
+ const trailing=footer.filter(link=>TRAILING_PAGES.includes(link.to));
+ return {menu:navigationPages(settings,'menu'),footer:[...footer.filter(link=>!TRAILING_PAGES.includes(link.to)),{to:'/login',label:'כניסת צוות',construction:false},...trailing]};
 }
 export function validSocialUrl(key,value){
  if(typeof value!=='string'||value.length>2048)return false;

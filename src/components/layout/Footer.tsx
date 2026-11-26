@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
-import {navigationPages,TRAILING_PAGES,SOCIAL_PLATFORMS,validSocialUrl} from '../../../shared/siteSettings';
+import {SOCIAL_PLATFORMS,validSocialUrl} from '../../../shared/siteSettings';
 import { Zap, ArrowUpLeft, Mail, Facebook, Instagram, Youtube, Music2, MessageCircle } from 'lucide-react';
 
 export default function Footer() {
-  const {settings}=useSiteSettings();
-  const fixed=navigationPages(settings,'footer');
-  const links=[...fixed.filter(p=>!TRAILING_PAGES.includes(p.to)),{to:'/login',label:'כניסת צוות',construction:false},...fixed.filter(p=>TRAILING_PAGES.includes(p.to))];
+  const {settings,status}=useSiteSettings();
+  const links=status==='ready'?settings.navigation?.footer??[]:[];
   const socials=settings.socials.filter(s=>s.enabled&&s.url&&validSocialUrl(s.key,s.url));
   const icons={facebook:Facebook,instagram:Instagram,youtube:Youtube,tiktok:Music2,whatsapp:MessageCircle};
   const currentYear = new Date().getFullYear();

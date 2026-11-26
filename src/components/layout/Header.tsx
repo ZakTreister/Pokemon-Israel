@@ -1,9 +1,7 @@
-import { useEffect,useState } from 'react';
+import { useState } from 'react';
 import { Link, NavLink, useNavigate,useLocation } from 'react-router-dom';
 import {LeagueLogo} from '../../features/siteSettings/LeagueLogo';
 import {useSiteSettings} from '../../features/siteSettings/SiteSettingsProvider';
-import {navigationPages,TRAILING_PAGES} from '../../../shared/siteSettings';
-import {contentPagesService} from '../../services/contentPages';
 import { X, LogOut, Sun, Moon, Menu as MenuIcon, Zap } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../features/auth/authSlice';
@@ -18,8 +16,6 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location=useLocation();
-  const [contentLinks,setContentLinks]=useState<{id:string;label:string}[]>([]);
-  useEffect(()=>{let active=true;contentPagesService.navigation().then(links=>{if(active&&Array.isArray(links))setContentLinks(links)}).catch(()=>{});return()=>{active=false};},[location.pathname]);
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
@@ -28,15 +24,12 @@ export default function Header() {
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
   const isStaff =
     isAuthenticated && (user?.role === 'admin' || user?.role === 'judge');
-  const {settings}=useSiteSettings();
-  const fixed=navigationPages(settings,'menu');
+  const {settings,status}=useSiteSettings();
   const links = [
     ...(isStaff
       ? [{ to: '/manage', label: 'ניהול', construction: false }]
       : []),
-    ...fixed.filter(link=>!TRAILING_PAGES.includes(link.to)),
-    ...contentLinks.map(page=>({to:'/content/'+page.id,label:page.label,construction:false})),
-    ...fixed.filter(link=>TRAILING_PAGES.includes(link.to)),
+    ...(status==='ready'?settings.navigation?.menu??[]:[]),
   ];
   const actions = (
     <>
