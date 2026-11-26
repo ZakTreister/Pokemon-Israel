@@ -24,6 +24,7 @@ try {
   ]);
   assert.equal(serializeEditor(root), '<p>שלום &amp; &lt;עולם&gt;</p><b>מודגש</b><em>נטוי</em><a href="/events/123?x=1&amp;y=2">קישור</a>');
   assert.throws(()=>serializeEditor(element('div',[element('a',[text('bad')],{href:'javascript:alert(1)'})])));
+  assert.equal(serializeEditor(element('div',[element('div',[text('מרכז')],{align:'center'}),element('h2',[text('כותרת')],{style:{textAlign:'center'}})])),'<p style="text-align: center">מרכז</p><h2 style="text-align: center">כותרת</h2>');
   const el = React.createElement;
   const Harness = () => {
     const [value,setValue] = React.useState('<p>תוכן קיים</p>');
@@ -35,7 +36,7 @@ try {
   assert.equal(renderer.root.findAllByType('input').length,0,'no permanent link fields');
   assert.equal(renderer.root.findAllByType('textarea').length,0);
   assert.equal(fake.innerHTML,'<p>תוכן קיים</p>');
-  for(const label of ['הדגשה','כתב נטוי','קו תחתון','הוסף או ערוך קישור','הסר קישור','בטל פעולה','שחזר פעולה']) assert.ok(button(label),label);
+  for(const label of ['הדגשה','כתב נטוי','קו תחתון','מרכז טקסט','יישור לימין','הוסף או ערוך קישור','הסר קישור','בטל פעולה','שחזר פעולה']) assert.ok(button(label),label);
   act(()=>button('הוסף או ערוך קישור').props.onClick());
   assert.equal(renderer.root.findAllByType('input').length,0,'link requires selected text');
   assert.ok(renderer.root.findByProps({role:'alert'}));

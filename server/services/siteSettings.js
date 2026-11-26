@@ -33,9 +33,9 @@ export function settingsFields(input){
 export async function getSiteSettings(){return settingsView(await SiteSettings.findById(ID).lean().maxTimeMS(600));}
 async function navigationView(record,managed=false){
  const settings=settingsView(record);
- const content=await ContentPage.find(managed?{}:{status:'published'}).select('title navigationLabel showInNavigation status').sort({createdAt:1,_id:1}).lean();
+ const content=await ContentPage.find({}).select('title navigationLabel showInNavigation status').sort({createdAt:1,_id:1}).lean();
  const contentPages=content.map((page,index)=>{const path='/content/'+String(page._id),saved=record?.contentNavigation?.find(p=>p.path===path);return {path,title:page.title,label:page.navigationLabel||page.title,active:page.status==='published',menu:!!page.showInNavigation,footer:!!saved?.footer,order:saved?.order??1000+index*10};});
- const result={...settings,contentPages};return {...result,navigation:buildNavigation(result)};
+ const result={...settings,contentPages:managed?contentPages:contentPages.filter(p=>p.active)};return {...result,navigation:buildNavigation(result)};
 }
 export async function getNavigationSettings(managed=false){return navigationView(await SiteSettings.findById(ID).lean().maxTimeMS(600),managed);}
 export async function saveSiteSettings(req){

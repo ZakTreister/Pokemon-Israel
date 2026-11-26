@@ -14,7 +14,7 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export default function Layout({children}:LayoutProps){return <SiteSettingsProvider><LayoutContent>{children}</LayoutContent></SiteSettingsProvider>;}
+export default function Layout({children}:LayoutProps){const {pathname}=useLocation();return <SiteSettingsProvider navigationKey={pathname}><LayoutContent>{children}</LayoutContent></SiteSettingsProvider>;}
 function LayoutContent({ children }: LayoutProps) {
   const {pathname}=useLocation();
   const {settings,status}=useSiteSettings();

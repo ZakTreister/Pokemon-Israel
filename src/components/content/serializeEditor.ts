@@ -20,9 +20,9 @@ export function serializeEditor(root: HTMLElement): string {
       if (!href) return content;
       return '<a href="' + escapeRichText(href.replace(/&/g, '&amp;')) + '">' + content + '</a>';
     }
-    const align = (element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
+    const align = (tag==='center'?'center':element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
     const attr = ['center','right','left'].includes(align) ? ' style="text-align: '+align+'"' : '';
-    if (tag === 'div') {
+    if (tag === 'div' || tag === 'center') {
       if (Array.from(element.children).some(child => blocks.has(child.tagName.toLowerCase()))) {
         // Browser commands may wrap selected paragraphs in an aligned div.
         return attr ? content.replace(/<(p|h2|h3|h4|blockquote|li)(?: style="text-align: (?:center|right|left)")?>/g, '<$1'+attr+'>') : content;

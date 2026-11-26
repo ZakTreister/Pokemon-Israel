@@ -3,7 +3,7 @@ import { fail } from '../utils/httpError.js';
 // Keep a plain-text excerpt for cards, feeds and legacy clients.
 function htmlExcerpt(html) {
   const entities = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-  return html.replace(/<\/?(?:p|h2|h3|h4|li|blockquote|ul|ol|br|hr)>/g, '\n')
+  return html.replace(/<\/?(?:p|h2|h3|h4|li|blockquote|ul|ol|br|hr)(?: style="text-align: (?:center|right|left)")?>/g, '\n')
     .replace(/<[^>]*>/g, '')
     .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (match, entity) => {
       const key = entity.toLowerCase();
