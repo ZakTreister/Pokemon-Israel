@@ -36,6 +36,7 @@ export function validateImage(buffer, mime) {
     fail(400, 'ניתן להעלות PNG, JPEG או WebP בלבד');
 }
 export function uploadNamespace(purpose, playerType) {
+  if (purpose === 'rich-content-image') return 'public/content-pages';
   if (purpose === 'team-logo' || purpose==='team-cover') return 'public/teams';
   if (purpose === 'update-image' || purpose === 'update-media') return 'public/updates';
   if (purpose === 'event-media') return 'public/events';
@@ -90,6 +91,7 @@ export async function presignUpload(req) {
       'event-media',
       'content-page-media',
       'gallery-media',
+      'rich-content-image',
     ].includes(purpose)
   )
     fail(400, 'מטרת העלאה לא נתמכת');
@@ -104,6 +106,9 @@ export async function presignUpload(req) {
   } else if (purpose === 'badge-program-image') {
     if (entityId !== BADGE_PROGRAM_ID) fail(400, 'מזהה מערך תגים לא חוקי');
     id = new mongoose.Types.ObjectId(BADGE_PROGRAM_ID);
+  } else if (purpose === 'rich-content-image') {
+    if(entityId!==undefined)fail(400,'אין לשייך העלאה עצמאית לרשומה');
+    id=new mongoose.Types.ObjectId();
   } else if (entityId !== undefined) {
     if (!validId(entityId)) fail(400, 'מזהה רשומה לא חוקי');
     entity = await owner(purpose, entityId);
