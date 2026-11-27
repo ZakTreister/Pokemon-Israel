@@ -1,4 +1,4 @@
-import { richBody } from './contentFields.js';
+import { richBody, mobileContentFields } from './contentFields.js';
 import { fail } from '../utils/httpError.js';
 // Keep a plain-text excerpt for cards, feeds and legacy clients.
 function htmlExcerpt(html) {
@@ -38,6 +38,7 @@ export function updateFields(input, existing = {}) {
   }
   for(const key of ['published','showInNews','showInFieldNews','imageInGallery'])if(input[key]!==undefined&&typeof input[key]!=='boolean')fail(400,'סימון תצוגה לא תקין');
   return {
+    ...mobileContentFields(input),
     ...(input.published!==undefined?{published:input.published}:{}),
     ...(input.showInNews!==undefined?{showInNews:input.showInNews}:{}),
     ...(input.showInFieldNews!==undefined?{showInFieldNews:input.showInFieldNews}:{}),
