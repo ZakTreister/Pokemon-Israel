@@ -1,4 +1,4 @@
-import { richBody } from './contentFields.js';
+import { richBody,mobileContentFields } from './contentFields.js';
 import { fail } from '../utils/httpError.js';
 
 const pageKeys = new Set(['all-stars', 'rankings']);
@@ -14,7 +14,7 @@ export function staticPageTextFields(input) {
       typeof subtitle !== 'string' || subtitle.length > 5000) {
     fail(400, 'יש להזין כותרת וטקסט תקינים');
   }
-  return { title: title.trim(), subtitle: subtitle.trim(), bodyHtml: richBody(bodyHtml) };
+  return { title: title.trim(), subtitle: subtitle.trim(), bodyHtml: richBody(bodyHtml),...mobileContentFields(input) };
 }
 
 // Preserve literal legacy plain text, including line breaks and angle brackets.
