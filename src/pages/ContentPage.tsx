@@ -18,12 +18,12 @@ function ContentPageBody({id}:{id:string}){
  if(error)return <div className="container py-8"><p role="alert">{error}</p></div>;
  if(!page)return null;
  const allStars=!!page.isAllStars;
- const hasMedia=!!page.mediaItems?.length,hasBody=!!page.bodyHtml?.trim();
+ const hasMedia=!!page.mediaItems?.length,hasBody=!!(page.bodyHtml?.trim()||page.mobileEnabled&&page.mobileHtml?.trim());
  return <div>
  <PageHero league={allStars?'allStars':'kids'} variant={allStars?'all-stars':'dark'} title={page.title} subtitle={page.subtitle}/>
  {(hasMedia||hasBody)&&<div className="container py-8 space-y-5">
  {hasMedia&&<MediaGallery carousel items={page.mediaItems}/>}
- {hasBody&&<Card variant="public" className="p-5 sm:p-8" role="article" aria-label="תוכן העמוד"><SafeHtml html={page.bodyHtml}/></Card>}
+ {hasBody&&<Card variant="public" className="p-5 sm:p-8" role="article" aria-label="תוכן העמוד"><SafeHtml html={page.bodyHtml} mobileHtml={page.mobileHtml} mobileEnabled={page.mobileEnabled}/></Card>}
  </div>}
  <ContentPageLinks target={'/content/'+page.id}/>
  </div>;

@@ -27,6 +27,8 @@ const updateSchema = new mongoose.Schema(
       default: '',
     },
     descriptionHtml: { type: String, default: undefined },
+    mobileHtml: {type:String,default:'',maxlength:50000},
+    mobileEnabled: {type:Boolean,default:false},
     date: {
       type: Date,
       default: Date.now,

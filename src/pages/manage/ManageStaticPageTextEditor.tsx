@@ -15,6 +15,7 @@ export default function ManageStaticPageTextEditor() {
 
 function Editor({ id, label }: { id: StaticPageTextKey; label: string }) {
   const [input, setInput] = useState<StaticPageText | null>(null);
+  const [inlineUploading,setInlineUploading]=useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const { showToast } = useToast();
@@ -25,7 +26,7 @@ function Editor({ id, label }: { id: StaticPageTextKey; label: string }) {
     return () => { active = false; };
   }, [id]);
   const save = async () => {
-    if (!input || busy) return;
+    if (!input || busy || inlineUploading) return;
     setBusy(true);
     setError('');
     try {
@@ -43,10 +44,10 @@ function Editor({ id, label }: { id: StaticPageTextKey; label: string }) {
         <label className="block">כותרת<input required maxLength={180} className="block w-full p-2 border rounded bg-card" value={input.title} onChange={e => setInput({ ...input, title: e.target.value })}/></label>
         <label className="block">כותרת משנה<textarea maxLength={5000} className="block w-full p-2 border rounded bg-card" value={input.subtitle} onChange={e => setInput({ ...input, subtitle: e.target.value })}/></label>
         <p className="text-sm font-medium">התוכן יוצג בכרטיס מיד מתחת להירו.</p>
-        <RichHtmlField value={input.bodyHtml} onChange={bodyHtml => { if (!busy) setInput({ ...input, bodyHtml }); }}/>
+        <RichHtmlField value={input.bodyHtml} onChange={bodyHtml => { if (!busy) setInput(old=>old?{...old,bodyHtml}:old); }} mobileHtml={input.mobileHtml} mobileEnabled={input.mobileEnabled} onMobileChange={(mobileHtml,mobileEnabled)=>setInput(old=>old?{...old,mobileHtml,mobileEnabled}:old)} onBusyChange={setInlineUploading}/>
       </fieldset>
       <div className="flex gap-2 flex-wrap">
-        <Button type="submit" disabled={busy || !input.title.trim()}>{busy ? 'שומר...' : 'שמור טקסטים'}</Button>
+        <Button type="submit" disabled={busy || inlineUploading || !input.title.trim()}>{busy ? 'שומר...' : 'שמור טקסטים'}</Button>
         <Button asChild variant="outline"><Link to="/manage/texts">סגור</Link></Button>
       </div>
     </form>}

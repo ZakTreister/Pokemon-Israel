@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Event from '../models/eventModel.js';
 import ContentPage from '../models/contentPageModel.js';
-import {richBody} from '../services/contentFields.js';
+import {richBody,mobileContentFields} from '../services/contentFields.js';
 import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
 import { publicTournament } from '../services/publicTournament.js';
@@ -12,7 +12,7 @@ const valid = id => typeof id === 'string' && mongoose.isValidObjectId(id) && /^
 const limit = (value, max = 100) => Math.max(1, Math.min(max, parseInt(value, 10) || 20));
 function categoryFor(type) { return type === 'inter_team' ? 'all_stars' : 'club'; }
 async function eventFields(input, current) {
-  const data = {};
+  const data = mobileContentFields(input);
   for (const field of ['title', 'description', 'bodyHtml','contentPageIds','showInFieldNews','category', 'status', 'featured', 'openingRound', 'startDate', 'endDate']) {
     if (input[field] === undefined) continue;
     data[field] = input[field];
@@ -48,7 +48,7 @@ const findEvent = async id => {
   return event;
 };
 const summary = e => ({ id: e.id, title: e.title, description: e.description,
-  bodyHtml:e.bodyHtml||'',contentPageIds:(e.contentPageIds||[]).map(String),showInFieldNews:!!e.showInFieldNews,
+  bodyHtml:e.bodyHtml||'',mobileHtml:e.mobileHtml||'',mobileEnabled:!!e.mobileEnabled,contentPageIds:(e.contentPageIds||[]).map(String),showInFieldNews:!!e.showInFieldNews,
   category: e.category, status: e.status, featured: e.featured, openingRound: !!e.openingRound, startDate: e.startDate,
   endDate: e.endDate, coverUrl: e.toJSON().coverUrl, mediaItems: e.toJSON().mediaItems });
 export const listEvents = asyncHandler(async (req, res) => {

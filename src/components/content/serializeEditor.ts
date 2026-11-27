@@ -2,7 +2,7 @@ import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 
 const tags = new Set(['p', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'a', 'span']);
 const blocks = new Set(['div', 'p', 'h2', 'h3', 'h4', 'ul', 'ol', 'blockquote']);
-const discarded = new Set(['script', 'style', 'iframe', 'object', 'embed', 'img', 'svg', 'video', 'audio', 'template']);
+const discarded = new Set(['script', 'style', 'iframe', 'object', 'embed', 'svg', 'video', 'audio', 'template']);
 
 // Browser editing commands can emit divs, fonts and spans with style attributes.
 // Convert to the existing restricted HTML grammar; never serialize arbitrary attributes.
@@ -14,14 +14,22 @@ export function serializeEditor(root: HTMLElement): string {
     const tag = element.tagName.toLowerCase();
     if (discarded.has(tag)) return '';
     if (tag === 'br' || tag === 'hr') return '<' + tag + '>';
+    const escapeAttr=(value:string)=>escapeRichText(value.replace(/&/g,'&amp;'));
+    const classes=element.getAttribute('class')?.trim()||'';
+    const classAttr=classes?' class="'+escapeAttr(classes)+'"':'';
+    if(tag==='img'){
+      const src=element.getAttribute('src');
+      return src?'<img src="'+escapeAttr(src)+'" alt="'+escapeAttr(element.getAttribute('alt')||'')+'"'+classAttr+'>':'';
+    }
     let content = Array.from(node.childNodes).map(serialize).join('');
     if (tag === 'a') {
       const href = element.getAttribute('href');
       if (!href) return content;
-      return '<a href="' + escapeRichText(href.replace(/&/g, '&amp;')) + '">' + content + '</a>';
+      return '<a href="' + escapeAttr(href) + '"' + classAttr + '>' + content + '</a>';
     }
     const align = (tag==='center'?'center':element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
     const attr = ['center','right','left'].includes(align) ? ' style="text-align: '+align+'"' : '';
+    if(tag==='div'&&(classes||element.parentElement?.closest('.layout-2-col,.layout-3-col')))return '<div'+classAttr+'>'+content+'</div>';
     if (tag === 'div' || tag === 'center') {
       if (Array.from(element.children).some(child => blocks.has(child.tagName.toLowerCase()))) {
         // Browser commands may wrap selected paragraphs in an aligned div.

@@ -1,12 +1,17 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight } from 'lucide-react';
+import type { ReactNode,DragEvent,ClipboardEvent } from 'react';
+import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight, Copy, Smartphone, X, ImagePlus } from 'lucide-react';
 import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
 import SafeHtml from './SafeHtml';
 import { richHtmlClassName } from './richHtmlStyles';
 import { serializeEditor } from './serializeEditor';
+import { richHtmlPrompt } from './richHtmlPrompt';
+import { optimizeInlineImage } from './optimizeInlineImage';
+import { hasRichContent } from '../../../shared/richHtml.js';
 
-type Props = { value: string; onChange: (value: string) => void; label?: string };
+type Props = { value: string; onChange: (value: string) => void; label?: string; mobileHtml?:string; mobileEnabled?:boolean; onMobileChange?:(html:string,enabled:boolean)=>void; onBusyChange?:(busy:boolean)=>void };
+type EditorProps = Pick<Props,'value'|'onChange'|'label'|'onBusyChange'> & { deviceControls?:ReactNode };
 const actions = [
   { command: 'undo', label: 'בטל פעולה', Icon: Undo2 },
   { command: 'redo', label: 'שחזר פעולה', Icon: Redo2 },
@@ -20,15 +25,34 @@ const actions = [
   { command: 'unlink', label: 'הסר קישור', Icon: Unlink },
 ] as const;
 
-export default function RichHtmlField({ value, onChange, label = 'תוכן' }: Props) {
+export default function RichHtmlField({value,onChange,label='תוכן',mobileHtml='',mobileEnabled=false,onMobileChange,onBusyChange}:Props){
+ const [mobile,setMobile]=useState(false);
+ const [uploading,setUploading]=useState(false);
+ const busyChange=(busy:boolean)=>{setUploading(busy);onBusyChange?.(busy);};
+ const hasMobile=hasRichContent(mobileHtml);
+ const controls=onMobileChange?(mobile?<>
+   <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={mobileEnabled} disabled={uploading} onChange={e=>onMobileChange(mobileHtml,e.target.checked)}/> הצג במובייל</label>
+   <Button type="button" size="icon" variant="ghost" disabled={uploading} title="סגור וחזור לתוכן ראשי" aria-label="סגור וחזור לתוכן ראשי" onClick={()=>setMobile(false)}><X size={18}/></Button>
+ </>:<Button type="button" size="icon" variant={hasMobile?'secondary':'ghost'} disabled={uploading} title="הוסף תוכן מובייל" aria-label="הוסף תוכן מובייל" onClick={()=>setMobile(true)}><Smartphone size={18}/></Button>):undefined;
+ return <RichHtmlEditor key={mobile?'mobile':'main'} label={mobile?label+' — מובייל':label} value={mobile?mobileHtml:value} onChange={mobile?(html=>onMobileChange?.(html,mobileEnabled||!hasMobile&&hasRichContent(html))):onChange} onBusyChange={busyChange} deviceControls={controls}/>;
+}
+function RichHtmlEditor({ value, onChange, label = 'תוכן', onBusyChange, deviceControls }: EditorProps) {
   const id = useId();
   const editor = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
+  const source=useRef<HTMLTextAreaElement>(null);
+  const filePicker=useRef<HTMLInputElement>(null);
+  const [uploading,setUploading]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const inFlight=useRef(false);
+  const mounted=useRef(true);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   const lastValue = useRef<string | null>(null);
   const [mode, setMode] = useState<'visual' | 'source'>(() => {
     try { sanitizeRichHtml(value); return 'visual'; } catch { return 'source'; }
   });
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [copied,setCopied]=useState(false);
   const [error, setError] = useState('');
 
   // Do not overwrite the live DOM on every keystroke: that loses selection and undo history.
@@ -93,7 +117,7 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     }
   };
   const switchMode = (next: 'visual' | 'source') => {
-    if (next === mode) return;
+    if (next === mode || inFlight.current) return;
     if (next === 'visual') {
       try {
         const html = sanitizeRichHtml(value);
@@ -134,11 +158,69 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     }
   };
 
+  const addImage=async(file:File)=>{
+    if(inFlight.current)return;
+    const range=savedRange.current?.cloneRange();
+    const index=source.current?.selectionEnd??value.length;
+    inFlight.current=true;setUploading(true);setProgress(0);onBusyChange?.(true);setError('');
+    try{
+      const optimized=await optimizeInlineImage(file);
+      const {uploadImage}=await import('../../services/media');
+      const uploaded=await uploadImage(optimized,{purpose:'rich-content-image'},p=>{if(mounted.current)setProgress(p);});
+      if(!mounted.current)return;
+      const attr=(v:string)=>escapeRichText(v.replace(/&/g,'&amp;'));
+      const imageHtml=sanitizeRichHtml('<img src="'+attr(uploaded.url)+'" alt="">');
+      if(mode==='source'){
+        const next=value.slice(0,index)+imageHtml+value.slice(index);
+        sanitizeRichHtml(next);
+        onChange(next);
+      }else{
+        const node=editor.current;
+        if(!node)return;
+        const doc=node.ownerDocument;
+        const target=range&&node.contains(range.commonAncestorContainer)?range:doc.createRange();
+        if(target!==range)target.selectNodeContents(node);
+        target.collapse(false);
+        const template=doc.createElement('template');template.innerHTML=imageHtml;
+        const image=template.content.firstChild!;
+        target.insertNode(image);target.setStartAfter(image);target.collapse(true);
+        const selection=doc.getSelection();selection?.removeAllRanges();selection?.addRange(target);
+        publish();
+      }
+    }catch(e){if(mounted.current)setError(e instanceof Error?e.message:'העלאת התמונה נכשלה');}
+    finally{inFlight.current=false;if(mounted.current){setUploading(false);onBusyChange?.(false);}}
+  };
+  const openImage=()=>{rememberSelection();filePicker.current?.click();};
+  const dropImage=(e:DragEvent<HTMLElement>)=>{
+    e.preventDefault();
+    if(inFlight.current)return;
+    if(e.dataTransfer.files.length!==1){setError('יש לגרור תמונה אחת בכל פעם');return;}
+    if(mode==='visual'&&editor.current){
+      const doc=editor.current.ownerDocument;
+      const range=doc.caretRangeFromPoint?.(e.clientX,e.clientY);
+      if(range&&editor.current.contains(range.commonAncestorContainer))savedRange.current=range;
+      else rememberSelection();
+    }
+    void addImage(e.dataTransfer.files[0]);
+  };
+  const pasteImage=(e:ClipboardEvent<HTMLElement>)=>{
+    const file=Array.from(e.clipboardData.files).find(f=>f.type.startsWith('image/'));
+    if(file){e.preventDefault();rememberSelection();void addImage(file);return true;}
+    return false;
+  };
+  const copyRules=async()=>{
+    try{await navigator.clipboard.writeText(richHtmlPrompt);setCopied(true);setError('');}
+    catch{setError('לא ניתן להעתיק. אפשר לסמן את הכללים ולהעתיק ידנית.');}
+  };
   return (
-    <div className="space-y-2" dir="rtl">
+    <fieldset disabled={uploading} className="space-y-2 min-w-0" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span id={id} className="font-bold">{label}</span>
-        <div className="flex gap-1" aria-label="מצב עריכת תוכן">
+        <div className="flex flex-wrap gap-1" aria-label="מצב עריכת תוכן">
+          {deviceControls}
+          <Button type="button" size="icon" variant="ghost" title="העלה תמונה" aria-label="העלה תמונה" onMouseDown={e=>{rememberSelection();e.preventDefault();}} onClick={openImage}><ImagePlus size={18}/></Button>
+          <input ref={filePicker} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void addImage(file);}}/>
+          <Button type="button" size="sm" variant="outline" aria-label="העתק פרומפט כללי עריכה" onClick={()=>void copyRules()}><Copy size={16}/> {copied?'הפרומפט הועתק':'העתק פרומפט כללי עריכה'}</Button>
           <Button type="button" size="sm" contextual variant={mode === 'visual' ? 'secondary' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => switchMode('visual')}>עריכה ויזואלית</Button>
           <Button type="button" size="sm" contextual variant={mode === 'source' ? 'secondary' : 'outline'} aria-pressed={mode === 'source'} onClick={() => switchMode('source')}>HTML</Button>
         </div>
@@ -164,14 +246,16 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
             <Button type="button" size="sm" onClick={applyLink}>החל</Button>
             <Button type="button" size="sm" variant="outline" onClick={() => { setLinkUrl(null); restoreSelection(); }}>ביטול</Button>
           </div>}
-          <div ref={editor} role="textbox" aria-labelledby={id} aria-multiline="true" contentEditable suppressContentEditableWarning dir="rtl" className={richHtmlClassName + ' min-h-48 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'} onInput={publish} onKeyUp={rememberSelection} onMouseUp={rememberSelection} onBlur={rememberSelection} onPaste={e => { e.preventDefault(); rememberSelection(); command('insertText', e.clipboardData.getData('text/plain')); }} onDrop={e => e.preventDefault()} onClick={e => { if ((e.target as Element).closest('a')) e.preventDefault(); }}/>
+          <div ref={editor} role="textbox" aria-labelledby={id} aria-multiline="true" contentEditable={!uploading} suppressContentEditableWarning dir="rtl" className={richHtmlClassName + ' min-h-48 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'} onInput={publish} onKeyUp={rememberSelection} onMouseUp={rememberSelection} onBlur={rememberSelection} onPaste={e => { if(pasteImage(e))return; e.preventDefault(); if(inFlight.current)return; rememberSelection(); command('insertText', e.clipboardData.getData('text/plain')); }} onDragOver={e=>{if(Array.from(e.dataTransfer.types).includes('Files'))e.preventDefault();}} onDrop={dropImage} onClick={e => { if ((e.target as Element).closest('a')) e.preventDefault(); }}/>
         </div>
       ) : (
-        <textarea aria-labelledby={id} maxLength={50000} rows={10} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="ltr" value={value} onChange={e => { onChange(e.target.value); setError(''); }}/>
+        <textarea ref={source} onDragOver={e=>{if(Array.from(e.dataTransfer.types).includes('Files'))e.preventDefault();}} onDrop={dropImage} onPaste={e=>{pasteImage(e);}} aria-labelledby={id} maxLength={50000} rows={10} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="ltr" value={value} onChange={e => { onChange(e.target.value); setError(''); }}/>
       )}
-      <p className="text-xs text-muted-foreground">סמנו טקסט ולחצו על סמל הקישור כדי להוסיף כתובת. תמונות וסרטונים מוסיפים בנפרד באזור המדיה.</p>
+      {uploading&&<p role="status" className="text-sm">מעבד ומעלה תמונה… {progress}%</p>}
+      <p className="text-xs text-muted-foreground">אפשר לגרור או להדביק תמונה ישירות בשדה. ניתן להדביק HTML שנוצר בכלי AI במצב HTML. תמונות מותרות באמצעות HTTPS בפורמט JPEG, PNG או WebP.</p>
+      <details className="text-xs"><summary className="cursor-pointer">כללי עריכה</summary><pre dir="rtl" className="whitespace-pre-wrap break-words">{richHtmlPrompt}</pre></details>
       {error && <p role="alert" className="text-destructive">{error}</p>}
       {mode === 'source' && value && <details className="border rounded p-3"><summary className="cursor-pointer">תצוגה מקדימה</summary><SafeHtml html={value}/></details>}
-    </div>
+    </fieldset>
   );
 }

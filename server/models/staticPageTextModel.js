@@ -5,6 +5,8 @@ const schema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 180 },
   subtitle: { type: String, default: '', maxlength: 5000 },
   bodyHtml: { type: String, default: '', maxlength: 50000 },
+  mobileHtml:{type:String,default:'',maxlength:50000},
+  mobileEnabled:{type:Boolean,default:false},
 }, { timestamps: true });
 
 export default mongoose.model('StaticPageText', schema);

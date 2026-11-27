@@ -5,7 +5,7 @@ import StaticPageText from '../models/staticPageTextModel.js';
 import { staticPageDefaults, staticPageTextFields } from '../services/staticPageTexts.js';
 
 const router = express.Router();
-const view = (record) => ({ title: record.title, subtitle: record.subtitle, bodyHtml: record.bodyHtml });
+const view = (record) => ({ title: record.title, subtitle: record.subtitle, bodyHtml: record.bodyHtml, ...(record.mobileHtml||record.mobileEnabled?{mobileHtml:record.mobileHtml||'',mobileEnabled:!!record.mobileEnabled}:{}) });
 
 router.get('/:key', asyncHandler(async (req, res) => {
   const defaults = staticPageDefaults(req.params.key);
