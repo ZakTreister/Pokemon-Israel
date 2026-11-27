@@ -1,5 +1,6 @@
 import { paginate, tournamentQuery } from '../services/pagination.js';
 import { publicTournament } from '../services/publicTournament.js';
+import { tournamentImage } from '../services/tournamentImage.js';
 import asyncHandler from 'express-async-handler';
 import Event from '../models/eventModel.js';
 import { publicMediaUrl } from '../services/storage/mediaMetadata.js';
@@ -164,7 +165,7 @@ export const createTournament = asyncHandler(async (req, res) => {
     // A club event has no participant limit. Preserve legacy caps for other event types.
     maxParticipants: club ? null : (req.body.maxParticipants ?? 32),
     registrationDeadline: club ? clubEndDay(firstDay) : new Date(tournamentDate),
-    image: req.body.image || 'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+    image: tournamentImage(req.body.image),
     isRecurring: Boolean(isRecurring),
   };
   if (isRecurring) {
@@ -241,7 +242,7 @@ export const updateTournament = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('קישור תמונה לא תקין');
     }
-    if (req.body.image.trim()) tournament.image = req.body.image.trim();
+    tournament.image = tournamentImage(req.body.image);
   }
   // Existing team/encounter behavior remains unchanged. Club events are unlimited.
   if (club) tournament.maxParticipants = null;
