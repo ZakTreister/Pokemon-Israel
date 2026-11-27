@@ -9,6 +9,8 @@ export interface StaticPageText {
   title: string;
   subtitle: string;
   bodyHtml: string;
+  mobileHtml?:string;
+  mobileEnabled?:boolean;
 }
 export const staticPageTextsService = {
   get: async (id: StaticPageTextKey) => (await api.get<StaticPageText>('/api/static-page-texts/' + id)).data,
