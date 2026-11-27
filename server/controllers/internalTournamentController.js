@@ -107,7 +107,7 @@ function base(team, participants, req, source) {
     date,
     registrationDeadline: date,
     location: team.name,
-    image: team.toJSON().logo || "/pokemon_kids_logo.png",
+    image: team.toJSON().logo || "",
     maxParticipants: 128,
     currentParticipants: participants.length,
     type: "team_internal",
