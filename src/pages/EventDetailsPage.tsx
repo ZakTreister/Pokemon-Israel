@@ -25,7 +25,7 @@ function EventDetails({id}:{id:string}){
  <div className="container py-8 space-y-8">
  <Link className="font-bold text-blue-500" to="/tournaments">→ לכל האירועים</Link>
  <>
- {event.bodyHtml&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml}/></Card>}
+ {(event.bodyHtml||event.mobileEnabled&&event.mobileHtml)&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml||''} mobileHtml={event.mobileHtml} mobileEnabled={event.mobileEnabled}/></Card>}
  {!!event.updates?.length&&<section className="space-y-4" aria-label="עדכונים"><h2 className="text-2xl font-extrabold">עדכונים</h2>
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{event.updates.map(u=><PublicUpdateCard key={u.id} update={u}/>)}</div>
  </section>}
