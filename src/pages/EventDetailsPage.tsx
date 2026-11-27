@@ -8,7 +8,6 @@ import type { Team } from '../types/team';
 import { PageHero } from '../components/ui/PageHero';
 import { requestError } from '../utils/requestError';
 import Button from '../components/ui/Button';
-import { MediaGallery } from '../components/media/MediaGallery';
 import PublicUpdateCard from '../features/updates/components/PublicUpdateCard';
 import SafeHtml from '../components/content/SafeHtml';
 export default function EventDetailsPage(){
@@ -26,9 +25,6 @@ function EventDetails({id}:{id:string}){
  <div className="container py-8 space-y-8">
  <Link className="font-bold text-blue-500" to="/tournaments">→ לכל האירועים</Link>
  <>
- <div>
- {event.mediaItems.length>0?<MediaGallery carousel items={event.mediaItems}/>:event.coverUrl?<img src={event.coverUrl} alt="" className="w-full max-h-96 object-cover rounded-xl" loading="lazy"/>:null}
- </div>
  {event.bodyHtml&&<Card variant="public" className="p-5" role="article" aria-label="תוכן האירוע"><SafeHtml html={event.bodyHtml}/></Card>}
  {!!event.updates?.length&&<section className="space-y-4" aria-label="עדכונים"><h2 className="text-2xl font-extrabold">עדכונים</h2>
  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{event.updates.map(u=><PublicUpdateCard key={u.id} update={u}/>)}</div>
