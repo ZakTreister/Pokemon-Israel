@@ -95,3 +95,9 @@ On public tournament lists, detail, series, nearest summary and event-linked tou
 
 ## Owner follow-up — no default tournament image
 Tournament image is optional, including on creation and update. Empty input clears the own image. An existing published parent event cover still takes priority. No generic stock image or generic league-logo fallback when no effective image exists. Known legacy generated default URLs are suppressed in tournament serialization without deleting database records; explicit nondefault images remain intact. Public detail and admin cards render no image element or reserved image area when image is empty. New inter-team meetings rely on event cover; actual internal-team logo remains if available. Deck images and league branding are unchanged.
+
+## Owner follow-up — event hero metadata
+Display event category and optional start date inside the existing public PageHero, below its subtitle, with readable contrast for both leagues. Remove the duplicate metadata line from the body; keep rich content and updates order unchanged.
+
+## Owner follow-up — event media add panel
+In the event management media section, visually group the new-media controls (file, YouTube URL, caption, cover/gallery flags, upload progress, add button) in a separate titled bordered panel. Keep existing media previews and management controls outside the panel. Other MediaManager owners keep their existing visual styling and behavior.
