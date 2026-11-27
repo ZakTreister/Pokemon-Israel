@@ -1,5 +1,6 @@
 import { tournamentLifecycle, clubRegistrationOpen } from '../../shared/tournamentDomain.js';
 import { calculateStandings } from './swiss.js';
+import { tournamentImage } from './tournamentImage.js';
 const percentage = (value) =>
   typeof value === 'number' ? (value > 1 ? value / 100 : value) : null;
 function legacyResults(t) {
@@ -34,7 +35,7 @@ export function publicTournament(t, detail = false, eventCoverUrl = '') {
     description: t.description,
     date: t.date,
     location: t.location,
-    image: t.eventId && eventCoverUrl ? eventCoverUrl : t.image,
+    image: t.eventId && eventCoverUrl ? eventCoverUrl : tournamentImage(t.image),
     type,
     lifecycle,
     status: t.status,
