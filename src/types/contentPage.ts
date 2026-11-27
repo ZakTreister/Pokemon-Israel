@@ -1,7 +1,7 @@
 import type { EventMedia } from './event';
 export interface ContentPageLink {id:string;title:string;subtitle?:string;status:'draft'|'published'}
 export interface ContentPage extends ContentPageLink {
- bodyHtml:string;showInNavigation:boolean;navigationLabel:string;showInFieldNews:boolean;mediaItems:EventMedia[];updatedAt?:string;
+ bodyHtml:string;mobileHtml?:string;mobileEnabled?:boolean;showInNavigation:boolean;navigationLabel:string;showInFieldNews:boolean;mediaItems:EventMedia[];updatedAt?:string;
  isAllStars?:boolean;showAsButton?:boolean;buttonLabel?:string;buttonTargets?:string[];
 }
-export type ContentPageInput=Pick<ContentPage,'title'|'subtitle'|'bodyHtml'|'status'|'showInNavigation'|'navigationLabel'|'showInFieldNews'|'isAllStars'|'showAsButton'|'buttonLabel'|'buttonTargets'>;
+export type ContentPageInput=Pick<ContentPage,'title'|'subtitle'|'bodyHtml'|'mobileHtml'|'mobileEnabled'|'status'|'showInNavigation'|'navigationLabel'|'showInFieldNews'|'isAllStars'|'showAsButton'|'buttonLabel'|'buttonTargets'>;
