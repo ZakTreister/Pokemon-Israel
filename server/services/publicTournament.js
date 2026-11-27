@@ -24,7 +24,7 @@ function legacyResults(t) {
       : null,
   }));
 }
-export function publicTournament(t, detail = false) {
+export function publicTournament(t, detail = false, eventCoverUrl = '') {
   const lifecycle = tournamentLifecycle(t);
   const type = t.type || 'quarterly';
   const data = {
@@ -34,7 +34,7 @@ export function publicTournament(t, detail = false) {
     description: t.description,
     date: t.date,
     location: t.location,
-    image: t.image,
+    image: t.eventId && eventCoverUrl ? eventCoverUrl : t.image,
     type,
     lifecycle,
     status: t.status,
