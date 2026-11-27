@@ -25,6 +25,8 @@ try {
   assert.equal(serializeEditor(root), '<p>שלום &amp; &lt;עולם&gt;</p><b>מודגש</b><em>נטוי</em><a href="/events/123?x=1&amp;y=2">קישור</a>');
   assert.throws(()=>serializeEditor(element('div',[element('a',[text('bad')],{href:'javascript:alert(1)'})])));
   assert.equal(serializeEditor(element('div',[element('div',[text('מרכז')],{align:'center'}),element('h2',[text('כותרת')],{style:{textAlign:'center'}})])),'<p style="text-align: center">מרכז</p><h2 style="text-align: center">כותרת</h2>');
+  const rich='<div class="mobile-only"><img src="https://example.com/a.jpg" alt="תמונה" class="image-medium align-center"><a href="/events" class="cta-button">אירועים</a></div>';
+  assert.equal(serializeEditor(element('div',[element('div',[element('img',[],{src:'https://example.com/a.jpg',alt:'תמונה',class:'image-medium align-center'}),element('a',[text('אירועים')],{href:'/events',class:'cta-button'})],{class:'mobile-only'})])),rich);
   const el = React.createElement;
   const Harness = () => {
     const [value,setValue] = React.useState('<p>תוכן קיים</p>');
@@ -51,6 +53,11 @@ try {
   assert.equal(renderer.root.findAllByType('textarea').length,0);
   assert.equal(fake.innerHTML,'<h2>כותרת</h2><a href="/events/123">אירוע</a>');
   assert.equal(renderer.root.findAllByType('input').length,0);
+  assert.ok(button('העתק פרומפט כללי עריכה'));
+  act(()=>button('HTML').props.onClick());
+  act(()=>renderer.root.findByType('textarea').props.onChange({target:{value:rich}}));
+  act(()=>button('עריכה ויזואלית').props.onClick());
+  assert.equal(fake.innerHTML,rich);
   console.log('Rich HTML editor checks passed: safe serialization, visual/source roundtrip, invalid source rejection and no permanent link fields.');
 } finally {
   if(renderer) act(()=>renderer.unmount());
