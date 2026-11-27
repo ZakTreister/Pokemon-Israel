@@ -6,6 +6,7 @@ import {richBody,mobileContentFields} from '../services/contentFields.js';
 import Tournament from '../models/tournamentModel.js';
 import Update from '../models/updateModel.js';
 import { publicTournament } from '../services/publicTournament.js';
+import { publicMediaUrl } from '../services/storage/mediaMetadata.js';
 import { fail } from '../utils/httpError.js';
 import { attachAsset,removeAsset,changeAssetVisibility } from '../services/assetAttachment.js';
 const valid = id => typeof id === 'string' && mongoose.isValidObjectId(id) && /^[a-f0-9]{24}$/i.test(id);
@@ -84,7 +85,7 @@ export const getEvent = asyncHandler(async (req,res) => {
     Tournament.find({ eventId:event._id }).sort({date:1}),
     Update.find({ eventId:event._id,published:{$ne:false} }).sort({date:-1}),
   ]);
-  res.json({ ...event.toJSON(), tournaments:tournaments.map(t=>publicTournament(t)),
+  res.json({ ...event.toJSON(), tournaments:tournaments.map(t=>publicTournament(t,false,publicMediaUrl(event.coverMedia))),
     updates:updates.map(u=>u.toJSON()),contentPages:await linkedPages(event) });
 });
 export const getManagedEvent = asyncHandler(async (req,res) => {
@@ -93,7 +94,7 @@ export const getManagedEvent = asyncHandler(async (req,res) => {
     Tournament.find({ eventId:event._id }).sort({date:1}),
     Update.find({eventId:event._id}).sort({date:-1}),
   ]);
-  res.json({ ...event.toJSON(), tournaments:tournaments.map(t=>publicTournament(t)),
+  res.json({ ...event.toJSON(), tournaments:tournaments.map(t=>publicTournament(t,false,publicMediaUrl(event.coverMedia))),
     updates:updates.map(u=>u.toJSON()),contentPages:await linkedPages(event,true) });
 });
 export const createEvent = asyncHandler(async (req,res) => {
