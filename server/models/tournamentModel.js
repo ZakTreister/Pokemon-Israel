@@ -1,3 +1,4 @@
+import { tournamentImage } from '../services/tournamentImage.js';
 import mongoose from 'mongoose';
 
 const standingSchema = new mongoose.Schema({
@@ -85,7 +86,8 @@ const tournamentSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
+    default: '',
+    set: tournamentImage,
   },
   // New fields for recurring tournaments
   seriesId: {
@@ -199,6 +201,7 @@ tournamentSchema.pre('aggregate', function () {
 tournamentSchema.set('toJSON', {
   transform: function(doc, ret) {
     ret.id = ret._id;
+    ret.image = tournamentImage(ret.image);
     delete ret._id;
     delete ret.__v;
     return ret;

@@ -96,7 +96,7 @@ router.post('/',asyncHandler(async(req,res)=>{
     type:'inter_team',engineVersion:'swiss-v1',scoringPolicy:SWISS_POLICY,
     title:`${ordered[0].name} מול ${ordered[1].name}`,
     description:'מפגש בין נבחרות',date:scheduledDate||fixture?.date||now,registrationDeadline:scheduledDate||fixture?.date||now,
-    location:(scheduled?req.body.location?.trim():fixture?.location)||ordered.map(t=>t.name).join(' / '),image:ordered[0].toJSON().logo||'/pokemon_kids_logo.png',
+    location:(scheduled?req.body.location?.trim():fixture?.location)||ordered.map(t=>t.name).join(' / '),image:'',
     maxParticipants:128,currentParticipants:players.length,source:'live',phase:'setup',
     status:'upcoming',createdBy:req.user._id,
     ...(event?{eventId:event._id}:{}),

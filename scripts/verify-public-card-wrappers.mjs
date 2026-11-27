@@ -89,6 +89,14 @@ try {
   assert.ok(renderer.root.findAllByType('h2').some(n=>n.children.join('')==='עדכונים'));
   assert.ok(renderer.root.findByProps({id:'update-news1'}).props.className.includes('h-[380px]'));
   const eventMarkup=JSON.stringify(renderer.toJSON());
+  const metadata=renderer.root.findAllByType('p').filter(n=>n.props['aria-label']==='סוג ותאריך האירוע');
+  assert.equal(metadata.length,1);
+  assert.ok(metadata[0].children.join('').includes('אירוע חוגים'));
+  assert.ok(metadata[0].children.join('').includes('1.12.2026'));
+  assert.ok(eventMarkup.indexOf('סוג ותאריך האירוע')<eventMarkup.indexOf('תוכן האירוע'));
+  let metadataParent=metadata[0].parent;
+  while(metadataParent&&metadataParent.type!=='section')metadataParent=metadataParent.parent;
+  assert.ok(metadataParent?.findAllByType('h1').length,'event metadata belongs inside PageHero');
   assert.ok(!eventMarkup.includes('/event-cover.jpg'));
   assert.ok(!eventMarkup.includes('/event-media.jpg'));
   assert.ok(eventMarkup.includes('https://example.com/inline.jpg'));

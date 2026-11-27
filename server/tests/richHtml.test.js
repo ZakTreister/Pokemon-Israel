@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sanitizeRichHtml,hasRichContent} from '../../shared/richHtml.js';
 import {contentPageFields,mobileContentFields} from '../services/contentFields.js';
+import {updateFields} from '../services/updateFields.js';
 test('rich HTML accepts only safe tags and canonical links',()=>{
  const html='<p>שלום <strong>עולם</strong> <a href="https://example.com/?a=1&b=2">קישור</a></p>';
  const clean=sanitizeRichHtml(html);
@@ -38,4 +39,13 @@ test('mobile HTML validates independently and disabling preserves stored content
  assert.throws(()=>mobileContentFields({mobileEnabled:'false'}));
  assert.equal(hasRichContent('<p><br>&nbsp;</p>'),false);
  assert.equal(hasRichContent('<img src="https://example.com/a.png" alt="">'),true);
+});
+
+test('responsive blocks round-trip and preserve word boundaries in update excerpts',()=>{
+ const raw='<div class="mobile-only"><img src="https://example.com/a.jpg?x=1&y=2" alt="תמונה"></div><div class="desktop-only"><p>מחשב</p></div>';
+ const safe=sanitizeRichHtml(raw);
+ assert.equal(safe,raw.replace('&y=','&amp;y='));
+ assert.equal(sanitizeRichHtml(safe),safe);
+ const update=updateFields({title:'בדיקה',descriptionHtml:'<div class="content-card">ראשון</div><div class="content-highlight">שני</div>'});
+ assert.equal(update.content,'ראשון\nשני');
 });

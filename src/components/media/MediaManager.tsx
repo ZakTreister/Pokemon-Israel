@@ -23,6 +23,8 @@ export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'
  const changeVisibility=async(assetId:string,value:boolean)=>{setBusy(true);setError('');try{const {data}=await api.put<{mediaItems:EventMedia[]}>(`/api/${path}/${id}/media/${assetId}`,{showInGallery:value});setLocal(data.mediaItems);await onChanged();}catch(e){setError(requestError(e));}finally{setBusy(false);}};
  return <div className="space-y-3">
  <MediaGallery items={local}/>
+ <div role="group" aria-label="הוספת מדיה חדשה" className={owner==='event'?'border rounded-lg p-4 space-y-3 bg-muted/20':'space-y-3'}>
+ {owner==='event'&&<h4 className="font-bold">הוספת מדיה חדשה</h4>}
  <label className="block">בחר תמונה (עד 5MB)<input type="file" accept="image/png,image/jpeg,image/webp" className="block w-full mt-1" disabled={busy} onChange={e=>setFile(e.target.files?.[0]||null)}/></label>
  <label className="block">או הוסף קישור לסרטון YouTube<input type="url" placeholder="https://www.youtube.com/watch?v=..." className="block border p-2 rounded-md w-full" value={youtubeUrl} disabled={busy||!!file} onChange={e=>setYoutubeUrl(e.target.value)}/></label>
  <label className="block">כיתוב<input maxLength={240} className="block border p-2 rounded-md w-full" value={caption} onChange={e=>setCaption(e.target.value)}/></label>
@@ -31,6 +33,7 @@ export default function MediaManager({owner,id,items,onChanged}:{owner:'event'|'
  {error&&<p role="alert" className="text-destructive">{error}</p>}
  <p role="status" className="text-sm">{busy?`מעלה ושומר... ${progress}%`:''}</p>
  <Button type="button" disabled={busy||(!file&&!youtubeUrl)||Boolean(file&&youtubeUrl)} onClick={()=>void add()}>הוסף למדיה</Button>
+ </div>
  {local.map(item=><div key={item.id} className="flex justify-between items-center gap-2"><span className="text-sm truncate">{item.caption||item.kind}</span>{owner!=='gallery'&&<label className="flex gap-2 text-sm"><input type="checkbox" checked={!!item.showInGallery} disabled={busy} onChange={e=>void changeVisibility(item.id,e.target.checked)}/> בגלריה</label>}<Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void remove(item.id)}>הסר</Button></div>)}
  </div>;
 }

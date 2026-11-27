@@ -550,14 +550,13 @@ export default function AdminTournaments({ embeddedCreate = false, eventContext 
               {sortedTournaments.map((tournament) => (
                 <Card key={tournament.id} className="overflow-hidden">
                   <CardContent className="p-0">
-                    <div className="grid md:grid-cols-[180px_1fr] h-full">
-                      <div className="relative h-[120px] md:h-full overflow-hidden">
-                        <img
-                          src={tournament.image}
-                          alt={tournament.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-2 left-2 flex gap-1">
+                    <div className={tournament.image?'grid md:grid-cols-[180px_1fr] h-full':'grid h-full'}>
+                      {tournament.image&&<div className="relative h-[120px] md:h-full overflow-hidden">
+                        <img src={tournament.image} alt={tournament.title} className="w-full h-full object-cover"/>
+                      </div>}
+                      <div className="p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex gap-1 flex-wrap mb-2">
                           <span className={`
                               px-2 py-1 rounded-full text-xs font-medium
                               ${tournament.status === 'upcoming' ? 'bg-primary/10 text-primary' : 
@@ -572,10 +571,6 @@ export default function AdminTournaments({ embeddedCreate = false, eventContext 
                             </span>
                           )}
                         </div>
-                      </div>
-                      
-                      <div className="p-4 flex flex-col justify-between">
-                        <div>
                           <h3 className="font-medium text-lg mb-2">{tournament.title}</h3>
                           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                             <div className="flex items-center gap-1">
