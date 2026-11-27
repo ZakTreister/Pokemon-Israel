@@ -25,7 +25,7 @@ export function serializeEditor(root: HTMLElement): string {
     if (tag === 'a') {
       const href = element.getAttribute('href');
       if (!href) return content;
-      return '<a href="' + escapeRichText(href.replace(/&/g, '&amp;')) + '">' + content + '</a>';
+      return '<a href="' + escapeAttr(href) + '"' + classAttr + '>' + content + '</a>';
     }
     const align = (tag==='center'?'center':element.style.textAlign || element.getAttribute('align') || '').toLowerCase();
     const attr = ['center','right','left'].includes(align) ? ' style="text-align: '+align+'"' : '';
