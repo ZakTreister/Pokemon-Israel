@@ -90,3 +90,8 @@ export function sanitizeRichHtml(input){
   if(stack.length)throw new Error('יש לסגור את כל תגיות ה-HTML');
   const result=output.join('');if(result.length>50000)throw new Error('תוכן HTML ארוך מדי');return result;
 }
+
+// Empty editor scaffolding is not a mobile override; images and rules count as content.
+export function hasRichContent(html){
+ return typeof html==='string'&&(/<(?:img|hr)(?:\s|>)/i.test(html)||!!html.replace(/<[^>]*>/g,'').replace(/&(?:nbsp|#160|#x0*a0);/gi,' ').trim());
+}
