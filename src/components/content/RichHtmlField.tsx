@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import type { ReactNode,DragEvent,ClipboardEvent } from 'react';
 import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight, Copy, Smartphone, X, ImagePlus } from 'lucide-react';
 import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
@@ -6,12 +7,11 @@ import SafeHtml from './SafeHtml';
 import { richHtmlClassName } from './richHtmlStyles';
 import { serializeEditor } from './serializeEditor';
 import { richHtmlPrompt } from './richHtmlPrompt';
-import { uploadImage } from '../../services/media';
 import { optimizeInlineImage } from './optimizeInlineImage';
 import { hasRichContent } from '../../../shared/richHtml.js';
 
 type Props = { value: string; onChange: (value: string) => void; label?: string; mobileHtml?:string; mobileEnabled?:boolean; onMobileChange?:(html:string,enabled:boolean)=>void; onBusyChange?:(busy:boolean)=>void };
-type EditorProps = Pick<Props,'value'|'onChange'|'label'|'onBusyChange'> & { deviceControls?:React.ReactNode };
+type EditorProps = Pick<Props,'value'|'onChange'|'label'|'onBusyChange'> & { deviceControls?:ReactNode };
 const actions = [
   { command: 'undo', label: 'בטל פעולה', Icon: Undo2 },
   { command: 'redo', label: 'שחזר פעולה', Icon: Redo2 },
@@ -165,13 +165,14 @@ function RichHtmlEditor({ value, onChange, label = 'תוכן', onBusyChange, dev
     inFlight.current=true;setUploading(true);setProgress(0);onBusyChange?.(true);setError('');
     try{
       const optimized=await optimizeInlineImage(file);
+      const {uploadImage}=await import('../../services/media');
       const uploaded=await uploadImage(optimized,{purpose:'rich-content-image'},p=>{if(mounted.current)setProgress(p);});
       if(!mounted.current)return;
       const attr=(v:string)=>escapeRichText(v.replace(/&/g,'&amp;'));
       const imageHtml=sanitizeRichHtml('<img src="'+attr(uploaded.url)+'" alt="">');
       if(mode==='source'){
         const next=value.slice(0,index)+imageHtml+value.slice(index);
-        if(next.length>50000)throw new Error('תוכן HTML ארוך מדי');
+        sanitizeRichHtml(next);
         onChange(next);
       }else{
         const node=editor.current;
@@ -190,7 +191,7 @@ function RichHtmlEditor({ value, onChange, label = 'תוכן', onBusyChange, dev
     finally{inFlight.current=false;if(mounted.current){setUploading(false);onBusyChange?.(false);}}
   };
   const openImage=()=>{rememberSelection();filePicker.current?.click();};
-  const dropImage=(e:React.DragEvent<HTMLElement>)=>{
+  const dropImage=(e:DragEvent<HTMLElement>)=>{
     e.preventDefault();
     if(inFlight.current)return;
     if(e.dataTransfer.files.length!==1){setError('יש לגרור תמונה אחת בכל פעם');return;}
@@ -202,7 +203,7 @@ function RichHtmlEditor({ value, onChange, label = 'תוכן', onBusyChange, dev
     }
     void addImage(e.dataTransfer.files[0]);
   };
-  const pasteImage=(e:React.ClipboardEvent<HTMLElement>)=>{
+  const pasteImage=(e:ClipboardEvent<HTMLElement>)=>{
     const file=Array.from(e.clipboardData.files).find(f=>f.type.startsWith('image/'));
     if(file){e.preventDefault();rememberSelection();void addImage(file);return true;}
     return false;
@@ -219,7 +220,7 @@ function RichHtmlEditor({ value, onChange, label = 'תוכן', onBusyChange, dev
           {deviceControls}
           <Button type="button" size="icon" variant="ghost" title="העלה תמונה" aria-label="העלה תמונה" onMouseDown={e=>{rememberSelection();e.preventDefault();}} onClick={openImage}><ImagePlus size={18}/></Button>
           <input ref={filePicker} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void addImage(file);}}/>
-          <Button type="button" size="sm" variant="outline" onClick={()=>void copyRules()}><Copy size={16}/> {copied?'הפרומפט הועתק':'העתק פרומפט כללי עריכה'}</Button>
+          <Button type="button" size="sm" variant="outline" aria-label="העתק פרומפט כללי עריכה" onClick={()=>void copyRules()}><Copy size={16}/> {copied?'הפרומפט הועתק':'העתק פרומפט כללי עריכה'}</Button>
           <Button type="button" size="sm" contextual variant={mode === 'visual' ? 'secondary' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => switchMode('visual')}>עריכה ויזואלית</Button>
           <Button type="button" size="sm" contextual variant={mode === 'source' ? 'secondary' : 'outline'} aria-pressed={mode === 'source'} onClick={() => switchMode('source')}>HTML</Button>
         </div>
