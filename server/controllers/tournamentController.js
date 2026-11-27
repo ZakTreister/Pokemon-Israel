@@ -2,6 +2,7 @@ import { paginate, tournamentQuery } from '../services/pagination.js';
 import { publicTournament } from '../services/publicTournament.js';
 import asyncHandler from 'express-async-handler';
 import Event from '../models/eventModel.js';
+import { publicMediaUrl } from '../services/storage/mediaMetadata.js';
 import Tournament from '../models/tournamentModel.js';
 import User from '../models/userModel.js';
 import Player from '../models/playerModel.js';
@@ -37,6 +38,14 @@ const clubEndDay = day => new Date(day + 'T23:59:59.999Z');
 // @access  Public
 const deckFields =
   'archetype iconImage1 iconImage2 attackerImage1 attackerImage2 image';
+// Resolve current published event covers in one query, not once per tournament.
+async function eventCoverMap(tournaments) {
+  const ids = [...new Set(tournaments.filter(t=>t.eventId).map(t=>String(t.eventId)))];
+  if(!ids.length)return new Map();
+  const events=await Event.find({_id:{$in:ids},status:'published'}).select('coverMedia');
+  return new Map(events.map(e=>[String(e._id),publicMediaUrl(e.coverMedia)]));
+}
+const coverFor=(t,covers)=>covers.get(String(t.eventId))||'';
 export const getTournaments = asyncHandler(async (req, res) => {
   const result = await paginate(
     Tournament,
@@ -47,7 +56,8 @@ export const getTournaments = asyncHandler(async (req, res) => {
         .populate('results.deck', deckFields)
         .sort({ date: req.query.order === 'asc' ? 1 : -1, _id: 1 }),
   );
-  res.json({ ...result, items: result.items.map((t) => publicTournament(t)) });
+  const covers=await eventCoverMap(result.items);
+  res.json({ ...result, items: result.items.map(t=>publicTournament(t,false,coverFor(t,covers))) });
 });
 // A date-based active status is not proof of a running public competition.
 // Expose only the minimal data required by the live homepage cards.
@@ -73,7 +83,8 @@ export const getTournamentById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Tournament not found');
   }
-  res.json(publicTournament(tournament, true));
+  const covers=await eventCoverMap([tournament]);
+  res.json(publicTournament(tournament,true,coverFor(tournament,covers)));
 });
 // The existing legacy staff editor retains its full authenticated DTO.
 export const getLegacyManagedTournaments = asyncHandler(async (req, res) => {
@@ -248,7 +259,8 @@ export const getTournamentsBySeries = asyncHandler(async (req, res) => {
   const tournaments = await Tournament.find({ seriesId: req.params.seriesId, engineVersion: { $ne: 'swiss-v1' } })
     .populate('results.deck', 'archetype image iconImage1 iconImage2 attackerImage1 attackerImage2')
     .sort({ date: 1 });
-  res.json(tournaments.map(t => publicTournament(t)));
+  const covers=await eventCoverMap(tournaments);
+  res.json(tournaments.map(t=>publicTournament(t,false,coverFor(t,covers))));
 });
 
 
@@ -599,11 +611,12 @@ export const getTournamentSummary = asyncHandler(async (req, res) => {
     Tournament.countDocuments(upcomingQuery),
     Tournament.findOne(upcomingQuery).sort({ date: 1, _id: 1 }),
   ]);
+  const covers=await eventCoverMap(nearest?[nearest]:[]);
   res.json({
     total: totals?.total || 0,
     participants: totals?.participants || 0,
     capacity: totals?.capacity || 0,
     upcoming,
-    nearest: nearest ? publicTournament(nearest) : null,
+    nearest: nearest ? publicTournament(nearest,false,coverFor(nearest,covers)) : null,
   });
 });
