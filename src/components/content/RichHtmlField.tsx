@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight } from 'lucide-react';
+import { Bold, Italic, Underline, List, ListOrdered, Link2, Unlink, Quote, Undo2, Redo2, AlignCenter, AlignRight, Copy } from 'lucide-react';
 import { escapeRichText, sanitizeRichHtml } from '../../../shared/richHtml.js';
 import Button from '../ui/Button';
 import SafeHtml from './SafeHtml';
 import { richHtmlClassName } from './richHtmlStyles';
 import { serializeEditor } from './serializeEditor';
+import { richHtmlPrompt } from './richHtmlPrompt';
 
 type Props = { value: string; onChange: (value: string) => void; label?: string };
 const actions = [
@@ -29,6 +30,7 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     try { sanitizeRichHtml(value); return 'visual'; } catch { return 'source'; }
   });
   const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [copied,setCopied]=useState(false);
   const [error, setError] = useState('');
 
   // Do not overwrite the live DOM on every keystroke: that loses selection and undo history.
@@ -134,11 +136,16 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
     }
   };
 
+  const copyRules=async()=>{
+    try{await navigator.clipboard.writeText(richHtmlPrompt);setCopied(true);setError('');}
+    catch{setError('לא ניתן להעתיק. אפשר לסמן את הכללים ולהעתיק ידנית.');}
+  };
   return (
     <div className="space-y-2" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span id={id} className="font-bold">{label}</span>
-        <div className="flex gap-1" aria-label="מצב עריכת תוכן">
+        <div className="flex flex-wrap gap-1" aria-label="מצב עריכת תוכן">
+          <Button type="button" size="sm" variant="outline" onClick={()=>void copyRules()}><Copy size={16}/> {copied?'הפרומפט הועתק':'העתק פרומפט כללי עריכה'}</Button>
           <Button type="button" size="sm" contextual variant={mode === 'visual' ? 'secondary' : 'outline'} aria-pressed={mode === 'visual'} onClick={() => switchMode('visual')}>עריכה ויזואלית</Button>
           <Button type="button" size="sm" contextual variant={mode === 'source' ? 'secondary' : 'outline'} aria-pressed={mode === 'source'} onClick={() => switchMode('source')}>HTML</Button>
         </div>
@@ -169,7 +176,8 @@ export default function RichHtmlField({ value, onChange, label = 'תוכן' }: P
       ) : (
         <textarea aria-labelledby={id} maxLength={50000} rows={10} className="block w-full border rounded-md p-3 bg-card font-mono text-sm" dir="ltr" value={value} onChange={e => { onChange(e.target.value); setError(''); }}/>
       )}
-      <p className="text-xs text-muted-foreground">סמנו טקסט ולחצו על סמל הקישור כדי להוסיף כתובת. תמונות וסרטונים מוסיפים בנפרד באזור המדיה.</p>
+      <p className="text-xs text-muted-foreground">ניתן להדביק HTML שנוצר בכלי AI במצב HTML. תמונות מותרות באמצעות HTTPS בפורמט JPEG, PNG או WebP.</p>
+      <details className="text-xs"><summary className="cursor-pointer">כללי עריכה</summary><pre dir="rtl" className="whitespace-pre-wrap break-words">{richHtmlPrompt}</pre></details>
       {error && <p role="alert" className="text-destructive">{error}</p>}
       {mode === 'source' && value && <details className="border rounded p-3"><summary className="cursor-pointer">תצוגה מקדימה</summary><SafeHtml html={value}/></details>}
     </div>
