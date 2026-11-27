@@ -4,8 +4,17 @@ import {normalizeContentLinkTarget,isRetiredPublicPage} from '../../shared/conte
 export function richBody(input){
  try{return sanitizeRichHtml(input);}catch(error){fail(400,error.message);}
 }
-export function contentPageFields(input,current={}){
+export function mobileContentFields(input){
  const data={};
+ if(input.mobileHtml!==undefined)data.mobileHtml=richBody(input.mobileHtml);
+ if(input.mobileEnabled!==undefined){
+  if(typeof input.mobileEnabled!=='boolean')fail(400,'סימון מובייל לא תקין');
+  data.mobileEnabled=input.mobileEnabled;
+ }
+ return data;
+}
+export function contentPageFields(input,current={}){
+ const data=mobileContentFields(input);
  for(const key of ['title','subtitle','bodyHtml','status','showInNavigation','navigationLabel','showInFieldNews','isAllStars','showAsButton','buttonLabel','buttonTargets'])if(input[key]!==undefined)data[key]=input[key];
  for(const [key,max] of [['title',180],['subtitle',5000],['navigationLabel',80],['buttonLabel',80]])if(data[key]!==undefined){
   if(typeof data[key]!=='string'||data[key].length>max)fail(400,'יש להזין טקסט תקין');
