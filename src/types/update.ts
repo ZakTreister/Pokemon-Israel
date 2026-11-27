@@ -10,6 +10,8 @@ export interface Update {
   content: string;
   description?: string;
   descriptionHtml?: string;
+  mobileHtml?: string;
+  mobileEnabled?: boolean;
   image?: string;
   mediaItems?: import('./event').EventMedia[];
   ctaText?: string;
@@ -20,6 +22,8 @@ export interface UpdateInput {
   title: string;
   description?: string;
   descriptionHtml?: string;
+  mobileHtml?: string;
+  mobileEnabled?: boolean;
   ctaText: string;
   ctaUrl: string;
   imageUploadId?: string | null;
