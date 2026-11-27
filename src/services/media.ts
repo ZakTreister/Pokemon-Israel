@@ -13,7 +13,8 @@ export type UploadPurpose =
   | 'event-media'
   | 'update-media'
   | 'content-page-media'
-  | 'gallery-media';
+  | 'gallery-media'
+  | 'rich-content-image';
 export interface UploadTarget {
   purpose: UploadPurpose;
   entityId?: string;
