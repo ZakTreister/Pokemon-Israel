@@ -558,3 +558,29 @@
 /* Row headings belong to the card body, not the dark table-header surface. */
 .cs-workspace .cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }
 .cs-site-settings-table tbody th { color: hsl(var(--card-foreground)); }
+
+/* Approved CMS layout classes, scoped to rich content. */
+.cs-rich-html img { max-width:100%; height:auto; }
+.cs-rich-html .image-small { width:min(100%, 160px); }
+.cs-rich-html .image-medium { width:min(100%, 320px); }
+.cs-rich-html .image-full { width:100%; }
+.cs-rich-html div.align-center { text-align:center; }
+.cs-rich-html div.align-left { text-align:left; }
+.cs-rich-html div.align-right { text-align:right; }
+.cs-rich-html img.align-center { display:block; margin-inline:auto; }
+.cs-rich-html img.align-left { display:block; margin-left:0; margin-right:auto; }
+.cs-rich-html img.align-right { display:block; margin-right:0; margin-left:auto; }
+.cs-rich-html .layout-2-col,.cs-rich-html .layout-3-col { display:grid; gap:1rem; align-items:start; grid-template-columns:minmax(0,1fr); }
+.cs-rich-html .layout-2-col > *, .cs-rich-html .layout-3-col > * { min-width:0; }
+@media (min-width:768px) {
+  .cs-rich-html .layout-2-col { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cs-rich-html .layout-3-col { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .cs-rich-html-public .mobile-only { display:none !important; }
+}
+@media (width < 768px) {
+  .cs-rich-html-public .desktop-only { display:none !important; }
+}
+.cs-rich-html .content-card,.cs-rich-html .content-highlight { padding:1rem; border-radius:0.5rem; border:1px solid hsl(var(--border)); }
+.cs-rich-html .content-highlight { background:hsl(var(--muted)); }
+.cs-rich-html a.cta-button { display:inline-block; padding:0.65rem 1rem; border-radius:0.5rem; background:#1d4ed8; color:white; font-weight:600; text-decoration:none; }
+.cs-rich-html:not(.cs-rich-html-public) .mobile-only,.cs-rich-html:not(.cs-rich-html-public) .desktop-only { border:1px dashed currentColor; padding:0.5rem; }
