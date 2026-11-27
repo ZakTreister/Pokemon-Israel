@@ -101,3 +101,6 @@ Display event category and optional start date inside the existing public PageHe
 
 ## Owner follow-up — event media add panel
 In the event management media section, visually group the new-media controls (file, YouTube URL, caption, cover/gallery flags, upload progress, add button) in a separate titled bordered panel. Keep existing media previews and management controls outside the panel. Other MediaManager owners keep their existing visual styling and behavior.
+
+## Consolidation of superseded inline HTML proposal (#65)
+Retain the newer editor and 768px responsive policy from #66, including HTTPS raster URL validation, image file uploads and the independent mobile editor. Do not restore #65's old 680px threshold, root-relative image URLs or extra device-block toolbar. Carry forward the plain-text excerpt block-boundary fix, including classed divs, and compatible responsive image regression coverage. The old branch history is merged into #68 without overwriting the newer implementation.
