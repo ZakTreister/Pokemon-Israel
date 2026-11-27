@@ -27,6 +27,9 @@ export default function UpdateEditDialog({
     ctaText: update?.ctaText || '',
     ctaUrl: update?.ctaUrl || '',
   });
+  const [mobileHtml,setMobileHtml]=useState(update?.mobileHtml||'');
+  const [mobileEnabled,setMobileEnabled]=useState(!!update?.mobileEnabled);
+  const [inlineUploading,setInlineUploading]=useState(false);
   const [published,setPublished]=useState(update?update.published!==false:false);
   const [showInNews,setShowInNews]=useState(update?.showInNews!==false);
   const [imageInGallery,setImageInGallery]=useState(!!update?.imageInGallery);
@@ -38,7 +41,7 @@ export default function UpdateEditDialog({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const save = async () => {
-    if (busy || uploading) return;
+    if (busy || uploading || inlineUploading) return;
     const parsed = updateFormSchema.safeParse(value);
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
@@ -48,7 +51,7 @@ export default function UpdateEditDialog({
     setError('');
     try {
       const { description, ...fields } = parsed.data;
-      const input = { ...fields, descriptionHtml: description, imageUploadId, teamIds,published,showInNews,imageInGallery };
+      const input = { ...fields, descriptionHtml: description, mobileHtml,mobileEnabled,imageUploadId, teamIds,published,showInNews,imageInGallery };
       if (update) await updatesService.updateUpdate(update.id, input);
       else await updatesService.createUpdate({ ...input, eventId: defaultEventId ?? null });
       await onSaved();
@@ -63,17 +66,17 @@ export default function UpdateEditDialog({
     <Modal
       title={update ? 'עריכת עדכון' : 'עדכון חדש'}
       panelClassName="max-w-xl"
-      onClose={busy || uploading ? undefined : onClose}
+      onClose={busy || uploading || inlineUploading ? undefined : onClose}
       footer={
         <div className="flex gap-2 justify-end">
           <Button
-            disabled={busy || uploading}
+            disabled={busy || uploading || inlineUploading}
             variant="outline"
             onClick={onClose}
           >
             ביטול
           </Button>
-          <Button disabled={busy || uploading} onClick={() => void save()}>
+          <Button disabled={busy || uploading || inlineUploading} onClick={() => void save()}>
             {busy ? 'שומר…' : 'שמור'}
           </Button>
         </div>
@@ -97,7 +100,7 @@ export default function UpdateEditDialog({
             onChange={e => setValue(old => ({ ...old, title: e.target.value }))}/>
         </label>
         <RichHtmlField label="תיאור" value={value.description}
-          onChange={description => setValue(old => ({ ...old, description }))}/>
+          onChange={description => setValue(old => ({ ...old, description }))} mobileHtml={mobileHtml} mobileEnabled={mobileEnabled} onMobileChange={(html,enabled)=>{setMobileHtml(html);setMobileEnabled(enabled);}} onBusyChange={setInlineUploading}/>
         {(['ctaText', 'ctaUrl'] as const).map((field, index) => (
           <label key={field} className="block">
             {['קריאה לפעולה', 'קישור קריאה לפעולה'][index]}
