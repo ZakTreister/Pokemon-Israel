@@ -8,7 +8,7 @@ export default function PublicUpdateCard({update}:{update:Update}){
  {image&&<img src={image} alt="" loading="lazy" className="shrink-0 w-full h-28 object-cover rounded-md"/>}
  <h3 className="shrink-0 font-extrabold text-xl line-clamp-2">{update.title}</h3>
  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden break-words overscroll-contain" tabIndex={0} role="region" aria-label={'תוכן העדכון: '+update.title}>
- {update.descriptionHtml!==undefined?<SafeHtml html={update.descriptionHtml}/>:<p className="whitespace-pre-wrap">{update.description??update.content}</p>}
+ {update.descriptionHtml!==undefined?<SafeHtml html={update.descriptionHtml} mobileHtml={update.mobileHtml} mobileEnabled={update.mobileEnabled}/>:<p className="whitespace-pre-wrap">{update.description??update.content}</p>}
  </div>
  <div className="shrink-0 empty:hidden"><UpdateAction update={update}/></div>
  </article>;
